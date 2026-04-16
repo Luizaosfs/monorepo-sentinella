@@ -1,0 +1,116 @@
+import { baseAuditToHttp } from '@shared/view-model/base-audit';
+
+import {
+  Vistoria,
+  VistoriaCalha,
+  VistoriaDeposito,
+  VistoriaRisco,
+  VistoriaSintoma,
+} from '../entities/vistoria';
+
+export class VistoriaViewModel {
+  static depositoToHttp(dep: VistoriaDeposito) {
+    return {
+      id: dep.id,
+      tipoDeposito: dep.tipoDeposito,
+      quantidade: dep.quantidade,
+      comLarva: dep.comLarva,
+      eliminado: dep.eliminado,
+      tratado: dep.tratado,
+      observacao: dep.observacao,
+      fotoUrl: dep.fotoUrl,
+      createdAt: dep.createdAt,
+    };
+  }
+
+  static sintomaToHttp(sint: VistoriaSintoma) {
+    return {
+      id: sint.id,
+      sintoma: sint.sintoma,
+      observacao: sint.observacao,
+      createdAt: sint.createdAt,
+    };
+  }
+
+  static riscoToHttp(risco: VistoriaRisco) {
+    return {
+      id: risco.id,
+      tipoRisco: risco.tipoRisco,
+      descricao: risco.descricao,
+      createdAt: risco.createdAt,
+    };
+  }
+
+  static calhaToHttp(calha: VistoriaCalha) {
+    return {
+      id: calha.id,
+      tipo: calha.tipo,
+      estado: calha.estado,
+      comAcumulo: calha.comAcumulo,
+      observacao: calha.observacao,
+      createdAt: calha.createdAt,
+    };
+  }
+
+  static toHttp(vistoria: Vistoria) {
+    return {
+      id: vistoria.id,
+      clienteId: vistoria.clienteId,
+      imovelId: vistoria.imovelId,
+      agenteId: vistoria.agenteId,
+      planejamentoId: vistoria.planejamentoId,
+      ciclo: vistoria.ciclo,
+      tipoAtividade: vistoria.tipoAtividade,
+      dataVisita: vistoria.dataVisita,
+      status: vistoria.status,
+      moradoresQtd: vistoria.moradoresQtd,
+      gravidas: vistoria.gravidas,
+      idosos: vistoria.idosos,
+      criancas7anos: vistoria.criancas7anos,
+      latChegada: vistoria.latChegada,
+      lngChegada: vistoria.lngChegada,
+      checkinEm: vistoria.checkinEm,
+      observacao: vistoria.observacao,
+      payload: vistoria.payload,
+      acessoRealizado: vistoria.acessoRealizado,
+      motivoSemAcesso: vistoria.motivoSemAcesso,
+      proximoHorarioSugerido: vistoria.proximoHorarioSugerido,
+      observacaoAcesso: vistoria.observacaoAcesso,
+      fotoExternaUrl: vistoria.fotoExternaUrl,
+      origemVisita: vistoria.origemVisita,
+      habitatSelecionado: vistoria.habitatSelecionado,
+      condicaoHabitat: vistoria.condicaoHabitat,
+      assinaturaResponsavelUrl: vistoria.assinaturaResponsavelUrl,
+      pendenteAssinatura: vistoria.pendenteAssinatura,
+      pendenteFoto: vistoria.pendenteFoto,
+      origemOffline: vistoria.origemOffline,
+      assinaturaPublicId: vistoria.assinaturaPublicId,
+      fotoExternaPublicId: vistoria.fotoExternaPublicId,
+      idempotencyKey: vistoria.idempotencyKey,
+      focoRiscoId: vistoria.focoRiscoId,
+      resultadoOperacional: vistoria.resultadoOperacional,
+      vulnerabilidadeDomiciliar: vistoria.vulnerabilidadeDomiciliar,
+      alertaSaude: vistoria.alertaSaude,
+      riscoSocioambiental: vistoria.riscoSocioambiental,
+      riscoVetorial: vistoria.riscoVetorial,
+      prioridadeFinal: vistoria.prioridadeFinal,
+      prioridadeMotivo: vistoria.prioridadeMotivo,
+      dimensaoDominante: vistoria.dimensaoDominante,
+      consolidacaoResumo: vistoria.consolidacaoResumo,
+      consolidacaoJson: vistoria.consolidacaoJson,
+      consolidacaoIncompleta: vistoria.consolidacaoIncompleta,
+      versaoRegraConsolidacao: vistoria.versaoRegraConsolidacao,
+      versaoPesosConsolidacao: vistoria.versaoPesosConsolidacao,
+      consolidadoEm: vistoria.consolidadoEm,
+      reprocessadoEm: vistoria.reprocessadoEm,
+      reprocessadoPor: vistoria.reprocessadoPor,
+      depositos: vistoria.depositos?.map(VistoriaViewModel.depositoToHttp),
+      sintomas: vistoria.sintomas?.map(VistoriaViewModel.sintomaToHttp),
+      riscos: vistoria.riscos?.map(VistoriaViewModel.riscoToHttp),
+      calhas: vistoria.calhas?.map(VistoriaViewModel.calhaToHttp),
+      createdAt: vistoria.createdAt,
+      updatedAt: vistoria.updatedAt,
+      ...baseAuditToHttp(vistoria),
+    };
+  }
+}

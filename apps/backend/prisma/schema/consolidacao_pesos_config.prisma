@@ -1,0 +1,14 @@
+model consolidacao_pesos_config {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cliente_id String?  @db.Uuid
+  flag_nome  String
+  grupo      String
+  peso       Decimal  @db.Decimal(5, 2)
+  versao     String
+  ativo      Boolean  @default(true)
+  observacao String?
+  criado_por String?  @db.Uuid
+  criado_em  DateTime @default(now()) @db.Timestamptz
+
+  @@map("consolidacao_pesos_config")
+}

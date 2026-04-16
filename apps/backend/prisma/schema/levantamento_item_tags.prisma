@@ -1,0 +1,9 @@
+model levantamento_item_tags {
+  levantamento_item_id String   @db.Uuid
+  tag_id               String   @db.Uuid
+  created_at           DateTime @default(now()) @db.Timestamptz
+
+  tag tags @relation(fields: [tag_id], references: [id])
+  @@id([levantamento_item_id, tag_id])
+  @@map("levantamento_item_tags")
+}

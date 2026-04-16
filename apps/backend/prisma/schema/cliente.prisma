@@ -1,0 +1,54 @@
+model clientes {
+  id                      String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nome                    String
+  slug                    String    @unique
+  cnpj                    String?
+  contato_email           String?
+  contato_telefone        String?
+  latitude_centro         Float?
+  longitude_centro        Float?
+  bounds                  Json?
+  kmz_url                 String?
+  ativo                   Boolean   @default(true)
+  created_at              DateTime  @default(now()) @db.Timestamptz
+  updated_at              DateTime  @default(now()) @db.Timestamptz
+  area                    Json?
+  endereco                String?
+  bairro                  String?
+  cidade                  String?
+  estado                  String?
+  cep                     String?
+  uf                      String?   @db.Char(2)
+  ibge_municipio          String?   @db.Char(7)
+  deleted_at              DateTime? @db.Timestamptz
+  surto_ativo             Boolean   @default(false)
+  janela_recorrencia_dias Int       @default(30)
+
+  // Relações
+  usuarios      usuarios[]
+  imoveis       imoveis[]
+  regioes       regioes[]
+  focos_risco           focos_risco[]
+  foco_risco_historico  foco_risco_historico[]
+  levantamentos levantamentos[]
+  ciclos        ciclos[]
+  vistorias          vistorias[]
+  drones             drones[]
+  sla_operacional    sla_operacional[]
+  sla_config         sla_config[]
+  sla_config_regiao  sla_config_regiao[]
+  sla_feriados       sla_feriados[]
+  sla_foco_config    sla_foco_config[]
+  sla_config_audit   sla_config_audit[]
+  operacoes              operacoes[]
+  planejamento           planejamento[]
+  unidades_saude         unidades_saude[]
+  casos_notificados      casos_notificados[]
+  push_subscriptions     push_subscriptions[]
+  item_notificacoes_esus item_notificacoes_esus[]
+  cliente_plano          cliente_plano[]
+  billing_ciclo          billing_ciclo[]
+  cliente_quotas         cliente_quotas[]
+
+  @@map("clientes")
+}

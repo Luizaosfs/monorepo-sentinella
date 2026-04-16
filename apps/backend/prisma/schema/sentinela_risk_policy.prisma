@@ -1,0 +1,24 @@
+model sentinela_risk_policy {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cliente_id String   @db.Uuid
+  name       String   @default("default")
+  version    String   @default("v1")
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now()) @db.Timestamptz
+  updated_at DateTime @default(now()) @db.Timestamptz
+
+  defaults               sentinela_risk_defaults[]
+  rules                  sentinela_risk_rule[]
+  fallback_rules         sentinela_risk_fallback_rule[]
+  bin_intensidade_chuva  sentinela_risk_bin_intensidade_chuva[]
+  bin_persistencia_7d    sentinela_risk_bin_persistencia_7d[]
+  bin_sem_chuva          sentinela_risk_bin_sem_chuva[]
+  temp_factors           sentinela_risk_temp_factor[]
+  vento_factors          sentinela_risk_vento_factor[]
+  temp_adjust_pp         sentinela_risk_temp_adjust_pp[]
+  vento_adjust_pp        sentinela_risk_vento_adjust_pp[]
+  persistencia_adjust_pp sentinela_risk_persistencia_adjust_pp[]
+  tendencia_adjust_pp    sentinela_risk_tendencia_adjust_pp[]
+
+  @@map("sentinela_risk_policy")
+}

@@ -1,0 +1,20 @@
+model item_notificacoes_esus {
+  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cliente_id           String    @db.Uuid
+  levantamento_item_id String?   @db.Uuid
+  tipo_agravo          String
+  numero_notificacao   String?
+  status               String    @default("pendente")
+  payload_enviado      Json?
+  resposta_api         Json?
+  erro_mensagem        String?
+  enviado_por          String?   @db.Uuid
+  retention_until      DateTime  @default(dbgenerated("(now() + '5 years'::interval)")) @db.Timestamptz
+  resposta_redacted_at DateTime? @db.Timestamptz
+  created_at           DateTime  @default(now()) @db.Timestamptz
+  updated_at           DateTime  @default(now()) @db.Timestamptz
+
+  cliente clientes @relation(fields: [cliente_id], references: [id])
+
+  @@map("item_notificacoes_esus")
+}

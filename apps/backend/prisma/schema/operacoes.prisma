@@ -1,0 +1,26 @@
+model operacoes {
+  id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cliente_id            String    @db.Uuid
+  item_id               String?   @db.Uuid
+  status                String    @default("pendente")
+  prioridade            String?
+  responsavel_id        String?   @db.Uuid
+  created_at            DateTime  @default(now()) @db.Timestamptz
+  iniciado_em           DateTime? @db.Timestamptz
+  concluido_em          DateTime? @db.Timestamptz
+  observacao            String?
+  tipo_vinculo          String?
+  item_operacional_id   String?   @db.Uuid
+  item_levantamento_id  String?   @db.Uuid
+  regiao_id             String?   @db.Uuid
+  foco_risco_id         String?   @db.Uuid
+  updated_at            DateTime  @default(now()) @db.Timestamptz
+  deleted_at            DateTime? @db.Timestamptz
+  deleted_by            String?   @db.Uuid
+
+  cliente      clientes          @relation(fields: [cliente_id], references: [id])
+  responsavel  usuarios?         @relation("operacao_responsavel", fields: [responsavel_id], references: [id])
+  evidencias   operacao_evidencias[]
+
+  @@map("operacoes")
+}

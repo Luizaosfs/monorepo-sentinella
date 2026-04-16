@@ -1,0 +1,19 @@
+model levantamento_analise_ia {
+  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  levantamento_id      String    @db.Uuid
+  cliente_id           String    @db.Uuid
+  modelo               String    @default("claude-haiku-4-5-20251001")
+  total_focos          Int       @default(0)
+  total_clusters       Int       @default(0)
+  falsos_positivos     Int       @default(0)
+  sumario              String
+  clusters             Json?
+  status               String    @default("sucesso")
+  erro                 String?
+  processado_em        DateTime  @default(now()) @db.Timestamptz
+  created_at           DateTime  @default(now()) @db.Timestamptz
+  retention_until      DateTime  @db.Timestamptz
+  clusters_redacted_at DateTime? @db.Timestamptz
+
+  @@map("levantamento_analise_ia")
+}

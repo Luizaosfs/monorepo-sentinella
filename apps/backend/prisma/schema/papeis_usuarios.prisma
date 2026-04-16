@@ -1,0 +1,10 @@
+// `usuario_id` armazena o mesmo UUID que `usuarios.auth_id` / JWT.sub (auth.users), não `usuarios.id`.
+model papeis_usuarios {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  usuario_id String    @db.Uuid
+  papel      papel_app
+
+  usuario usuarios @relation(fields: [usuario_id], references: [auth_id])
+
+  @@map("papeis_usuarios")
+}

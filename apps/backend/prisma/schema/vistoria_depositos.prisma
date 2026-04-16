@@ -1,0 +1,16 @@
+model vistoria_depositos {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  vistoria_id     String   @db.Uuid
+  tipo_deposito   String
+  quantidade      Int?     @default(1)
+  com_larva       Boolean? @default(false)
+  eliminado       Boolean? @default(false)
+  tratado         Boolean? @default(false)
+  observacao      String?
+  foto_url        String?
+  created_at      DateTime @default(now()) @db.Timestamptz
+
+  vistoria vistorias @relation(fields: [vistoria_id], references: [id])
+
+  @@map("vistoria_depositos")
+}

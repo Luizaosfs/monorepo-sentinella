@@ -1,0 +1,17 @@
+model job_queue {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tipo           String
+  payload        Json     @default("{}")
+  status         String   @default("pendente") // CHECK: pendente | em_execucao | concluido | falhou | cancelado
+  tentativas     Int      @default(0)
+  max_tentativas Int      @default(3)
+  executar_em    DateTime @default(now()) @db.Timestamptz
+  iniciado_em    DateTime? @db.Timestamptz
+  concluido_em   DateTime? @db.Timestamptz
+  resultado      Json?
+  erro           String?
+  criado_em      DateTime @default(now()) @db.Timestamptz
+  updated_at     DateTime @default(now()) @updatedAt @db.Timestamptz
+
+  @@map("job_queue")
+}

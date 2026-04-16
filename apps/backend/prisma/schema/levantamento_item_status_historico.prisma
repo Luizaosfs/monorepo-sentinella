@@ -1,0 +1,13 @@
+model levantamento_item_status_historico {
+  id                     String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  levantamento_item_id   String   @db.Uuid
+  cliente_id             String   @db.Uuid
+  status_anterior        String?
+  status_novo            String
+  acao_aplicada_anterior String?
+  acao_aplicada_nova     String?
+  alterado_por           String?  @db.Uuid
+  alterado_em            DateTime @default(now()) @db.Timestamptz
+
+  @@map("levantamento_item_status_historico")
+}

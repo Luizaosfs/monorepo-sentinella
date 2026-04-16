@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__plugin_context-mode_context-mode__ctx_batch_execute",
+      "mcp__plugin_context-mode_context-mode__ctx_execute",
+      "mcp__plugin_context-mode_context-mode__ctx_execute_file",
+      "Bash(pnpm build:*)",
+      "Bash(pnpm generate:*)",
+      "Bash(grep -v \"^$\")",
+      "Bash(npm run:*)",
+      "Bash(npx prisma:*)",
+      "Bash(pnpm install:*)",
+      "Bash(grep -l describe D:/sentinella/ms-api-sentinella/src/modules/cliente/dtos/*.ts D:/sentinella/ms-api-sentinella/src/modules/regiao/dtos/*.ts)",
+      "Bash(ls D:/manfrota-web/mf-api-finance/*.json D:/manfrota-web/mf-api-finance/.*)",
+      "Bash(ls D:/sentinella/ms-api-sentinella/*.json D:/sentinella/ms-api-sentinella/.*)",
+      "mcp__plugin_context-mode_context-mode__ctx_search",
+      "Bash(for f:*)",
+      "Bash(do echo:*)",
+      "Read(//d/sentinella/ms-api-sentinella/**)",
+      "Bash(done)",
+      "Bash(npx tsc:*)",
+      "Bash(npx jest:*)"
+    ]
+  }
+}

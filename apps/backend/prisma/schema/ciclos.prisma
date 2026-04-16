@@ -1,0 +1,26 @@
+model ciclos {
+  id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cliente_id            String    @db.Uuid
+  numero                Int
+  ano                   Int
+  status                String    @default("planejamento")
+  data_inicio           DateTime  @db.Date
+  data_fim_prevista     DateTime  @db.Date
+  data_fechamento       DateTime? @db.Date
+  meta_cobertura_pct    Decimal?  @default(100.0) @db.Decimal(5, 2)
+  snapshot_fechamento   Json?
+  observacao_abertura   String?
+  observacao_fechamento String?
+  aberto_por            String?   @db.Uuid
+  fechado_por           String?   @db.Uuid
+  created_at            DateTime  @default(now()) @db.Timestamptz
+  updated_at            DateTime  @default(now()) @db.Timestamptz
+
+  cliente         clientes        @relation(fields: [cliente_id], references: [id])
+  levantamentos   levantamentos[]
+  aberto_usuario  usuarios?       @relation("ciclo_aberto_por", fields: [aberto_por], references: [id])
+  fechado_usuario usuarios?       @relation("ciclo_fechado_por", fields: [fechado_por], references: [id])
+
+  @@unique([cliente_id, numero, ano])
+  @@map("ciclos")
+}

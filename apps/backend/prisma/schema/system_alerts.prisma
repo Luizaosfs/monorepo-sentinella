@@ -1,0 +1,11 @@
+model system_alerts {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  servico      String
+  nivel        String
+  mensagem     String
+  resolvido    Boolean   @default(false)
+  resolvido_em DateTime? @db.Timestamptz
+  criado_em    DateTime  @default(now()) @db.Timestamptz
+
+  @@map("system_alerts")
+}

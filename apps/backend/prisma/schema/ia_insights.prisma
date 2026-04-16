@@ -1,0 +1,14 @@
+model ia_insights {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cliente_id String   @db.Uuid
+  tipo       String
+  texto      String
+  payload    Json     @default("{}")
+  modelo     String   @default("claude-haiku")
+  tokens_in  Int?
+  tokens_out Int?
+  valido_ate DateTime @db.Timestamptz
+  created_at DateTime @default(now()) @db.Timestamptz
+
+  @@map("ia_insights")
+}

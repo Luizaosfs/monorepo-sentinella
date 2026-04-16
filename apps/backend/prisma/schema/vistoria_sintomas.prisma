@@ -1,0 +1,11 @@
+model vistoria_sintomas {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  vistoria_id  String   @db.Uuid
+  sintoma      String
+  observacao   String?
+  created_at   DateTime @default(now()) @db.Timestamptz
+
+  vistoria vistorias @relation(fields: [vistoria_id], references: [id])
+
+  @@map("vistoria_sintomas")
+}

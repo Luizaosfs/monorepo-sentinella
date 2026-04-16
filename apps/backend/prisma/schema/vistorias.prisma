@@ -1,0 +1,68 @@
+model vistorias {
+  id                            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cliente_id                    String    @db.Uuid
+  imovel_id                     String?   @db.Uuid
+  agente_id                     String    @db.Uuid
+  planejamento_id               String?   @db.Uuid
+  ciclo                         Int       @default(1)
+  tipo_atividade                String    @default("pesquisa")
+  data_visita                   DateTime  @default(now()) @db.Timestamptz
+  status                        String    @default("pendente")
+  moradores_qtd                 Int?
+  gravidas                      Boolean   @default(false)
+  idosos                        Boolean   @default(false)
+  criancas_7anos                Boolean   @default(false)
+  lat_chegada                   Float?
+  lng_chegada                   Float?
+  checkin_em                    DateTime? @db.Timestamptz
+  observacao                    String?
+  payload                       Json?
+  created_at                    DateTime  @default(now()) @db.Timestamptz
+  updated_at                    DateTime  @default(now()) @db.Timestamptz
+  acesso_realizado              Boolean   @default(true)
+  motivo_sem_acesso             String?
+  proximo_horario_sugerido      String?
+  observacao_acesso             String?
+  foto_externa_url              String?
+  origem_visita                 String?
+  habitat_selecionado           String?
+  condicao_habitat              String?
+  assinatura_responsavel_url    String?
+  pendente_assinatura           Boolean   @default(false)
+  pendente_foto                 Boolean   @default(false)
+  origem_offline                Boolean   @default(false)
+  assinatura_public_id          String?
+  foto_externa_public_id        String?
+  idempotency_key               String?   @db.Uuid
+  deleted_at                    DateTime? @db.Timestamptz
+  deleted_by                    String?   @db.Uuid
+  created_by                    String?   @db.Uuid
+  foco_risco_id                 String?   @db.Uuid
+  resultado_operacional         String?
+  vulnerabilidade_domiciliar    String?
+  alerta_saude                  String?
+  risco_socioambiental          String?
+  risco_vetorial                String?
+  prioridade_final              String?
+  prioridade_motivo             String?
+  dimensao_dominante            String?
+  consolidacao_resumo           String?
+  consolidacao_json             Json?
+  consolidacao_incompleta       Boolean   @default(false)
+  versao_regra_consolidacao     String?
+  versao_pesos_consolidacao     String?
+  consolidado_em                DateTime? @db.Timestamptz
+  reprocessado_em               DateTime? @db.Timestamptz
+  reprocessado_por              String?   @db.Uuid
+
+  cliente      clientes      @relation(fields: [cliente_id], references: [id])
+  imovel       imoveis?      @relation(fields: [imovel_id], references: [id])
+  agente       usuarios      @relation(fields: [agente_id], references: [id])
+  planejamento planejamento? @relation(fields: [planejamento_id], references: [id])
+  depositos    vistoria_depositos[]
+  sintomas     vistoria_sintomas[]
+  riscos       vistoria_riscos[]
+  calhas       vistoria_calhas[]
+
+  @@map("vistorias")
+}

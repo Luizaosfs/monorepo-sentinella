@@ -1,0 +1,19 @@
+model unidades_saude_sync_controle {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cliente_id        String    @db.Uuid
+  status            String    @default("pendente")
+  origem_execucao   String    @default("agendado")
+  iniciado_em       DateTime  @default(now()) @db.Timestamptz
+  finalizado_em     DateTime? @db.Timestamptz
+  usuario_id        String?   @db.Uuid
+  total_recebidos   Int?
+  total_inseridos   Int?
+  total_atualizados Int?
+  total_inativados  Int?
+  erro_mensagem     String?
+  created_at        DateTime  @default(now()) @db.Timestamptz
+  retention_until   DateTime  @db.Timestamptz
+
+  logs unidades_saude_sync_log[]
+  @@map("unidades_saude_sync_controle")
+}

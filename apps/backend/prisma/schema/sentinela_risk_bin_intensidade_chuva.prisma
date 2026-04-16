@@ -1,0 +1,10 @@
+model sentinela_risk_bin_intensidade_chuva {
+  id        String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  policy_id String  @db.Uuid
+  idx       Int
+  min_val   Decimal @db.Decimal(10, 2)
+  max_val   Decimal @db.Decimal(10, 2)
+
+  policy sentinela_risk_policy @relation(fields: [policy_id], references: [id])
+  @@map("sentinela_risk_bin_intensidade_chuva")
+}

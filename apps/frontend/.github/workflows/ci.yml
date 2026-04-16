@@ -1,0 +1,109 @@
+# =============================================================================
+# QW-20 — CI: Validação em Pull Requests e pushes
+#
+# Executa em todo PR e push para main:
+#   1. TypeScript — zero erros (tsc --noEmit)
+#   2. Testes unitários — Vitest com cobertura (`npm run test:ci`) e thresholds em vitest.config.ts
+#   3. Build de produção — garante que o bundle gera sem erros
+#
+# Falha qualquer etapa → PR não pode ser mergeado (branch protection rule).
+# =============================================================================
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: TypeScript + Testes + Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: TypeScript — zero erros
+        run: npx tsc --noEmit
+
+      - name: Testes unitários (Vitest + cobertura / thresholds)
+        run: npm run test:ci
+
+      - name: Build de produção
+        run: npm run build
+
+      - name: Sumário
+        if: always()
+        run: |
+          echo "## CI — Resultado" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Etapa | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| TypeScript | ${{ job.status == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Testes Vitest | ${{ job.status == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build produção | ${{ job.status == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Commit: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+
+  # E2E smoke (Playwright) — opcional: defina variável de repositório E2E_CI_ENABLED=true e secrets (ver docs/TESTING.md).
+  e2e-smoke:
+    name: E2E smoke (Playwright / Chromium)
+    runs-on: ubuntu-latest
+    needs: validate
+    if: vars.E2E_CI_ENABLED == 'true' && (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository)
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Instalar Chromium (Playwright)
+        run: npx playwright install chromium --with-deps
+
+      - name: Criar .env.e2e a partir de secrets
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.E2E_VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.E2E_VITE_SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$VITE_SUPABASE_URL" ] || [ -z "$VITE_SUPABASE_ANON_KEY" ]; then
+            echo "::error::Defina secrets E2E_VITE_SUPABASE_URL e E2E_VITE_SUPABASE_ANON_KEY no repositório."
+            exit 1
+          fi
+          echo "VITE_SUPABASE_URL=$VITE_SUPABASE_URL" >> .env.e2e
+          echo "VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY" >> .env.e2e
+
+      - name: Testes E2E smoke (@smoke)
+        run: npm run test:e2e:smoke
+
+      - name: Upload report Playwright
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

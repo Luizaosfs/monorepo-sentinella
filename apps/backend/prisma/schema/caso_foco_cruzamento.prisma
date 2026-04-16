@@ -1,0 +1,10 @@
+model caso_foco_cruzamento {
+  id                   String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  caso_id              String   @db.Uuid
+  levantamento_item_id String   @db.Uuid
+  distancia_metros     Float
+  criado_em            DateTime @default(now()) @db.Timestamptz
+
+  @@unique([caso_id, levantamento_item_id])
+  @@map("caso_foco_cruzamento")
+}

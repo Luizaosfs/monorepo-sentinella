@@ -1,0 +1,13 @@
+model plano_acao_catalogo {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cliente_id String   @db.Uuid
+  label      String
+  descricao  String?
+  tipo_item  String?
+  ativo      Boolean  @default(true)
+  ordem      Int      @default(0)
+  created_at DateTime @default(now()) @db.Timestamptz
+  updated_at DateTime @default(now()) @db.Timestamptz
+
+  @@map("plano_acao_catalogo")
+}

@@ -1,0 +1,25 @@
+model planejamento {
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  descricao           String?
+  data_planejamento   DateTime  @default(now()) @db.Timestamptz
+  cliente_id          String?   @db.Uuid
+  area_total          Decimal?  @db.Decimal
+  altura_voo          Decimal?  @db.Decimal
+  area                Unsupported("geometry(Polygon,4326)")?
+  created_at          DateTime  @default(now()) @db.Timestamptz
+  updated_at          DateTime  @default(now()) @db.Timestamptz
+  tipo                String?
+  ativo               Boolean   @default(false)
+  tipo_entrada        String?
+  tipo_levantamento   String    @default("MANUAL")
+  regiao_id           String?   @db.Uuid
+  deleted_at          DateTime? @db.Timestamptz
+  deleted_by          String?   @db.Uuid
+
+  cliente   clientes? @relation(fields: [cliente_id], references: [id])
+  regiao    regioes?  @relation(fields: [regiao_id], references: [id])
+  vistorias vistorias[]
+  voos      voos[]
+
+  @@map("planejamento")
+}

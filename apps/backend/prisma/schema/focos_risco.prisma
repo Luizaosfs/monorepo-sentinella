@@ -1,0 +1,45 @@
+model focos_risco {
+  id                              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cliente_id                      String    @db.Uuid
+  imovel_id                       String?   @db.Uuid
+  regiao_id                       String?   @db.Uuid
+  origem_tipo                     String
+  origem_levantamento_item_id     String?   @db.Uuid
+  origem_vistoria_id              String?   @db.Uuid
+  status                          String    @default("suspeita")
+  prioridade                      String?
+  ciclo                           Int?
+  latitude                        Float?
+  longitude                       Float?
+  endereco_normalizado            String?
+  suspeita_em                     DateTime  @default(now()) @db.Timestamptz
+  confirmado_em                   DateTime? @db.Timestamptz
+  resolvido_em                    DateTime? @db.Timestamptz
+  responsavel_id                  String?   @db.Uuid
+  desfecho                        String?
+  foco_anterior_id                String?   @db.Uuid
+  casos_ids                       String[]  @default([]) @db.Uuid
+  created_at                      DateTime  @default(now()) @db.Timestamptz
+  updated_at                      DateTime  @default(now()) @db.Timestamptz
+  prioridade_original_antes_caso  String?
+  deleted_at                      DateTime? @db.Timestamptz
+  deleted_by                      String?   @db.Uuid
+  created_by                      String?   @db.Uuid
+  observacao                      String?
+  classificacao_inicial           String    @default("suspeito")
+  dados_minimos_em                DateTime? @db.Timestamptz
+  inspecao_em                     DateTime? @db.Timestamptz
+  payload                         Json?     @default("{}")
+  score_prioridade                Int       @default(0)
+  codigo_foco                     String?
+
+  cliente       clientes   @relation(fields: [cliente_id], references: [id])
+  imovel        imoveis?   @relation(fields: [imovel_id], references: [id])
+  regiao        regioes?   @relation(fields: [regiao_id], references: [id])
+  responsavel   usuarios?  @relation("foco_responsavel", fields: [responsavel_id], references: [id])
+
+  historico     foco_risco_historico[]
+  sla_operacional sla_operacional[]
+
+  @@map("focos_risco")
+}

@@ -1,0 +1,34 @@
+model imoveis {
+  id                     String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cliente_id             String    @db.Uuid
+  regiao_id              String?   @db.Uuid
+  tipo_imovel            String    @default("residencial")
+  logradouro             String?
+  numero                 String?
+  complemento            String?
+  bairro                 String?
+  quarteirao             String?
+  latitude               Float?
+  longitude              Float?
+  ativo                  Boolean   @default(true)
+  created_at             DateTime  @default(now()) @db.Timestamptz
+  updated_at             DateTime  @default(now()) @db.Timestamptz
+  proprietario_ausente   Boolean   @default(false)
+  tipo_ausencia          String?
+  contato_proprietario   String?
+  tem_animal_agressivo   Boolean   @default(false)
+  historico_recusa       Boolean   @default(false)
+  tem_calha              Boolean   @default(false)
+  calha_acessivel        Boolean   @default(true)
+  prioridade_drone       Boolean   @default(false)
+  notificacao_formal_em  DateTime? @db.Date
+  deleted_at             DateTime? @db.Timestamptz
+  deleted_by             String?   @db.Uuid
+
+  cliente      clientes      @relation(fields: [cliente_id], references: [id])
+  regiao       regioes?      @relation(fields: [regiao_id], references: [id])
+  focos_risco  focos_risco[]
+  vistorias    vistorias[]
+
+  @@map("imoveis")
+}

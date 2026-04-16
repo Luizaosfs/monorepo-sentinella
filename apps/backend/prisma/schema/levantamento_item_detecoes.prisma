@@ -1,0 +1,15 @@
+model levantamento_item_detecoes {
+  id                   String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  levantamento_item_id String   @db.Uuid
+  ordem                Int      @default(0) @db.SmallInt
+  class_name           String
+  confidence           Float?
+  bbox_xyxy            Json?
+  bbox_norm            Json?
+  created_at           DateTime @default(now()) @db.Timestamptz
+
+  item levantamento_itens @relation(fields: [levantamento_item_id], references: [id])
+
+  @@unique([levantamento_item_id, ordem])
+  @@map("levantamento_item_detecoes")
+}

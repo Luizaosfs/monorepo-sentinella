@@ -1,0 +1,11 @@
+model relatorios_gerados {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cliente_id     String   @db.Uuid
+  gerado_por     String?  @db.Uuid
+  periodo_inicio DateTime @db.Date
+  periodo_fim    DateTime @db.Date
+  payload        Json
+  created_at     DateTime @default(now()) @db.Timestamptz
+
+  @@map("relatorios_gerados")
+}

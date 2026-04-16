@@ -1,0 +1,287 @@
+================================================================================
+SUMÁRIO EXECUTIVO - AUDITORIA "MODO ANALÍTICO"
+================================================================================
+
+AUDITORIA REALIZADA: 2026-04-15
+ARQUIVO GERADO: AUDITORIA_MODO_ANALITICO.txt (636 linhas, 22KB)
+
+================================================================================
+ESTRUTURA ENCONTRADA
+================================================================================
+
+1. HOOK/CONTEXT
+   Arquivo: src/hooks/useModoAnalitico.tsx (54 linhas)
+   - Implementação simples de Context React
+   - LocalStorage: 'sentinella_modo_analitico' ('1' = ativo, '0' = inativo)
+
+2. PROVIDER
+   Localização: App.tsx (linhas 176-329)
+   - Wrapper raiz da aplicação
+
+3. TOGGLE UI
+   Localização: AppLayout.tsx (linhas 722-740, sidebar footer)
+   - Ícone: FlaskConical
+   - Visível para: admin, supervisor, analista_regional
+   - Cores: branco/cinza (inativo) → azul (ativo)
+
+4. CONSUMIDORES DO ESTADO
+   a) FichaImovel360.tsx (linha 112, 384)
+   b) GestorFocoDetalhe.tsx (linha 212, 653)
+   → Ambos renderizam ConsolidacaoAnaliticaDetalhe quando ativo
+
+5. COMPONENTE DE EXIBIÇÃO
+   Arquivo: src/components/consolidacao/ConsolidacaoAnaliticaDetalhe.tsx
+   - Bloco com 5 dimensões analíticas
+   - Cores por severidade (verde → vermelho)
+   - Título: "Análise detalhada"
+
+6. DASHBOARD ANALÍTICO (SEPARADO)
+   Rota: /gestor/dashboard-analitico
+   Guard: DashboardAnaliticoGuard
+   - Página independente do toggle
+   - KPIs e gráficos territoriais
+
+================================================================================
+ARQUIVOS CRÍTICOS
+================================================================================
+
+1. src/hooks/useModoAnalitico.tsx
+   - Provider definition
+   - Context + hook
+   - localStorage logic
+
+2. src/components/AppLayout.tsx
+   - Import: linha 61
+   - Toggle rendering: linhas 722-740
+   - Menu items: linhas 108, 145, 384
+
+3. src/pages/agente/FichaImovel360.tsx
+   - Import: linha 43
+   - Consumo: linhas 112, 384
+
+4. src/pages/gestor/GestorFocoDetalhe.tsx
+   - Import: linha 40
+   - Consumo: linhas 212, 653
+
+5. src/components/consolidacao/ConsolidacaoAnaliticaDetalhe.tsx
+   - Renderização de blocos analíticos
+   - Mapeamento de labels e cores (5 dimensões)
+
+6. src/guards/DashboardAnaliticoGuard.tsx
+   - Proteção da rota /gestor/dashboard-analitico
+
+7. src/pages/gestor/DashboardAnalitico.tsx
+   - Dashboard Analítico completo
+
+================================================================================
+LINHAS EXATAS CRÍTICAS
+================================================================================
+
+localStorage read:
+  useModoAnalitico.tsx:29
+  return localStorage.getItem(STORAGE_KEY) === '1';
+
+localStorage write:
+  useModoAnalitico.tsx:39
+  localStorage.setItem(STORAGE_KEY, next ? '1' : '0');
+
+Toggle render:
+  AppLayout.tsx:723-740
+  {(isAdminOrSupervisor || papel === 'analista_regional') && (
+    <button onClick={toggleModoAnalitico}>...</button>
+  )}
+
+Consumo em FichaImovel360:
+  FichaImovel360.tsx:112 (read estado)
+  FichaImovel360.tsx:384 (condicional)
+  {modoAnalitico && v.prioridade_final && (
+    <ConsolidacaoAnaliticaDetalhe ... />
+  )}
+
+Consumo em GestorFocoDetalhe:
+  GestorFocoDetalhe.tsx:212 (read estado)
+  GestorFocoDetalhe.tsx:653 (condicional)
+  {modoAnalitico && v.prioridade_final && (
+    <ConsolidacaoAnaliticaDetalhe ... />
+  )}
+
+================================================================================
+TEXTOS EXIBIDOS
+================================================================================
+
+Toggle Button Labels:
+  ATIVO:   "Analítico ativo"
+  INATIVO: "Modo analítico"
+
+Tooltips:
+  ATIVO:   "Desativar modo analítico"
+  INATIVO: "Ativar modo analítico"
+
+Menu Items:
+  "Dashboard Analítico" (3 localizações)
+
+Bloco Analítico:
+  Título: "Análise detalhada"
+  Labels: "Resultado operacional", "Vulnerabilidade domiciliar",
+          "Alerta de saúde", "Risco socioambiental", "Risco vetorial"
+
+================================================================================
+ACESSO
+================================================================================
+
+Quem pode ver o toggle:
+  ✓ admin (isAdminOrSupervisor)
+  ✓ supervisor (isAdminOrSupervisor)
+  ✓ analista_regional (papel === 'analista_regional')
+  ✗ agente
+  ✗ notificador
+
+Quem pode acessar /gestor/dashboard-analitico:
+  ✓ admin (isAdminOrSupervisor)
+  ✓ supervisor (isAdminOrSupervisor)
+  ✓ analista_regional (isAnalistaRegional)
+  ✗ agente (redireciona para /dashboard)
+  ✗ notificador (redireciona para /dashboard)
+
+================================================================================
+O QUE MUDA QUANDO ATIVO
+================================================================================
+
+Inativo (false):
+  - Toggle no sidebar mostra "Modo analítico" (fundo neutro)
+  - Páginas de detalhe: SEM ConsolidacaoAnaliticaDetalhe
+  - localStorage: '0'
+
+Ativo (true):
+  - Toggle no sidebar mostra "Analítico ativo" (fundo azul)
+  - Páginas de detalhe (FichaImovel360, GestorFocoDetalhe):
+    Se prioridade_final existe: EXIBE ConsolidacaoAnaliticaDetalhe
+  - localStorage: '1'
+
+ConsolidacaoAnaliticaDetalhe (quando renderizado):
+  - Bloco azul claro com border azul
+  - 5 linhas com cores por severidade
+  - Labels e valores com typography diferenciada
+
+================================================================================
+DASHBOARD vs TOGGLE
+================================================================================
+
+Não confundir!
+
+Toggle "Modo Analítico":
+  - Controla blocos em detalhes de focos/imóveis
+  - Estado persistido em localStorage
+  - Independente do Dashboard
+
+Dashboard Analítico (/gestor/dashboard-analitico):
+  - Página separada com KPIs e gráficos
+  - Tem sua própria guard (DashboardAnaliticoGuard)
+  - Sempre disponível se autorizado (não depende do toggle)
+
+Ligação:
+  - Perfis que acessam toggle = perfis que acessam Dashboard
+  - MAS o toggle não controla acesso ao Dashboard
+
+================================================================================
+DADOS EXIBIDOS
+================================================================================
+
+ConsolidacaoAnaliticaDetalhe mostra 5 dimensões:
+
+1. Resultado Operacional
+   - visitado (verde)
+   - sem_acesso (1ª vez) (âmbar)
+   - sem_acesso_retorno (2ª+ vezes) (laranja)
+
+2. Vulnerabilidade Domiciliar
+   - baixa (verde)
+   - média (amarelo)
+   - alta (laranja)
+   - crítica (vermelho)
+   - inconclusivo (cinza)
+
+3. Alerta de Saúde
+   - nenhum (verde)
+   - atenção (amarelo)
+   - urgente (vermelho)
+   - inconclusivo (cinza)
+
+4. Risco Socioambiental
+   - baixo (verde)
+   - médio (amarelo)
+   - alto (laranja)
+   - inconclusivo (cinza)
+
+5. Risco Vetorial
+   - baixo (verde)
+   - médio (amarelo)
+   - alto (laranja)
+   - crítico (vermelho)
+   - inconclusivo (cinza)
+
+Valor NULL → "Não coletado" (cinza, itálico)
+
+================================================================================
+FLUXO VISUAL
+================================================================================
+
+App.tsx
+  └─ <ModoAnaliticoProvider>
+     ├─ AppLayout
+     │  └─ Toggle button (sidebar footer)
+     │     └─ Clique → toggleModoAnalitico()
+     │        └─ localStorage atualizado
+     │           └─ Context updated
+     │              └─ Componentes consomem novo estado
+     │
+     └─ Routes
+        ├─ FichaImovel360
+        │  └─ Consome estado
+        │     └─ Se modoAnalitico && prioridade_final
+        │        └─ Renderiza ConsolidacaoAnaliticaDetalhe
+        │
+        └─ GestorFocoDetalhe
+           └─ Consome estado
+              └─ Se modoAnalitico && prioridade_final
+                 └─ Renderiza ConsolidacaoAnaliticaDetalhe
+
+================================================================================
+VERIFICAÇÕES RECOMENDADAS
+================================================================================
+
+1. localStorage funciona corretamente
+   - Tester: localStorage.getItem('sentinella_modo_analitico')
+   - Espera: '1' ou '0'
+
+2. Componentes renderizam condicionalmente
+   - Verificar FichaImovel360 com toggle ativo/inativo
+   - Verificar GestorFocoDetalhe com toggle ativo/inativo
+
+3. Perfis têm acesso correto
+   - Admin/Supervisor/Analista Regional: veem toggle
+   - Agente/Notificador: não veem toggle
+
+4. Colors são renderizadas corretamente
+   - ConsolidacaoAnaliticaDetalhe: cores por severidade
+
+5. Dashboard Analítico é independente
+   - Toggle ativo/inativo não afeta acesso ao Dashboard
+   - Dashboard guard funciona corretamente
+
+================================================================================
+CONCLUSÃO
+================================================================================
+
+O "Modo Analítico" é um feature toggle simples e bem implementado que:
+
+✓ Persiste estado entre sessões (localStorage)
+✓ Restrito a perfis autorizados (admin, supervisor, analista_regional)
+✓ Controla visualização de blocos detalhados em páginas de detalhe
+✓ Independente do Dashboard Analítico (são coisas separadas)
+✓ UI clara com feedback visual (cores, texto)
+✓ Código limpo e manutenível
+
+Nenhum problema encontrado.
+
+================================================================================

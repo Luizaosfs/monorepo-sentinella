@@ -1,0 +1,17 @@
+model cliente_integracoes {
+  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cliente_id           String    @db.Uuid
+  tipo                 String
+  api_key              String
+  endpoint_url         String    @default("https://notifica.saude.gov.br/api/notificacoes")
+  codigo_ibge          String?
+  unidade_saude_cnes   String?
+  ambiente             String    @default("homologacao")
+  ativo                Boolean   @default(false)
+  ultima_sincronizacao DateTime? @db.Timestamptz
+  api_key_masked       String?   @default(dbgenerated("(public.mascarar_api_key(api_key))::text"))
+  created_at           DateTime  @default(now()) @db.Timestamptz
+  updated_at           DateTime  @default(now()) @db.Timestamptz
+
+  @@map("cliente_integracoes")
+}

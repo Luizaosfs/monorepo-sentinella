@@ -1,0 +1,13 @@
+model sla_config_audit {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cliente_id    String    @db.Uuid
+  changed_by    String?   @db.Uuid
+  changed_at    DateTime  @default(now()) @db.Timestamptz
+  action        String
+  config_before Json?
+  config_after  Json?
+
+  cliente clientes @relation(fields: [cliente_id], references: [id])
+
+  @@map("sla_config_audit")
+}

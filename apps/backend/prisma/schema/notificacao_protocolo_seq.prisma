@@ -1,0 +1,8 @@
+model notificacao_protocolo_seq {
+  cliente_id String @db.Uuid
+  ano_mes    String @db.Char(6)
+  ultimo_seq Int    @default(0)
+
+  @@id([cliente_id, ano_mes])
+  @@map("notificacao_protocolo_seq")
+}

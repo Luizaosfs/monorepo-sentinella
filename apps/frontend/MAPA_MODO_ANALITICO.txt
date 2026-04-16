@@ -1,0 +1,352 @@
+================================================================================
+MAPA VISUAL - MODO ANALÍTICO
+================================================================================
+
+1. ARQUITETURA
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────────┐
+│                         App.tsx                                     │
+│  ┌───────────────────────────────────────────────────────────────┐  │
+│  │    <ModoAnaliticoProvider>  [linhas 176-329]                  │  │
+│  │         (localStorage: 'sentinella_modo_analitico')           │  │
+│  │                                                               │  │
+│  │  ┌──────────────────────────────────────────────────────┐    │  │
+│  │  │                 Context Value                        │    │  │
+│  │  │  { ativo: boolean, toggle: () => void }             │    │  │
+│  │  └──────────────────────────────────────────────────────┘    │  │
+│  │                                                               │  │
+│  └───────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────┘
+           │                                                  │
+           ├─────────────────────────┬──────────────────────┤
+           │                         │                      │
+           ▼                         ▼                      ▼
+    ┌───────────────┐        ┌──────────────┐      ┌─────────────┐
+    │  AppLayout    │        │  FichaImovel │      │ GestorFoco  │
+    │               │        │  360.tsx     │      │ Detalhe.tsx │
+    │ Toggle button │        │              │      │             │
+    │ Sidebar       │        │ Consome:     │      │ Consome:    │
+    │ linhas722-740 │        │ linha 112    │      │ linha 212   │
+    │               │        │              │      │             │
+    │ onClick:      │        │ Renderiza    │      │ Renderiza   │
+    │ toggleModo... │        │ se ativo &&  │      │ se ativo && │
+    │ analitico()   │        │ prioridade   │      │ prioridade  │
+    │               │        │              │      │             │
+    │ Classes:      │        │ Linha 384    │      │ Linha 653   │
+    │ ✓ inativo:    │        │              │      │             │
+    │   bg-white/5  │        └──────┬───────┘      └──────┬───────┘
+    │ ✓ ativo:      │               │                     │
+    │   bg-blue-500 │               ▼                     ▼
+    └───────────────┘        ┌────────────────────────────────────┐
+                             │ ConsolidacaoAnaliticaDetalhe       │
+                             │                                    │
+                             │ Bloco azul claro                   │
+                             │ Título: "Análise detalhada"        │
+                             │                                    │
+                             │ 5 linhas:                          │
+                             │ • Resultado operacional            │
+                             │ • Vulnerabilidade domiciliar       │
+                             │ • Alerta de saúde                  │
+                             │ • Risco socioambiental             │
+                             │ • Risco vetorial                   │
+                             │                                    │
+                             │ Cores: verde → amarelo → laranja → vermelho
+                             └────────────────────────────────────┘
+
+
+2. FLUXO DE ESTADO
+================================================================================
+
+User Click (Toggle Button)
+         │
+         ▼
+toggleModoAnalitico() [AppLayout.tsx:727]
+         │
+         ▼
+setAtivo((v) => !v) [useModoAnalitico.tsx:36]
+         │
+         ▼
+localStorage.setItem('sentinella_modo_analitico', next ? '1' : '0')
+         │
+         ▼
+Context Updated: ModoAnaliticoContext.Provider
+         │
+         ▼
+FichaImovel360 + GestorFocoDetalhe re-render
+         │
+         ▼
+useModoAnalitico() returns new { ativo, toggle }
+         │
+         ▼
+Conditional: {modoAnalitico && v.prioridade_final && (
+  <ConsolidacaoAnaliticaDetalhe {...} />
+)}
+         │
+         ▼
+UI Updated: Blocos aparecem/desaparecem
+
+
+3. LOCALIZAÇÃO DOS COMPONENTES
+================================================================================
+
+src/
+├── hooks/
+│   └── useModoAnalitico.tsx ⭐ CORE
+│       ├─ ModoAnaliticoProvider
+│       ├─ ModoAnaliticoContext
+│       └─ useModoAnalitico hook
+│
+├── components/
+│   ├── AppLayout.tsx ⭐ TOGGLE UI
+│   │   ├─ linhas 61: import
+│   │   ├─ linhas 311: read estado
+│   │   ├─ linhas 722-740: button render
+│   │   ├─ linhas 108, 145, 384: menu items
+│   │   └─ classes: ativo/inativo
+│   │
+│   └── consolidacao/
+│       └── ConsolidacaoAnaliticaDetalhe.tsx ⭐ RENDER
+│           ├─ linhas 56-65: Linha subcomponente
+│           ├─ linhas 18-52: Label mappings
+│           ├─ linhas 80-135: render lógica
+│           └─ 5 dimensões com cores
+│
+├── pages/
+│   ├── agente/
+│   │   └── FichaImovel360.tsx
+│   │       ├─ linha 43: import
+│   │       ├─ linha 112: read estado
+│   │       └─ linha 384: condicional
+│   │
+│   ├── gestor/
+│   │   ├── GestorFocoDetalhe.tsx
+│   │   │   ├─ linha 40: import
+│   │   │   ├─ linha 212: read estado
+│   │   │   └─ linha 653: condicional
+│   │   │
+│   │   └── DashboardAnalitico.tsx (INDEPENDENTE)
+│   │       └─ Página separada
+│   │
+│   └── App.tsx ⭐ PROVIDER ROOT
+│       ├─ linha 17: import ModoAnaliticoProvider
+│       ├─ linhas 176-329: Provider wrapper
+│       └─ linha 316: rota /gestor/dashboard-analitico
+│
+└── guards/
+    └── DashboardAnaliticoGuard.tsx (DASHBOARD PROTECTION)
+        └─ Protege /gestor/dashboard-analitico
+
+
+4. FLUXO DE ACESSO
+================================================================================
+
+┌──────────────────────────────────┐
+│    User Login                    │
+│    papel = ?                     │
+└──────────────────┬───────────────┘
+                   │
+         ┌─────────┼─────────┬────────────┐
+         │         │         │            │
+         ▼         ▼         ▼            ▼
+      admin   supervisor  analista_    agente/
+                          regional   notificador
+         │         │         │            │
+    ✓ Can see   ✓ Can see  ✓ Can see   ✗ No toggle
+    toggle in   toggle in  toggle in   (AppLayout:723)
+    sidebar     sidebar    sidebar
+         │         │         │
+         └─────────┼─────────┘
+                   │
+             ▼ Can click toggle
+                   │
+         Set/Get from localStorage
+                   │
+         ┌─────────┴──────────┐
+         │                    │
+         ▼                    ▼
+    ATIVO = '1'          INATIVO = '0'
+    (localStorage)       (localStorage)
+         │                    │
+         ▼                    ▼
+    Render Bloco         Hide Bloco
+    (FichaImovel360)     (FichaImovel360)
+    (GestorFocoDetalhe)  (GestorFocoDetalhe)
+
+
+5. CONDIÇÕES DE RENDERIZAÇÃO
+================================================================================
+
+┌─ FichaImovel360.tsx:384 ─────────────────────────────────┐
+│                                                           │
+│  {modoAnalitico && v.prioridade_final && (               │
+│    <ConsolidacaoAnaliticaDetalhe {...} />               │
+│  )}                                                       │
+│                                                           │
+│  Requer AMBAS:                                           │
+│  ✓ modoAnalitico === true                               │
+│  ✓ v.prioridade_final !== null                          │
+│                                                           │
+│  Se ambas TRUE → renderiza bloco azul                   │
+│  Caso contrário → nada renderizado                      │
+└───────────────────────────────────────────────────────────┘
+
+Mesma lógica em GestorFocoDetalhe.tsx:653
+
+
+6. TOGGLE UI DETAILS
+================================================================================
+
+┌─ AppLayout.tsx:722-740 ──────────────────────────────┐
+│                                                      │
+│  Location: Sidebar footer (antes do dark/light)     │
+│                                                      │
+│  Conditional Render:                                │
+│  {(isAdminOrSupervisor || papel === 'analista_regional') && (
+│    <div className="mb-2">                          │
+│      <button                                        │
+│        type="button"                                │
+│        onClick={toggleModoAnalitico}                │
+│        className={cn(                              │
+│          'w-full flex items-center justify-center  │
+│           gap-2 h-9 rounded-xl text-xs              │
+│           font-semibold border transition-all',    │
+│          modoAnalitico                             │
+│            ? 'bg-blue-500/20 text-blue-200         │
+│              border-blue-400/30                     │
+│              hover:bg-blue-500/30'                 │
+│            : 'bg-white/5 text-white/70             │
+│              hover:bg-white/15                     │
+│              hover:text-white                      │
+│              border-white/10'                      │
+│        )}                                           │
+│        title={modoAnalitico ?                      │
+│          'Desativar modo analítico' :              │
+│          'Ativar modo analítico'}                  │
+│      >                                             │
+│        <FlaskConical className="h-3.5 w-3.5" />   │
+│        {modoAnalitico ?                            │
+│          'Analítico ativo' :                       │
+│          'Modo analítico'}                         │
+│      </button>                                     │
+│    </div>                                          │
+│  )}                                                │
+│                                                      │
+│  Icon: FlaskConical (lucide-react)                 │
+│  Cores:                                            │
+│    Inativo: white/5 bg, white/70 text              │
+│    Ativo:   blue-500/20 bg, blue-200 text          │
+│                                                      │
+└──────────────────────────────────────────────────────┘
+
+
+7. LOCALSTORAGE CYCLE
+================================================================================
+
+PAGE LOAD
+    │
+    ├─ App.tsx mounts
+    │  └─ ModoAnaliticoProvider mounts
+    │
+    ├─ useModoAnalitico.tsx useState initialization
+    │  └─ localStorage.getItem('sentinella_modo_analitico')
+    │
+    ├─ Value = '1' ? true : false
+    │  └─ setAtivo(true/false)
+    │
+    ├─ Component mounts with { ativo, toggle }
+    │  └─ useModoAnalitico() provides context
+    │
+    ▼ READY
+    
+USER CLICKS TOGGLE
+    │
+    └─ onClick={toggleModoAnalitico}
+       └─ setAtivo((v) => {
+            const next = !v;
+            localStorage.setItem(
+              'sentinella_modo_analitico',
+              next ? '1' : '0'
+            );
+            return next;
+          })
+       └─ Context updated
+          └─ Consumers re-render
+             └─ ConsolidacaoAnaliticaDetalhe appear/disappear
+
+PAGE REFRESH
+    │
+    └─ localStorage.getItem('sentinella_modo_analitico')
+       └─ Recupera valor anterior
+          └─ Estado persiste
+
+
+8. CORES DO CONSOLIDACAO ANALITICA DETALHE
+================================================================================
+
+Resultado Operacional:
+  visitado                 → text-green-700 (verde)
+  sem_acesso (1ª)        → text-amber-700 (âmbar)
+  sem_acesso_retorno (2ª+) → text-orange-700 font-semibold (laranja)
+
+Vulnerabilidade Domiciliar:
+  baixa                    → text-green-700 (verde)
+  media                    → text-yellow-700 (amarelo)
+  alta                     → text-orange-700 font-semibold (laranja)
+  critica                  → text-red-700 font-bold (vermelho)
+  inconclusivo             → text-gray-500 (cinza)
+
+Alerta de Saúde:
+  nenhum                   → text-green-700 (verde)
+  atencao                  → text-yellow-700 font-semibold (amarelo)
+  urgente                  → text-red-700 font-bold (vermelho)
+  inconclusivo             → text-gray-500 (cinza)
+
+Risco Socioambiental:
+  baixo                    → text-green-700 (verde)
+  medio                    → text-yellow-700 font-semibold (amarelo)
+  alto                     → text-orange-700 font-bold (laranja)
+  inconclusivo             → text-gray-500 (cinza)
+
+Risco Vetorial:
+  baixo                    → text-green-700 (verde)
+  medio                    → text-yellow-700 (amarelo)
+  alto                     → text-orange-700 font-semibold (laranja)
+  critico                  → text-red-700 font-bold (vermelho)
+  inconclusivo             → text-gray-500 (cinza)
+
+NULL Values:
+  Não coletado             → text-gray-400 italic (cinza claro)
+
+
+9. SEPARAÇÃO: TOGGLE vs DASHBOARD
+================================================================================
+
+TOGGLE "Modo Analítico"
+    │
+    ├─ O QUÊ: Estado global (localStorage)
+    ├─ ONDE: Sidebar footer (AppLayout)
+    ├─ EFEITO: Liga/desliga blocos em detalhes
+    ├─ PERSISTÊNCIA: Sim (localStorage)
+    ├─ ACESSO: admin, supervisor, analista_regional
+    └─ CONTROLA DASHBOARD?: NÃO
+
+DASHBOARD ANALÍTICO (/gestor/dashboard-analitico)
+    │
+    ├─ O QUÊ: Página separada
+    ├─ ONDE: Route definition (App.tsx:316)
+    ├─ EFEITO: KPIs, gráficos, análises territoriais
+    ├─ PERSISTÊNCIA: Não (dados em query)
+    ├─ ACESSO: admin, supervisor, analista_regional
+    └─ AFETADO PELO TOGGLE?: NÃO
+
+RELACIONAMENTO:
+    ✗ O toggle NÃO controla acesso ao Dashboard
+    ✗ O Dashboard NÃO afeta o toggle
+    ✓ Mesmos perfis (admin, supervisor, analista_regional)
+    ✓ Conceitos completamente independentes
+
+
+================================================================================
+END OF MAP
+================================================================================

@@ -1,0 +1,57 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ── Enums ──────────────────────────────────────────────
+enum papel_app {
+  admin
+  supervisor
+  agente
+  notificador
+  analista_regional
+}
+
+enum foco_risco_status {
+  suspeita
+  em_triagem
+  aguarda_inspecao
+  em_inspecao
+  confirmado
+  em_tratamento
+  resolvido
+  descartado
+}
+
+enum foco_origem_tipo {
+  drone
+  agente
+  cidadao
+  pluvio
+  manual
+}
+
+enum foco_prioridade {
+  P1
+  P2
+  P3
+  P4
+  P5
+}
+
+enum tipo_imovel {
+  residencial
+  comercial
+  terreno
+  ponto_estrategico
+}
+
+enum classificacao_inicial {
+  suspeito
+  risco
+  foco
+  caso_notificado
+}

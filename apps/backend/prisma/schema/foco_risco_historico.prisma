@@ -1,0 +1,18 @@
+model foco_risco_historico {
+  id                     String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  foco_risco_id          String   @db.Uuid
+  cliente_id             String   @db.Uuid
+  status_anterior        String?
+  status_novo            String
+  alterado_por           String?  @db.Uuid
+  alterado_em            DateTime @default(now()) @db.Timestamptz
+  tipo_evento            String?
+  classificacao_anterior String?
+  classificacao_nova     String?
+  motivo                 String?
+
+  foco    focos_risco @relation(fields: [foco_risco_id], references: [id])
+  cliente clientes    @relation(fields: [cliente_id], references: [id])
+
+  @@map("foco_risco_historico")
+}

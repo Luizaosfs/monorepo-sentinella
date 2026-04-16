@@ -1,0 +1,10 @@
+model sentinela_risk_bin_persistencia_7d {
+  id        String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  policy_id String @db.Uuid
+  idx       Int
+  min_val   Int
+  max_val   Int
+
+  policy sentinela_risk_policy @relation(fields: [policy_id], references: [id])
+  @@map("sentinela_risk_bin_persistencia_7d")
+}

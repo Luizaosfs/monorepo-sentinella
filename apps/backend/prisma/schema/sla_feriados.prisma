@@ -1,0 +1,12 @@
+model sla_feriados {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cliente_id String   @db.Uuid
+  data       DateTime @db.Date
+  descricao  String
+  nacional   Boolean  @default(false)
+  created_at DateTime @db.Timestamptz
+
+  cliente clientes @relation(fields: [cliente_id], references: [id])
+
+  @@map("sla_feriados")
+}

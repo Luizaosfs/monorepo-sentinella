@@ -1,0 +1,33 @@
+model pluvio_risco {
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  regiao_id           String    @db.Uuid
+  cliente_id          String?   @db.Uuid
+  dt_ref              DateTime  @db.Date
+  chuva_24h           Decimal?  @default(0)
+  chuva_72h           Decimal?  @default(0)
+  chuva_7d            Decimal?  @default(0)
+  dias_pos_chuva      Int?
+  janela_sem_chuva    String?
+  persistencia_7d     Int?      @default(0)
+  tendencia           String?
+  nivel_risco         String?
+  situacao_ambiental  String?
+  prob_label          String?
+  prob_base_min       Decimal?
+  prob_base_max       Decimal?
+  prob_final_min      Decimal?
+  prob_final_max      Decimal?
+  classificacao_final String?
+  temp_c              Decimal?
+  vento_kmh           Decimal?
+  temp_med_c          Decimal?
+  vento_med_kmh       Decimal?
+  prev_d1_mm          Decimal?
+  prev_d2_mm          Decimal?
+  prev_d3_mm          Decimal?
+  created_at          DateTime? @default(now()) @db.Timestamptz
+  updated_at          DateTime? @default(now()) @db.Timestamptz
+
+  @@unique([regiao_id, dt_ref], name: "regiao_id_dt_ref")
+  @@map("pluvio_risco")
+}

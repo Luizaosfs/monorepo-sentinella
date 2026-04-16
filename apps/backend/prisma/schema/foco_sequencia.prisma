@@ -1,0 +1,8 @@
+model foco_sequencia {
+  cliente_id String @db.Uuid
+  ano        Int
+  ultimo     BigInt @default(0)
+
+  @@id([cliente_id, ano])
+  @@map("foco_sequencia")
+}

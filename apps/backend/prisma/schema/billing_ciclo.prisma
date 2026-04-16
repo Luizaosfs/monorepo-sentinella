@@ -1,0 +1,21 @@
+model billing_ciclo {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cliente_id       String    @db.Uuid
+  cliente_plano_id String?   @db.Uuid
+  periodo_inicio   DateTime  @db.Date
+  periodo_fim      DateTime  @db.Date
+  status           String    @default("aberto")
+  valor_base       Decimal?  @db.Decimal(10, 2)
+  valor_excedente  Decimal   @default(0) @db.Decimal(10, 2)
+  valor_total      Decimal?  @db.Decimal(10, 2)
+  nota_fiscal_ref  String?
+  pago_em          DateTime? @db.Timestamptz
+  observacao       String?
+  created_at       DateTime  @default(now()) @db.Timestamptz
+  updated_at       DateTime  @default(now()) @db.Timestamptz
+
+  cliente       clientes       @relation(fields: [cliente_id], references: [id])
+  cliente_plano cliente_plano? @relation(fields: [cliente_plano_id], references: [id])
+
+  @@map("billing_ciclo")
+}

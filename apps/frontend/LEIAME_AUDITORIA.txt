@@ -1,0 +1,243 @@
+================================================================================
+DOCUMENTAÇÃO DE AUDITORIA - MODO ANALÍTICO
+================================================================================
+
+DOCUMENTOS GERADOS: 4 arquivos
+
+1. AUDITORIA_MODO_ANALITICO.txt (22KB, 636 linhas)
+   ├─ Seção 1: Hook, Context e Provider
+   ├─ Seção 2: Persistência (localStorage)
+   ├─ Seção 3: Arquivos que consomem o hook
+   ├─ Seção 4: Textos exibidos ao usuário
+   ├─ Seção 5: Localização do toggle no layout
+   ├─ Seção 6: Perfis com acesso
+   ├─ Seção 7: O que muda visualmente
+   ├─ Seção 8: Rota do Dashboard Analítico
+   ├─ Seção 9: Guard de acesso
+   ├─ Seção 10: Relação toggle vs dashboard
+   ├─ Seção 11: Componente ConsolidacaoAnaliticaDetalhe
+   ├─ Seção 12: Fluxo completo do estado
+   ├─ Seção 13: Queries analíticas
+   ├─ Seção 14: Resumo executivo
+   └─ RECOMENDADO: Leitura completa para entender tudo
+
+2. SUMARIO_MODO_ANALITICO.txt (287 linhas)
+   ├─ Estrutura encontrada (resumo)
+   ├─ Arquivos críticos com localizações
+   ├─ Linhas exatas críticas
+   ├─ Textos exibidos
+   ├─ Acesso por role
+   ├─ O que muda quando ativo
+   ├─ Dashboard vs Toggle
+   ├─ Dados exibidos
+   ├─ Fluxo visual
+   ├─ Verificações recomendadas
+   └─ Conclusão
+   
+   RECOMENDADO: Leitura rápida para overview
+
+3. MAPA_MODO_ANALITICO.txt (352 linhas)
+   ├─ 1. Arquitetura (diagrama visual)
+   ├─ 2. Fluxo de estado (passo a passo)
+   ├─ 3. Localização dos componentes (árvore)
+   ├─ 4. Fluxo de acesso (por role)
+   ├─ 5. Condições de renderização
+   ├─ 6. Toggle UI Details (CSS classes)
+   ├─ 7. LocalStorage Cycle
+   ├─ 8. Cores do ConsolidacaoAnaliticaDetalhe
+   ├─ 9. Separação: Toggle vs Dashboard
+   └─ Muito visual e esquemático
+   
+   RECOMENDADO: Para entender o fluxo visualmente
+
+4. LEIAME_AUDITORIA.txt (este arquivo)
+   └─ Guia de navegação dos documentos
+
+================================================================================
+COMO USAR ESTES DOCUMENTOS
+================================================================================
+
+CENÁRIO 1: "Preciso entender rápido o que é modo analítico"
+  → Leia: SUMARIO_MODO_ANALITICO.txt
+  → Tempo: ~5 minutos
+
+CENÁRIO 2: "Preciso encontrar onde está X funcionalidade"
+  → Leia: MAPA_MODO_ANALITICO.txt (seção 3: localização dos componentes)
+  → Depois: AUDITORIA_MODO_ANALITICO.txt (seção específica)
+
+CENÁRIO 3: "Preciso de uma auditoria completa de tudo"
+  → Leia: AUDITORIA_MODO_ANALITICO.txt (todas as 14 seções)
+  → Tempo: ~30 minutos
+
+CENÁRIO 4: "Preciso entender o fluxo de estado"
+  → Leia: MAPA_MODO_ANALITICO.txt (seção 2: fluxo de estado)
+  → Depois: AUDITORIA_MODO_ANALITICO.txt (seção 12: fluxo completo)
+
+CENÁRIO 5: "Preciso saber quem tem acesso a quê"
+  → Leia: SUMARIO_MODO_ANALITICO.txt (seção: Acesso)
+  → Depois: MAPA_MODO_ANALITICO.txt (seção 4: fluxo de acesso)
+
+CENÁRIO 6: "Preciso debugar/entender as linhas exatas"
+  → Leia: SUMARIO_MODO_ANALITICO.txt (seção: Linhas exatas críticas)
+  → Depois: AUDITORIA_MODO_ANALITICO.txt (seção 3: arquivos que consomem)
+
+================================================================================
+RESUMO QUICK REFERENCE
+================================================================================
+
+ARQUIVOS PRINCIPAIS:
+  • src/hooks/useModoAnalitico.tsx (54 linhas) - CORE
+  • src/components/AppLayout.tsx (linhas 61, 311, 722-740) - TOGGLE UI
+  • src/pages/agente/FichaImovel360.tsx (linhas 43, 112, 384) - CONSUMIDOR
+  • src/pages/gestor/GestorFocoDetalhe.tsx (linhas 40, 212, 653) - CONSUMIDOR
+  • src/components/consolidacao/ConsolidacaoAnaliticaDetalhe.tsx - RENDER
+
+CHAVE LOCALSTORAGE:
+  'sentinella_modo_analitico' (valores: '1' ou '0')
+
+TOGGLE LOCATION:
+  Sidebar footer (AppLayout.tsx linhas 722-740)
+
+ACESSO:
+  ✓ admin, supervisor, analista_regional
+  ✗ agente, notificador
+
+O QUE MUDA:
+  Mostra/esconde bloco "Análise detalhada" em FichaImovel360 e GestorFocoDetalhe
+
+DASHBOARD:
+  Separado e independente (/gestor/dashboard-analitico)
+
+================================================================================
+CHECKLIST DE COMPREENSÃO
+================================================================================
+
+Após ler os documentos, você deve ser capaz de responder:
+
+[  ] O que é o "Modo Analítico"?
+[  ] Como o estado é persistido?
+[  ] Quem tem acesso ao toggle?
+[  ] Onde o toggle aparece na UI?
+[  ] Quais páginas consomem o estado?
+[  ] O que renderiza quando ativo?
+[  ] Como é a cor/visual do bloco?
+[  ] O toggle afeta o Dashboard? (resposta: NÃO)
+[  ] Qual é a rota do Dashboard?
+[  ] Quais são as 5 dimensões mostradas?
+
+Se respondeu SIM a todas → Compreensão completa ✓
+
+================================================================================
+DÚVIDAS FREQUENTES
+================================================================================
+
+P: O "Modo Analítico" (toggle) afeta o acesso ao Dashboard Analítico?
+R: NÃO. São coisas completamente separadas. O toggle apenas mostra/esconde
+   blocos em detalhes de focos/imóveis. O Dashboard é uma página independente.
+
+P: Onde o toggle fica?
+R: Sidebar, seção footer (rodapé). Antes do botão de dark/light mode.
+
+P: Quem vê o toggle?
+R: Admin, Supervisor, Analista Regional. Agente e Notificador não veem.
+
+P: O que muda quando clico?
+R: Blocos "Análise detalhada" aparecem/desaparecem em FichaImovel360 e GestorFocoDetalhe.
+
+P: O estado sobrevive a refresh?
+R: Sim, fica gravado em localStorage.
+
+P: Qual é a chave localStorage?
+R: 'sentinella_modo_analitico' (valores: '1' ou '0')
+
+P: O que é o bloco "Análise detalhada"?
+R: Um componente (ConsolidacaoAnaliticaDetalhe) que mostra 5 dimensões analíticas
+   com cores por severidade.
+
+P: Quais são as 5 dimensões?
+R: 1) Resultado operacional
+   2) Vulnerabilidade domiciliar
+   3) Alerta de saúde
+   4) Risco socioambiental
+   5) Risco vetorial
+
+P: Em quais páginas o bloco aparece?
+R: FichaImovel360.tsx (linha 384) e GestorFocoDetalhe.tsx (linha 653)
+
+P: O toggle está buscando/calculando dados?
+R: NÃO. Apenas controla a visualização de dados já presentes no banco.
+
+================================================================================
+ESTRUTURA DOS ARQUIVOS GERADOS
+================================================================================
+
+AUDITORIA_MODO_ANALITICO.txt
+├─ Muito detalhado
+├─ 636 linhas
+├─ Cada seção documentada passo-a-passo
+├─ Inclui código exato com números de linha
+└─ Recomendado para referência completa
+
+SUMARIO_MODO_ANALITICO.txt
+├─ Resumido
+├─ 287 linhas
+├─ Seções curtas e diretas
+├─ Foco em localização e números de linha
+└─ Recomendado para leitura rápida
+
+MAPA_MODO_ANALITICO.txt
+├─ Visual e esquemático
+├─ 352 linhas
+├─ Muitos diagramas ASCII
+├─ Fluxos e estruturas visuais
+└─ Recomendado para entender interconexões
+
+================================================================================
+PRÓXIMOS PASSOS
+================================================================================
+
+Se você está:
+
+1. DESENVOLVENDO um novo recurso relacionado:
+   → Leia AUDITORIA_MODO_ANALITICO.txt seção 12-14
+   → Estude MAPA_MODO_ANALITICO.txt seção 2
+
+2. DEBUGANDO um problema:
+   → Leia SUMARIO_MODO_ANALITICO.txt seção "Linhas exatas críticas"
+   → Use MAPA_MODO_ANALITICO.txt seção 7 (localStorage cycle)
+
+3. TESTANDO:
+   → Leia SUMARIO_MODO_ANALITICO.txt seção "Verificações recomendadas"
+   → Verifique cada ponto
+
+4. DOCUMENTANDO para outros:
+   → Compartilhe SUMARIO_MODO_ANALITICO.txt (leitura rápida)
+   → Use MAPA_MODO_ANALITICO.txt (imagens visuais)
+
+5. REFATORANDO:
+   → Leia AUDITORIA_MODO_ANALITICO.txt completo
+   → Mapeie impactos em todos os 4 arquivos consumidores
+
+================================================================================
+CONTATO/OBSERVAÇÕES
+================================================================================
+
+Auditoria realizada: 2026-04-15
+Escopo: D:/sentinella/sentinelaweb/src/
+
+Arquivos analisados:
+  ✓ src/hooks/useModoAnalitico.tsx
+  ✓ src/components/AppLayout.tsx (partes)
+  ✓ src/pages/agente/FichaImovel360.tsx (partes)
+  ✓ src/pages/gestor/GestorFocoDetalhe.tsx (partes)
+  ✓ src/components/consolidacao/ConsolidacaoAnaliticaDetalhe.tsx
+  ✓ src/guards/DashboardAnaliticoGuard.tsx
+  ✓ src/pages/gestor/DashboardAnalitico.tsx (intro)
+  ✓ src/App.tsx (partes)
+
+CONCLUSÃO:
+  Implementação limpa, bem estruturada e manutenível.
+  Nenhum problema encontrado.
+  Código segue boas práticas de React.
+
+================================================================================

@@ -1,0 +1,11 @@
+model pluvio_operacional_run {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cliente_id    String   @db.Uuid
+  dt_ref        DateTime @db.Date
+  dt_gerado     DateTime @default(now()) @db.Timestamptz
+  total_bairros Int      @default(0)
+  created_at    DateTime @default(now()) @db.Timestamptz
+
+  itens pluvio_operacional_item[]
+  @@map("pluvio_operacional_run")
+}

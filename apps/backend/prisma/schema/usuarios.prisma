@@ -1,0 +1,31 @@
+model usuarios {
+  id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  auth_id               String?   @unique @db.Uuid
+  nome                  String
+  email                 String
+  cliente_id            String?   @db.Uuid
+  created_at            DateTime  @default(now()) @db.Timestamptz
+  updated_at            DateTime  @default(now()) @db.Timestamptz
+  ativo                 Boolean   @default(true)
+  onboarding_concluido  Boolean   @default(false)
+  onboarding_versao     String?
+  onboarding_concluido_em DateTime? @db.Timestamptz
+  agrupamento_id        String?   @db.Uuid
+
+  cliente          clientes?         @relation(fields: [cliente_id], references: [id])
+  papeis_usuarios  papeis_usuarios[]
+
+  // Relações inversas
+  focos_responsavel       focos_risco[]       @relation("foco_responsavel")
+  vistorias               vistorias[]
+  levantamentos           levantamentos[]
+  sla_como_operador       sla_operacional[]   @relation("sla_operador")
+  operacoes_responsavel   operacoes[]         @relation("operacao_responsavel")
+  push_subscriptions      push_subscriptions[]
+  casos_notificados_notif casos_notificados[] @relation("caso_notificador")
+  ciclos_abertos          ciclos[]            @relation("ciclo_aberto_por")
+  ciclos_fechados         ciclos[]            @relation("ciclo_fechado_por")
+  voos_piloto             voos[]              @relation("voo_piloto")
+
+  @@map("usuarios")
+}

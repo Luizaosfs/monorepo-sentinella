@@ -1,0 +1,29 @@
+model casos_notificados {
+  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cliente_id           String    @db.Uuid
+  unidade_saude_id     String    @db.Uuid
+  notificador_id       String?   @db.Uuid
+  doenca               String    @default("suspeito")
+  status               String    @default("suspeito")
+  data_inicio_sintomas DateTime? @db.Date
+  data_notificacao     DateTime  @default(dbgenerated("CURRENT_DATE")) @db.Date
+  logradouro_bairro    String?
+  bairro               String?
+  latitude             Float?
+  longitude            Float?
+  regiao_id            String?   @db.Uuid
+  observacao           String?
+  payload              Json?
+  created_at           DateTime  @default(now()) @db.Timestamptz
+  updated_at           DateTime  @default(now()) @db.Timestamptz
+  deleted_at           DateTime? @db.Timestamptz
+  deleted_by           String?   @db.Uuid
+  created_by           String?   @db.Uuid
+
+  cliente       clientes       @relation(fields: [cliente_id], references: [id])
+  unidade_saude unidades_saude @relation(fields: [unidade_saude_id], references: [id])
+  notificador   usuarios?      @relation("caso_notificador", fields: [notificador_id], references: [id])
+  regiao        regioes?       @relation(fields: [regiao_id], references: [id])
+
+  @@map("casos_notificados")
+}

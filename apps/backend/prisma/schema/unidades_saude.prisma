@@ -1,0 +1,27 @@
+model unidades_saude {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cliente_id     String    @db.Uuid
+  nome           String
+  tipo           String    @default("ubs")
+  endereco       String?
+  latitude       Float?
+  longitude      Float?
+  ativo          Boolean   @default(true)
+  cnes           String?   @unique
+  tipo_sentinela String    @default("OUTRO")
+  telefone       String?
+  bairro         String?
+  municipio      String?
+  uf             String?   @db.Char(2)
+  origem         String    @default("manual")
+  ultima_sync_em DateTime? @db.Timestamptz
+  deleted_at     DateTime? @db.Timestamptz
+  deleted_by     String?   @db.Uuid
+  created_at     DateTime  @default(now()) @db.Timestamptz
+  updated_at     DateTime  @default(now()) @db.Timestamptz
+
+  cliente          clientes           @relation(fields: [cliente_id], references: [id])
+  casos_notificados casos_notificados[]
+
+  @@map("unidades_saude")
+}

@@ -1,0 +1,13 @@
+model sla_config_regiao {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cliente_id String   @db.Uuid
+  regiao_id  String   @db.Uuid
+  config     Json     @default("{}")
+  created_at DateTime @db.Timestamptz
+  updated_at DateTime @db.Timestamptz
+
+  cliente clientes @relation(fields: [cliente_id], references: [id])
+  regiao  regioes  @relation(fields: [regiao_id], references: [id])
+
+  @@map("sla_config_regiao")
+}

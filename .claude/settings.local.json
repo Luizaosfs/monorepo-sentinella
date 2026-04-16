@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__plugin_context-mode_context-mode__ctx_batch_execute",
+      "mcp__plugin_context-mode_context-mode__ctx_search",
+      "Bash(rsync --version)",
+      "Bash(pnpm --version)",
+      "Read(//d/sentinella/ms-api-sentinella/**)",
+      "Bash(tar --exclude='./node_modules' --exclude='./.git' --exclude='./dist' --exclude='./.cache' -cf - .)",
+      "Bash(tar -xf - -C /d/sentinella/monorepo-sentinella/apps/backend/)",
+      "Read(//d/sentinella/sentinelaweb/**)",
+      "Bash(tar --exclude='./node_modules' --exclude='./.git' --exclude='./dist' --exclude='./.cache' --exclude='./build' -cf - .)",
+      "Bash(tar -xf - -C /d/sentinella/monorepo-sentinella/apps/frontend/)",
+      "Bash(pnpm install:*)",
+      "Bash(pnpm run:*)",
+      "Bash(npx tsc:*)",
+      "Bash(pnpm --filter @sentinella/frontend build)",
+      "mcp__plugin_context-mode_context-mode__ctx_execute",
+      "mcp__plugin_context-mode_context-mode__ctx_execute_file",
+      "Bash(grep -v \"//\")",
+      "Bash(grep -n \"^  [a-zA-Z]*: {$\\\\|^  [a-zA-Z]*: async\\\\|executivo:\\\\|resumoDiario:\\\\|relatorio\" /d/sentinella/monorepo-sentinella/apps/frontend/src/services/api-supabase.ts)",
+      "Bash(tr -d ' {')",
+      "mcp__plugin_context-mode_context-mode__ctx_index",
+      "mcp__plugin_context-mode_context-mode__ctx_stats",
+      "Bash(pnpm --filter @sentinella/backend build)"
+    ]
+  }
+}

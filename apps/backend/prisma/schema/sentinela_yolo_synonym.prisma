@@ -1,0 +1,9 @@
+model sentinela_yolo_synonym {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cliente_id String   @db.Uuid
+  synonym    String
+  maps_to    String
+  created_at DateTime @default(now()) @db.Timestamptz
+
+  @@map("sentinela_yolo_synonym")
+}

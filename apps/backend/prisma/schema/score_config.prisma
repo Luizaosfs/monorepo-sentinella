@@ -1,0 +1,25 @@
+model score_config {
+  cliente_id              String   @id @db.Uuid
+  peso_foco_suspeito      Int      @default(10)
+  peso_foco_confirmado    Int      @default(25)
+  peso_foco_em_tratamento Int      @default(20)
+  peso_foco_recorrente    Int      @default(35)
+  peso_historico_3focos   Int      @default(15)
+  peso_caso_300m          Int      @default(25)
+  peso_chuva_alta         Int      @default(10)
+  peso_temperatura_30     Int      @default(8)
+  peso_denuncia_cidadao   Int      @default(10)
+  peso_imovel_recusa      Int      @default(8)
+  peso_sla_vencido        Int      @default(12)
+  peso_foco_resolvido     Int      @default(-15)
+  peso_vistoria_negativa  Int      @default(-8)
+  janela_resolucao_dias   Int      @default(30)
+  janela_vistoria_dias    Int      @default(45)
+  janela_caso_dias        Int      @default(60)
+  cap_focos               Int      @default(40)
+  cap_epidemio            Int      @default(30)
+  cap_historico           Int      @default(20)
+  updated_at              DateTime @default(now()) @db.Timestamptz
+
+  @@map("score_config")
+}

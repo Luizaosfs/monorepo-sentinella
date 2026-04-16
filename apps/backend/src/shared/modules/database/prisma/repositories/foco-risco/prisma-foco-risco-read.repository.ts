@@ -1,0 +1,141 @@
+import { FilterFocoRiscoInput } from '@modules/foco-risco/dtos/filter-foco-risco.input';
+import {
+  FocoRisco,
+  FocoRiscoPaginated,
+} from '@modules/foco-risco/entities/foco-risco';
+import {
+  ContagemTriagemResult,
+  FocoRiscoReadRepository,
+} from '@modules/foco-risco/repositories/foco-risco-read.repository';
+import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
+import { PaginationProps } from 'src/shared/dtos/pagination-body';
+import { Paginate } from 'src/utils/pagination';
+
+import { PrismaRepository } from '@/decorators/prisma-repository.decorator';
+
+import { PrismaFocoRiscoMapper } from '../../mappers/prisma-foco-risco.mapper';
+import { PrismaService } from '../../prisma.service';
+
+@PrismaRepository(FocoRiscoReadRepository)
+@Injectable()
+export class PrismaFocoRiscoReadRepository implements FocoRiscoReadRepository {
+  constructor(private prisma: PrismaService) {}
+
+  async findById(id: string): Promise<FocoRisco | null> {
+    const raw = await this.prisma.client.focos_risco.findFirst({
+      where: { id, deleted_at: null },
+    });
+    return raw ? PrismaFocoRiscoMapper.toDomain(raw as any) : null;
+  }
+
+  async findByIdComHistorico(id: string): Promise<FocoRisco | null> {
+    const raw = await this.prisma.client.focos_risco.findFirst({
+      where: { id, deleted_at: null },
+      include: { historico: { orderBy: { alterado_em: 'asc' } } },
+    });
+    return raw ? PrismaFocoRiscoMapper.toDomain(raw as any) : null;
+  }
+
+  async findAll(filters: FilterFocoRiscoInput): Promise<FocoRisco[]> {
+    const rows = await this.prisma.client.focos_risco.findMany({
+      where: this.buildWhere(filters),
+      orderBy: { created_at: 'desc' },
+    });
+    return rows.map((r) => PrismaFocoRiscoMapper.toDomain(r as any));
+  }
+
+  async findPaginated(
+    filters: FilterFocoRiscoInput,
+    { currentPage, perPage, orderKey, orderValue }: PaginationProps,
+  ): Promise<FocoRiscoPaginated> {
+    const where = this.buildWhere(filters);
+    const [items, count] = await this.prisma.client.$transaction([
+      this.prisma.client.focos_risco.findMany({
+        where,
+        skip: perPage * (currentPage - 1),
+        take: perPage,
+        orderBy: { [orderKey]: orderValue },
+      }),
+      this.prisma.client.focos_risco.count({ where }),
+    ]);
+    const pagination = await Paginate(count, perPage, currentPage);
+    return {
+      items: items.map((r) => PrismaFocoRiscoMapper.toDomain(r as any)),
+      pagination,
+    };
+  }
+
+  async findManyByIds(ids: string[], clienteId: string): Promise<FocoRisco[]> {
+    const rows = await this.prisma.client.focos_risco.findMany({
+      where: { id: { in: ids }, cliente_id: clienteId, deleted_at: null },
+    });
+    return rows.map((r) => PrismaFocoRiscoMapper.toDomain(r as any));
+  }
+
+  async findContagemTriagem(filters: FilterFocoRiscoInput): Promise<ContagemTriagemResult> {
+    type Row = {
+      total: bigint;
+      suspeita: bigint;
+      em_triagem: bigint;
+      aguarda_inspecao: bigint;
+      em_inspecao: bigint;
+      p1p2: bigint;
+      sem_responsavel: bigint;
+    };
+
+    if (!filters.clienteId) {
+      return { total: 0, suspeita: 0, em_triagem: 0, aguarda_inspecao: 0, em_inspecao: 0, p1p2: 0, sem_responsavel: 0 };
+    }
+
+    const regiaoFilter = filters.regiaoId
+      ? Prisma.sql`AND regiao_id = ${filters.regiaoId}::uuid`
+      : Prisma.empty;
+    const responsavelFilter = filters.responsavelId
+      ? Prisma.sql`AND responsavel_id = ${filters.responsavelId}::uuid`
+      : Prisma.empty;
+    const origemFilter = filters.origemTipo
+      ? Prisma.sql`AND origem_tipo = ${filters.origemTipo}`
+      : Prisma.empty;
+
+    const [row] = await this.prisma.client.$queryRaw<Row[]>`
+      SELECT
+        COUNT(*)                                                                   AS total,
+        COUNT(*) FILTER (WHERE status = 'suspeita')                               AS suspeita,
+        COUNT(*) FILTER (WHERE status = 'em_triagem')                             AS em_triagem,
+        COUNT(*) FILTER (WHERE status = 'aguarda_inspecao')                       AS aguarda_inspecao,
+        COUNT(*) FILTER (WHERE status = 'em_inspecao')                            AS em_inspecao,
+        COUNT(*) FILTER (WHERE prioridade IN ('critica', 'alta', 'P1', 'P2'))     AS p1p2,
+        COUNT(*) FILTER (WHERE responsavel_id IS NULL)                            AS sem_responsavel
+      FROM focos_risco
+      WHERE cliente_id = ${filters.clienteId}::uuid
+        AND deleted_at IS NULL
+        AND status NOT IN ('resolvido', 'descartado')
+        ${regiaoFilter}
+        ${responsavelFilter}
+        ${origemFilter}
+    `;
+
+    return {
+      total: Number(row.total),
+      suspeita: Number(row.suspeita),
+      em_triagem: Number(row.em_triagem),
+      aguarda_inspecao: Number(row.aguarda_inspecao),
+      em_inspecao: Number(row.em_inspecao),
+      p1p2: Number(row.p1p2),
+      sem_responsavel: Number(row.sem_responsavel),
+    };
+  }
+
+  private buildWhere(filters: FilterFocoRiscoInput) {
+    return {
+      deleted_at: null,
+      ...(filters.clienteId && { cliente_id: filters.clienteId }),
+      ...(filters.status && { status: filters.status }),
+      ...(filters.prioridade && { prioridade: filters.prioridade }),
+      ...(filters.regiaoId && { regiao_id: filters.regiaoId }),
+      ...(filters.responsavelId && { responsavel_id: filters.responsavelId }),
+      ...(filters.origemTipo && { origem_tipo: filters.origemTipo }),
+    };
+  }
+}

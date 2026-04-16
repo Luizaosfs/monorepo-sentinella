@@ -1,0 +1,15 @@
+model vistoria_consolidacao_historico {
+  id                     String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  vistoria_id            String    @db.Uuid
+  prioridade_final       String?
+  dimensao_dominante     String?
+  consolidacao_json      Json?
+  versao_regra           String?
+  versao_pesos           String?
+  consolidado_em         DateTime? @db.Timestamptz
+  arquivado_em           DateTime  @default(now()) @db.Timestamptz
+  motivo_reprocessamento String
+  reprocessado_por       String?   @db.Uuid
+
+  @@map("vistoria_consolidacao_historico")
+}

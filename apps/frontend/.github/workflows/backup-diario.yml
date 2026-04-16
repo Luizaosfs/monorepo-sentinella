@@ -1,0 +1,118 @@
+# =============================================================================
+# Backup Diário — pg_dump do banco Supabase
+# QW-10D — Procedimento de backup externo
+#
+# Secrets necessários (GitHub → Settings → Secrets and variables → Actions):
+#   SUPABASE_DB_HOST      — host do banco (ex: db.<project-ref>.supabase.co)
+#   SUPABASE_DB_PASSWORD  — senha do usuário postgres
+#                           (Supabase Dashboard → Settings → Database → Database password)
+#
+# O backup é enviado para GitHub Actions Artifacts (retenção: 30 dias).
+# Para retenção longa, configure upload para S3/R2/GCS (ver comentário no job).
+#
+# RTO estimado com este workflow: < 2h (tempo de restaurar pg_restore + deploy)
+# RPO com este workflow: 24h (execução diária)
+# RPO com PITR Supabase Pro: minutos (independente deste workflow)
+# =============================================================================
+
+name: Backup Diário
+
+on:
+  schedule:
+    - cron: '0 3 * * *'   # 03:00 UTC diariamente (fora do horário de pico BR)
+  workflow_dispatch:
+    inputs:
+      apenas_validar:
+        description: 'Apenas testar conexão sem gerar backup'
+        type: boolean
+        default: false
+
+jobs:
+  backup:
+    name: pg_dump Supabase
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Instalar postgresql-client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client
+
+      - name: Validar conexão
+        env:
+          PGPASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          pg_isready \
+            --host="${{ secrets.SUPABASE_DB_HOST }}" \
+            --port=5432 \
+            --username=postgres \
+            --dbname=postgres
+          echo "✅ Conexão com banco Supabase OK"
+
+      - name: Gerar pg_dump
+        if: ${{ inputs.apenas_validar != true }}
+        env:
+          PGPASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          DATE=$(date -u +%Y%m%d-%H%M%S)
+          FILENAME="sentinella-backup-${DATE}.dump"
+          echo "BACKUP_FILENAME=${FILENAME}" >> $GITHUB_ENV
+
+          pg_dump \
+            --host="${{ secrets.SUPABASE_DB_HOST }}" \
+            --port=5432 \
+            --username=postgres \
+            --dbname=postgres \
+            --no-password \
+            --format=custom \
+            --compress=9 \
+            --exclude-table="public.offline_sync_log" \
+            --exclude-table="public.unidades_saude_sync_log" \
+            --no-privileges \
+            --no-owner \
+            --verbose \
+            --file="${FILENAME}" 2>&1 | tail -5
+
+          SIZE=$(du -h "${FILENAME}" | cut -f1)
+          echo "✅ Backup gerado: ${FILENAME} (${SIZE})"
+          echo "BACKUP_SIZE=${SIZE}" >> $GITHUB_ENV
+
+      - name: Upload do backup (artifact — 30 dias)
+        if: ${{ inputs.apenas_validar != true }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: backup-${{ github.run_id }}-${{ github.run_attempt }}
+          path: "*.dump"
+          retention-days: 30
+          compression-level: 0   # pg_dump já comprimiu com --compress=9
+
+      # ── Opcional: upload para storage externo de longo prazo ────────────────
+      # Para retenção > 30 dias (ex: 1 ano), descomentar e configurar:
+      #
+      # - name: Upload para S3 (opcional)
+      #   if: ${{ inputs.apenas_validar != true }}
+      #   env:
+      #     AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      #     AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      #   run: |
+      #     aws s3 cp "${BACKUP_FILENAME}" \
+      #       s3://sentinella-backups/db/$(date -u +%Y/%m)/${BACKUP_FILENAME} \
+      #       --storage-class STANDARD_IA
+      # ────────────────────────────────────────────────────────────────────────
+
+      - name: Sumário
+        if: always()
+        run: |
+          echo "## Backup Diário — Resultado" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ inputs.apenas_validar }}" = "true" ]; then
+            echo "🔍 **Modo validação** — apenas teste de conexão" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Campo | Valor |" >> $GITHUB_STEP_SUMMARY
+            echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
+            echo "| Arquivo | \`${{ env.BACKUP_FILENAME }}\` |" >> $GITHUB_STEP_SUMMARY
+            echo "| Tamanho | ${{ env.BACKUP_SIZE }} |" >> $GITHUB_STEP_SUMMARY
+            echo "| Retenção | 30 dias (GitHub Artifacts) |" >> $GITHUB_STEP_SUMMARY
+            echo "| RPO | 24h |" >> $GITHUB_STEP_SUMMARY
+          fi

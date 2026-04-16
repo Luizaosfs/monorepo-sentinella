@@ -1,0 +1,48 @@
+-- =============================================================================
+-- 20260411010000 — P0.1 Limpeza Final: auditoria de strings mortas
+--
+-- RESULTADO DA AUDITORIA:
+--   Nenhuma alteração de código SQL foi necessária.
+--
+-- FUNÇÕES AUDITADAS:
+--   - public.is_supervisor()    → LIMPA: DB fallback usa LOWER(papel::text) = 'supervisor'
+--                                  O comment documenta "moderador nunca existiu no enum".
+--                                  Nenhuma string morta no corpo executável.
+--   - public.get_meu_papel()    → LIMPA: escada de prioridade usa apenas papéis canônicos
+--                                  (admin=5, supervisor=4, agente=3, notificador=2, else=0).
+--                                  Nenhuma string morta no corpo executável.
+--   - public.is_admin()         → LIMPA: JWT fast-path = 'admin', DB fallback papel = 'admin'.
+--   - public.is_agente()        → LIMPA: JWT fast-path = 'agente', DB fallback LOWER = 'agente'.
+--   - public.is_notificador()   → LIMPA: JWT fast-path = 'notificador', DB fallback LOWER = 'notificador'.
+--   - public.usuario_pode_acessar_cliente() → LIMPA: delega para is_admin() + JWT fast-path cliente_id.
+--
+-- ENUM papel_app (estado atual no dump):
+--   CREATE TYPE public.papel_app AS ENUM ('admin','supervisor','agente','notificador');
+--   Os valores mortos (operador, usuario, platform_admin) foram REMOVIDOS do enum
+--   pela migration 20261015000003 (shadow column strategy).
+--   COMMENT ON TYPE confirma: "Enum canônico final. Nenhum valor morto."
+--
+-- CONSTRAINT chk_papel_canonico em papeis_usuarios:
+--   CONSTRAINT chk_papel_canonico CHECK (
+--     (papel)::text = ANY (ARRAY['admin','supervisor','agente','notificador'])
+--   )
+--   Bloqueia qualquer inserção de valor morto na camada de dados.
+--
+-- FUNÇÕES MORTAS JÁ REMOVIDAS (confirmado no dump):
+--   - is_operador()                   → DROP em 20261015000002
+--   - papel_permitido_para_operador() → DROP em 20261015000002
+--   - operador_pode_gerir_usuario()   → DROP em 20261015000002
+--   - is_platform_admin()             → DROP em 20260910000000 (S01)
+--
+-- R4 (risco documentado no P0): is_supervisor() aceita 'moderador' no fallback DB
+--   STATUS: FALSO POSITIVO — o corpo atual do dump NÃO contém 'moderador'.
+--   O comment da função diz "moderador nunca existiu no enum — não há alias."
+--   A migration 20261015000002 corrigiu esse comment. O corpo executável
+--   apenas verifica LOWER(papel::text) = 'supervisor'. Nada a corrigir.
+--
+-- CONCLUSÃO: O banco está em estado canônico. Esta migration existe apenas
+--   como registro de auditoria P0.1. Nenhuma DDL foi executada.
+-- =============================================================================
+
+-- Sem DDL a executar. Migration de auditoria pura.
+SELECT 'P0.1 auditoria concluída: nenhuma string morta encontrada nas funções de papel.' AS resultado;

@@ -1,0 +1,56 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+.env
+.env.*
+!.env.example
+.env.e2e
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.cursor/
+
+# Backup files
+*.bak
+
+# Test artifacts
+coverage/
+.nyc_output/
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
+# Saídas temporárias de ferramentas
+lint*.txt
+lint-output*.txt
+eslint-output.json
+tsc-output.txt
+build-output.txt
+vite_build_log.txt
+temp_*.txt
+check_db.ts
+test_parse*.ts
+test_policies.ts
+
+.claude/worktrees/

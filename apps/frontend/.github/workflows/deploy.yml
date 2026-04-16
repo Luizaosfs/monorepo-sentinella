@@ -1,0 +1,129 @@
+# =============================================================================
+# QW-20 — Deploy automático ao fazer push para main
+#
+# Etapas (sequenciais — falha para tudo se qualquer uma falhar):
+#   1. CI gate     — roda tsc + vitest + build (mesmo do ci.yml)
+#   2. Migrations  — supabase db push (aplica migrações pendentes)
+#   3. Functions   — supabase functions deploy (todas as Edge Functions)
+#   4. Frontend    — build + upload FTP para Hostinger
+#
+# Secrets necessários (GitHub → Settings → Secrets and variables → Actions):
+#   SUPABASE_ACCESS_TOKEN   — token pessoal (supabase.com → Account → Access tokens)
+#   SUPABASE_PROJECT_REF    — referência do projeto (ex: ezrffpaialljfcqdmias)
+#   SUPABASE_DB_PASSWORD    — senha do banco (já usada no backup-diario.yml)
+#   FTP_HOST                — ex: ftp.seudominio.com.br
+#   FTP_USER                — usuário FTP Hostinger
+#   FTP_PASSWORD            — senha FTP Hostinger
+#   FTP_REMOTE_DIR          — diretório remoto (ex: /public_html)
+# =============================================================================
+
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: deploy-main
+  cancel-in-progress: false   # Deploy nunca cancela — deixa terminar
+
+jobs:
+  # ── 1. CI gate ──────────────────────────────────────────────────────────────
+  ci:
+    name: CI Gate (tsc + vitest + build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npm test
+      - run: npm run build
+
+      # Preserva o build para o job de deploy frontend
+      - name: Upload dist/
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ github.sha }}
+          path: dist/
+          retention-days: 1
+
+  # ── 2. Migrations + Edge Functions ──────────────────────────────────────────
+  supabase:
+    name: Migrations + Edge Functions
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: ci
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Autenticar no Supabase
+        run: supabase login --token ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Aplicar migrations pendentes
+        run: |
+          supabase db push \
+            --project-ref ${{ secrets.SUPABASE_PROJECT_REF }} \
+            --password ${{ secrets.SUPABASE_DB_PASSWORD }}
+
+      - name: Deploy Edge Functions
+        run: |
+          supabase functions deploy \
+            --project-ref ${{ secrets.SUPABASE_PROJECT_REF }} \
+            --no-verify-jwt health-check job-worker relatorio-semanal \
+            triagem-ia-pos-voo billing-snapshot cnes-sync \
+            sla-marcar-vencidos sla-push-critico pluvio-risco-daily \
+            cloudinary-cleanup-orfaos cloudinary-upload-image \
+            limpeza-retencao-logs upload-evidencia
+
+      - name: Sumário Supabase
+        if: always()
+        run: |
+          echo "## Supabase Deploy" >> $GITHUB_STEP_SUMMARY
+          echo "- Migrations: aplicadas" >> $GITHUB_STEP_SUMMARY
+          echo "- Edge Functions: deployadas" >> $GITHUB_STEP_SUMMARY
+          echo "- Projeto: \`${{ secrets.SUPABASE_PROJECT_REF }}\`" >> $GITHUB_STEP_SUMMARY
+
+  # ── 3. Frontend — Hostinger via FTP ─────────────────────────────────────────
+  frontend:
+    name: Frontend → Hostinger (FTP)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [ci, supabase]
+    steps:
+      - name: Baixar dist/ do CI gate
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-${{ github.sha }}
+          path: dist/
+
+      - name: Deploy via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server:          ${{ secrets.FTP_HOST }}
+          username:        ${{ secrets.FTP_USER }}
+          password:        ${{ secrets.FTP_PASSWORD }}
+          local-dir:       ./dist/
+          server-dir:      ${{ secrets.FTP_REMOTE_DIR }}/
+          dangerous-clean-slate: false   # não apaga arquivos extras no servidor
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+
+      - name: Sumário Frontend
+        if: always()
+        run: |
+          echo "## Frontend Deploy" >> $GITHUB_STEP_SUMMARY
+          echo "- Destino: Hostinger FTP" >> $GITHUB_STEP_SUMMARY
+          echo "- Commit: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Branch: \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY

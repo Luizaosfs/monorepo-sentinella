@@ -1,0 +1,13 @@
+model vistoria_drone_correlacao {
+  id                   String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  vistoria_id          String   @db.Uuid
+  levantamento_item_id String   @db.Uuid
+  cliente_id           String   @db.Uuid
+  distancia_metros     Decimal
+  drone_detectou_foco  Boolean
+  campo_confirmou_foco Boolean?
+  created_at           DateTime @default(now()) @db.Timestamptz
+
+  @@unique([vistoria_id, levantamento_item_id])
+  @@map("vistoria_drone_correlacao")
+}

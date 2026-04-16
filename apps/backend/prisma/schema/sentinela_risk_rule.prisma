@@ -1,0 +1,20 @@
+model sentinela_risk_rule {
+  id                    String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  policy_id             String   @db.Uuid
+  idx                   Int
+  chuva_mm_min          Decimal  @db.Decimal(10, 2)
+  chuva_mm_max          Decimal  @db.Decimal(10, 2)
+  dias_min              Int
+  dias_max              Int
+  situacao_ambiental    String
+  probabilidade_label   String
+  probabilidade_pct_min Int
+  probabilidade_pct_max Int
+  classificacao         String
+  icone                 String
+  severity              Int
+  created_at            DateTime @default(now()) @db.Timestamptz
+
+  policy sentinela_risk_policy @relation(fields: [policy_id], references: [id])
+  @@map("sentinela_risk_rule")
+}

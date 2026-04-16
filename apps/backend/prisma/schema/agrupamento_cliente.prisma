@@ -1,0 +1,9 @@
+model agrupamento_cliente {
+  agrupamento_id String   @db.Uuid
+  cliente_id     String   @db.Uuid
+  adicionado_em  DateTime @default(now()) @db.Timestamptz
+
+  agrupamento agrupamento_regional @relation(fields: [agrupamento_id], references: [id])
+  @@id([agrupamento_id, cliente_id])
+  @@map("agrupamento_cliente")
+}

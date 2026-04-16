@@ -1,0 +1,13 @@
+model unidades_saude_sync_log {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  controle_id     String   @db.Uuid
+  cliente_id      String   @db.Uuid
+  cnes            String?
+  acao            String
+  mensagem        String?
+  created_at      DateTime @default(now()) @db.Timestamptz
+  retention_until DateTime @db.Timestamptz
+
+  controle unidades_saude_sync_controle @relation(fields: [controle_id], references: [id])
+  @@map("unidades_saude_sync_log")
+}

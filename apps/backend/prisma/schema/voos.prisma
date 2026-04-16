@@ -1,0 +1,26 @@
+model voos {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  planejamento_id   String?   @db.Uuid
+  voo_numero        Int?
+  inicio            DateTime  @db.Timestamptz
+  fim               DateTime? @db.Timestamptz
+  duracao_min       Decimal?
+  km                Decimal?
+  ha                Decimal?
+  baterias          Int?
+  fotos             Int?
+  amostra_lat       Decimal?
+  amostra_lon       Decimal?
+  amostra_data_hora DateTime? @db.Timestamptz
+  amostra_arquivo   String?
+  wx_error          String?
+  wx_detail         String?
+  created_at        DateTime? @default(now()) @db.Timestamptz
+  updated_at        DateTime? @default(now()) @db.Timestamptz
+  piloto_id         String?   @db.Uuid
+
+  planejamento planejamento? @relation(fields: [planejamento_id], references: [id])
+  piloto       usuarios?     @relation("voo_piloto", fields: [piloto_id], references: [id])
+
+  @@map("voos")
+}

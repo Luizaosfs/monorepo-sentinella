@@ -1,0 +1,6 @@
+﻿"logradouro","numero","complemento","bairro","cidade","uf","cep","tipo_imovel","quarteirao","lote","latitude","longitude"
+"Rua das Flores","123","","Centro","Santa Fé do Sul","SP","15775-000","residencial","Q12","L34","-20.2193","-50.9218"
+"Avenida Brasil","456","Fundos","Jardim América","Santa Fé do Sul","SP","15775-100","comercial","Q08","L02","",""
+"Rua São João","789","","Vila Nova","Santa Fé do Sul","SP","","terreno","Q03","L15","",""
+"Rua 7 de Setembro","1001","Apto 2","Centro","Santa Fé do Sul","SP","15775-000","residencial","Q01","L01","-20.2210","-50.9201"
+"Travessa das Palmeiras","22","","Bela Vista","Santa Fé do Sul","SP","","ponto_estrategico","Q20","L05","",""

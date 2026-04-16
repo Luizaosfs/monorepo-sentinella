@@ -1,0 +1,10 @@
+model piloto_eventos {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cliente_id String   @db.Uuid
+  usuario_id String?  @db.Uuid
+  tipo       String
+  payload    Json     @default("{}")
+  created_at DateTime @default(now()) @db.Timestamptz
+
+  @@map("piloto_eventos")
+}

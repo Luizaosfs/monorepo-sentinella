@@ -1,0 +1,10 @@
+model resumos_diarios {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cliente_id String   @db.Uuid
+  data_ref   DateTime @db.Date
+  sumario    String
+  metricas   Json?
+  created_at DateTime @default(now()) @db.Timestamptz
+
+  @@map("resumos_diarios")
+}

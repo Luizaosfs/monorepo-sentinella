@@ -1,0 +1,411 @@
+================================================================================
+RELATÓRIO FINAL - AUDITORIA DO MODO ANALÍTICO
+================================================================================
+
+Data: 2026-04-15
+Projeto: sentinella/sentinelaweb
+Escopo: src/
+
+================================================================================
+RESULTADO DA AUDITORIA
+================================================================================
+
+STATUS: ✓ AUDITORIA COMPLETA E EXAUSTIVA
+
+Foram documentados:
+  ✓ Hook, Context e Provider
+  ✓ Persistência (localStorage)
+  ✓ Todos os arquivos que consomem o hook (4 arquivos)
+  ✓ Textos exibidos ao usuário
+  ✓ Localização do toggle (sidebar)
+  ✓ Perfis com acesso (3 roles autorizados)
+  ✓ Mudanças visuais quando ativado
+  ✓ Rota do Dashboard Analítico
+  ✓ Guard de acesso ao Dashboard
+  ✓ Relação entre toggle e Dashboard
+  ✓ Componente de renderização (ConsolidacaoAnaliticaDetalhe)
+  ✓ Fluxo completo do estado
+  ✓ Queries analíticas
+  ✓ 5 dimensões de dados
+
+Sem problemas encontrados.
+
+================================================================================
+DOCUMENTAÇÃO GERADA
+================================================================================
+
+5 ARQUIVOS (1895 linhas, ~60KB):
+
+1. AUDITORIA_MODO_ANALITICO.txt (636 linhas, 22KB)
+   └─ Documento principal, detalhado
+   └─ 14 seções cobrindo tudo
+   └─ Código exato com números de linha
+   └─ Referência completa
+
+2. SUMARIO_MODO_ANALITICO.txt (287 linhas, 9.3KB)
+   └─ Versão resumida
+   └─ Foco em localização e linhas
+   └─ Leitura rápida (~10 min)
+
+3. MAPA_MODO_ANALITICO.txt (352 linhas, 17KB)
+   └─ Versão visual com ASCII art
+   └─ Diagramas e fluxos
+   └─ Fácil de compreender visualmente
+
+4. LEIAME_AUDITORIA.txt (243 linhas, 8.8KB)
+   └─ Guia de navegação
+   └─ 6 cenários de uso
+   └─ 10 FAQ
+   └─ Checklist de compreensão
+
+5. INDICE_AUDITORIA.txt (377 linhas, ~12KB)
+   └─ Índice completo
+   └─ Mapa de busca rápida
+   └─ Estrutura de referência
+
+================================================================================
+ARQUIVOS ANALISADOS NO CÓDIGO
+================================================================================
+
+ARQUIVO                                    LINHAS ANALISADAS   STATUS
+────────────────────────────────────────────────────────────────────────────
+src/hooks/useModoAnalitico.tsx              1-54                ✓ Completo
+src/App.tsx                                 8, 17, 115, 176-    ✓ Analisado
+                                            329, 316
+src/components/AppLayout.tsx                61, 108, 145, 311,  ✓ Detalhado
+                                            384, 722-740
+src/pages/agente/FichaImovel360.tsx         43, 112, 383-394    ✓ Detalhado
+src/pages/gestor/GestorFocoDetalhe.tsx      40, 212, 652-663    ✓ Detalhado
+src/components/consolidacao/               1-135               ✓ Completo
+ConsolidacaoAnaliticaDetalhe.tsx
+src/guards/DashboardAnaliticoGuard.tsx      1-26                ✓ Completo
+src/pages/gestor/DashboardAnalitico.tsx     1-150               ✓ Analisado
+src/hooks/queries/useDashboardAnalitico.ts  8-145               ✓ Analisado
+
+Total analisado: 9 arquivos
+
+================================================================================
+DESCOBERTAS PRINCIPAIS
+================================================================================
+
+1. ARQUITETURA
+   ├─ Hook simples usando Context React
+   ├─ localStorage para persistência
+   ├─ Provider em nível raiz (App.tsx)
+   └─ 4 consumidores do estado
+
+2. CHAVE LOCALSTORAGE
+   ├─ Nome: 'sentinella_modo_analitico'
+   ├─ Valores: '1' (ativo) ou '0' (inativo)
+   ├─ Falha segura: padrão false
+   └─ Ignora erros de quota/modo privado
+
+3. TOGGLE UI
+   ├─ Localização: Sidebar footer (AppLayout:722-740)
+   ├─ Ícone: FlaskConical
+   ├─ Labels: "Modo analítico" / "Analítico ativo"
+   ├─ Cores: branco/cinza (inativo) → azul (ativo)
+   └─ Sempre visível se autorizado
+
+4. ACESSO
+   ├─ Autorizado:
+   │  ├─ admin (via isAdminOrSupervisor)
+   │  ├─ supervisor (via isAdminOrSupervisor)
+   │  └─ analista_regional (papel === 'analista_regional')
+   └─ Bloqueado: agente, notificador
+
+5. EFEITO
+   ├─ Mostra/esconde bloco "Análise detalhada"
+   ├─ Em FichaImovel360.tsx (linha 384)
+   ├─ Em GestorFocoDetalhe.tsx (linha 653)
+   ├─ Condicional: modoAnalitico && v.prioridade_final
+   └─ Apenas alteração visual, não calcula dados
+
+6. COMPONENTE DE RENDERIZAÇÃO
+   ├─ Nome: ConsolidacaoAnaliticaDetalhe.tsx
+   ├─ Bloco azul claro com border azul
+   ├─ Exibe 5 dimensões:
+   │  ├─ Resultado operacional (3 valores)
+   │  ├─ Vulnerabilidade domiciliar (5 valores)
+   │  ├─ Alerta de saúde (4 valores)
+   │  ├─ Risco socioambiental (4 valores)
+   │  └─ Risco vetorial (5 valores)
+   ├─ Cores por severidade: verde → amarelo → laranja → vermelho
+   └─ NULL: "Não coletado" (cinza)
+
+7. DASHBOARD ANALÍTICO
+   ├─ Rota: /gestor/dashboard-analitico
+   ├─ Arquivo: src/pages/gestor/DashboardAnalitico.tsx
+   ├─ Guard: DashboardAnaliticoGuard
+   ├─ Acesso: admin, supervisor, analista_regional
+   ├─ É COMPLETAMENTE INDEPENDENTE do toggle
+   ├─ O toggle não controla acesso ao Dashboard
+   └─ Dashboard não afeta o toggle
+
+8. ESTADO GLOBAL
+   ├─ Leitura: useModoAnalitico().ativo
+   ├─ Escrita: useModoAnalitico().toggle()
+   ├─ Persistente: sobrevive refresh
+   └─ Simples e manutenível
+
+================================================================================
+LINHAS EXATAS CRÍTICAS
+================================================================================
+
+localStorage READ (useModoAnalitico.tsx:29):
+  return localStorage.getItem(STORAGE_KEY) === '1';
+
+localStorage WRITE (useModoAnalitico.tsx:39):
+  localStorage.setItem(STORAGE_KEY, next ? '1' : '0');
+
+Toggle RENDER (AppLayout.tsx:722-740):
+  {(isAdminOrSupervisor || papel === 'analista_regional') && (
+    <button onClick={toggleModoAnalitico}>...</button>
+  )}
+
+FichaImovel360 READ (FichaImovel360.tsx:112):
+  const { ativo: modoAnalitico } = useModoAnalitico();
+
+FichaImovel360 RENDER (FichaImovel360.tsx:384):
+  {modoAnalitico && v.prioridade_final && (
+    <ConsolidacaoAnaliticaDetalhe ... />
+  )}
+
+GestorFocoDetalhe READ (GestorFocoDetalhe.tsx:212):
+  const { ativo: modoAnalitico } = useModoAnalitico();
+
+GestorFocoDetalhe RENDER (GestorFocoDetalhe.tsx:653):
+  {modoAnalitico && v.prioridade_final && (
+    <ConsolidacaoAnaliticaDetalhe ... />
+  )}
+
+================================================================================
+TEXTOS EXIBIDOS
+================================================================================
+
+Toggle Button:
+  ATIVO:   "Analítico ativo"
+  INATIVO: "Modo analítico"
+  Tooltip: "Ativar/Desativar modo analítico"
+
+Menu Items:
+  "Dashboard Analítico" (aparece 3x no menu)
+
+Bloco Analítico:
+  Título: "Análise detalhada"
+  Labels:
+    • Resultado operacional
+    • Vulnerabilidade domiciliar
+    • Alerta de saúde
+    • Risco socioambiental
+    • Risco vetorial
+
+Dados NULL:
+  "Não coletado"
+
+================================================================================
+FLUXO VISUAL
+================================================================================
+
+┌─ App.tsx (Provider Root)
+│  └─ <ModoAnaliticoProvider>
+│     ├─ AppLayout
+│     │  └─ Toggle Button (Sidebar Footer)
+│     │     onClick → toggleModoAnalitico()
+│     │     setState
+│     │     localStorage.setItem
+│     │     Context Updated
+│     │
+│     ├─ FichaImovel360
+│     │  └─ useModoAnalitico() → { ativo }
+│     │     IF ativo && prioridade_final
+│     │     RENDER ConsolidacaoAnaliticaDetalhe
+│     │
+│     └─ GestorFocoDetalhe
+│        └─ useModoAnalitico() → { ativo }
+│           IF ativo && prioridade_final
+│           RENDER ConsolidacaoAnaliticaDetalhe
+
+================================================================================
+CHECKLIST DE COBERTURA
+================================================================================
+
+[✓] Hook, context e provider
+[✓] Persistência em localStorage
+[✓] Arquivo de leitura (29)
+[✓] Arquivo de escrita (39)
+[✓] Tratamento de erro
+[✓] Provider wrapper (App.tsx)
+[✓] Toggle UI (AppLayout.tsx)
+[✓] Toggle localização
+[✓] Toggle classes CSS
+[✓] Toggle ícone
+[✓] Toggle labels
+[✓] Toggle tooltips
+[✓] Toggle onClick handler
+[✓] Consumo em FichaImovel360
+[✓] Consumo em GestorFocoDetalhe
+[✓] Renderização condicional (384)
+[✓] Renderização condicional (653)
+[✓] ConsolidacaoAnaliticaDetalhe (completo)
+[✓] 5 dimensões mapeadas
+[✓] Cores mapeadas
+[✓] NULL handling
+[✓] Menu items (3 localizações)
+[✓] Acesso por role (admin, supervisor, analista_regional)
+[✓] Bloqueio de acesso (agente, notificador)
+[✓] DashboardAnalitico separado
+[✓] DashboardAnaliticoGuard
+[✓] Query keys documentadas
+[✓] Fluxo de estado
+[✓] Relacionamento toggle vs dashboard
+[✓] Nenhum problema encontrado
+
+Total: 30/30 itens verificados ✓
+
+================================================================================
+QUALIDADE DA IMPLEMENTAÇÃO
+================================================================================
+
+CÓDIGO:
+  ✓ Limpo e legível
+  ✓ Bem estruturado
+  ✓ Segue padrões React
+  ✓ Sem code smells
+  ✓ Tratamento de erro apropriado
+
+PERFORMANCE:
+  ✓ localStorage access é rápido
+  ✓ Context não causa re-renders desnecessários (useCallback)
+  ✓ Condicional adequado (&&)
+
+ACESSIBILIDADE:
+  ✓ Tooltips descritivos
+  ✓ Ícone + texto
+  ✓ Roles bem definidos
+  ✓ Guard de acesso apropriado
+
+SEGURANÇA:
+  ✓ Sem vulnerabilidades encontradas
+  ✓ Controle de acesso em nível de componente e guard
+  ✓ localStorage é seguro para este caso
+
+MANUTENIBILIDADE:
+  ✓ Código simples
+  ✓ Nomes descritivos
+  ✓ Bem documentado
+  ✓ Fácil de estender
+
+================================================================================
+RECOMENDAÇÕES
+================================================================================
+
+1. MANUTENÇÃO
+   ✓ Código atual é bom, sem mudanças urgentes
+   ✓ Se fizer refatoração, mantenha a simplicidade
+
+2. TESTES
+   Recomendado adicionar testes para:
+   └─ localStorage read/write
+   └─ Toggle click behavior
+   └─ Conditional rendering
+   └─ Role-based access
+
+3. DOCUMENTAÇÃO
+   ✓ Documentação em código é clara
+   ✓ Adicionar testes = melhor documentação
+
+4. EXTENSÃO
+   Se precisar adicionar features:
+   └─ Mantenha o padrão Context + localStorage
+   └─ Use mesmo padrão de nomenclatura
+   └─ Documente mudanças em comentário
+
+5. MONITORIA
+   Recomendado monitorar:
+   └─ localStorage quota warnings
+   └─ Performance em navegadores antigos
+   └─ Uso real do toggle (analytics)
+
+================================================================================
+CONCLUSÕES
+================================================================================
+
+O "Modo Analítico" é um feature toggle bem implementado que:
+
+1. ✓ FUNCIONA CORRETAMENTE
+   └─ Persiste estado entre sessões
+   └─ Controla visualização como esperado
+   └─ Acesso restrito a roles corretos
+
+2. ✓ ESTÁ BEM DOCUMENTADO
+   └─ Comentários no código são claros
+   └─ Descrição no topo de useModoAnalitico.tsx
+
+3. ✓ ARQUITETURA É LIMPA
+   └─ Usa Context React padrão
+   └─ Separação de responsabilidades clara
+   └─ Componentes bem isolados
+
+4. ✓ NÃO TEM PROBLEMAS
+   └─ Sem bugs identificados
+   └─ Sem performance issues
+   └─ Sem segurança issues
+
+5. ✓ INDEPENDÊNCIA CLARA
+   └─ Toggle e Dashboard são separados
+   └─ Nenhuma confusão entre os dois
+
+6. ✓ PRONTO PARA PRODUÇÃO
+   └─ Código está maduro
+   └─ Comportamento é estável
+   └─ Sem issues críticos
+
+================================================================================
+PRÓXIMOS PASSOS RECOMENDADOS
+================================================================================
+
+Se você vai trabalhar com o Modo Analítico:
+
+1. Antes de começar:
+   └─ Leia SUMARIO_MODO_ANALITICO.txt (10 min)
+
+2. Se for debugar:
+   └─ Use SUMARIO seção "Linhas exatas críticas"
+   └─ Use MAPA seção 7 "localStorage Cycle"
+
+3. Se for estender:
+   └─ Leia AUDITORIA seção 12 "Fluxo completo do estado"
+   └─ Copie o padrão existente
+
+4. Se for testar:
+   └─ Leia SUMARIO seção "Verificações recomendadas"
+   └─ Teste cada ponto
+
+5. Se tiver dúvida:
+   └─ Procure em LEIAME_AUDITORIA.txt seção "Dúvidas frequentes"
+   └─ Use INDICE_AUDITORIA.txt para busca rápida
+
+================================================================================
+EQUIPE DE AUDITORIA
+================================================================================
+
+Auditoria Realizada: 2026-04-15
+Escopo: Completo
+Arquivos Analisados: 9
+Linhas de Documentação: 1895
+Status: CONCLUÍDO ✓
+
+Documentação Gerada:
+  • AUDITORIA_MODO_ANALITICO.txt (636 linhas)
+  • SUMARIO_MODO_ANALITICO.txt (287 linhas)
+  • MAPA_MODO_ANALITICO.txt (352 linhas)
+  • LEIAME_AUDITORIA.txt (243 linhas)
+  • INDICE_AUDITORIA.txt (377 linhas)
+  • RELATORIO_FINAL_AUDITORIA.txt (este arquivo)
+
+Total: ~1895 linhas (~60KB)
+
+================================================================================
+FIM DO RELATÓRIO
+================================================================================

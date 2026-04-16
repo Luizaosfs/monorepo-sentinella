@@ -1,0 +1,13 @@
+model offline_sync_log {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  usuario_id      String?   @db.Uuid
+  cliente_id      String?   @db.Uuid
+  operacao        String
+  erro            String
+  criado_em       DateTime  @default(now()) @db.Timestamptz
+  retention_until DateTime  @db.Timestamptz
+  retry_count     Int       @default(0)
+  idempotency_key String?   @db.Uuid
+
+  @@map("offline_sync_log")
+}

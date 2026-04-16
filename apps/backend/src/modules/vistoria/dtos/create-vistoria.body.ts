@@ -1,0 +1,141 @@
+import { coerceOptionalNumber } from '@shared/dtos/zod-coercion';
+import { createZodDto } from 'nestjs-zod';
+import { z } from 'zod';
+
+const depositoSchema = z.object({
+  tipoDeposito: z
+    .string({ required_error: 'Tipo de depósito obrigatório' })
+    .describe('Tipo do depósito (A1, A2, B, C, D1, D2, E)'),
+  quantidade: z.coerce
+    .number()
+    .int()
+    .positive()
+    .optional()
+    .describe('Quantidade encontrada'),
+  comLarva: z.boolean().optional().describe('Presença de larvas'),
+  eliminado: z.boolean().optional().describe('Depósito eliminado'),
+  tratado: z.boolean().optional().describe('Depósito tratado'),
+  observacao: z.string().optional().describe('Observações'),
+  fotoUrl: z.string().url().optional().describe('URL da foto'),
+});
+
+const sintomaSchema = z.object({
+  sintoma: z
+    .string({ required_error: 'Sintoma obrigatório' })
+    .describe('Sintoma observado'),
+  observacao: z.string().optional().describe('Observações'),
+});
+
+const riscoSchema = z.object({
+  tipoRisco: z
+    .string({ required_error: 'Tipo de risco obrigatório' })
+    .describe('Tipo de risco identificado'),
+  descricao: z.string().optional().describe('Descrição do risco'),
+});
+
+const calhaSchema = z.object({
+  tipo: z.string().optional().describe('Tipo da calha'),
+  estado: z.string().optional().describe('Estado de conservação'),
+  comAcumulo: z.boolean().optional().describe('Com acúmulo de água'),
+  observacao: z.string().optional().describe('Observações'),
+});
+
+export const createVistoriaSchema = z.object({
+  clienteId: z
+    .string()
+    .uuid()
+    .optional()
+    .describe('ID do cliente (tenant) — preenchido pelo backend'),
+  imovelId: z.string().uuid().optional().describe('ID do imóvel vistoriado'),
+  agenteId: z
+    .string()
+    .uuid()
+    .optional()
+    .describe('ID do agente (padrão: usuário logado)'),
+  planejamentoId: z.string().uuid().optional().describe('ID do planejamento'),
+  ciclo: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(6)
+    .describe('Número do ciclo epidemiológico'),
+  tipoAtividade: z
+    .string({ required_error: 'Tipo de atividade obrigatório' })
+    .describe('Tipo da atividade (LI, LIRAa, PE, TR, etc.)'),
+  dataVisita: z.coerce.date().describe('Data/hora da visita'),
+  status: z.string().default('pendente').describe('Status inicial da vistoria'),
+  moradoresQtd: z.coerce.number().int().optional().describe('Qtd de moradores'),
+  gravidas: z.boolean().default(false).describe('Há gestantes no imóvel'),
+  idosos: z.boolean().default(false).describe('Há idosos no imóvel'),
+  criancas7anos: z
+    .boolean()
+    .default(false)
+    .describe('Há crianças menores de 7 anos'),
+  latChegada: coerceOptionalNumber('Latitude de chegada'),
+  lngChegada: coerceOptionalNumber('Longitude de chegada'),
+  checkinEm: z.coerce.date().optional().describe('Momento do check-in'),
+  observacao: z.string().optional().describe('Observações gerais'),
+  payload: z
+    .record(z.string(), z.unknown())
+    .optional()
+    .describe('Payload JSON auxiliar'),
+  acessoRealizado: z
+    .boolean()
+    .default(true)
+    .describe('Acesso ao imóvel foi realizado'),
+  motivoSemAcesso: z
+    .string()
+    .optional()
+    .describe('Motivo pelo qual não houve acesso'),
+  proximoHorarioSugerido: z
+    .string()
+    .optional()
+    .describe('Horário sugerido pelo morador para retorno'),
+  observacaoAcesso: z.string().optional().describe('Observação sobre o acesso'),
+  fotoExternaUrl: z
+    .string()
+    .url()
+    .optional()
+    .describe('URL da foto externa do imóvel'),
+  origemVisita: z.string().optional().describe('Origem da visita'),
+  habitatSelecionado: z.string().optional().describe('Habitat selecionado'),
+  condicaoHabitat: z.string().optional().describe('Condição do habitat'),
+  assinaturaResponsavelUrl: z
+    .string()
+    .url()
+    .optional()
+    .describe('URL da assinatura do responsável'),
+  assinaturaPublicId: z
+    .string()
+    .optional()
+    .describe('Public ID Cloudinary da assinatura'),
+  fotoExternaPublicId: z
+    .string()
+    .optional()
+    .describe('Public ID Cloudinary da foto externa'),
+  focoRiscoId: z
+    .string()
+    .uuid()
+    .optional()
+    .describe('Vínculo com foco de risco'),
+  pendenteAssinatura: z
+    .boolean()
+    .default(false)
+    .describe('Aguarda assinatura do responsável'),
+  pendenteFoto: z.boolean().default(false).describe('Aguarda foto externa'),
+  origemOffline: z.boolean().default(false).describe('Registro feito offline'),
+  idempotencyKey: z
+    .string()
+    .uuid()
+    .optional()
+    .describe('Chave UUID (idempotency_key); persistida na criação'),
+  depositos: z
+    .array(depositoSchema)
+    .optional()
+    .describe('Depósitos identificados'),
+  sintomas: z.array(sintomaSchema).optional().describe('Sintomas observados'),
+  riscos: z.array(riscoSchema).optional().describe('Riscos identificados'),
+  calhas: z.array(calhaSchema).optional().describe('Calhas inspecionadas'),
+});
+
+export class CreateVistoriaBody extends createZodDto(createVistoriaSchema) {}

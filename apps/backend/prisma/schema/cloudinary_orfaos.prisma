@@ -1,0 +1,16 @@
+model cloudinary_orfaos {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  public_id       String
+  url             String?
+  origem_tabela   String
+  origem_id       String?   @db.Uuid
+  cliente_id      String?   @db.Uuid
+  motivo          String    @default("soft_delete")
+  retention_until DateTime  @db.Timestamptz
+  processado_em   DateTime? @db.Timestamptz
+  deletado_em     DateTime? @db.Timestamptz
+  erro            String?
+  created_at      DateTime  @default(now()) @db.Timestamptz
+
+  @@map("cloudinary_orfaos")
+}

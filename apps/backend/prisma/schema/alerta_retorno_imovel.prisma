@@ -1,0 +1,15 @@
+model alerta_retorno_imovel {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cliente_id   String    @db.Uuid
+  imovel_id    String    @db.Uuid
+  agente_id    String    @db.Uuid
+  ciclo        Int
+  vistoria_id  String?   @db.Uuid
+  motivo       String
+  retorno_em   DateTime  @db.Timestamptz
+  resolvido    Boolean   @default(false)
+  resolvido_em DateTime? @db.Timestamptz
+  created_at   DateTime  @default(now()) @db.Timestamptz
+
+  @@map("alerta_retorno_imovel")
+}

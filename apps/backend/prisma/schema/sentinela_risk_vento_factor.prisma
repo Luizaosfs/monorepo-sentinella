@@ -1,0 +1,11 @@
+model sentinela_risk_vento_factor {
+  id        String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  policy_id String  @db.Uuid
+  idx       Int
+  vento_min Decimal @db.Decimal(10, 2)
+  vento_max Decimal @db.Decimal(10, 2)
+  factor    Decimal @db.Decimal(10, 4)
+
+  policy sentinela_risk_policy @relation(fields: [policy_id], references: [id])
+  @@map("sentinela_risk_vento_factor")
+}

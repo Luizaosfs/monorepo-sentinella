@@ -1,0 +1,9 @@
+model system_health_log {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  servico   String
+  status    String
+  detalhes  Json?
+  criado_em DateTime @default(now()) @db.Timestamptz
+
+  @@map("system_health_log")
+}

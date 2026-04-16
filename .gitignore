@@ -1,0 +1,36 @@
+node_modules/
+dist/
+build/
+.cache/
+.env
+# arquivos de ambiente
+.env.*
+!.env.example
+.env.e2e
+
+# cobertura / cache de ferramentas
+coverage/
+*.tsbuildinfo
+.next/
+out/
+.turbo/
+.nx/
+
+# logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# SO / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# temporarios
+tmp/
+temp/
+*.tmp

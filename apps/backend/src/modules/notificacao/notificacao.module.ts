@@ -1,0 +1,53 @@
+import { Module } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { DatabaseModule } from '@shared/modules/database/database.module';
+import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
+
+import { NotificacaoController } from './notificacao.controller';
+import { CreateCaso } from './use-cases/create-caso';
+import { CreateEsus } from './use-cases/create-esus';
+import { CreatePush } from './use-cases/create-push';
+import { CreateUnidade } from './use-cases/create-unidade';
+import { DeleteCaso } from './use-cases/delete-caso';
+import { DeletePush } from './use-cases/delete-push';
+import { DeleteUnidade } from './use-cases/delete-unidade';
+import { FilterCasos } from './use-cases/filter-casos';
+import { FilterEsus } from './use-cases/filter-esus';
+import { FilterUnidades } from './use-cases/filter-unidades';
+import { GetCaso } from './use-cases/get-caso';
+import { CanalCidadaoService } from './canal-cidadao.service';
+import { ListarNoRaio } from './use-cases/listar-no-raio';
+import { PushService } from './push.service';
+import { PaginationCasos } from './use-cases/pagination-casos';
+import { ProximoProtocolo } from './use-cases/proximo-protocolo';
+import { SaveCaso } from './use-cases/save-caso';
+import { SaveUnidade } from './use-cases/save-unidade';
+
+@Module({
+  providers: [
+    FilterUnidades,
+    CreateUnidade,
+    SaveUnidade,
+    DeleteUnidade,
+    FilterCasos,
+    GetCaso,
+    CreateCaso,
+    SaveCaso,
+    DeleteCaso,
+    CreatePush,
+    DeletePush,
+    FilterEsus,
+    CreateEsus,
+    PaginationCasos,
+    ListarNoRaio,
+    ProximoProtocolo,
+    PushService,
+    CanalCidadaoService,
+    JwtService,
+    PrismaService,
+  ],
+  exports: [PushService, CanalCidadaoService],
+  controllers: [NotificacaoController],
+  imports: [DatabaseModule],
+})
+export class NotificacaoModule {}

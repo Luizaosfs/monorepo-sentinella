@@ -1,0 +1,11 @@
+model sentinela_risk_temp_adjust_pp {
+  id        String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  policy_id String  @db.Uuid
+  idx       Int
+  temp_min  Decimal @db.Decimal(10, 2)
+  temp_max  Decimal @db.Decimal(10, 2)
+  delta_pp  Int
+
+  policy sentinela_risk_policy @relation(fields: [policy_id], references: [id])
+  @@map("sentinela_risk_temp_adjust_pp")
+}

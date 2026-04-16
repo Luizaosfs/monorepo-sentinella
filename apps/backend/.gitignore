@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.env
+.env.local
+.env.e2e
+.env.example
+coverage/
+generated/
+*.log
+.turbo/

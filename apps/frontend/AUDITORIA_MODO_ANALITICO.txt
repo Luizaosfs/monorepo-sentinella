@@ -1,0 +1,636 @@
+================================================================================
+AUDITORIA COMPLETA DO "MODO ANALÍTICO" - SENTINELLA WEB
+================================================================================
+Data: 2026-04-15
+Escopo: src/
+
+================================================================================
+1. HOOK, CONTEXT E PROVIDER
+================================================================================
+
+ARQUIVO PRINCIPAL:
+  D:/sentinella/sentinelaweb/src/hooks/useModoAnalitico.tsx
+
+DESCRIÇÃO (linhas 1-10):
+  useModoAnalitico — Toggle global do modo analítico avançado.
+  Context + hook para compartilhar estado entre AppLayout (toggle) e
+  páginas de detalhe (GestorFocoDetalhe, FichaImovel360).
+  - Persiste em localStorage (chave: sentinella_modo_analitico)
+  - Apenas altera visualização; nunca altera dados ou regras
+  - Exibir toggle somente para supervisor, admin e analista_regional
+
+ESTRUTURA DO CONTEXT (linhas 14-24):
+  const STORAGE_KEY = 'sentinella_modo_analitico';
+  
+  interface ModoAnaliticoContextValue {
+    ativo: boolean;
+    toggle: () => void;
+  }
+  
+  const ModoAnaliticoContext = createContext<ModoAnaliticoContextValue>({
+    ativo: false,
+    toggle: () => {},
+  });
+
+PROVIDER (linhas 26-50):
+  export function ModoAnaliticoProvider({ children }: { children: ReactNode }) {
+    const [ativo, setAtivo] = useState<boolean>(() => {
+      try {
+        return localStorage.getItem(STORAGE_KEY) === '1';  // linha 29
+      } catch {
+        return false;
+      }
+    });
+
+    const toggle = useCallback(() => {
+      setAtivo((v) => {
+        const next = !v;
+        try {
+          localStorage.setItem(STORAGE_KEY, next ? '1' : '0');  // linha 39
+        } catch { /* ignore quota/private mode */ }
+        return next;
+      });
+    }, []);
+
+    return (
+      <ModoAnaliticoContext.Provider value={{ ativo, toggle }}>
+        {children}
+      </ModoAnaliticoContext.Provider>
+    );
+  }
+
+HOOK (linhas 52-54):
+  export function useModoAnalitico() {
+    return useContext(ModoAnaliticoContext);
+  }
+
+================================================================================
+2. PERSISTÊNCIA
+================================================================================
+
+LOCAL STORAGE KEY:
+  sentinella_modo_analitico
+
+VALORES:
+  '1' = ativo (true)
+  '0' = inativo (false)
+
+LÓGICA DE LEITURA (linha 29 em useModoAnalitico.tsx):
+  return localStorage.getItem(STORAGE_KEY) === '1';
+
+LÓGICA DE ESCRITA (linha 39 em useModoAnalitico.tsx):
+  localStorage.setItem(STORAGE_KEY, next ? '1' : '0');
+
+TRATAMENTO DE ERRO:
+  Ignora erros de quota ou modo privado do navegador
+  (linha 40: catch { /* ignore quota/private mode */ })
+
+================================================================================
+3. ARQUIVOS QUE IMPORTAM/CONSOMEM O HOOK
+================================================================================
+
+A. App.tsx
+   Linhas: 17 (import), 176 (provider abertura), 329 (provider fechamento)
+   
+   Linha 17:
+     import { ModoAnaliticoProvider } from "@/hooks/useModoAnalitico";
+   
+   Linhas 176-329:
+     <ModoAnaliticoProvider>
+       {/* Routes e componentes */}
+     </ModoAnaliticoProvider>
+   
+   PROPÓSITO: Provider wrapper no nível raiz da aplicação
+
+B. AppLayout.tsx
+   Linhas: 61 (import), 311 (consumo), 727 (onClick), 730, 734, 737 (renderização)
+   
+   Linha 61:
+     import { useModoAnalitico } from '@/hooks/useModoAnalitico';
+   
+   Linha 311:
+     const { ativo: modoAnalitico, toggle: toggleModoAnalitico } = useModoAnalitico();
+   
+   Linhas 722-740 (Toggle Button no Sidebar):
+     {/* Toggle modo analítico — apenas supervisor, admin e analista_regional */}
+     {(isAdminOrSupervisor || papel === 'analista_regional') && (
+       <div className="mb-2">
+         <button
+           type="button"
+           onClick={toggleModoAnalitico}
+           className={cn(
+             'w-full flex items-center justify-center gap-2 h-9 rounded-xl text-xs font-semibold border transition-all',
+             modoAnalitico
+               ? 'bg-blue-500/20 text-blue-200 border-blue-400/30 hover:bg-blue-500/30'
+               : 'bg-white/5 text-white/70 hover:bg-white/15 hover:text-white border-white/10',
+           )}
+           title={modoAnalitico ? 'Desativar modo analítico' : 'Ativar modo analítico'}
+         >
+           <FlaskConical className="h-3.5 w-3.5" />
+           {modoAnalitico ? 'Analítico ativo' : 'Modo analítico'}
+         </button>
+       </div>
+     )}
+   
+   PROPÓSITO: Renderizar toggle + consumir estado
+
+C. FichaImovel360.tsx
+   Linhas: 43 (import), 112 (consumo), 384 (condicional)
+   
+   Linha 43:
+     import { useModoAnalitico } from '@/hooks/useModoAnalitico';
+   
+   Linha 112:
+     const { ativo: modoAnalitico } = useModoAnalitico();
+   
+   Linhas 383-394:
+     {/* Modo analítico avançado */}
+     {modoAnalitico && v.prioridade_final && (
+       <div className="px-3 pb-2">
+         <ConsolidacaoAnaliticaDetalhe
+           resultado_operacional={v.resultado_operacional ?? undefined}
+           vulnerabilidade_domiciliar={v.vulnerabilidade_domiciliar ?? undefined}
+           alerta_saude={v.alerta_saude ?? undefined}
+           risco_socioambiental={v.risco_socioambiental ?? undefined}
+           risco_vetorial={v.risco_vetorial ?? undefined}
+         />
+       </div>
+     )}
+   
+   PROPÓSITO: Consumir estado para exibir bloco analítico em lista de focos
+
+D. GestorFocoDetalhe.tsx
+   Linhas: 40 (import), 212 (consumo), 653 (condicional)
+   
+   Linha 40:
+     import { useModoAnalitico } from '@/hooks/useModoAnalitico';
+   
+   Linha 212:
+     const { ativo: modoAnalitico } = useModoAnalitico();
+   
+   Linhas 652-663:
+     {/* Modo analítico avançado */}
+     {modoAnalitico && v.prioridade_final && (
+       <div className="px-3 pb-2">
+         <ConsolidacaoAnaliticaDetalhe
+           resultado_operacional={v.resultado_operacional ?? undefined}
+           vulnerabilidade_domiciliar={v.vulnerabilidade_domiciliar ?? undefined}
+           alerta_saude={v.alerta_saude ?? undefined}
+           risco_socioambiental={v.risco_socioambiental ?? undefined}
+           risco_vetorial={v.risco_vetorial ?? undefined}
+         />
+       </div>
+     )}
+   
+   PROPÓSITO: Consumir estado para exibir bloco analítico em detalhe de foco
+
+================================================================================
+4. TEXTOS EXIBIDOS AO USUÁRIO
+================================================================================
+
+TOGGLE BUTTON (AppLayout.tsx, linhas 722-740):
+
+Conditional Text (linha 734 - title attribute):
+  ATIVO:   "Desativar modo analítico"
+  INATIVO: "Ativar modo analítico"
+
+Button Label Text (linha 737):
+  ATIVO:   "Analítico ativo"
+  INATIVO: "Modo analítico"
+
+Ícone:
+  FlaskConical (lucide-react) - símbolo de análise/experimento
+
+MENU ITEMS NA SIDEBAR (AppLayout.tsx):
+
+Linha 108 (Analista Regional):
+  { to: '/gestor/dashboard-analitico', label: 'Dashboard Analítico', icon: LayoutDashboard }
+
+Linha 145 (Grupo Inteligência):
+  { to: '/gestor/dashboard-analitico', label: 'Dashboard Analítico', icon: LayoutDashboard, adminOnly: false }
+
+Linha 384 (Mobile/Collapsed):
+  { to: '/gestor/dashboard-analitico', label: 'Analítico', icon: LayoutDashboard }
+
+COMPONENTE ConsolidacaoAnaliticaDetalhe.tsx (linhas 103-104):
+  <p className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-1.5">
+    Análise detalhada
+  </p>
+
+Labels das 5 Dimensões (ConsolidacaoAnaliticaDetalhe.tsx, linhas 107-131):
+  1. "Resultado operacional"
+  2. "Vulnerabilidade domiciliar"
+  3. "Alerta de saúde"
+  4. "Risco socioambiental"
+  5. "Risco vetorial"
+
+================================================================================
+5. LOCALIZAÇÃO DO TOGGLE NO LAYOUT
+================================================================================
+
+POSIÇÃO NO SIDEBAR:
+  Seção final da sidebar (footer area)
+  Antes do toggle de tema (dark/light)
+  Após o botão "Como usar"
+
+ESTRUTURA HTML:
+  <div className="mb-2">
+    <button>...</button>
+  </div>
+
+CLASSES CSS QUANDO INATIVO:
+  bg-white/5 text-white/70 hover:bg-white/15 hover:text-white border-white/10
+
+CLASSES CSS QUANDO ATIVO:
+  bg-blue-500/20 text-blue-200 border-blue-400/30 hover:bg-blue-500/30
+
+ÍCONE:
+  FlaskConical (da biblioteca lucide-react)
+  Tamanho: h-3.5 w-3.5
+
+================================================================================
+6. PERFIS (ROLES) COM ACESSO AO TOGGLE
+================================================================================
+
+ROLES AUTORIZADAS:
+  1. admin        (verificado via isAdminOrSupervisor)
+  2. supervisor   (verificado via isAdminOrSupervisor)
+  3. analista_regional (verificado explicitamente: papel === 'analista_regional')
+
+ROLES BLOQUEADAS (sem acesso ao toggle):
+  1. agente
+  2. notificador
+
+CÓDIGO DE VERIFICAÇÃO (AppLayout.tsx, linha 723):
+  {(isAdminOrSupervisor || papel === 'analista_regional') && (
+    // renderiza toggle
+  )}
+
+================================================================================
+7. O QUE MUDA VISUALMENTE QUANDO ATIVADO
+================================================================================
+
+QUANDO modoAnalitico = false:
+  - Toggle no sidebar: texto "Modo analítico" (fundo neutro)
+  - Páginas de detalhe: NÃO mostra ConsolidacaoAnaliticaDetalhe
+  - Listas de focos/imóveis: mantém apenas DimensoesBadges normais
+
+QUANDO modoAnalitico = true:
+  - Toggle no sidebar: texto "Analítico ativo" (fundo azul)
+  - Páginas de detalhe (FichaImovel360, GestorFocoDetalhe):
+    Renderiza ConsolidacaoAnaliticaDetalhe se v.prioridade_final existe
+  
+COMPONENTE ConsolidacaoAnaliticaDetalhe (linhas 96-135):
+  
+  Aparência:
+    - Fundo: bg-blue-50/40 dark:bg-blue-950/10
+    - Borda: border-blue-200/60 dark:border-blue-800/30
+    - Border-radius: rounded-lg
+    - Padding: px-3 py-2
+  
+  Título:
+    "Análise detalhada" (uppercase, semibold, text-blue-600)
+  
+  Conteúdo (5 linhas divididas):
+    1. Resultado Operacional:
+       - visitado (verde)
+       - sem_acesso (âmbar)
+       - sem_acesso_retorno (laranja, semibold)
+    
+    2. Vulnerabilidade Domiciliar:
+       - baixa (verde)
+       - media (amarelo)
+       - alta (laranja, semibold)
+       - critica (vermelho, bold)
+       - inconclusivo (cinza)
+    
+    3. Alerta de Saúde:
+       - nenhum (verde)
+       - atencao (amarelo, semibold)
+       - urgente (vermelho, bold)
+       - inconclusivo (cinza)
+    
+    4. Risco Socioambiental:
+       - baixo (verde)
+       - medio (amarelo, semibold)
+       - alto (laranja, bold)
+       - inconclusivo (cinza)
+    
+    5. Risco Vetorial:
+       - baixo (verde)
+       - medio (amarelo)
+       - alto (laranja, semibold)
+       - critico (vermelho, bold)
+       - inconclusivo (cinza)
+  
+  Valores NULL:
+    "Não coletado" (cinza, itálico)
+
+CONDIÇÃO DE EXIBIÇÃO:
+  {modoAnalitico && v.prioridade_final && (
+    <ConsolidacaoAnaliticaDetalhe {...} />
+  )}
+
+  Requer AMBAS as condições:
+    1. modoAnalitico = true (toggle ativado)
+    2. v.prioridade_final != null (consolidação completa)
+
+================================================================================
+8. ROTA DO DASHBOARD ANALÍTICO
+================================================================================
+
+ROTA:
+  /gestor/dashboard-analitico
+
+DEFINIÇÃO (App.tsx):
+
+  Linha 8 (import guard):
+    import { DashboardAnaliticoGuard } from '@/guards/DashboardAnaliticoGuard';
+  
+  Linha 115 (lazy import):
+    const DashboardAnalitico = safeLazy(() => import("@/pages/gestor/DashboardAnalitico"));
+  
+  Linha 316 (route definition):
+    <Route path="/gestor/dashboard-analitico" element={<DashboardAnaliticoGuard><DashboardAnalitico /></DashboardAnaliticoGuard>} />
+
+PÁGINA COMPONENTE:
+  Arquivo: D:/sentinella/sentinelaweb/src/pages/gestor/DashboardAnalitico.tsx
+  
+  Descrição (linhas 1-6):
+    /**
+     * DashboardAnalitico — Dashboard Analítico Estratégico (P8.2)
+     *
+     * Visão macro da consolidação avançada de vistoria por bairro/território.
+     * Público: supervisor, admin, analista_regional.
+     */
+  
+  Hooks Utilizados:
+    - useResumoAnalitico()
+    - useRiscoTerritorial()
+    - useVulnerabilidadeDistrib()
+    - useAlertaSaudeDistrib()
+    - useResultadoOperacionalDistrib()
+    - useImoveisCriticos()
+    - useBairrosDashboard()
+  
+  Componentes Utilizados:
+    - KpiCard (cards de KPI)
+    - SemaforoCell (indicadores de semáforo)
+    - DistribBars (gráficos de distribuição)
+    - BarChart (gráficos de barra do Recharts)
+
+================================================================================
+9. GUARD DE ACESSO AO DASHBOARD
+================================================================================
+
+ARQUIVO:
+  D:/sentinella/sentinelaweb/src/guards/DashboardAnaliticoGuard.tsx
+
+DESCRIÇÃO (linhas 4-7):
+  /**
+   * Protege a rota /gestor/dashboard-analitico.
+   * Permite: admin, supervisor e analista_regional.
+   * Bloqueia: agente, notificador → redireciona para /dashboard.
+   */
+
+IMPLEMENTAÇÃO (linhas 9-25):
+  export const DashboardAnaliticoGuard = ({ children }: { children: React.ReactNode }) => {
+    const { isAdminOrSupervisor, isAnalistaRegional, loading: authLoading } = useAuth();
+
+    if (authLoading) {
+      return (
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        </div>
+      );
+    }
+
+    if (!isAdminOrSupervisor && !isAnalistaRegional) {
+      return <Navigate to="/dashboard" replace />;
+    }
+
+    return <>{children}</>;
+  };
+
+ROLES PERMITIDOS:
+  1. admin (via isAdminOrSupervisor)
+  2. supervisor (via isAdminOrSupervisor)
+  3. analista_regional (via isAnalistaRegional)
+
+REDIRECIONAMENTO:
+  Roles bloqueadas → /dashboard
+
+================================================================================
+10. RELAÇÃO ENTRE TOGGLE E DASHBOARD ANALÍTICO
+================================================================================
+
+SÃO DUAS COISAS COMPLETAMENTE SEPARADAS:
+
+                    Toggle Modo Analítico    |    Dashboard Analítico
+────────────────────────────────────────────────────────────────────────────
+Tipo                Toggle/State             |    Página/Rota
+Localização         Sidebar (footer)         |    URL: /gestor/dashboard-analitico
+Função              Liga/desliga blocos      |    KPIs, gráficos, análises
+Afeta o quê         Detalhe de foco/imóvel   |    Visão territorial
+Independência       Independente             |    Independente
+Dependência         -                        |    DashboardAnaliticoGuard
+Desativação         Sim (desativa blocos)    |    Não (sempre ativa se acessível)
+Visibilidade no UI  Sidebar sempre           |    Menu items sempre (se autorizado)
+Estado Persistente  localStorage             |    N/A
+Afeta Menu Items    NÃO                      |    SIM (visibilidade condicionada)
+
+IMPORTANTE:
+  - O toggle "Modo analítico" NÃO afeta se o Dashboard é acessível
+  - O Dashboard "Análise Detalhada" é uma página completa e independente
+  - O toggle só controla visualização de blocos em detalhes de focos/imóveis
+  - O Dashboard tem sua própria guard (DashboardAnaliticoGuard)
+  - Perfis com acesso ao toggle = perfis com acesso ao Dashboard (admin, supervisor, analista_regional)
+
+POSSÍVEL CONFUSÃO:
+  Nomes semelhantes ("Dashboard Analítico" + "Modo analítico") podem levar a pensar
+  que o toggle afeta o acesso ao Dashboard, MAS isso é falso. São independentes.
+
+================================================================================
+11. COMPONENTE ConsolidacaoAnaliticaDetalhe
+================================================================================
+
+ARQUIVO:
+  D:/sentinella/sentinelaweb/src/components/consolidacao/ConsolidacaoAnaliticaDetalhe.tsx
+
+DESCRIÇÃO (linhas 1-12):
+  /**
+   * ConsolidacaoAnaliticaDetalhe — Bloco analítico avançado (modo analítico ativo).
+   *
+   * Exibe as 4 dimensões analíticas + resultado operacional de forma explícita e
+   * rotulada, voltado para supervisor, admin e analista_regional.
+   *
+   * Regras:
+   *  • Não recalcula nada — exibe apenas o que vem do banco
+   *  • Não aparece em listas (apenas em telas de detalhe)
+   *  • Não substitui DimensoesBadges — complementa
+   *  • Dados ausentes (null) são exibidos como "Não coletado"
+   */
+
+PROPS (linhas 69-76):
+  interface ConsolidacaoAnaliticaDetalheProps {
+    resultado_operacional?: Vistoria['resultado_operacional'];
+    vulnerabilidade_domiciliar?: Vistoria['vulnerabilidade_domiciliar'];
+    alerta_saude?: Vistoria['alerta_saude'];
+    risco_socioambiental?: Vistoria['risco_socioambiental'];
+    risco_vetorial?: Vistoria['risco_vetorial'];
+    className?: string;
+  }
+
+MAPEAMENTOS DE LABELS E CORES (linhas 18-52):
+
+  RO_LABEL (Resultado Operacional):
+    visitado             → "Visitado" (verde)
+    sem_acesso           → "Sem acesso (1ª vez)" (âmbar)
+    sem_acesso_retorno   → "Sem acesso (2ª+ vez)" (laranja, semibold)
+
+  VD_LABEL (Vulnerabilidade Domiciliar):
+    baixa        → "Baixa" (verde)
+    media        → "Média" (amarelo)
+    alta         → "Alta" (laranja, semibold)
+    critica      → "Crítica" (vermelho, bold)
+    inconclusivo → "Inconclusivo" (cinza)
+
+  AS_LABEL (Alerta de Saúde):
+    nenhum       → "Nenhum" (verde)
+    atencao      → "Atenção" (amarelo, semibold)
+    urgente      → "Urgente" (vermelho, bold)
+    inconclusivo → "Inconclusivo" (cinza)
+
+  SA_LABEL (Risco Socioambiental):
+    baixo        → "Baixo" (verde)
+    medio        → "Médio" (amarelo, semibold)
+    alto         → "Alto" (laranja, bold)
+    inconclusivo → "Inconclusivo" (cinza)
+
+  RV_LABEL (Risco Vetorial):
+    baixo        → "Baixo" (verde)
+    medio        → "Médio" (amarelo)
+    alto         → "Alto" (laranja, semibold)
+    critico      → "Crítico" (vermelho, bold)
+    inconclusivo → "Inconclusivo" (cinza)
+
+RENDERIZAÇÃO (linhas 80-135):
+  - Mapeia cada prop para seu label + cor
+  - Renderiza 5 linhas (Linha subcomponente)
+  - Cada linha tem label à esquerda, valor à direita
+  - Cores aplicadas ao valor (não ao label)
+  - Se valor = null → exibe "Não coletado" (cinza, itálico)
+
+================================================================================
+12. FLUXO COMPLETO DO ESTADO
+================================================================================
+
+1. INICIALIZAÇÃO:
+   App.tsx (linhas 176-329)
+   └─ <ModoAnaliticoProvider>
+      └─ Cria context global do modo analítico
+
+2. LEITURA INICIAL:
+   useModoAnalitico.tsx (linhas 27-33)
+   └─ useState hook lê localStorage na inicialização
+      localStorage.getItem('sentinella_modo_analitico') === '1'
+      Padrão: false se não encontrado
+
+3. TOGGLE DISPARADO:
+   AppLayout.tsx (linhas 727-737)
+   └─ Usuário clica no button
+      onClick={toggleModoAnalitico}
+
+4. ESTADO ATUALIZADO:
+   useModoAnalitico.tsx (linhas 35-43)
+   └─ setAtivo inverte valor
+   └─ localStorage.setItem atualiza persistência
+
+5. COMPONENTES CONSUMIDORES ATUALIZAM:
+   FichaImovel360.tsx (linha 112)
+   GestorFocoDetalhe.tsx (linha 212)
+   └─ useModoAnalitico() retorna novo estado
+   └─ Renderizam/reminem ConsolidacaoAnaliticaDetalhe
+
+6. UI REFLETE MUDANÇA:
+   Blocos analíticos aparecem/desaparecem
+   Toggle muda cor (azul quando ativo)
+
+================================================================================
+13. QUERIES ANALÍTICAS (DASHBOARD)
+================================================================================
+
+ARQUIVO:
+  D:/sentinella/sentinelaweb/src/hooks/queries/useDashboardAnalitico.ts
+
+QUERY KEYS (linhas 85-145):
+
+1. dashboard-analitico-resumo
+   useResumoAnalitico()
+   Key: ['dashboard-analitico-resumo', clienteId]
+
+2. dashboard-analitico-risco-territorial
+   useRiscoTerritorial()
+   Key: ['dashboard-analitico-risco-territorial', clienteId, bairroFilter]
+
+3. dashboard-analitico-vulnerabilidade
+   useVulnerabilidadeDistrib()
+   Key: ['dashboard-analitico-vulnerabilidade', clienteId, bairroFilter]
+
+4. dashboard-analitico-alerta-saude
+   useAlertaSaudeDistrib()
+   Key: ['dashboard-analitico-alerta-saude', clienteId, bairroFilter]
+
+5. dashboard-analitico-resultado-operacional
+   useResultadoOperacionalDistrib()
+   Key: ['dashboard-analitico-resultado-operacional', clienteId, bairroFilter]
+
+6. dashboard-analitico-imoveis-criticos
+   useImoveisCriticos()
+   Key: ['dashboard-analitico-imoveis-criticos', clienteId, bairroFilter, prioridadeFilter]
+
+7. dashboard-analitico-bairros
+   useBairrosDashboard()
+   Key: ['dashboard-analitico-bairros', clienteId]
+
+================================================================================
+14. RESUMO EXECUTIVO
+================================================================================
+
+O "Modo Analítico" é um feature flag simples que:
+
+1. PROPÓSITO:
+   Liga/desliga a exibição de "Análise Detalhada" em telas de detalhe de focos/imóveis
+
+2. IMPLEMENTAÇÃO:
+   - Context React + localStorage
+   - Toggle no sidebar (footer area)
+   - 54 linhas de código simples
+
+3. ACESSO:
+   Apenas: admin, supervisor, analista_regional
+
+4. EFEITO:
+   Mostra/esconde bloco ConsolidacaoAnaliticaDetalhe em:
+   - FichaImovel360.tsx
+   - GestorFocoDetalhe.tsx
+
+5. DADOS:
+   5 dimensões de análise:
+   - Resultado operacional (visitado, sem acesso)
+   - Vulnerabilidade domiciliar (baixa a crítica)
+   - Alerta de saúde (nenhum a urgente)
+   - Risco socioambiental (baixo a alto)
+   - Risco vetorial (baixo a crítico)
+
+6. INDEPENDÊNCIA:
+   NÃO afeta o Dashboard Analítico (/gestor/dashboard-analitico)
+   São dois conceitos separados
+
+7. PERSISTÊNCIA:
+   localStorage['sentinella_modo_analitico'] = '1' ou '0'
+   Sobrevive a refresh/navegação
+
+================================================================================
+FIM DA AUDITORIA
+================================================================================

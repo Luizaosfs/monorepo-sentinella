@@ -1,0 +1,16 @@
+model quarteiroes {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cliente_id String    @db.Uuid
+  regiao_id  String?   @db.Uuid
+  codigo     String
+  bairro     String?
+  ativo      Boolean   @default(true)
+  created_at DateTime  @default(now()) @db.Timestamptz
+  updated_at DateTime  @default(now()) @db.Timestamptz
+  deleted_at DateTime? @db.Timestamptz
+  deleted_by String?   @db.Uuid
+
+  distribuicoes distribuicao_quarteirao[]
+  @@unique([cliente_id, codigo])
+  @@map("quarteiroes")
+}

@@ -1,0 +1,9 @@
+model sentinela_risk_tendencia_adjust_pp {
+  id        String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  policy_id String @db.Uuid
+  tendencia String
+  delta_pp  Int
+
+  policy sentinela_risk_policy @relation(fields: [policy_id], references: [id])
+  @@map("sentinela_risk_tendencia_adjust_pp")
+}

@@ -1,0 +1,26 @@
+model regioes {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cliente_id   String   @db.Uuid
+  nome         String
+  tipo         String?
+  cor          String?
+  geojson      Json?
+  ativo         Boolean   @default(true)
+  created_at    DateTime  @default(now()) @db.Timestamptz
+  updated_at    DateTime  @default(now()) @db.Timestamptz
+  lat_centroid  Float?
+  lng_centroid  Float?
+  municipio     String?
+  uf            String?
+  deleted_at    DateTime? @db.Timestamptz
+  deleted_by    String?   @db.Uuid
+
+  cliente           clientes            @relation(fields: [cliente_id], references: [id])
+  imoveis           imoveis[]
+  focos_risco       focos_risco[]
+  sla_config_regiao sla_config_regiao[]
+  planejamento      planejamento[]
+  casos_notificados casos_notificados[]
+
+  @@map("regioes")
+}

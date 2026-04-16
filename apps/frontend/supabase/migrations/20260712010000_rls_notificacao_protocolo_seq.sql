@@ -1,0 +1,41 @@
+-- =============================================================
+-- Migration: 20260712010000_rls_notificacao_protocolo_seq.sql
+-- Data: 2026-07-12
+-- Resolve: RS-03 / QW-02 (docs/10-riscos-e-falhas.md)
+--
+-- Contexto:
+--   A tabela notificacao_protocolo_seq armazena o último número
+--   de protocolo gerado por prefeitura/mês. Foi criada sem RLS
+--   na migration 20260401020000_protocolo_notificacao.sql.
+--
+-- Por que habilitar RLS sem criar políticas:
+--   A tabela é acessada EXCLUSIVAMENTE pela função
+--   proximo_protocolo_notificacao(), que é SECURITY DEFINER.
+--   Funções SECURITY DEFINER executam como superuser e
+--   bypassam o RLS — portanto a função CONTINUA FUNCIONANDO
+--   normalmente após esta migration.
+--
+--   Sem RLS, um usuário autenticado com acesso direto ao banco
+--   (ex: via Supabase Studio ou integração com anon key) poderia
+--   fazer SELECT * e ver os contadores de todas as prefeituras.
+--
+--   Com RLS habilitado e sem nenhuma política definida, o
+--   PostgreSQL aplica a regra padrão: DENY ALL para qualquer
+--   role não-superuser. Isso fecha o acesso direto sem
+--   impactar o fluxo via função SECURITY DEFINER.
+--
+-- Impacto nos fluxos existentes:
+--   - proximo_protocolo_notificacao(): SEM impacto (SECURITY DEFINER)
+--   - Qualquer SELECT direto por usuário autenticado: bloqueado
+--   - Qualquer INSERT direto por usuário autenticado: bloqueado
+--
+-- Nota sobre o timestamp:
+--   20260712000000 já existia na tabela supabase_migrations do
+--   banco remoto (migration aplicada fora do repositório).
+--   Este arquivo usa 20260712010000 para evitar o conflito.
+--
+-- Reversão (se necessário):
+--   ALTER TABLE notificacao_protocolo_seq DISABLE ROW LEVEL SECURITY;
+-- =============================================================
+
+ALTER TABLE notificacao_protocolo_seq ENABLE ROW LEVEL SECURITY;

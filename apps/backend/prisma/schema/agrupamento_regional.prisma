@@ -1,0 +1,12 @@
+model agrupamento_regional {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nome       String
+  tipo       String
+  uf         String?  @db.Char(2)
+  ativo      Boolean  @default(true)
+  created_at DateTime @default(now()) @db.Timestamptz
+  updated_at DateTime @default(now()) @db.Timestamptz
+
+  clientes agrupamento_cliente[]
+  @@map("agrupamento_regional")
+}

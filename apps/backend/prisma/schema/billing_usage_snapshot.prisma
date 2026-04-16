@@ -1,0 +1,23 @@
+model billing_usage_snapshot {
+  id                    String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cliente_id            String   @db.Uuid
+  billing_ciclo_id      String?  @db.Uuid
+  periodo_inicio        DateTime @db.Date
+  periodo_fim           DateTime @db.Date
+  vistorias_mes         Int      @default(0)
+  levantamentos_mes     Int      @default(0)
+  itens_focos_mes       Int      @default(0)
+  voos_mes              Int      @default(0)
+  denuncias_mes         Int      @default(0)
+  ia_calls_mes          Int      @default(0)
+  relatorios_mes        Int      @default(0)
+  syncs_cnes_mes        Int      @default(0)
+  notificacoes_esus_mes Int      @default(0)
+  usuarios_ativos_mes   Int      @default(0)
+  imoveis_total         Int      @default(0)
+  storage_gb            Decimal  @default(0) @db.Decimal(10, 3)
+  calculado_em          DateTime @default(now()) @db.Timestamptz
+  payload_detalhado     Json?
+
+  @@map("billing_usage_snapshot")
+}

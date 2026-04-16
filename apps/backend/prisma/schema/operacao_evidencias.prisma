@@ -1,0 +1,12 @@
+model operacao_evidencias {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  operacao_id String   @db.Uuid
+  image_url   String
+  legenda     String?
+  public_id   String?
+  created_at  DateTime @default(now()) @db.Timestamptz
+
+  operacao operacoes @relation(fields: [operacao_id], references: [id])
+
+  @@map("operacao_evidencias")
+}

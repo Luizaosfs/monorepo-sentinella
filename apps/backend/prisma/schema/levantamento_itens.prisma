@@ -1,0 +1,49 @@
+model levantamento_itens {
+  id                             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  levantamento_id                String    @db.Uuid
+  cliente_id                     String?   @db.Uuid
+  arquivo                        String?
+  latitude                       Float?
+  longitude                      Float?
+  item                           String?
+  risco                          String?
+  peso                           Int?
+  acao                           String?
+  score_final                    Int?
+  prioridade                     String?
+  sla_horas                      Int?
+  endereco_curto                 String?
+  endereco_completo              String?
+  maps                           String?
+  waze                           String?
+  data_hora                      DateTime? @db.Timestamptz
+  payload                        Json?
+  created_at                     DateTime  @default(now()) @db.Timestamptz
+  updated_at                     DateTime  @default(now()) @db.Timestamptz
+  image_url                      String?
+  uuid_img                       String?
+  id_drone                       String?   @db.Uuid
+  altitude_m                     Float?
+  altura_relativa_m              Float?
+  focal_mm                       Float?
+  iso                            Float?
+  exposure_s                     Float?
+  resolucao_largura_px           Int?
+  resolucao_altura_px            Int?
+  megapixels                     Float?
+  inclinacao_camera_graus        Float?
+  direcao_yaw_graus              Float?
+  inclinacao_lateral_roll_graus  Float?
+  inclinacao_frontal_pitch_graus Float?
+  detection_bbox                 Json?
+  updated_by                     String?   @db.Uuid
+  deleted_at                     DateTime? @db.Timestamptz
+  deleted_by                     String?   @db.Uuid
+  image_public_id                String?
+
+  levantamento levantamentos              @relation(fields: [levantamento_id], references: [id])
+  detecoes     levantamento_item_detecoes[]
+  evidencias   levantamento_item_evidencias[]
+
+  @@map("levantamento_itens")
+}
