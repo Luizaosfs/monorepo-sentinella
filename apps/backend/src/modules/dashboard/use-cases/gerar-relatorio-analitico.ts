@@ -18,7 +18,8 @@ export class GerarRelatorioAnalitico {
   async execute(
     input: RelatorioAnaliticoBody,
   ): Promise<{ relatorio: RelatorioGerado }> {
-    const clienteId = (input.clienteId ?? this.req['tenantId']) as string;
+    // MT-02: tenantId do guard sempre vence — nunca aceita clienteId do frontend
+    const clienteId = this.req['tenantId'] as string;
     const userId = this.req['userId'] as string | undefined;
 
     const [liraa, comparativo, scoreRegioes] = await Promise.all([

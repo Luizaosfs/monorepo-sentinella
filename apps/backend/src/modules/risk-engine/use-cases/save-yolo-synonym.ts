@@ -13,8 +13,8 @@ export class SaveYoloSynonym {
   ) {}
 
   async execute(input: SaveYoloSynonymInput) {
-    const tenantId = this.req['tenantId'] as string | undefined;
-    const clienteId = input.clienteId ?? tenantId!;
+    // MT-02: tenantId do guard sempre vence — nunca aceita clienteId do frontend
+    const clienteId = this.req['tenantId'] as string;
 
     const synonym = new YoloSynonym(
       {

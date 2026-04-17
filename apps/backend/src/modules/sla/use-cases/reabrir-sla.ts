@@ -11,8 +11,8 @@ export class ReabrirSla {
     private writeRepository: SlaWriteRepository,
   ) {}
 
-  async execute(id: string) {
-    const sla = await this.readRepository.findById(id);
+  async execute(id: string, clienteId?: string | null) {
+    const sla = await this.readRepository.findById(id, clienteId);
     if (!sla) throw SlaException.notFound();
 
     sla.status = 'pendente';

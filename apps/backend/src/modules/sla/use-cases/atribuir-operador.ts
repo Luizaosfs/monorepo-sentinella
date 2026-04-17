@@ -12,8 +12,8 @@ export class AtribuirOperador {
     private writeRepository: SlaWriteRepository,
   ) {}
 
-  async execute(id: string, data: AtribuirOperadorBody) {
-    const sla = await this.readRepository.findById(id);
+  async execute(id: string, data: AtribuirOperadorBody, clienteId?: string | null) {
+    const sla = await this.readRepository.findById(id, clienteId);
     if (!sla) throw SlaException.notFound();
 
     sla.operadorId = data.operadorId;

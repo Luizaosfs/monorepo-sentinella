@@ -93,7 +93,8 @@ export class PrismaUsuarioReadRepository implements UsuarioReadRepository {
         email: { contains: filters.email, mode: 'insensitive' as const },
       }),
       ...(filters.ativo !== undefined && { ativo: filters.ativo }),
-      ...(filters.clienteId && { cliente_id: filters.clienteId }),
+      // MT-09: != null distingue null intencional (admin global) de UUID (tenant filter)
+      ...(filters.clienteId != null && { cliente_id: filters.clienteId }),
       ...(filters.papel && {
         papeis_usuarios: { some: { papel: filters.papel } },
       }),

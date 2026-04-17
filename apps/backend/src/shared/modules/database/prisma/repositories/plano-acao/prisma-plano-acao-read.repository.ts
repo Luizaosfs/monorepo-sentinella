@@ -44,14 +44,14 @@ export class PrismaPlanoAcaoReadRepository implements PlanoAcaoReadRepository {
   private buildWhere(filters: FilterPlanoAcaoInput, onlyActive: boolean) {
     return {
       ...(onlyActive && { ativo: true }),
-      ...(filters.clienteId && { cliente_id: filters.clienteId }),
+      ...(filters.clienteId != null && { cliente_id: filters.clienteId }),
       ...(filters.tipoItem && { tipo_item: filters.tipoItem }),
     };
   }
 
   private buildWhereAll(filters: FilterPlanoAcaoAllInput) {
     return {
-      ...(filters.clienteId && { cliente_id: filters.clienteId }),
+      ...(filters.clienteId != null && { cliente_id: filters.clienteId }),
       ...(filters.tipoItem && { tipo_item: filters.tipoItem }),
     };
   }

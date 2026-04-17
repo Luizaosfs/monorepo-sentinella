@@ -22,10 +22,11 @@ export class FilterReinspecoes {
       throw ReinspecaoException.forbiddenTenant();
     }
 
-    const clienteId = filters.clienteId ?? this.req['tenantId'];
+    // MT-02: tenantId do guard sempre vence — nunca aceita clienteId do frontend
+    const clienteId = this.req['tenantId'];
     const merged: FilterReinspecaoInput = {
       ...filters,
-      ...(clienteId && { clienteId }),
+      ...(clienteId != null && { clienteId }),
     };
 
     const items = await this.repository.findAll(merged);

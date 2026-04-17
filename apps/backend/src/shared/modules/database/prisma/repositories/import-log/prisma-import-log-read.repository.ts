@@ -31,7 +31,7 @@ export class PrismaImportLogReadRepository implements ImportLogReadRepository {
 
   private buildWhere(filters: FilterImportLogInput) {
     return {
-      ...(filters.clienteId && { cliente_id: filters.clienteId }),
+      ...(filters.clienteId != null && { cliente_id: filters.clienteId }),
       ...(filters.status?.length && {
         status: filters.status.length === 1 ? filters.status[0] : { in: filters.status },
       }),

@@ -76,12 +76,12 @@ export class DroneController {
   @Roles('admin', 'supervisor', 'agente')
   @ApiOperation({ summary: 'Avalia condições meteorológicas para voo baseado em pluvio_risco' })
   async condicoesVoo(
-    @Query('clienteId') clienteId: string,
     @Query('data') dataStr: string,
   ) {
     const { data } = z.object({ data: z.coerce.date() }).parse({ data: dataStr });
-    const resolvedClienteId = clienteId ?? (this.req['tenantId'] as string);
-    return this.avaliarCondicoesVoo.execute(resolvedClienteId, data);
+    // MT-02: tenantId do guard sempre vence — nunca aceita clienteId do frontend
+    const clienteId = this.req['tenantId'] as string;
+    return this.avaliarCondicoesVoo.execute(clienteId, data);
   }
 
   // ── Drones ───────────────────────────────────────────────────────────────

@@ -27,9 +27,10 @@ import { PrismaService } from '../../prisma.service';
 export class PrismaSlaReadRepository implements SlaReadRepository {
   constructor(private prisma: PrismaService) {}
 
-  async findById(id: string): Promise<SlaOperacional | null> {
-    const raw = await this.prisma.client.sla_operacional.findUnique({
-      where: { id },
+  async findById(id: string, clienteId?: string | null): Promise<SlaOperacional | null> {
+    const raw = await this.prisma.client.sla_operacional.findFirst({
+      // MT-08: filtra por cliente_id quando informado (impede IDOR cross-tenant)
+      where: { id, ...(clienteId != null && { cliente_id: clienteId }) },
     });
     return raw ? PrismaSlaMapper.slaOperacionalToDomain(raw as any) : null;
   }
@@ -113,9 +114,9 @@ export class PrismaSlaReadRepository implements SlaReadRepository {
   }
 
   async findFeriados(clienteId: string): Promise<SlaFeriado[]> {
-    const where = clienteId ? { cliente_id: clienteId } : {};
+    // MT-05/findFeriados: sempre filtra por cliente_id — nunca usa where vazio
     const rows = await this.prisma.client.sla_feriados.findMany({
-      where,
+      where: { cliente_id: clienteId },
       orderBy: { data: 'asc' },
     });
     return rows.map((r) => PrismaSlaMapper.slaFeriadoToDomain(r as any));
@@ -220,7 +221,8 @@ export class PrismaSlaReadRepository implements SlaReadRepository {
   private buildWhere(filters: FilterSlaInput) {
     return {
       deleted_at: null,
-      ...(filters.clienteId && { cliente_id: filters.clienteId }),
+      // MT-09: != null distingue null intencional (admin global) de UUID (tenant filter)
+      ...(filters.clienteId != null && { cliente_id: filters.clienteId }),
       ...(filters.operadorId && { operador_id: filters.operadorId }),
       ...(filters.status && { status: filters.status }),
       ...(filters.prioridade && { prioridade: filters.prioridade }),

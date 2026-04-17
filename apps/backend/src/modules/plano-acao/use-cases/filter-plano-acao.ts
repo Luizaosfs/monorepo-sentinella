@@ -13,7 +13,8 @@ export class FilterPlanoAcao {
   ) {}
 
   async execute(filters: FilterPlanoAcaoInput) {
-    const clienteId = filters.clienteId ?? (this.req['tenantId'] as string | undefined);
+    // MT-02: tenantId do guard sempre vence — nunca aceita clienteId do frontend
+    const clienteId = this.req['tenantId'] as string | undefined;
     const planosAcao = await this.repository.findAllActive({
       ...filters,
       clienteId,

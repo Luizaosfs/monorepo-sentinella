@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Inject,
   Param,
   Post,
   Put,
@@ -11,7 +12,9 @@ import {
   UseInterceptors,
   UsePipes,
 } from '@nestjs/common';
+import { REQUEST } from '@nestjs/core';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Request } from 'express';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { RolesGuard } from 'src/guards/roles.guard';
@@ -76,6 +79,7 @@ export class RiskEngineController {
     private saveYoloSynonymUC: SaveYoloSynonym,
     private readRepository: RiskEngineReadRepository,
     private writeRepository: RiskEngineWriteRepository,
+    @Inject(REQUEST) private req: Request,
   ) {}
 
   // ── Policy ────────────────────────────────────────────────────────────────
@@ -133,8 +137,8 @@ export class RiskEngineController {
   @Get('drone-config')
   @Roles('admin', 'supervisor', 'analista_regional')
   @ApiOperation({ summary: 'Configuração de risco para drone/YOLO do cliente' })
-  async getDroneConfig(@Query('clienteId') clienteId?: string) {
-    const { config } = await this.getDroneConfigUC.execute(clienteId);
+  async getDroneConfig() {
+    const { config } = await this.getDroneConfigUC.execute();
     return DroneRiskConfigViewModel.toHttp(config);
   }
 
@@ -143,10 +147,9 @@ export class RiskEngineController {
   @ApiOperation({ summary: 'Atualizar configuração de drone do cliente' })
   async saveDroneConfig(
     @Body() body: SaveDroneConfigBody,
-    @Query('clienteId') clienteId?: string,
   ) {
     const parsed = saveDroneConfigSchema.parse(body);
-    const { config } = await this.saveDroneConfigUC.execute(parsed, clienteId);
+    const { config } = await this.saveDroneConfigUC.execute(parsed);
     return DroneRiskConfigViewModel.toHttp(config);
   }
 
@@ -155,8 +158,8 @@ export class RiskEngineController {
   @Get('yolo-classes')
   @Roles('admin', 'supervisor', 'analista_regional')
   @ApiOperation({ summary: 'Listar classes YOLO do cliente' })
-  async filterYoloClasses(@Query('clienteId') clienteId?: string) {
-    const { classes } = await this.filterYoloClassesUC.execute(clienteId);
+  async filterYoloClasses() {
+    const { classes } = await this.filterYoloClassesUC.execute();
     return classes.map(YoloClassConfigViewModel.toHttp);
   }
 
@@ -174,8 +177,8 @@ export class RiskEngineController {
   @Get('yolo-synonyms')
   @Roles('admin', 'supervisor', 'analista_regional')
   @ApiOperation({ summary: 'Listar sinônimos YOLO do cliente' })
-  async filterYoloSynonyms(@Query('clienteId') clienteId?: string) {
-    const { synonyms } = await this.filterYoloSynonymsUC.execute(clienteId);
+  async filterYoloSynonyms() {
+    const { synonyms } = await this.filterYoloSynonymsUC.execute();
     return synonyms.map(YoloSynonymViewModel.toHttp);
   }
 

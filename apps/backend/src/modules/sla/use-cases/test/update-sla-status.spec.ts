@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { mock } from 'jest-mock-extended';
+import { mockRequest } from '@test/utils/user-helpers';
 
 import { SlaException } from '../../errors/sla.exception';
 import { SlaReadRepository } from '../../repositories/sla-read.repository';
@@ -8,6 +9,9 @@ import { expectHttpException } from '@test/utils/expect-http-exception';
 
 import { UpdateSlaStatus } from '../update-sla-status';
 import { SlaOperacionalBuilder } from './builders/sla-operacional.builder';
+
+const TENANT_ID = 'tenant-uuid-1';
+const USER_ID = 'user-uuid-1';
 
 describe('UpdateSlaStatus', () => {
   let useCase: UpdateSlaStatus;
@@ -22,6 +26,10 @@ describe('UpdateSlaStatus', () => {
         UpdateSlaStatus,
         { provide: SlaReadRepository, useValue: readRepo },
         { provide: SlaWriteRepository, useValue: writeRepo },
+        {
+          provide: 'REQUEST',
+          useValue: mockRequest({ tenantId: TENANT_ID, user: { id: USER_ID } as any }),
+        },
       ],
     }).compile();
     useCase = module.get<UpdateSlaStatus>(UpdateSlaStatus);
@@ -38,7 +46,7 @@ describe('UpdateSlaStatus', () => {
     readRepo.findById.mockResolvedValue(sla);
     writeRepo.save.mockResolvedValue();
 
-    const result = await useCase.execute(sla.id!, { status: 'em_atendimento' });
+    const result = await useCase.execute(sla.id!, { status: 'em_atendimento' }, TENANT_ID);
 
     expect(result.sla.status).toBe('em_atendimento');
     expect(writeRepo.save).toHaveBeenCalledWith(sla);
@@ -52,7 +60,7 @@ describe('UpdateSlaStatus', () => {
     readRepo.findById.mockResolvedValue(sla);
     writeRepo.save.mockResolvedValue();
 
-    const result = await useCase.execute(sla.id!, { status: 'concluido' });
+    const result = await useCase.execute(sla.id!, { status: 'concluido' }, TENANT_ID);
 
     expect(result.sla.concluidoEm?.getTime()).toBe(agora.getTime());
   });
@@ -68,7 +76,7 @@ describe('UpdateSlaStatus', () => {
     readRepo.findById.mockResolvedValue(sla);
     writeRepo.save.mockResolvedValue();
 
-    const result = await useCase.execute(sla.id!, { status: 'concluido' });
+    const result = await useCase.execute(sla.id!, { status: 'concluido' }, TENANT_ID);
 
     expect(result.sla.concluidoEm?.getTime()).toBe(existente.getTime());
   });
@@ -77,8 +85,18 @@ describe('UpdateSlaStatus', () => {
     readRepo.findById.mockResolvedValue(null);
 
     await expectHttpException(
-      () => useCase.execute('nao-existe', { status: 'pendente' }),
+      () => useCase.execute('nao-existe', { status: 'pendente' }, TENANT_ID),
       SlaException.notFound(),
     );
+  });
+
+  it('deve buscar SLA filtrando pelo clienteId do guard (tenant isolation)', async () => {
+    const sla = new SlaOperacionalBuilder().withClienteId(TENANT_ID).build();
+    readRepo.findById.mockResolvedValue(sla);
+    writeRepo.save.mockResolvedValue();
+
+    await useCase.execute(sla.id!, { status: 'em_atendimento' }, TENANT_ID);
+
+    expect(readRepo.findById).toHaveBeenCalledWith(sla.id, TENANT_ID);
   });
 });

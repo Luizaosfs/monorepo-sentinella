@@ -5,6 +5,7 @@ import { Reinspecao } from '../entities/reinspecao';
 
 @Injectable()
 export abstract class ReinspecaoReadRepository {
-  abstract findById(id: string): Promise<Reinspecao | null>;
+  abstract findById(id: string, clienteId?: string | null): Promise<Reinspecao | null>;
   abstract findAll(filters: FilterReinspecaoInput): Promise<Reinspecao[]>;
+  abstract countPendentes(clienteId: string, agenteId?: string): Promise<number>;
 }

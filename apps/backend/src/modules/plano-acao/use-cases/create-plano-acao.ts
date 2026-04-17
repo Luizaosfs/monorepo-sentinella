@@ -15,9 +15,8 @@ export class CreatePlanoAcao {
   ) {}
 
   async execute(data: CreatePlanoAcaoBody) {
-    const clienteId = (data.clienteId ?? this.req['tenantId']) as
-      | string
-      | undefined;
+    // MT-02: tenantId do guard sempre vence — nunca aceita clienteId do frontend
+    const clienteId = this.req['tenantId'] as string | undefined;
     if (!clienteId) {
       throw PlanoAcaoException.tenantRequired();
     }

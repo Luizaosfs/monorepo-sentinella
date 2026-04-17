@@ -52,7 +52,7 @@ export class PrismaPlanejamentoReadRepository implements PlanejamentoReadReposit
   private buildWhere(filters: FilterPlanejamentoInput) {
     return {
       deleted_at: null,
-      ...(filters.clienteId && { cliente_id: filters.clienteId }),
+      ...(filters.clienteId != null && { cliente_id: filters.clienteId }),
       ...(filters.ativo !== undefined && { ativo: filters.ativo }),
       ...(filters.tipoLevantamento && {
         tipo_levantamento: filters.tipoLevantamento,

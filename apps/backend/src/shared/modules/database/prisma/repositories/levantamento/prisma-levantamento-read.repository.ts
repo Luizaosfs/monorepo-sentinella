@@ -131,7 +131,7 @@ export class PrismaLevantamentoReadRepository implements LevantamentoReadReposit
 
   private buildWhere(filters: FilterLevantamentoInput) {
     return {
-      ...(filters.clienteId && { cliente_id: filters.clienteId }),
+      ...(filters.clienteId != null && { cliente_id: filters.clienteId }),
       ...(filters.planejamentoId && { planejamento_id: filters.planejamentoId }),
       ...(filters.cicloId && { ciclo_id: filters.cicloId }),
       ...(filters.usuarioId && { usuario_id: filters.usuarioId }),

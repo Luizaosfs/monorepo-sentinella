@@ -109,7 +109,7 @@ export class PrismaPluvioReadRepository implements PluvioReadRepository {
 
   private buildRunWhere(filters: FilterPluvioRunInputType) {
     return {
-      ...(filters.clienteId && { cliente_id: filters.clienteId }),
+      ...(filters.clienteId != null && { cliente_id: filters.clienteId }),
       ...(filters.dataReferenciaInicio || filters.dataReferenciaFim
         ? {
             dt_ref: {

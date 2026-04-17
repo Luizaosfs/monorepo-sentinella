@@ -22,10 +22,11 @@ export class FilterQuarteiroes {
       throw QuarteiraoException.forbiddenTenant();
     }
 
-    const clienteId = filters.clienteId ?? this.req['tenantId'];
+    // MT-02: tenantId do guard sempre vence — nunca aceita clienteId do frontend
+    const clienteId = this.req['tenantId'];
     const merged: FilterQuarteiraoInput = {
       ...filters,
-      ...(clienteId && { clienteId }),
+      ...(clienteId != null && { clienteId }),
     };
     const items = await this.repository.findAllQuarteiroes(merged);
     return { quarteiroes: items };

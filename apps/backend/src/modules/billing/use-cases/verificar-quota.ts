@@ -22,7 +22,8 @@ export class VerificarQuota {
   ) {}
 
   async execute(input: VerificarQuotaQuery): Promise<VerificarQuotaResult> {
-    const clienteId = (input.clienteId ?? this.req['tenantId']) as string;
+    // MT-02: tenantId do guard sempre vence — nunca aceita clienteId do frontend
+    const clienteId = this.req['tenantId'] as string;
     const metrica = input.metrica as Metrica;
     const { mesInicio, mesFim } = mesAtual();
 

@@ -12,7 +12,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.enableCors({
-    origin: process.env.CLIENT_URL || '*',
+    origin: process.env.CLIENT_URL || (process.env.NODE_ENV === 'production' ? false : '*'),
     credentials: true,
   });
 
@@ -36,7 +36,8 @@ async function bootstrap() {
   app.use('/reference', apiReference({ spec: { content: document } }));
 
   await app.listen(process.env.PORT ?? 3333);
-  console.log(`🦟 Sentinella API rodando na porta ${process.env.PORT ?? 3333}`);
+  const logger = new Logger('Bootstrap');
+  logger.log(`Sentinella API rodando na porta ${process.env.PORT ?? 3333}`);
   Logger.verbose(
     `\x1b[33m💰💵 API running on port ${process.env.PORT ?? 3333} 💵💰`,
   );

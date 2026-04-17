@@ -7,8 +7,8 @@ import { ImovelReadRepository } from '../repositories/imovel-read.repository';
 export class GetImovel {
   constructor(private repository: ImovelReadRepository) {}
 
-  async execute(id: string) {
-    const imovel = await this.repository.findById(id);
+  async execute(id: string, clienteId?: string | null) {
+    const imovel = await this.repository.findById(id, clienteId);
     if (!imovel) throw ImovelException.notFound();
     return { imovel };
   }

@@ -91,7 +91,7 @@ export class PrismaOperacaoReadRepository implements OperacaoReadRepository {
   private buildWhere(filters: FilterOperacaoInput) {
     return {
       deleted_at: null,
-      ...(filters.clienteId && { cliente_id: filters.clienteId }),
+      ...(filters.clienteId != null && { cliente_id: filters.clienteId }),
       ...(filters.status && { status: filters.status }),
       ...(filters.prioridade && { prioridade: filters.prioridade }),
       ...(filters.responsavelId && { responsavel_id: filters.responsavelId }),

@@ -16,7 +16,8 @@ export class ResumoAgente {
   ) {}
 
   async execute(query: ResumoAgenteQuery): Promise<ResumoAgenteResult> {
-    const clienteId = (query.clienteId ?? this.req['tenantId']) as string;
+    // MT-02: tenantId do guard sempre vence — nunca aceita clienteId do frontend
+    const clienteId = this.req['tenantId'] as string;
     return this.readRepository.resumoAgente(
       clienteId,
       query.agenteId,

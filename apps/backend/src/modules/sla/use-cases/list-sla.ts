@@ -13,7 +13,8 @@ export class ListSla {
   ) {}
 
   async execute(filters: FilterSlaInput) {
-    const clienteId = filters.clienteId ?? this.req['tenantId'];
+    // MT-02: tenantId do guard sempre vence — nunca aceita clienteId do frontend
+    const clienteId = this.req['tenantId'];
     const slas = await this.repository.findAll({ ...filters, clienteId });
     return { slas };
   }

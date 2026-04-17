@@ -22,13 +22,11 @@ export class FilterDistribuicoes {
       throw QuarteiraoException.forbiddenTenant();
     }
 
-    const clienteId = filters.clienteId ?? this.req['tenantId'];
-    if (!clienteId) {
-      throw QuarteiraoException.badRequest();
-    }
+    // MT-02: tenantId do guard sempre vence — nunca aceita clienteId do frontend
+    const clienteId = this.req['tenantId'];
     const merged: FilterDistribuicaoInput = {
       ...filters,
-      clienteId,
+      ...(clienteId != null && { clienteId }),
     };
     const items = await this.repository.findAllDistribuicoes(merged);
     return { distribuicoes: items };

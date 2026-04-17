@@ -25,7 +25,8 @@ export class EscalarSla {
   ) {}
 
   async execute(id: string) {
-    const sla = await this.readRepository.findById(id);
+    const tenantId = this.req['tenantId'] as string | null;
+    const sla = await this.readRepository.findById(id, tenantId);
     if (!sla) throw SlaException.notFound();
 
     const indiceAtual = ESCALA_PRIORIDADE.indexOf(sla.prioridade);

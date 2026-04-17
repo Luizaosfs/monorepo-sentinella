@@ -12,8 +12,8 @@ export class FilterRuns {
   ) {}
 
   async execute(filters: FilterPluvioRunInputType) {
-    const tenantId = this.req['tenantId'] as string | undefined;
-    const clienteId = filters.clienteId ?? tenantId;
+    // MT-02: tenantId do guard sempre vence — nunca aceita clienteId do frontend
+    const clienteId = this.req['tenantId'];
 
     const runs = await this.repository.findRuns({ ...filters, clienteId });
     return { runs };

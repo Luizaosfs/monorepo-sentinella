@@ -67,6 +67,7 @@ import { CreateFocoRisco } from './use-cases/create-foco-risco';
 import { FilterFocoRisco } from './use-cases/filter-foco-risco';
 import { GetFocoAtivoById } from './use-cases/get-foco-ativo-by-id';
 import { GetFocoHistorico } from './use-cases/get-foco-historico';
+import { GetFocoTimeline } from './use-cases/get-foco-timeline';
 import { GetFocoRisco } from './use-cases/get-foco-risco';
 import { IniciarInspecao } from './use-cases/iniciar-inspecao';
 import { ListFocosByIds } from './use-cases/list-focos-by-ids';
@@ -95,6 +96,7 @@ export class FocoRiscoController {
     private contagemTriagemFilaUc: ContagemTriagemFila,
     private getFocoAtivoByIdUc: GetFocoAtivoById,
     private getFocoHistoricoUc: GetFocoHistorico,
+    private getFocoTimelineUc: GetFocoTimeline,
     private listFocosByIdsUc: ListFocosByIds,
     private updateFocoRiscoUc: UpdateFocoRisco,
     @Inject(REQUEST) private req: Request,
@@ -105,6 +107,8 @@ export class FocoRiscoController {
   @ApiOperation({ summary: 'Listar focos de risco com filtros (suporta page/pageSize/orderBy)' })
   async filter(@Query() filters: FilterFocoRiscoInput) {
     const parsed = filterFocoRiscoSchema.parse(filters);
+    // MT-02: clienteId SEMPRE vem do TenantGuard, nunca da query diretamente
+    parsed.clienteId = this.req['tenantId'] as string | undefined;
 
     // Se o frontend enviou page/pageSize, retorna resposta paginada
     if (parsed.page != null || parsed.pageSize != null) {
@@ -147,6 +151,8 @@ export class FocoRiscoController {
     @Query() pagination: PaginationProps,
   ) {
     const parsedFilters = filterFocoRiscoSchema.parse(filters);
+    // MT-02: clienteId SEMPRE vem do TenantGuard, nunca da query diretamente
+    parsedFilters.clienteId = this.req['tenantId'] as string | undefined;
     const parsedPagination = paginationSchema.parse(pagination);
     const result = await this.paginationFocoRisco.execute(
       parsedFilters,
@@ -163,13 +169,17 @@ export class FocoRiscoController {
   @ApiOperation({ summary: 'Contagem agregada para fila de triagem' })
   async contagemTriagem(@Query() filters: FilterFocoRiscoInput) {
     const parsed = filterFocoRiscoSchema.parse(filters);
+    // MT-02: clienteId SEMPRE vem do TenantGuard, nunca da query diretamente
+    parsed.clienteId = this.req['tenantId'] as string | undefined;
     return this.contagemTriagemFilaUc.execute(parsed);
   }
 
   @Get('contagem-por-status')
   @Roles('admin', 'supervisor', 'agente')
   @ApiOperation({ summary: 'Contagem de focos agrupados por status' })
-  async contagemPorStatus(@Query('clienteId') clienteId: string) {
+  async contagemPorStatus() {
+    // MT-03: clienteId vem do TenantGuard, não de query param
+    const clienteId = this.req['tenantId'] as string;
     return this.contagemPorStatusUc.execute(clienteId);
   }
 
@@ -187,14 +197,21 @@ export class FocoRiscoController {
   @Roles('admin', 'supervisor', 'agente')
   @ApiOperation({ summary: 'Buscar foco ativo por ID (retorna null se terminal)' })
   async getAtivo(@Param('id') id: string) {
-    return this.getFocoAtivoByIdUc.execute(id);
+    return this.getFocoAtivoByIdUc.execute(id, this.req['tenantId'] as string | null);
   }
 
   @Get(':id/historico')
   @Roles('admin', 'supervisor', 'agente')
   @ApiOperation({ summary: 'Histórico de transições do foco' })
   async getHistorico(@Param('id') id: string) {
-    return this.getFocoHistoricoUc.execute(id);
+    return this.getFocoHistoricoUc.execute(id, this.req['tenantId'] as string | null);
+  }
+
+  @Get(':id/timeline')
+  @Roles('admin', 'supervisor', 'agente')
+  @ApiOperation({ summary: 'Timeline unificada do foco (estados, vistorias, SLA, casos)' })
+  async getTimeline(@Param('id') id: string) {
+    return this.getFocoTimelineUc.execute(id);
   }
 
   @Get(':id')
@@ -204,7 +221,7 @@ export class FocoRiscoController {
       'Buscar foco de risco por ID (histórico + resumo SLA: fase, prazo da fase, sla_operacional)',
   })
   async findById(@Param('id') id: string) {
-    const { foco, sla, consolidacao } = await this.getFocoRisco.execute(id);
+    const { foco, sla, consolidacao } = await this.getFocoRisco.execute(id, this.req['tenantId'] as string | null);
     return FocoRiscoViewModel.toHttp(foco, sla, consolidacao);
   }
 

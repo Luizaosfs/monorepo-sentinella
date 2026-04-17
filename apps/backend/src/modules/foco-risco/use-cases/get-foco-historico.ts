@@ -7,8 +7,8 @@ import { FocoRiscoViewModel } from '../view-model/foco-risco';
 export class GetFocoHistorico {
   constructor(private repository: FocoRiscoReadRepository) {}
 
-  async execute(focoId: string) {
-    const foco = await this.repository.findByIdComHistorico(focoId);
+  async execute(focoId: string, clienteId?: string | null) {
+    const foco = await this.repository.findByIdComHistorico(focoId, clienteId);
     if (!foco) return [];
     return (foco.historico ?? []).map(FocoRiscoViewModel.historicoToHttp);
   }

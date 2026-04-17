@@ -73,6 +73,8 @@ export class ImovelController {
   @ApiOperation({ summary: 'Listar imóveis com filtros' })
   async filter(@Query() filters: FilterImovelInput) {
     const parsed = filterImovelSchema.parse(filters);
+    // MT-02: clienteId SEMPRE vem do TenantGuard, nunca da query diretamente
+    parsed.clienteId = this.req['tenantId'] as string | undefined;
     const { imoveis } = await this.filterImovel.execute(parsed);
     return imoveis.map(ImovelViewModel.toHttp);
   }
@@ -85,6 +87,8 @@ export class ImovelController {
     @Query() pagination: PaginationProps,
   ) {
     const parsedFilters = filterImovelSchema.parse(filters);
+    // MT-02: clienteId SEMPRE vem do TenantGuard, nunca da query diretamente
+    parsedFilters.clienteId = this.req['tenantId'] as string | undefined;
     const parsedPagination = paginationSchema.parse(pagination);
     const result = await this.paginationImovel.execute(
       parsedFilters,
@@ -117,7 +121,9 @@ export class ImovelController {
   @Get(':id/score')
   @Roles('admin', 'supervisor', 'agente')
   @ApiOperation({ summary: 'Calcula e grava score de risco do imóvel' })
-  async score(@Param('id') id: string, @Query('clienteId') clienteId: string) {
+  async score(@Param('id') id: string) {
+    // MT-03: clienteId vem do TenantGuard, não de query param
+    const clienteId = this.req['tenantId'] as string;
     return this.calcularScore.execute(id, clienteId);
   }
 
@@ -125,7 +131,7 @@ export class ImovelController {
   @Roles('admin', 'supervisor', 'agente')
   @ApiOperation({ summary: 'Resumo agregado de um imóvel por ID (substitui v_imovel_resumo)' })
   async getResumo(@Param('id') id: string) {
-    const { resumo } = await this.getImovelResumoUc.execute(id);
+    const { resumo } = await this.getImovelResumoUc.execute(id, this.req['tenantId'] as string | null);
     return resumo;
   }
 
@@ -133,7 +139,7 @@ export class ImovelController {
   @Roles('admin', 'supervisor', 'agente')
   @ApiOperation({ summary: 'Buscar imóvel por ID' })
   async findById(@Param('id') id: string) {
-    const { imovel } = await this.getImovel.execute(id);
+    const { imovel } = await this.getImovel.execute(id, this.req['tenantId'] as string | null);
     return ImovelViewModel.toHttp(imovel);
   }
 

@@ -13,7 +13,8 @@ export class FilterOperacao {
   ) {}
 
   async execute(filters: FilterOperacaoInput) {
-    const clienteId = filters.clienteId ?? this.req['tenantId'];
+    // MT-02: tenantId do guard sempre vence — nunca aceita clienteId do frontend
+    const clienteId = this.req['tenantId'];
     const operacoes = await this.repository.findAll({ ...filters, clienteId });
     return { operacoes };
   }

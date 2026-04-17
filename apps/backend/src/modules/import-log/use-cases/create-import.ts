@@ -15,10 +15,8 @@ export class CreateImport {
   ) {}
 
   async execute(input: CreateImportLogBody) {
-    const isAdmin = this.req['user']?.papeis?.includes('admin');
-    const clienteId = isAdmin
-      ? input.clienteId ?? this.req['tenantId']
-      : this.req['tenantId'];
+    // MT-02: tenantId do guard sempre vence — nunca aceita clienteId do frontend
+    const clienteId = this.req['tenantId'];
 
     if (!clienteId) {
       throw ImportLogException.clienteIdRequired();

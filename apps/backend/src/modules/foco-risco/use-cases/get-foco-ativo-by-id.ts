@@ -9,8 +9,8 @@ const TERMINAL_STATUSES = ['resolvido', 'descartado'];
 export class GetFocoAtivoById {
   constructor(private repository: FocoRiscoReadRepository) {}
 
-  async execute(id: string) {
-    const foco = await this.repository.findById(id);
+  async execute(id: string, clienteId?: string | null) {
+    const foco = await this.repository.findById(id, clienteId);
     if (!foco || TERMINAL_STATUSES.includes(foco.status)) return null;
     return FocoRiscoViewModel.toHttp(foco);
   }

@@ -12,8 +12,8 @@ export class GetPolicy {
   ) {}
 
   async execute(filters: FilterRiskPolicyInputType) {
-    const tenantId = this.req['tenantId'] as string | undefined;
-    const clienteId = filters.clienteId ?? tenantId;
+    // MT-02: tenantId do guard sempre vence — nunca aceita clienteId do frontend
+    const clienteId = this.req['tenantId'];
 
     const policies = await this.repository.findPolicies({ ...filters, clienteId });
     return { policies };

@@ -58,7 +58,8 @@ export class IaController {
   @ApiOperation({ summary: 'Identificar larvas de Aedes via IA (Claude Vision)' })
   async identifyLarva(@Body() body: unknown) {
     const parsed = identifyLarvaSchema.parse(body);
-    const clienteId = (parsed.clienteId ?? this.req['tenantId']) as string;
+    // MT-02: tenantId do guard sempre vence — nunca aceita clienteId do frontend
+    const clienteId = this.req['tenantId'] as string;
     return this.iaService.identifyLarva({ ...parsed, clienteId });
   }
 
@@ -67,7 +68,8 @@ export class IaController {
   @ApiOperation({ summary: 'Triagem pós-voo com clustering geográfico e IA' })
   async triagemPosVoo(@Body() body: unknown) {
     const parsed = triagemSchema.parse(body);
-    const clienteId = (parsed.clienteId ?? this.req['tenantId']) as string;
+    // MT-02: tenantId do guard sempre vence — nunca aceita clienteId do frontend
+    const clienteId = this.req['tenantId'] as string;
     return this.iaService.triagemPosVoo(parsed.levantamentoId, clienteId);
   }
 }

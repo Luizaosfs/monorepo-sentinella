@@ -16,7 +16,8 @@ export class ResumoRegional {
   ) {}
 
   async execute(query: ResumoRegionalQuery): Promise<ResumoRegionalRow[]> {
-    const clienteId = (query.clienteId ?? this.req['tenantId']) as string;
+    // MT-02: tenantId do guard sempre vence — nunca aceita clienteId do frontend
+    const clienteId = this.req['tenantId'] as string;
     return this.readRepository.resumoRegional(
       clienteId,
       query.ciclo,

@@ -22,9 +22,10 @@ import { PrismaService } from '../../prisma.service';
 export class PrismaImovelReadRepository implements ImovelReadRepository {
   constructor(private prisma: PrismaService) {}
 
-  async findById(id: string): Promise<Imovel | null> {
+  async findById(id: string, clienteId?: string | null): Promise<Imovel | null> {
     const raw = await this.prisma.client.imoveis.findFirst({
-      where: { id, deleted_at: null },
+      // MT-08: filtra por cliente_id quando informado (impede IDOR cross-tenant)
+      where: { id, deleted_at: null, ...(clienteId != null && { cliente_id: clienteId }) },
     });
     return raw ? PrismaImovelMapper.toDomain(raw as any) : null;
   }
@@ -61,7 +62,8 @@ export class PrismaImovelReadRepository implements ImovelReadRepository {
 
   async findScoreInputs(imovelId: string, clienteId: string): Promise<ScoreInputs> {
     const [imovelRaw, configRaw] = await Promise.all([
-      this.prisma.client.imoveis.findFirst({ where: { id: imovelId, deleted_at: null } }),
+      // MT-08: inclui cliente_id no WHERE para prevenir acesso cross-tenant
+      this.prisma.client.imoveis.findFirst({ where: { id: imovelId, cliente_id: clienteId, deleted_at: null } }),
       this.prisma.client.score_config.findUnique({ where: { cliente_id: clienteId } }),
     ]);
 
@@ -287,7 +289,7 @@ export class PrismaImovelReadRepository implements ImovelReadRepository {
     }));
   }
 
-  async getResumoById(id: string): Promise<ImovelResumo | null> {
+  async getResumoById(id: string, clienteId?: string | null): Promise<ImovelResumo | null> {
     type Row = {
       id: string;
       cliente_id: string;
@@ -320,6 +322,11 @@ export class PrismaImovelReadRepository implements ImovelReadRepository {
       score_fatores: Record<string, unknown> | null;
       score_calculado_em: string | null;
     };
+
+    // MT-05: filtro de tenant no raw SQL (impede leitura cross-tenant por ID)
+    const tenantFilter = clienteId != null
+      ? Prisma.sql`AND i.cliente_id = ${clienteId}::uuid`
+      : Prisma.empty;
 
     const rows = await this.prisma.client.$queryRaw<Row[]>`
       SELECT
@@ -383,6 +390,7 @@ export class PrismaImovelReadRepository implements ImovelReadRepository {
       LEFT JOIN territorio_score ts ON ts.imovel_id = i.id AND ts.cliente_id = i.cliente_id
       WHERE i.id = ${id}::uuid
         AND i.deleted_at IS NULL
+        ${tenantFilter}
     `;
 
     if (!rows.length) return null;
@@ -524,7 +532,8 @@ export class PrismaImovelReadRepository implements ImovelReadRepository {
   private buildWhere(filters: FilterImovelInput) {
     return {
       deleted_at: null,
-      ...(filters.clienteId && { cliente_id: filters.clienteId }),
+      // MT-09: != null distingue null intencional (admin global) de UUID (tenant filter)
+      ...(filters.clienteId != null && { cliente_id: filters.clienteId }),
       ...(filters.regiaoId && { regiao_id: filters.regiaoId }),
       ...(filters.bairro && {
         bairro: { contains: filters.bairro, mode: 'insensitive' as const },

@@ -6,6 +6,7 @@ import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 import { ReinspecaoController } from './reinspecao.controller';
 import { ReinspecaoScheduler } from './reinspecao.scheduler';
 import { CancelarReinspecao } from './use-cases/cancelar';
+import { CountReinspecoesPendentes } from './use-cases/count-pendentes';
 import { CriarManual } from './use-cases/criar-manual';
 import { FilterReinspecoes } from './use-cases/filter-reinspecoes';
 import { GetReinspecao } from './use-cases/get-reinspecao';
@@ -16,6 +17,7 @@ import { RegistrarResultadoReinspecao } from './use-cases/registrar-resultado';
 @Module({
   providers: [
     FilterReinspecoes,
+    CountReinspecoesPendentes,
     GetReinspecao,
     CriarManual,
     CancelarReinspecao,

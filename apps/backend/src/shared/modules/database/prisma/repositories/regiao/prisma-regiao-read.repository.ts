@@ -52,7 +52,7 @@ export class PrismaRegiaoReadRepository implements RegiaoReadRepository {
 
   private buildWhere(filters: FilterRegiaoInput) {
     return {
-      ...(filters.clienteId && { cliente_id: filters.clienteId }),
+      ...(filters.clienteId != null && { cliente_id: filters.clienteId }),
       ...(filters.nome && {
         nome: { contains: filters.nome, mode: 'insensitive' as const },
       }),

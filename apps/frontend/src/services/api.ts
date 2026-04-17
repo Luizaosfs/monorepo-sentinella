@@ -324,8 +324,14 @@ export const api = {
       http.get(`/reinspecoes${qs({ clienteId, status: 'vencida' })}`),
 
     /** Conta reinspeções pendentes/vencidas de um agente. */
-    countPendentesAgente: (clienteId: string, agenteId: string): Promise<number> =>
-      http.get(`/reinspecoes/count${qs({ clienteId, agenteId })}`),
+    countPendentesAgente: async (clienteId: string, agenteId: string): Promise<number> => {
+      try {
+        return await http.get(`/reinspecoes/count${qs({ clienteId, agenteId })}`);
+      } catch (err) {
+        logFallback('reinspecoes', 'countPendentesAgente', err, '/reinspecoes/count');
+        return _sb.reinspecoes.countPendentesAgente(clienteId, agenteId);
+      }
+    },
 
     /** Cria reinspeção manual. */
     criar: (
@@ -337,7 +343,7 @@ export const api = {
     registrarResultado: (
       payload: Parameters<typeof _sb.reinspecoes.registrarResultado>[0],
     ): Promise<Ret<typeof _sb.reinspecoes.registrarResultado>> =>
-      http.post(`/reinspecoes/${payload.reinspecaoId}/resultado`, payload),
+      http.patch(`/reinspecoes/${payload.reinspecaoId}/resultado`, payload),
 
     /** Cancela uma reinspeção. */
     cancelar: (reinspecaoId: string, motivo?: string): Promise<void> =>

@@ -10,9 +10,9 @@ export class FilterYoloSynonyms {
     @Inject('REQUEST') private req: Request,
   ) {}
 
-  async execute(clienteId?: string) {
-    const tenantId = this.req['tenantId'] as string | undefined;
-    const id = clienteId ?? tenantId!;
+  async execute() {
+    // MT-02: tenantId do guard sempre vence — nunca aceita clienteId do frontend
+    const id = this.req['tenantId'] as string;
 
     const synonyms = await this.repository.filterYoloSynonyms(id);
     return { synonyms };

@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Inject,
   Param,
   Patch,
   Post,
@@ -10,7 +11,9 @@ import {
   UseInterceptors,
   UsePipes,
 } from '@nestjs/common';
+import { REQUEST } from '@nestjs/core';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Request } from 'express';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { RolesGuard } from 'src/guards/roles.guard';
@@ -38,6 +41,7 @@ import {
   resultadoReinspecaoSchema,
 } from './dtos/resultado-reinspecao.body';
 import { CancelarReinspecao } from './use-cases/cancelar';
+import { CountReinspecoesPendentes } from './use-cases/count-pendentes';
 import { CriarManual } from './use-cases/criar-manual';
 import { FilterReinspecoes } from './use-cases/filter-reinspecoes';
 import { GetReinspecao } from './use-cases/get-reinspecao';
@@ -54,12 +58,14 @@ import { ReinspecaoViewModel } from './view-model/reinspecao';
 export class ReinspecaoController {
   constructor(
     private filterReinspecoes: FilterReinspecoes,
+    private countPendentes: CountReinspecoesPendentes,
     private criarManual: CriarManual,
     private cancelarReinspecao: CancelarReinspecao,
     private reagendarReinspecao: ReagendarReinspecao,
     private registrarResultadoReinspecao: RegistrarResultadoReinspecao,
     private marcarVencidas: MarcarVencidas,
     private getReinspecao: GetReinspecao,
+    @Inject(REQUEST) private req: Request,
   ) {}
 
   @Post('marcar-vencidas')
@@ -77,6 +83,8 @@ export class ReinspecaoController {
   @ApiOperation({ summary: 'Listar reinspeções programadas' })
   async filter(@Query() filters: FilterReinspecaoInput) {
     const parsed = filterReinspecaoSchema.parse(filters);
+    // MT-02: clienteId SEMPRE vem do TenantGuard, nunca da query diretamente
+    parsed.clienteId = this.req['tenantId'] as string | undefined;
     const { reinspecoes } = await this.filterReinspecoes.execute(parsed);
     return reinspecoes.map(ReinspecaoViewModel.toHttp);
   }
@@ -88,6 +96,15 @@ export class ReinspecaoController {
     const parsed = createReinspecaoSchema.parse(body);
     const { reinspecao } = await this.criarManual.execute(parsed);
     return ReinspecaoViewModel.toHttp(reinspecao);
+  }
+
+  @Get('count')
+  @Roles('admin', 'supervisor', 'agente')
+  @ApiOperation({ summary: 'Contar reinspeções pendentes/vencidas (do agente ou do cliente)' })
+  async count(@Query('agenteId') agenteId?: string) {
+    // MT-03: clienteId vem do TenantGuard, não de query param
+    const clienteId = this.req['tenantId'] as string;
+    return this.countPendentes.execute(clienteId, agenteId);
   }
 
   @Get(':id')

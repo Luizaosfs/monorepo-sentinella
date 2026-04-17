@@ -27,7 +27,9 @@
       "Bash(echo \"EXIT:$?\")",
       "Bash(pnpm build:frontend)",
       "Bash(xargs grep:*)",
-      "Bash(pnpm tsc:*)"
+      "Bash(pnpm tsc:*)",
+      "Bash(mkdir -p /tmp/sentinella_audit)",
+      "Bash(unzip -o \"D:/sentinella/backup_20260417_225324/monorepo-sentinella_sources.zip\" -d /tmp/sentinella_audit/)"
     ]
   }
 }

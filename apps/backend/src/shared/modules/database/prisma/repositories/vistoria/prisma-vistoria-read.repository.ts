@@ -71,7 +71,7 @@ export class PrismaVistoriaReadRepository implements VistoriaReadRepository {
 
   private buildWhere(filters: FilterVistoriaInput) {
     return {
-      ...(filters.clienteId && { cliente_id: filters.clienteId }),
+      ...(filters.clienteId != null && { cliente_id: filters.clienteId }),
       ...(filters.imovelId && { imovel_id: filters.imovelId }),
       ...(filters.agenteId && { agente_id: filters.agenteId }),
       ...(filters.planejamentoId && {

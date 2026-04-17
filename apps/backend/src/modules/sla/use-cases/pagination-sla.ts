@@ -14,7 +14,8 @@ export class PaginationSla {
   ) {}
 
   async execute(filters: FilterSlaInput, pagination: PaginationProps) {
-    const clienteId = filters.clienteId ?? this.req['tenantId'];
+    // MT-02: tenantId do guard sempre vence — nunca aceita clienteId do frontend
+    const clienteId = this.req['tenantId'];
     return this.repository.findPaginated({ ...filters, clienteId }, pagination);
   }
 }

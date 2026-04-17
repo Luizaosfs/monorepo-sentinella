@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Inject,
   Param,
   Patch,
   Post,
@@ -12,7 +13,9 @@ import {
   UseInterceptors,
   UsePipes,
 } from '@nestjs/common';
+import { REQUEST } from '@nestjs/core';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Request } from 'express';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { RolesGuard } from 'src/guards/roles.guard';
@@ -81,6 +84,7 @@ export class PluvioController {
     private deleteRiscoUC: DeleteRisco,
     private bulkInsertRiscoUC: BulkInsertRisco,
     private gerarSlasRunUC: GerarSlasRun,
+    @Inject(REQUEST) private req: Request,
   ) {}
 
   // ── Runs ─────────────────────────────────────────────────────────────────
@@ -88,8 +92,8 @@ export class PluvioController {
   @Get('runs/latest')
   @Roles('admin', 'supervisor', 'analista_regional')
   @ApiOperation({ summary: 'Última run pluviométrica do cliente' })
-  async latestRun(@Query('clienteId') clienteId?: string) {
-    const { run } = await this.latestRunUC.execute(clienteId);
+  async latestRun() {
+    const { run } = await this.latestRunUC.execute();
     return PluvioRunViewModel.toHttp(run);
   }
 

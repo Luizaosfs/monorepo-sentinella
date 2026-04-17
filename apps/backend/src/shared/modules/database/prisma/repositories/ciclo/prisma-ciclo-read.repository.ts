@@ -25,7 +25,7 @@ export class PrismaCicloReadRepository implements CicloReadRepository {
   async findAll(filters: FilterCicloInput): Promise<Ciclo[]> {
     const rows = await this.prisma.client.ciclos.findMany({
       where: {
-        ...(filters.clienteId && { cliente_id: filters.clienteId }),
+        ...(filters.clienteId != null && { cliente_id: filters.clienteId }),
         ...(filters.ano && { ano: filters.ano }),
         ...(filters.status && { status: filters.status }),
       },

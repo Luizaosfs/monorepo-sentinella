@@ -24,11 +24,11 @@ export class TenantGuard implements CanActivate {
     const isAdmin = user.papeis?.includes('admin');
 
     if (isAdmin) {
-      // Admin pode escolher tenant via query param ou body
-      const clienteId = request.query?.clienteId || request.body?.clienteId;
-      if (clienteId) {
-        request['tenantId'] = clienteId;
-      }
+      // Admin pode escolher tenant via query param ou body.
+      // Usa null (explícito) quando não informado — nunca undefined,
+      // pois undefined remove o filtro de cliente_id em queries Prisma.
+      const clienteId = request.query?.clienteId ?? request.body?.clienteId ?? null;
+      request['tenantId'] = clienteId;
       return true;
     }
 

@@ -4,6 +4,7 @@ import { z } from 'zod';
 export const filterReinspecaoSchema = z.object({
   clienteId: z.string().uuid().optional(),
   focoRiscoId: z.string().uuid().optional(),
+  agenteId: z.string().uuid().optional(),
   /** Aceita único valor ou array repetido (?status=x&status=y). */
   status: z
     .preprocess(

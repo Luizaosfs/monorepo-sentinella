@@ -12,14 +12,11 @@ export class GetReinspecao {
   ) {}
 
   async execute(id: string) {
-    const r = await this.repository.findById(id);
+    const tenantId = this.req['tenantId'] as string | null;
+    // MT-06: passa clienteId para o findById filtrar no banco (impede IDOR cross-tenant)
+    const r = await this.repository.findById(id, tenantId);
     if (!r) {
       throw ReinspecaoException.notFound();
-    }
-
-    const isAdmin = this.req['user']?.papeis?.includes('admin');
-    if (!isAdmin && r.clienteId !== this.req['tenantId']) {
-      throw ReinspecaoException.forbiddenTenant();
     }
 
     return { reinspecao: r };

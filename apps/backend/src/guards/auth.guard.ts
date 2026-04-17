@@ -4,6 +4,7 @@ import {
   CanActivate,
   ExecutionContext,
   Injectable,
+  Logger,
   UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
@@ -32,6 +33,7 @@ export type AuthenticatedUser = {
 export class AuthGuard implements CanActivate {
   /** Cache kid → PEM para não buscar JWKS em todo request. */
   private readonly jwksCache = new Map<string, string>();
+  private readonly logger = new Logger(AuthGuard.name);
 
   constructor(
     private jwtService: JwtService,
@@ -55,7 +57,7 @@ export class AuthGuard implements CanActivate {
       }
       return this.jwksCache.get(kid) ?? null;
     } catch (e) {
-      console.error('[AuthGuard] Erro ao buscar JWKS:', (e as Error).message);
+      this.logger.error(`Erro ao buscar JWKS: ${(e as Error).message}`);
       return null;
     }
   }
@@ -87,24 +89,35 @@ export class AuthGuard implements CanActivate {
     } catch (nestErr) {
       if (nestErr instanceof UnauthorizedException) throw nestErr;
 
-      // Bridge: aceita token Supabase (ES256 via JWKS) durante a migração
+      // Bridge: aceita token Supabase durante a migração (HS256 ou ES256 via JWKS)
       try {
         const headerB64 = token.split('.')[0];
         const header = JSON.parse(Buffer.from(headerB64, 'base64url').toString()) as { kid?: string; alg?: string };
         const kid = header.kid;
-        if (!kid) throw new Error('Token sem kid');
 
-        const publicKey = await this.getSupabasePublicKey(kid);
-        if (!publicKey) throw new Error('Chave pública não encontrada para kid: ' + kid);
-
-        const sbPayload = await this.jwtService.verifyAsync(token, {
-          publicKey,
-          algorithms: ['ES256'],
-        });
-        if (!sbPayload?.sub) throw new Error('Token sem sub');
-        authId = sbPayload.sub as string;
+        if (!kid) {
+          // HS256: projetos Supabase legados sem kid — usa SUPABASE_JWT_SECRET
+          const secret = env.SUPABASE_JWT_SECRET;
+          if (!secret) throw new Error('SUPABASE_JWT_SECRET não configurado');
+          const sbPayload = await this.jwtService.verifyAsync(token, {
+            secret,
+            algorithms: ['HS256'],
+          });
+          if (!sbPayload?.sub) throw new Error('Token sem sub');
+          authId = sbPayload.sub as string;
+        } else {
+          // ES256: projetos Supabase modernos com JWKS
+          const publicKey = await this.getSupabasePublicKey(kid);
+          if (!publicKey) throw new Error('Chave pública não encontrada para kid: ' + kid);
+          const sbPayload = await this.jwtService.verifyAsync(token, {
+            publicKey,
+            algorithms: ['ES256'],
+          });
+          if (!sbPayload?.sub) throw new Error('Token sem sub');
+          authId = sbPayload.sub as string;
+        }
       } catch (sbErr) {
-        console.error('[AuthGuard] Supabase bridge falhou:', (sbErr as Error).message);
+        this.logger.warn(`Supabase bridge falhou: ${(sbErr as Error).message}`);
         throw AuthException.unauthorized();
       }
     }

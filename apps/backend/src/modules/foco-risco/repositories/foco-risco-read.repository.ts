@@ -16,8 +16,8 @@ export interface ContagemTriagemResult {
 
 @Injectable()
 export abstract class FocoRiscoReadRepository {
-  abstract findById(id: string): Promise<FocoRisco | null>;
-  abstract findByIdComHistorico(id: string): Promise<FocoRisco | null>;
+  abstract findById(id: string, clienteId?: string | null): Promise<FocoRisco | null>;
+  abstract findByIdComHistorico(id: string, clienteId?: string | null): Promise<FocoRisco | null>;
   abstract findAll(filters: FilterFocoRiscoInput): Promise<FocoRisco[]>;
   abstract findPaginated(
     filters: FilterFocoRiscoInput,
@@ -26,4 +26,15 @@ export abstract class FocoRiscoReadRepository {
   abstract findManyByIds(ids: string[], clienteId: string): Promise<FocoRisco[]>;
   abstract findContagemTriagem(filters: FilterFocoRiscoInput): Promise<ContagemTriagemResult>;
   abstract findContagemPorStatus(clienteId: string): Promise<Record<string, number>>;
+  abstract findTimeline(focoId: string): Promise<TimelineItem[]>;
+}
+
+export interface TimelineItem {
+  foco_risco_id: string;
+  tipo: string;
+  ts: string | null;
+  titulo: string;
+  descricao: string | null;
+  ator_id: string | null;
+  ref_id: string | null;
 }

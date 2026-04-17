@@ -53,7 +53,7 @@ describe('GetFocoRisco', () => {
     });
     expect(result.consolidacao?.origem.fonte).toBe('indisponivel');
     expect(findManyVistorias).toHaveBeenCalled();
-    expect(readRepo.findByIdComHistorico).toHaveBeenCalledWith('foco-1');
+    expect(readRepo.findByIdComHistorico).toHaveBeenCalledWith('foco-1', undefined);
   });
 
   it('deve rejeitar foco não encontrado', async () => {
@@ -63,5 +63,15 @@ describe('GetFocoRisco', () => {
       () => useCase.execute('nao-existe'),
       FocoRiscoException.notFound(),
     );
+  });
+
+  it('deve buscar foco filtrando pelo clienteId (tenant isolation)', async () => {
+    const tenantId = 'tenant-uuid-1';
+    const foco = new FocoRiscoBuilder().withId('foco-1').build();
+    readRepo.findByIdComHistorico.mockResolvedValue(foco);
+
+    await useCase.execute('foco-1', tenantId);
+
+    expect(readRepo.findByIdComHistorico).toHaveBeenCalledWith('foco-1', tenantId);
   });
 });

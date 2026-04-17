@@ -6,6 +6,7 @@ import {
 import {
   ContagemTriagemResult,
   FocoRiscoReadRepository,
+  TimelineItem,
 } from '@modules/foco-risco/repositories/foco-risco-read.repository';
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
@@ -22,16 +23,18 @@ import { PrismaService } from '../../prisma.service';
 export class PrismaFocoRiscoReadRepository implements FocoRiscoReadRepository {
   constructor(private prisma: PrismaService) {}
 
-  async findById(id: string): Promise<FocoRisco | null> {
+  async findById(id: string, clienteId?: string | null): Promise<FocoRisco | null> {
     const raw = await this.prisma.client.focos_risco.findFirst({
-      where: { id, deleted_at: null },
+      // MT-06: filtra por cliente_id quando informado (impede IDOR cross-tenant)
+      where: { id, deleted_at: null, ...(clienteId != null && { cliente_id: clienteId }) },
     });
     return raw ? PrismaFocoRiscoMapper.toDomain(raw) : null;
   }
 
-  async findByIdComHistorico(id: string): Promise<FocoRisco | null> {
+  async findByIdComHistorico(id: string, clienteId?: string | null): Promise<FocoRisco | null> {
     const raw = await this.prisma.client.focos_risco.findFirst({
-      where: { id, deleted_at: null },
+      // MT-06: filtra por cliente_id quando informado (impede IDOR cross-tenant)
+      where: { id, deleted_at: null, ...(clienteId != null && { cliente_id: clienteId }) },
       include: { historico: { orderBy: { alterado_em: 'asc' } } },
     });
     return raw ? PrismaFocoRiscoMapper.toDomain(raw) : null;
@@ -164,10 +167,21 @@ export class PrismaFocoRiscoReadRepository implements FocoRiscoReadRepository {
     return result;
   }
 
+  async findTimeline(focoId: string): Promise<TimelineItem[]> {
+    return this.prisma.client.$queryRaw<TimelineItem[]>`
+      SELECT foco_risco_id, tipo, ts, titulo, descricao, ator_id, ref_id
+      FROM v_foco_risco_timeline
+      WHERE foco_risco_id = ${focoId}::uuid
+      ORDER BY ts DESC NULLS LAST
+    `;
+  }
+
   private buildWhere(filters: FilterFocoRiscoInput) {
     return {
       deleted_at: null,
-      ...(filters.clienteId && { cliente_id: filters.clienteId }),
+      // != null distingue null intencional (admin global) de UUID (tenant filter).
+      // undefined também passa sem filtro — controlado pelo TenantGuard + MT-02/03/04.
+      ...(filters.clienteId != null && { cliente_id: filters.clienteId }),
       ...(filters.status?.length && {
         status: filters.status.length === 1
           ? filters.status[0]

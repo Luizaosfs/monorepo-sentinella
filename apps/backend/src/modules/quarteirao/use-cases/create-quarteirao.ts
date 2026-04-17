@@ -15,7 +15,8 @@ export class CreateQuarteirao {
   ) {}
 
   async execute(input: CreateQuarteiraoBody) {
-    const clienteId = input.clienteId ?? this.req['tenantId'];
+    // MT-02: tenantId do guard sempre vence — nunca aceita clienteId do frontend
+    const clienteId = this.req['tenantId'];
     if (!clienteId) {
       throw QuarteiraoException.badRequest();
     }

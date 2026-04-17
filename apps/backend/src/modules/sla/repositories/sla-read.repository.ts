@@ -11,7 +11,7 @@ import {
 
 @Injectable()
 export abstract class SlaReadRepository {
-  abstract findById(id: string): Promise<SlaOperacional | null>;
+  abstract findById(id: string, clienteId?: string | null): Promise<SlaOperacional | null>;
   abstract findAll(filters: FilterSlaInput): Promise<SlaOperacional[]>;
   abstract findPaginated(
     filters: FilterSlaInput,

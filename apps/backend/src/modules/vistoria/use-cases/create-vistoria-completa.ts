@@ -14,7 +14,8 @@ export class CreateVistoriaCompleta {
   ) {}
 
   async execute(data: CreateVistoriaCompletaBody): Promise<{ id: string }> {
-    const clienteId = (data.clienteId ?? this.req['tenantId']) as string;
+    // MT-02: tenantId do guard sempre vence — nunca aceita clienteId do frontend
+    const clienteId = this.req['tenantId'] as string;
 
     const vistoria = new Vistoria(
       {

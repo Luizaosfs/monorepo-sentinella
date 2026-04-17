@@ -166,7 +166,7 @@ export class SlaController {
     @Body() body: UpdateSlaStatusBody,
   ) {
     const parsed = updateSlaStatusSchema.parse(body);
-    const { sla } = await this.updateSlaStatus.execute(id, parsed);
+    const { sla } = await this.updateSlaStatus.execute(id, parsed, this.req['tenantId'] as string | null);
     return SlaOperacionalViewModel.toHttp(sla);
   }
 
@@ -182,7 +182,7 @@ export class SlaController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Reabrir SLA concluído' })
   async reabrir(@Param('id') id: string) {
-    const { sla } = await this.reabrirSla.execute(id);
+    const { sla } = await this.reabrirSla.execute(id, this.req['tenantId'] as string | null);
     return SlaOperacionalViewModel.toHttp(sla);
   }
 
@@ -190,7 +190,7 @@ export class SlaController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Concluir SLA manualmente' })
   async concluir(@Param('id') id: string) {
-    const { sla } = await this.concluirSla.execute(id);
+    const { sla } = await this.concluirSla.execute(id, this.req['tenantId'] as string | null);
     return SlaOperacionalViewModel.toHttp(sla);
   }
 
@@ -199,7 +199,7 @@ export class SlaController {
   @ApiOperation({ summary: 'Atribuir operador ao SLA' })
   async atribuir(@Param('id') id: string, @Body() body: AtribuirOperadorBody) {
     const parsed = atribuirOperadorSchema.parse(body);
-    const { sla } = await this.atribuirOperador.execute(id, parsed);
+    const { sla } = await this.atribuirOperador.execute(id, parsed, this.req['tenantId'] as string | null);
     return SlaOperacionalViewModel.toHttp(sla);
   }
 

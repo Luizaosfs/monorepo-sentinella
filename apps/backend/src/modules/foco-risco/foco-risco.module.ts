@@ -13,6 +13,7 @@ import { CreateFocoRisco } from './use-cases/create-foco-risco';
 import { FilterFocoRisco } from './use-cases/filter-foco-risco';
 import { GetFocoAtivoById } from './use-cases/get-foco-ativo-by-id';
 import { GetFocoHistorico } from './use-cases/get-foco-historico';
+import { GetFocoTimeline } from './use-cases/get-foco-timeline';
 import { GetFocoRisco } from './use-cases/get-foco-risco';
 import { IniciarInspecao } from './use-cases/iniciar-inspecao';
 import { ListFocosByIds } from './use-cases/list-focos-by-ids';
@@ -31,6 +32,7 @@ import { UpdateFocoRisco } from './use-cases/update-foco-risco';
     FilterFocoRisco,
     GetFocoAtivoById,
     GetFocoHistorico,
+    GetFocoTimeline,
     GetFocoRisco,
     IniciarInspecao,
     ListFocosByIds,

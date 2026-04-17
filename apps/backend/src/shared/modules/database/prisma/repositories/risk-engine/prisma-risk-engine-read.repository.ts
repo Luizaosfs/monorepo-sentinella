@@ -33,7 +33,7 @@ export class PrismaRiskEngineReadRepository implements RiskEngineReadRepository 
   async findPolicies(filters: FilterRiskPolicyInputType): Promise<RiskPolicy[]> {
     const rows = await this.prisma.client.sentinela_risk_policy.findMany({
       where: {
-        ...(filters.clienteId && { cliente_id: filters.clienteId }),
+        ...(filters.clienteId != null && { cliente_id: filters.clienteId }),
         ...(filters.name && { name: { contains: filters.name, mode: 'insensitive' as const } }),
         ...(filters.version && { version: filters.version }),
         ...(filters.isActive !== undefined && { is_active: filters.isActive }),

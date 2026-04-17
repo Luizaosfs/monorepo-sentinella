@@ -44,7 +44,7 @@ export class PrismaQuarteiraoReadRepository implements QuarteiraoReadRepository 
   ): Promise<DistribuicaoQuarteirao[]> {
     const rows = await this.prisma.client.distribuicao_quarteirao.findMany({
       where: {
-        ...(filters.clienteId && { cliente_id: filters.clienteId }),
+        ...(filters.clienteId != null && { cliente_id: filters.clienteId }),
         ciclo: filters.ciclo,
       },
       orderBy: { quarteirao: 'asc' },
@@ -102,7 +102,7 @@ export class PrismaQuarteiraoReadRepository implements QuarteiraoReadRepository 
   private buildWhereQuarteiroes(filters: FilterQuarteiraoInput) {
     return {
       deleted_at: null,
-      ...(filters.clienteId && { cliente_id: filters.clienteId }),
+      ...(filters.clienteId != null && { cliente_id: filters.clienteId }),
       ...(filters.codigo && {
         codigo: { contains: filters.codigo, mode: 'insensitive' as const },
       }),

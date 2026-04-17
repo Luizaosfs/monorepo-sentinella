@@ -4,6 +4,7 @@ import { DatabaseModule } from '@shared/modules/database/database.module';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 
 import { DashboardController } from './dashboard.controller';
+import { HealthController } from './health.controller';
 import { CalcularLiraa } from './use-cases/calcular-liraa';
 import { GetCentralKpis } from './use-cases/get-central-kpis';
 import { ListImoveisParaHoje } from './use-cases/list-imoveis-para-hoje';
@@ -46,7 +47,7 @@ import { ScoreSurtoRegioes } from './use-cases/score-surto-regioes';
     JwtService,
     PrismaService,
   ],
-  controllers: [DashboardController],
+  controllers: [DashboardController, HealthController],
   exports: [DashboardSchedulerService, HealthCheckService, LiraaExportService],
   imports: [DatabaseModule],
 })

@@ -14,7 +14,8 @@ export class CreateOperacao {
   ) {}
 
   async execute(data: CreateOperacaoBody) {
-    const clienteId = (data.clienteId ?? this.req['tenantId']) as string;
+    // MT-02: tenantId do guard sempre vence — nunca aceita clienteId do frontend
+    const clienteId = this.req['tenantId'] as string;
 
     const operacao = new Operacao(
       {
