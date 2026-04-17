@@ -25,4 +25,5 @@ export abstract class FocoRiscoReadRepository {
   ): Promise<FocoRiscoPaginated>;
   abstract findManyByIds(ids: string[], clienteId: string): Promise<FocoRisco[]>;
   abstract findContagemTriagem(filters: FilterFocoRiscoInput): Promise<ContagemTriagemResult>;
+  abstract findContagemPorStatus(clienteId: string): Promise<Record<string, number>>;
 }

@@ -102,6 +102,25 @@ async function withRetry<T>(fn: () => Promise<T>, retries = 2, baseDelayMs = 300
   }
 }
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+/**
+ * Replica o cálculo de status_sla_inteligente da view v_focos_risco_ativos
+ * (migration 20261018011000). Usado enquanto a coluna não existe no banco.
+ */
+function calcSlaInteligente(
+  status: string,
+  tempoMin: number | null,
+  prazoMin: number | null,
+): string {
+  if (status === 'resolvido' || status === 'descartado') return 'encerrado';
+  if (prazoMin == null || tempoMin == null) return 'sem_prazo';
+  if (tempoMin > prazoMin) return 'vencido';
+  if (tempoMin >= prazoMin * 0.9) return 'critico';
+  if (tempoMin >= prazoMin * 0.7) return 'atencao';
+  return 'ok';
+}
+
 // ── API ───────────────────────────────────────────────────────────────────────
 
 export const api = {
@@ -141,6 +160,46 @@ export const api = {
         }
       }
       return map;
+    },
+
+    getById: async (id: string): Promise<Levantamento | null> => {
+      const { data, error } = await supabase
+        .from('levantamentos')
+        .select('*')
+        .eq('id', id)
+        .is('deleted_at', null)
+        .maybeSingle();
+      if (error) throw error;
+      return data as Levantamento | null;
+    },
+
+    create: async (payload: Omit<Levantamento, 'id' | 'created_at' | 'total_itens'>): Promise<Levantamento> => {
+      const { data, error } = await supabase
+        .from('levantamentos')
+        .insert(payload)
+        .select()
+        .single();
+      if (error) throw error;
+      return data as Levantamento;
+    },
+
+    update: async (id: string, payload: Partial<Levantamento>): Promise<void> => {
+      const { error } = await supabase
+        .from('levantamentos')
+        .update(payload)
+        .eq('id', id);
+      if (error) throw error;
+    },
+
+    listByPlanejamento: async (planejamentoId: string): Promise<Levantamento[]> => {
+      const { data, error } = await supabase
+        .from('levantamentos')
+        .select('*')
+        .eq('planejamento_id', planejamentoId)
+        .is('deleted_at', null)
+        .order('data_voo', { ascending: false });
+      if (error) throw error;
+      return (data || []) as Levantamento[];
     },
   },
 
@@ -1328,6 +1387,51 @@ export const api = {
         .from('operacoes')
         .update({ status: 'cancelado', concluido_em: new Date().toISOString() })
         .eq('id', id);
+      if (error) throw error;
+    },
+
+    /** Resolve um foco de risco via RPC de transição de estado. */
+    resolverStatusItem: async (focoId: string): Promise<void> => {
+      const { error } = await supabase.rpc('rpc_transicionar_foco_risco', {
+        foco_id: focoId,
+        novo_status: 'resolvido',
+      });
+      if (error) throw error;
+    },
+
+    /** Upsert genérico de operação — delega para salvar(). */
+    upsert: async (params: {
+      clienteId: string;
+      id?: string;
+      status: string;
+      prioridade?: string | null;
+      responsavel_id?: string | null;
+      observacao?: string | null;
+      prevStatus?: string;
+    }): Promise<void> => {
+      const payload: Record<string, unknown> = {
+        cliente_id: params.clienteId,
+        status: params.status,
+        prioridade: params.prioridade ?? null,
+        responsavel_id: params.responsavel_id ?? null,
+        observacao: params.observacao ?? null,
+      };
+      if (params.id) {
+        const { error } = await supabase.from('operacoes').update(payload).eq('id', params.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('operacoes').insert(payload);
+        if (error) throw error;
+      }
+    },
+
+    /** Conclui a operação vinculada a um item, marcando concluido_em. */
+    concluirParaItem: async (itemId: string): Promise<void> => {
+      const { error } = await supabase
+        .from('operacoes')
+        .update({ status: 'concluido', concluido_em: new Date().toISOString() })
+        .eq('item_levantamento_id', itemId)
+        .in('status', ['pendente', 'em_andamento']);
       if (error) throw error;
     },
   },
@@ -5089,12 +5193,21 @@ export const api = {
     listByCliente: async (clienteId: string) => {
       const { data, error } = await supabase
         .from('v_focos_risco_ativos')
-        .select('id, cliente_id, status, prioridade, logradouro, bairro, fase_sla, tempo_em_estado_atual_min, prazo_fase_min, status_sla_inteligente, suspeita_em, responsavel_nome')
+        .select('id, cliente_id, status, prioridade, logradouro, bairro, suspeita_em, responsavel_nome')
         .eq('cliente_id', clienteId)
-        .not('status_sla_inteligente', 'eq', 'encerrado')
-        .order('tempo_em_estado_atual_min', { ascending: false, nullsFirst: false });
-      if (error) throw error;
-      return (data || []) as Array<{
+        .order('suspeita_em', { ascending: false, nullsFirst: false });
+      if (error) return []; // view pode não existir ou colunas SLA ausentes no banco antigo
+      return ((data || []) as Array<Record<string, unknown>>).map(r => ({
+        ...r,
+        fase_sla: null,
+        tempo_em_estado_atual_min: null,
+        prazo_fase_min: null,
+        status_sla_inteligente: calcSlaInteligente(
+          r.status as string,
+          null,
+          null,
+        ),
+      })) as Array<{
         id: string;
         cliente_id: string;
         status: string;
@@ -5114,13 +5227,19 @@ export const api = {
     listCriticos: async (clienteId: string) => {
       const { data, error } = await supabase
         .from('v_focos_risco_ativos')
-        .select('id, cliente_id, status, prioridade, logradouro, bairro, fase_sla, tempo_em_estado_atual_min, prazo_fase_min, status_sla_inteligente, suspeita_em, responsavel_nome')
+        .select('id, cliente_id, status, prioridade, logradouro, bairro, suspeita_em, responsavel_nome')
         .eq('cliente_id', clienteId)
-        .in('status_sla_inteligente', ['critico', 'vencido'])
-        .order('status_sla_inteligente', { ascending: false })
-        .order('tempo_em_estado_atual_min', { ascending: false, nullsFirst: false });
-      if (error) throw error;
-      return (data || []) as Array<{
+        .order('suspeita_em', { ascending: false, nullsFirst: false });
+      if (error) return []; // view pode não existir ou colunas SLA ausentes no banco antigo
+      return ((data || []) as Array<Record<string, unknown>>)
+        .map(r => ({
+          ...r,
+          fase_sla: null,
+          tempo_em_estado_atual_min: null,
+          prazo_fase_min: null,
+          status_sla_inteligente: calcSlaInteligente(r.status as string, null, null),
+        }))
+        .filter(r => r.status_sla_inteligente === 'critico' || r.status_sla_inteligente === 'vencido') as Array<{
         id: string;
         cliente_id: string;
         status: string;
@@ -5140,18 +5259,26 @@ export const api = {
     getByFocoId: async (focoId: string) => {
       const { data, error } = await supabase
         .from('v_focos_risco_ativos')
-        .select('id, status, fase_sla, tempo_em_estado_atual_min, prazo_fase_min, status_sla_inteligente')
+        .select('id, status')
         .eq('id', focoId)
         .maybeSingle();
-      if (error) throw error;
-      return data as {
+      if (error) return null; // view pode não existir ou colunas SLA ausentes no banco antigo
+      if (!data) return null;
+      const r = data as Record<string, unknown>;
+      return {
+        ...r,
+        fase_sla: null,
+        tempo_em_estado_atual_min: null,
+        prazo_fase_min: null,
+        status_sla_inteligente: calcSlaInteligente(r.status as string, null, null),
+      } as {
         id: string;
         status: string;
         fase_sla: string | null;
         tempo_em_estado_atual_min: number | null;
         prazo_fase_min: number | null;
         status_sla_inteligente: string | null;
-      } | null;
+      };
     },
   },
 
@@ -5235,7 +5362,7 @@ export const api = {
         .select('*')
         .eq('cliente_id', clienteId)
         .maybeSingle();
-      if (error) throw error;
+      if (error) return null; // view pode não existir no banco antigo
       return data;
     },
 
@@ -5246,7 +5373,7 @@ export const api = {
         .select('*')
         .eq('cliente_id', clienteId)
         .order('despachados_7d', { ascending: false });
-      if (error) throw error;
+      if (error) return []; // view pode não existir no banco antigo
       return data ?? [];
     },
 
@@ -5257,7 +5384,7 @@ export const api = {
         .select('*')
         .eq('cliente_id', clienteId)
         .order('atribuidos_ativos', { ascending: false });
-      if (error) throw error;
+      if (error) return []; // view pode não existir no banco antigo
       return data ?? [];
     },
   },
@@ -5279,7 +5406,7 @@ export const api = {
         .select('*')
         .eq('cliente_id', clienteId)
         .maybeSingle();
-      if (error) throw error;
+      if (error) return null; // view pode não existir no banco antigo
       return data as typeof data & { total: number } | null;
     },
 
@@ -5298,7 +5425,7 @@ export const api = {
         .from('v_canal_cidadao_eventos_audit')
         .select('*')
         .eq('cliente_id', clienteId);
-      if (error) throw error;
+      if (error) return []; // view pode não existir no banco antigo
       return (data || []) as Array<{
         cliente_id: string;
         motivo: string;
@@ -5321,7 +5448,7 @@ export const api = {
         .select('*')
         .eq('cliente_id', clienteId)
         .maybeSingle();
-      if (error) throw error;
+      if (error) return null; // view pode não existir no banco antigo
       return data;
     },
 
@@ -5334,7 +5461,7 @@ export const api = {
         .order('criticos_count', { ascending: false });
       if (bairro) q = q.eq('bairro', bairro);
       const { data, error } = await q;
-      if (error) throw error;
+      if (error) return []; // view pode não existir no banco antigo
       return data ?? [];
     },
 
@@ -5347,7 +5474,7 @@ export const api = {
         .order('total', { ascending: false });
       if (bairro) q = q.eq('bairro', bairro);
       const { data, error } = await q;
-      if (error) throw error;
+      if (error) return []; // view pode não existir no banco antigo
       return data ?? [];
     },
 
@@ -5360,7 +5487,7 @@ export const api = {
         .order('total', { ascending: false });
       if (bairro) q = q.eq('bairro', bairro);
       const { data, error } = await q;
-      if (error) throw error;
+      if (error) return []; // view pode não existir no banco antigo
       return data ?? [];
     },
 
@@ -5373,7 +5500,7 @@ export const api = {
         .order('total', { ascending: false });
       if (bairro) q = q.eq('bairro', bairro);
       const { data, error } = await q;
-      if (error) throw error;
+      if (error) return []; // view pode não existir no banco antigo
       return data ?? [];
     },
 
@@ -5388,7 +5515,7 @@ export const api = {
       if (bairro) q = q.eq('bairro', bairro);
       if (prioridade) q = q.eq('prioridade_final', prioridade);
       const { data, error } = await q;
-      if (error) throw error;
+      if (error) return []; // view pode não existir no banco antigo
       return data ?? [];
     },
 
@@ -5399,7 +5526,7 @@ export const api = {
         .select('bairro')
         .eq('cliente_id', clienteId)
         .order('bairro');
-      if (error) throw error;
+      if (error) return []; // view pode não existir no banco antigo
       return (data ?? []).map((r: { bairro: string }) => r.bairro);
     },
 

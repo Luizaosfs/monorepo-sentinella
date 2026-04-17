@@ -17,15 +17,15 @@ export class PrismaFocoRiscoWriteRepository implements FocoRiscoWriteRepository 
 
   async create(foco: FocoRisco): Promise<FocoRisco> {
     const data = PrismaFocoRiscoMapper.toPrisma(foco);
-    const created = await this.prisma.client.focos_risco.create({ data: data as any });
-    return PrismaFocoRiscoMapper.toDomain(created as any);
+    const created = await this.prisma.client.focos_risco.create({ data });
+    return PrismaFocoRiscoMapper.toDomain(created);
   }
 
   async save(foco: FocoRisco): Promise<void> {
     const data = PrismaFocoRiscoMapper.toPrisma(foco);
     await this.prisma.client.focos_risco.update({
       where: { id: foco.id },
-      data: data as any,
+      data,
     });
   }
 
@@ -33,9 +33,7 @@ export class PrismaFocoRiscoWriteRepository implements FocoRiscoWriteRepository 
     historico: FocoRiscoHistorico,
   ): Promise<FocoRiscoHistorico> {
     const data = PrismaFocoRiscoMapper.historicToPrisma(historico);
-    const created = await this.prisma.client.foco_risco_historico.create({
-      data,
-    });
-    return PrismaFocoRiscoMapper.historicToDomain(created as any);
+    const created = await this.prisma.client.foco_risco_historico.create({ data });
+    return PrismaFocoRiscoMapper.historicToDomain(created);
   }
 }

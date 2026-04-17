@@ -19,7 +19,7 @@ export class PrismaCicloReadRepository implements CicloReadRepository {
 
   async findById(id: string): Promise<Ciclo | null> {
     const raw = await this.prisma.client.ciclos.findUnique({ where: { id } });
-    return raw ? PrismaCicloMapper.toDomain(raw as any) : null;
+    return raw ? PrismaCicloMapper.toDomain(raw) : null;
   }
 
   async findAll(filters: FilterCicloInput): Promise<Ciclo[]> {
@@ -31,7 +31,7 @@ export class PrismaCicloReadRepository implements CicloReadRepository {
       },
       orderBy: [{ ano: 'desc' }, { numero: 'desc' }],
     });
-    return rows.map((r) => PrismaCicloMapper.toDomain(r as any));
+    return rows.map((r) => PrismaCicloMapper.toDomain(r));
   }
 
   async findAtivoByClienteId(clienteId: string): Promise<Ciclo | null> {
@@ -42,7 +42,7 @@ export class PrismaCicloReadRepository implements CicloReadRepository {
     const raw = await this.prisma.client.ciclos.findFirst({
       where: { cliente_id: clienteId, status: 'ativo' },
     });
-    return raw ? PrismaCicloMapper.toDomain(raw as any) : null;
+    return raw ? PrismaCicloMapper.toDomain(raw) : null;
   }
 
   async findByNumeroAno(
@@ -53,7 +53,7 @@ export class PrismaCicloReadRepository implements CicloReadRepository {
     const raw = await this.prisma.client.ciclos.findUnique({
       where: { cliente_id_numero_ano: { cliente_id: clienteId, numero, ano } },
     });
-    return raw ? PrismaCicloMapper.toDomain(raw as any) : null;
+    return raw ? PrismaCicloMapper.toDomain(raw) : null;
   }
 
   async findProgresso(clienteId: string): Promise<CicloProgresso | null> {

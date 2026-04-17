@@ -1,29 +1,11 @@
-import { Prisma } from '@prisma/client';
+import { Prisma, import_log as PrismaImportLog } from '@prisma/client';
 import {
   ImportLog,
   ImportLogStatus,
 } from 'src/modules/import-log/entities/import-log';
 
-type RawImportLog = {
-  id: string;
-  cliente_id: string;
-  criado_por: string | null;
-  filename: string;
-  total_linhas: number;
-  importados: number;
-  com_erro: number;
-  ignorados: number;
-  duplicados: number;
-  geocodificados: number;
-  geo_falhou: number;
-  status: string;
-  erros: Prisma.JsonValue | null;
-  created_at: Date;
-  finished_at: Date | null;
-};
-
 export class PrismaImportLogMapper {
-  static toDomain(raw: RawImportLog): ImportLog {
+  static toDomain(raw: PrismaImportLog): ImportLog {
     const status = raw.status as ImportLogStatus;
 
     return new ImportLog(
@@ -53,7 +35,7 @@ export class PrismaImportLogMapper {
     );
   }
 
-  static toPrismaCreate(entity: ImportLog) {
+  static toPrismaCreate(entity: ImportLog): Prisma.import_logUncheckedCreateInput {
     return {
       cliente_id: entity.clienteId,
       criado_por: entity.criadoPor ?? null,

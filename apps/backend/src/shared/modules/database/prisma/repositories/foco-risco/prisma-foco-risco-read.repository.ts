@@ -26,7 +26,7 @@ export class PrismaFocoRiscoReadRepository implements FocoRiscoReadRepository {
     const raw = await this.prisma.client.focos_risco.findFirst({
       where: { id, deleted_at: null },
     });
-    return raw ? PrismaFocoRiscoMapper.toDomain(raw as any) : null;
+    return raw ? PrismaFocoRiscoMapper.toDomain(raw) : null;
   }
 
   async findByIdComHistorico(id: string): Promise<FocoRisco | null> {
@@ -34,7 +34,7 @@ export class PrismaFocoRiscoReadRepository implements FocoRiscoReadRepository {
       where: { id, deleted_at: null },
       include: { historico: { orderBy: { alterado_em: 'asc' } } },
     });
-    return raw ? PrismaFocoRiscoMapper.toDomain(raw as any) : null;
+    return raw ? PrismaFocoRiscoMapper.toDomain(raw) : null;
   }
 
   async findAll(filters: FilterFocoRiscoInput): Promise<FocoRisco[]> {
@@ -42,7 +42,7 @@ export class PrismaFocoRiscoReadRepository implements FocoRiscoReadRepository {
       where: this.buildWhere(filters),
       orderBy: { created_at: 'desc' },
     });
-    return rows.map((r) => PrismaFocoRiscoMapper.toDomain(r as any));
+    return this.attachImageUrls(rows.map((r) => PrismaFocoRiscoMapper.toDomain(r)), rows);
   }
 
   async findPaginated(
@@ -61,16 +61,37 @@ export class PrismaFocoRiscoReadRepository implements FocoRiscoReadRepository {
     ]);
     const pagination = await Paginate(count, perPage, currentPage);
     return {
-      items: items.map((r) => PrismaFocoRiscoMapper.toDomain(r as any)),
+      items: await this.attachImageUrls(items.map((r) => PrismaFocoRiscoMapper.toDomain(r as any)), items),
       pagination,
     };
+  }
+
+  /** Batch-carrega image_url de levantamento_itens e anexa em cada foco. */
+  private async attachImageUrls(
+    focos: FocoRisco[],
+    rows: Array<{ origem_levantamento_item_id?: string | null }>,
+  ): Promise<FocoRisco[]> {
+    const ids = rows
+      .map((r) => r.origem_levantamento_item_id)
+      .filter((id): id is string => !!id);
+    if (!ids.length) return focos;
+    const itens = await this.prisma.client.levantamento_itens.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, image_url: true },
+    });
+    const imageMap = new Map(itens.map((i) => [i.id, i.image_url]));
+    for (let i = 0; i < focos.length; i++) {
+      const itemId = rows[i].origem_levantamento_item_id;
+      focos[i].origemImageUrl = itemId ? (imageMap.get(itemId) ?? null) : null;
+    }
+    return focos;
   }
 
   async findManyByIds(ids: string[], clienteId: string): Promise<FocoRisco[]> {
     const rows = await this.prisma.client.focos_risco.findMany({
       where: { id: { in: ids }, cliente_id: clienteId, deleted_at: null },
     });
-    return rows.map((r) => PrismaFocoRiscoMapper.toDomain(r as any));
+    return rows.map((r) => PrismaFocoRiscoMapper.toDomain(r));
   }
 
   async findContagemTriagem(filters: FilterFocoRiscoInput): Promise<ContagemTriagemResult> {
@@ -127,11 +148,31 @@ export class PrismaFocoRiscoReadRepository implements FocoRiscoReadRepository {
     };
   }
 
+  async findContagemPorStatus(clienteId: string): Promise<Record<string, number>> {
+    type Row = { status: string; total: bigint };
+    const rows = await this.prisma.client.$queryRaw<Row[]>`
+      SELECT status, COUNT(*) AS total
+      FROM focos_risco
+      WHERE cliente_id = ${clienteId}::uuid
+        AND deleted_at IS NULL
+      GROUP BY status
+    `;
+    const result: Record<string, number> = {};
+    for (const row of rows) {
+      result[row.status] = Number(row.total);
+    }
+    return result;
+  }
+
   private buildWhere(filters: FilterFocoRiscoInput) {
     return {
       deleted_at: null,
       ...(filters.clienteId && { cliente_id: filters.clienteId }),
-      ...(filters.status && { status: filters.status }),
+      ...(filters.status?.length && {
+        status: filters.status.length === 1
+          ? filters.status[0]
+          : { in: filters.status },
+      }),
       ...(filters.prioridade && { prioridade: filters.prioridade }),
       ...(filters.regiaoId && { regiao_id: filters.regiaoId }),
       ...(filters.responsavelId && { responsavel_id: filters.responsavelId }),

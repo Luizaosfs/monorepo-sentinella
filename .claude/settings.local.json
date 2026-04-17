@@ -22,7 +22,12 @@
       "Bash(tr -d ' {')",
       "mcp__plugin_context-mode_context-mode__ctx_index",
       "mcp__plugin_context-mode_context-mode__ctx_stats",
-      "Bash(pnpm --filter @sentinella/backend build)"
+      "Bash(pnpm --filter @sentinella/backend build)",
+      "Bash(pnpm build:backend)",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(pnpm build:frontend)",
+      "Bash(xargs grep:*)",
+      "Bash(pnpm tsc:*)"
     ]
   }
 }

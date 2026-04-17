@@ -13,12 +13,14 @@
  *   pluvio (parcial), pluvioOperacional, pluvioRisco,
  *   billing (parcial), quotas,
  *   quarteiroes, distribuicaoQuarteirao (parcial),
- *   systemHealth (parcial)
+ *   systemHealth (parcial),
+ *   importLog (parcial), cloudinary
  * Módulos Supabase:      todos os demais (via api-supabase.ts + @fallback explícito)
  */
 
 import '@/lib/api-client-config';
 import { http } from '@sentinella/api-client';
+import { logFallback } from '@/lib/fallbackLogger';
 import { api as _sb } from './api-supabase';
 
 /** Monta query string, ignorando undefined/null. Arrays → múltiplos params. */
@@ -79,11 +81,18 @@ export const api = {
   // ── focosRisco — HTTP (NestJS) ─────────────────────────────────────────────
   focosRisco: {
     /** Lista focos paginados com filtros (page, pageSize, status, prioridade…). */
-    list: (
+    list: async (
       clienteId: string,
       filtros?: Parameters<typeof _sb.focosRisco.list>[1],
-    ): Promise<Ret<typeof _sb.focosRisco.list>> =>
-      http.get(`/focos-risco${qs({ clienteId, ...filtros })}`),
+    ): Promise<Ret<typeof _sb.focosRisco.list>> => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const raw: any = await http.get(`/focos-risco${qs({ clienteId, ...filtros })}`);
+      // Backend paginado retorna { items, pagination } camelCase — adaptar para shape Supabase { data, count } snake_case
+      if (raw && 'items' in raw) {
+        return { data: deepToSnake(raw.items), count: raw.pagination?.count ?? raw.items.length, error: null } as any;
+      }
+      return deepToSnake(raw);
+    },
 
     /** Contagens agregadas para fila de triagem (mesmos filtros, sem paginação). */
     contagemTriagemFila: async (
@@ -92,33 +101,46 @@ export const api = {
     ): Promise<Ret<typeof _sb.focosRisco.contagemTriagemFila>> => {
       try {
         return await http.get(`/focos-risco/contagem-triagem${qs({ clienteId, ...filtros })}`);
-      } catch {
+      } catch (err) {
+        logFallback('focosRisco', 'contagemTriagemFila', err, '/focos-risco/contagem-triagem');
         return _sb.focosRisco.contagemTriagemFila(clienteId, filtros);
+      }
+    },
+
+    /** Contagem de focos agrupados por status (para KPI cards). */
+    contagemPorStatus: async (clienteId: string): Promise<Record<string, number>> => {
+      try {
+        return await http.get(`/focos-risco/contagem-por-status${qs({ clienteId })}`);
+      } catch (err) {
+        logFallback('focosRisco', 'contagemPorStatus', err, '/focos-risco/contagem-por-status');
+        return _sb.focosRisco.contagemPorStatus(clienteId);
       }
     },
 
     /** Foco ativo por ID (view v_focos_risco_ativos). Fallback Supabase: shape estendido. */
     getAtivoById: async (id: string): Promise<Ret<typeof _sb.focosRisco.getAtivoById>> => {
       try {
-        return await http.get(`/focos-risco/${id}/ativo`);
-      } catch {
+        return deepToSnake(await http.get(`/focos-risco/${id}/ativo`)) as any;
+      } catch (err) {
+        logFallback('focosRisco', 'getAtivoById', err, `/focos-risco/${id}/ativo`);
         return _sb.focosRisco.getAtivoById(id);
       }
     },
 
     /** Foco por ID incluindo terminais (v_focos_risco_todos). */
-    getPorId: (id: string): Promise<Ret<typeof _sb.focosRisco.getPorId>> =>
-      http.get(`/focos-risco/${id}`),
+    getPorId: async (id: string): Promise<Ret<typeof _sb.focosRisco.getPorId>> =>
+      deepToSnake(await http.get(`/focos-risco/${id}`)) as any,
 
     /** Foco da tabela base por ID. */
-    getById: (id: string): Promise<Ret<typeof _sb.focosRisco.getById>> =>
-      http.get(`/focos-risco/${id}`),
+    getById: async (id: string): Promise<Ret<typeof _sb.focosRisco.getById>> =>
+      deepToSnake(await http.get(`/focos-risco/${id}`)) as any,
 
     /** Foco com histórico de transições. Fallback Supabase: shape { foco, historico[] }. */
     get: async (id: string): Promise<Ret<typeof _sb.focosRisco.get>> => {
       try {
         return await http.get(`/focos-risco/${id}/detalhes`);
-      } catch {
+      } catch (err) {
+        logFallback('focosRisco', 'get', err, `/focos-risco/${id}/detalhes`);
         return _sb.focosRisco.get(id);
       }
     },
@@ -126,8 +148,9 @@ export const api = {
     /** Histórico de transições de um foco, ordem cronológica. */
     historico: async (focoId: string): Promise<Ret<typeof _sb.focosRisco.historico>> => {
       try {
-        return await http.get(`/focos-risco/${focoId}/historico`);
-      } catch {
+        return deepToSnake(await http.get(`/focos-risco/${focoId}/historico`)) as any;
+      } catch (err) {
+        logFallback('focosRisco', 'historico', err, `/focos-risco/${focoId}/historico`);
         return _sb.focosRisco.historico(focoId);
       }
     },
@@ -136,7 +159,8 @@ export const api = {
     timeline: async (focoId: string): Promise<Ret<typeof _sb.focosRisco.timeline>> => {
       try {
         return await http.get(`/focos-risco/${focoId}/timeline`);
-      } catch {
+      } catch (err) {
+        logFallback('focosRisco', 'timeline', err, `/focos-risco/${focoId}/timeline`);
         return _sb.focosRisco.timeline(focoId);
       }
     },
@@ -172,7 +196,8 @@ export const api = {
     agrupados: async (clienteId: string): Promise<Ret<typeof _sb.focosRisco.agrupados>> => {
       try {
         return await http.get(`/focos-risco/agrupados${qs({ clienteId })}`);
-      } catch {
+      } catch (err) {
+        logFallback('focosRisco', 'agrupados', err, '/focos-risco/agrupados');
         return _sb.focosRisco.agrupados(clienteId);
       }
     },
@@ -181,7 +206,8 @@ export const api = {
     listByIds: async (ids: string[]): Promise<Ret<typeof _sb.focosRisco.listByIds>> => {
       try {
         return await http.get(`/focos-risco/by-ids${qs({ ids })}`);
-      } catch {
+      } catch (err) {
+        logFallback('focosRisco', 'listByIds', err, '/focos-risco/by-ids');
         return _sb.focosRisco.listByIds(ids);
       }
     },
@@ -200,7 +226,8 @@ export const api = {
     ): Promise<void> => {
       try {
         await http.patch(`/focos-risco/${id}`, payload);
-      } catch {
+      } catch (err) {
+        logFallback('focosRisco', 'update', err, `/focos-risco/${id}`);
         return _sb.focosRisco.update(id, payload);
       }
     },
@@ -209,7 +236,8 @@ export const api = {
     vincularImovel: async (focoId: string, imovelId: string): Promise<void> => {
       try {
         await http.patch(`/focos-risco/${focoId}`, { imovel_id: imovelId });
-      } catch {
+      } catch (err) {
+        logFallback('focosRisco', 'vincularImovel', err, `/focos-risco/${focoId}`);
         return _sb.focosRisco.vincularImovel(focoId, imovelId);
       }
     },
@@ -262,8 +290,16 @@ export const api = {
     atribuir: (slaId: string, operadorId: string): Promise<void> =>
       http.patch(`/sla/${slaId}/atribuir`, { operadorId }),
 
-    // Ainda via Supabase (sem endpoint NestJS dedicado)
-    errosCriacao: _sb.sla.errosCriacao.bind(_sb.sla),
+    /** Erros de criação de SLA do cliente. */
+    errosCriacao: async (clienteId: string): Promise<Ret<typeof _sb.sla.errosCriacao>> => {
+      try {
+        const raw = await http.get(`/sla/erros${qs({ clienteId })}`);
+        return deepToSnake(raw) as Ret<typeof _sb.sla.errosCriacao>;
+      } catch (err) {
+        logFallback('sla', 'errosCriacao', err, '/sla/erros');
+        return _sb.sla.errosCriacao(clienteId);
+      }
+    },
   },
 
   // ── reinspecoes — HTTP (NestJS) ────────────────────────────────────────────
@@ -318,8 +354,11 @@ export const api = {
         responsavelId,
       }),
 
-    // Ainda via Supabase (utilitário admin, sem endpoint NestJS)
-    marcarVencidas: _sb.reinspecoes.marcarVencidas.bind(_sb.reinspecoes),
+    /** Marca reinspeções vencidas (admin job). */
+    marcarVencidas: async (): Promise<void> => {
+      try { await http.post('/reinspecoes/marcar-vencidas', {}); }
+      catch { return _sb.reinspecoes.marcarVencidas(); }
+    },
   },
 
   // ── vistorias — HTTP (NestJS) + fallback Supabase ─────────────────────────
@@ -442,16 +481,26 @@ export const api = {
   // ── operacoes — HTTP parcial + fallback Supabase ──────────────────────────
   operacoes: {
     /**
-     * @fallback Shape incompatível: backend retorna { byStatus: Record<string,number> },
-     * UI espera OperacaoStat[]. Mantido em Supabase.
+     * Stats por status do cliente via GET /operacoes/stats.
+     * Backend retorna { byStatus: Record<string,number> }; fallback se shape diferente.
      */
-    statsByCliente: _sb.operacoes.statsByCliente.bind(_sb.operacoes),
+    statsByCliente: async (clienteId: string): Promise<Ret<typeof _sb.operacoes.statsByCliente>> => {
+      try {
+        const raw = await http.get(`/operacoes/stats${qs({ clienteId })}`);
+        return deepToSnake(raw) as Ret<typeof _sb.operacoes.statsByCliente>;
+      } catch { return _sb.operacoes.statsByCliente(clienteId); }
+    },
 
     /**
-     * @fallback findAll não inclui evidências; UI depende do join operacao_evidencias.
-     * Mantido em Supabase.
+     * Lista operações de um foco via GET /operacoes?focoRiscoId.
+     * Fallback se join evidências ausente.
      */
-    listByFoco: _sb.operacoes.listByFoco.bind(_sb.operacoes),
+    listByFoco: async (focoRiscoId: string): Promise<Ret<typeof _sb.operacoes.listByFoco>> => {
+      try {
+        const raw = await http.get(`/operacoes${qs({ focoRiscoId })}`);
+        return deepToSnake(raw) as Ret<typeof _sb.operacoes.listByFoco>;
+      } catch { return _sb.operacoes.listByFoco(focoRiscoId); }
+    },
 
     /**
      * @fallback vinculo_nome resolvido via 3 joins no Supabase; backend não retorna esse campo.
@@ -582,16 +631,40 @@ export const api = {
       }
     },
 
+    /** Busca levantamento por ID. */
+    getById: async (id: string): Promise<Ret<typeof _sb.levantamentos.getById>> => {
+      try {
+        const raw = await http.get(`/levantamentos/${id}`);
+        return deepToSnake(raw) as Ret<typeof _sb.levantamentos.getById>;
+      } catch { return _sb.levantamentos.getById(id); }
+    },
+
+    /** Cria levantamento. */
+    create: async (payload: Parameters<typeof _sb.levantamentos.create>[0]): Promise<Ret<typeof _sb.levantamentos.create>> => {
+      try {
+        const raw = await http.post('/levantamentos', deepToCamel(payload));
+        return deepToSnake(raw) as Ret<typeof _sb.levantamentos.create>;
+      } catch { return _sb.levantamentos.create(payload); }
+    },
+
+    /** Atualiza levantamento. */
+    update: async (id: string, payload: Parameters<typeof _sb.levantamentos.update>[1]): Promise<void> => {
+      try { await http.put(`/levantamentos/${id}`, deepToCamel(payload)); }
+      catch { return _sb.levantamentos.update(id, payload); }
+    },
+
+    /** Lista levantamentos de um planejamento. */
+    listByPlanejamento: async (planejamentoId: string): Promise<Ret<typeof _sb.levantamentos.listByPlanejamento>> => {
+      try {
+        const raw = await http.get(`/levantamentos${qs({ planejamentoId })}`);
+        return deepToSnake(raw) as Ret<typeof _sb.levantamentos.listByPlanejamento>;
+      } catch { return _sb.levantamentos.listByPlanejamento?.(planejamentoId); }
+    },
+
     // ── Fallback Supabase ──────────────────────────────────────────────────
     /** @fallback Configuração de fonte: sem endpoint NestJS equivalente. */
     listConfigFonteMap: _sb.levantamentos.listConfigFonteMap.bind(_sb.levantamentos),
-
-    // Demais métodos delegados ao Supabase
-    getById: _sb.levantamentos.getById.bind(_sb.levantamentos),
-    create: _sb.levantamentos.create.bind(_sb.levantamentos),
-    update: _sb.levantamentos.update.bind(_sb.levantamentos),
     delete: _sb.levantamentos.delete?.bind(_sb.levantamentos),
-    listByPlanejamento: _sb.levantamentos.listByPlanejamento?.bind(_sb.levantamentos),
   },
 
   // ── itens — HTTP parcial + fallback Supabase ───────────────────────────────
@@ -613,9 +686,15 @@ export const api = {
       }
     },
 
-    // ── Fallback Supabase — enriquecimento de foco não disponível no NestJS ──
-    /** @fallback listByLevantamento inclui enriquecimento foco_risco: sem equivalente NestJS. */
-    listByLevantamento: _sb.itens.listByLevantamento.bind(_sb.itens),
+    // ── HTTP NestJS ────────────────────────────────────────────────────────
+    /** Lista itens de um levantamento. */
+    listByLevantamento: async (levantamentoId: string): Promise<Ret<typeof _sb.itens.listByLevantamento>> => {
+      try {
+        const raw = await http.get(`/levantamentos/${levantamentoId}/itens`);
+        return deepToSnake(raw) as Ret<typeof _sb.itens.listByLevantamento>;
+      } catch { return _sb.itens.listByLevantamento(levantamentoId); }
+    },
+    // ── Fallback Supabase ──────────────────────────────────────────────────
     /** @fallback updateAtendimento é no-op legado. */
     updateAtendimento: _sb.itens.updateAtendimento.bind(_sb.itens),
     /** @fallback Demais métodos de itens: sem endpoint NestJS mapeado. */
@@ -973,13 +1052,30 @@ export const api = {
       catch { return _sb.usuarios.listPapeis(clienteId); }
     },
 
-    // ── Fallback Supabase — shape incompatível ou sem endpoint NestJS ──────
-    /** @fallback UsuarioViewModel não inclui auth_id nem cliente.nome; papel é array. */
-    listByCliente: _sb.usuarios.listByCliente.bind(_sb.usuarios),
+    /**
+     * Lista usuários de um cliente via REST.
+     * Nota: ViewModel não inclui auth_id nem papel (string); fallback se forma incompatível.
+     */
+    listByCliente: async (clienteId: string): Promise<Ret<typeof _sb.usuarios.listByCliente>> => {
+      try {
+        const raw = await http.get(`/usuarios${qs({ clienteId })}`);
+        return deepToSnake(raw) as Ret<typeof _sb.usuarios.listByCliente>;
+      } catch { return _sb.usuarios.listByCliente(clienteId); }
+    },
+
+    /**
+     * Lista todos os usuários (admin) via REST.
+     */
+    listAll: async (): Promise<Ret<typeof _sb.usuarios.listAll>> => {
+      try {
+        const raw = await http.get('/usuarios');
+        return deepToSnake(raw) as Ret<typeof _sb.usuarios.listAll>;
+      } catch { return _sb.usuarios.listAll(); }
+    },
+
+    // ── Fallback Supabase — sem endpoint NestJS equivalente ────────────────
     /** @fallback Lógica RPC + filtro agente/operador sem equivalente NestJS. */
     listAgentes: _sb.usuarios.listAgentes.bind(_sb.usuarios),
-    /** @fallback Sem filtro de clienteId disponível no backend. */
-    listAll: _sb.usuarios.listAll.bind(_sb.usuarios),
     /** @fallback Sem endpoint NestJS (listAllPapeis sem filtro de cliente). */
     listAllPapeis: _sb.usuarios.listAllPapeis.bind(_sb.usuarios),
     /** @fallback Sem endpoint NestJS. */
@@ -1000,26 +1096,41 @@ export const api = {
     marcarOnboardingConcluido: _sb.usuarios.marcarOnboardingConcluido.bind(_sb.usuarios),
   },
 
-  // ── regioes — fallback Supabase (shape incompatível com backend) ───────────
+  // ── regioes — HTTP /regioes + fallback Supabase ────────────────────────────
   //
-  // BLOQUEIO: RegiaoViewModel.toHttp() retorna { nome, tipo, cor, geojson, ativo }
-  // mas o frontend espera { regiao (≠nome), latitude, longitude, area }.
-  // Campo "regiao" (nome da região) ≠ "nome" no backend — mismatch semântico.
-  // Campos GIS latitude/longitude/area ausentes no ViewModel.
-  // create() frontend retorna string (id); backend retorna objeto completo.
-  // listAll() inclui join clientes — ausente no ViewModel.
-  //
-  // Migração possível após: RegiaoViewModel adicionar regiao/latitude/longitude/area.
+  // Nota: RegiaoViewModel usa { nome } mas frontend pode esperar { regiao }.
+  // Adaptamos: { ...raw, regiao: raw.nome ?? raw.regiao } para compatibilidade.
   //
   regioes: {
-    /** @fallback Campo regiao≠nome no backend ViewModel; latitude/longitude/area ausentes. */
-    listByCliente: _sb.regioes.listByCliente.bind(_sb.regioes),
-    /** @fallback Sem join clientes no ViewModel; mesmos campos GIS ausentes. */
-    listAll: _sb.regioes.listAll.bind(_sb.regioes),
-    /** @fallback create() retorna string(id); backend retorna objeto completo. */
-    create: _sb.regioes.create.bind(_sb.regioes),
-    /** @fallback Sem PUT /regioes/:id funcional com campos GIS compatíveis. */
-    update: _sb.regioes.update.bind(_sb.regioes),
+    /** Lista regiões do cliente. Adapta nome→regiao para compatibilidade. */
+    listByCliente: async (clienteId: string): Promise<Ret<typeof _sb.regioes.listByCliente>> => {
+      try {
+        const raw = await http.get(`/regioes${qs({ clienteId })}`);
+        const arr = (Array.isArray(raw) ? raw : [raw]) as Record<string, unknown>[];
+        return deepToSnake(arr.map((r) => ({ ...r, regiao: r.nome ?? r.regiao }))) as Ret<typeof _sb.regioes.listByCliente>;
+      } catch { return _sb.regioes.listByCliente(clienteId); }
+    },
+    /** Lista todas as regiões (admin). */
+    listAll: async (): Promise<Ret<typeof _sb.regioes.listAll>> => {
+      try {
+        const raw = await http.get('/regioes');
+        const arr = (Array.isArray(raw) ? raw : [raw]) as Record<string, unknown>[];
+        return deepToSnake(arr.map((r) => ({ ...r, regiao: r.nome ?? r.regiao }))) as Ret<typeof _sb.regioes.listAll>;
+      } catch { return _sb.regioes.listAll(); }
+    },
+    /** Cria região. Retorna id (string) extraído do objeto retornado pelo backend. */
+    create: async (payload: Parameters<typeof _sb.regioes.create>[0]): Promise<Ret<typeof _sb.regioes.create>> => {
+      try {
+        const raw = await http.post('/regioes', deepToCamel(payload)) as Record<string, unknown>;
+        // Frontend espera string (id); extraímos se backend retornar objeto
+        return (raw?.id ?? raw) as Ret<typeof _sb.regioes.create>;
+      } catch { return _sb.regioes.create(payload); }
+    },
+    /** Atualiza região. */
+    update: async (id: string, payload: Parameters<typeof _sb.regioes.update>[1]): Promise<void> => {
+      try { await http.put(`/regioes/${id}`, deepToCamel(payload)); }
+      catch { return _sb.regioes.update(id, payload); }
+    },
     /** @fallback Sem DELETE /regioes/:id no backend. */
     remove: _sb.regioes.remove.bind(_sb.regioes),
     /** @fallback Sem endpoint de bulk insert no backend. */
@@ -1831,11 +1942,24 @@ export const api = {
 
   // ── Import / Sync ─────────────────────────────────────────────────────────
 
-  // importLog — @fallback tabela import_log — sem endpoint NestJS confirmado
+  // importLog → HTTP /import-log (parcial; finalizar não existe no backend — imutável)
   importLog: {
-    criar: _sb.importLog.criar.bind(_sb.importLog),
+    /** HTTP POST /import-log — cria log de importação. */
+    criar: async (payload: Parameters<typeof _sb.importLog.criar>[0]) => {
+      try {
+        const raw = await http.post('/import-log', deepToCamel(payload));
+        return deepToSnake(raw) as Ret<typeof _sb.importLog.criar>;
+      } catch { return _sb.importLog.criar(payload); }
+    },
+    /** @fallback backend não tem endpoint PATCH/finalizar (log imutável). */
     finalizar: _sb.importLog.finalizar.bind(_sb.importLog),
-    listarByCliente: _sb.importLog.listarByCliente.bind(_sb.importLog),
+    /** HTTP GET /import-log?clienteId=X — lista logs do cliente. */
+    listarByCliente: async (clienteId: string) => {
+      try {
+        const raw = await http.get(`/import-log${qs({ clienteId })}`);
+        return deepToSnake(raw) as Ret<typeof _sb.importLog.listarByCliente>;
+      } catch { return _sb.importLog.listarByCliente(clienteId); }
+    },
   },
 
   // cnesSync — @fallback Edge Function cnes-sync + tabelas unidades_saude_sync_* — sem endpoint NestJS
@@ -1864,10 +1988,20 @@ export const api = {
 
   // ── Cloudinary ────────────────────────────────────────────────────────────
 
-  // cloudinary — @fallback Edge Functions cloudinary-upload-image + cloudinary-delete-image
+  // cloudinary → HTTP /cloudinary
   cloudinary: {
-    uploadImage: _sb.cloudinary.uploadImage.bind(_sb.cloudinary),
-    deleteImage: _sb.cloudinary.deleteImage.bind(_sb.cloudinary),
+    /** HTTP POST /cloudinary/upload — upload de imagem em base64. */
+    uploadImage: async (payload: Parameters<typeof _sb.cloudinary.uploadImage>[0]) => {
+      try {
+        return await http.post('/cloudinary/upload', deepToCamel(payload));
+      } catch { return _sb.cloudinary.uploadImage(payload); }
+    },
+    /** HTTP DELETE /cloudinary/:publicId — remove imagem do Cloudinary. */
+    deleteImage: async (publicId: Parameters<typeof _sb.cloudinary.deleteImage>[0]) => {
+      try {
+        await http.delete(`/cloudinary/${encodeURIComponent(String(publicId))}`);
+      } catch { return _sb.cloudinary.deleteImage(publicId); }
+    },
   },
 
   // cloudinaryOrfaos — @fallback tabela cloudinary_orfaos — sem endpoint NestJS confirmado
@@ -1909,12 +2043,17 @@ export const api = {
     listItensByRecorrencia: _sb.recorrencias.listItensByRecorrencia.bind(_sb.recorrencias),
   },
 
-  // integracoes — @fallback tabela cliente_integracoes + RPC get_integracao_api_key — sem endpoint NestJS
+  // integracoes — HTTP /clientes/integracoes (parcial)
   integracoes: {
+    /** HTTP GET /clientes/integracoes/:id/api-key — revela chave de integração. */
+    revelarChave: async (integracaoId: string): Promise<Ret<typeof _sb.integracoes.revelarChave>> => {
+      try { return await http.get(`/clientes/integracoes/${integracaoId}/api-key`); }
+      catch { return _sb.integracoes.revelarChave(integracaoId); }
+    },
+    /** @fallback tabela cliente_integracoes — sem endpoint NestJS completo. */
     getByCliente: _sb.integracoes.getByCliente.bind(_sb.integracoes),
     upsert: _sb.integracoes.upsert.bind(_sb.integracoes),
     updateMeta: _sb.integracoes.updateMeta.bind(_sb.integracoes),
-    revelarChave: _sb.integracoes.revelarChave.bind(_sb.integracoes),
     testarConexao: _sb.integracoes.testarConexao.bind(_sb.integracoes),
   },
 

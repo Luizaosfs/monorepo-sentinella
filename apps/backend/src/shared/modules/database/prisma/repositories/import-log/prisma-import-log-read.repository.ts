@@ -17,7 +17,7 @@ export class PrismaImportLogReadRepository implements ImportLogReadRepository {
     const raw = await this.prisma.client.import_log.findUnique({
       where: { id },
     });
-    return raw ? PrismaImportLogMapper.toDomain(raw as any) : null;
+    return raw ? PrismaImportLogMapper.toDomain(raw) : null;
   }
 
   async findAll(filters: FilterImportLogInput): Promise<ImportLog[]> {
@@ -26,13 +26,15 @@ export class PrismaImportLogReadRepository implements ImportLogReadRepository {
       where,
       orderBy: { created_at: 'desc' },
     });
-    return rows.map((r) => PrismaImportLogMapper.toDomain(r as any));
+    return rows.map((r) => PrismaImportLogMapper.toDomain(r));
   }
 
   private buildWhere(filters: FilterImportLogInput) {
     return {
       ...(filters.clienteId && { cliente_id: filters.clienteId }),
-      ...(filters.status && { status: filters.status }),
+      ...(filters.status?.length && {
+        status: filters.status.length === 1 ? filters.status[0] : { in: filters.status },
+      }),
     };
   }
 }

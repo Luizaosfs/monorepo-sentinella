@@ -7,6 +7,7 @@ import { FocoRiscoController } from './foco-risco.controller';
 import { AtribuirAgente } from './use-cases/atribuir-agente';
 import { AtribuirAgenteLote } from './use-cases/atribuir-agente-lote';
 import { AtualizarClassificacao } from './use-cases/atualizar-classificacao';
+import { ContagemPorStatus } from './use-cases/contagem-por-status';
 import { ContagemTriagemFila } from './use-cases/contagem-triagem-fila';
 import { CreateFocoRisco } from './use-cases/create-foco-risco';
 import { FilterFocoRisco } from './use-cases/filter-foco-risco';
@@ -21,6 +22,7 @@ import { UpdateFocoRisco } from './use-cases/update-foco-risco';
 
 @Module({
   providers: [
+    ContagemPorStatus,
     AtribuirAgente,
     AtribuirAgenteLote,
     AtualizarClassificacao,

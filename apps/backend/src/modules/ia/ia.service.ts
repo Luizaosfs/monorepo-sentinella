@@ -89,7 +89,8 @@ export class IaService {
     }
 
     const totalClusters = clusterMap.size;
-    const falsosPositivos = itens.filter((i) => (i as any).yolo_confirmado === false).length;
+    // yolo_confirmado não existe em levantamento_itens — falsos positivos não rastreáveis aqui
+    const falsosPositivos = 0;
     const totalFocos = itens.length - falsosPositivos;
 
     let sumario = `Triagem pós-voo: ${totalFocos} focos confirmados em ${totalClusters} clusters, ${falsosPositivos} falsos positivos.`;

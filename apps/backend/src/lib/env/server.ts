@@ -23,6 +23,10 @@ const envSchema = z.object({
    *  Quando definido, o AuthGuard aceita tokens Supabase além dos NestJS JWT.
    *  Remover após migração completa do auth. */
   SUPABASE_JWT_SECRET: z.string().optional(),
+  /** Bridge de migração: URL base do projeto Supabase (ex: https://xyz.supabase.co).
+   *  Necessário para verificar tokens ES256 via JWKS endpoint.
+   *  Remover após migração completa do auth. */
+  SUPABASE_URL: z.string().optional(),
 });
 
 const getEnv = () => {

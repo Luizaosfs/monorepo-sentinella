@@ -1,28 +1,9 @@
-import { Prisma } from '@prisma/client';
+import { Prisma, ciclos as PrismaCiclos } from '@prisma/client';
 
 import { Ciclo } from 'src/modules/ciclo/entities/ciclo';
 
-type RawCiclo = {
-  id: string;
-  cliente_id: string;
-  numero: number;
-  ano: number;
-  status: string;
-  data_inicio: Date;
-  data_fim_prevista: Date;
-  data_fechamento: Date | null;
-  meta_cobertura_pct: { toNumber(): number } | null;
-  snapshot_fechamento: unknown;
-  observacao_abertura: string | null;
-  observacao_fechamento: string | null;
-  aberto_por: string | null;
-  fechado_por: string | null;
-  created_at: Date;
-  updated_at: Date;
-};
-
 export class PrismaCicloMapper {
-  static toDomain(raw: RawCiclo): Ciclo {
+  static toDomain(raw: PrismaCiclos): Ciclo {
     return new Ciclo(
       {
         clienteId: raw.cliente_id,
@@ -51,8 +32,7 @@ export class PrismaCicloMapper {
     );
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  static toPrisma(entity: Ciclo): any {
+  static toPrisma(entity: Ciclo): Prisma.ciclosUncheckedCreateInput {
     return {
       cliente_id: entity.clienteId,
       numero: entity.numero,
@@ -64,7 +44,7 @@ export class PrismaCicloMapper {
       meta_cobertura_pct: entity.metaCoberturaPct ?? null,
       snapshot_fechamento:
         entity.snapshotFechamento !== undefined
-          ? entity.snapshotFechamento
+          ? (entity.snapshotFechamento as Prisma.InputJsonValue)
           : Prisma.JsonNull,
       observacao_abertura: entity.observacaoAbertura ?? null,
       observacao_fechamento: entity.observacaoFechamento ?? null,

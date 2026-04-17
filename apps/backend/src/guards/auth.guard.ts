@@ -1,3 +1,5 @@
+import * as crypto from 'crypto';
+
 import {
   CanActivate,
   ExecutionContext,
@@ -28,11 +30,35 @@ export type AuthenticatedUser = {
 
 @Injectable()
 export class AuthGuard implements CanActivate {
+  /** Cache kid → PEM para não buscar JWKS em todo request. */
+  private readonly jwksCache = new Map<string, string>();
+
   constructor(
     private jwtService: JwtService,
     private prisma: PrismaService,
     private reflector: Reflector,
   ) {}
+
+  private async getSupabasePublicKey(kid: string): Promise<string | null> {
+    if (this.jwksCache.has(kid)) return this.jwksCache.get(kid)!;
+
+    const supabaseUrl = env.SUPABASE_URL;
+    if (!supabaseUrl) return null;
+
+    try {
+      const res = await fetch(`${supabaseUrl}/auth/v1/.well-known/jwks.json`);
+      const { keys } = await res.json() as { keys: Array<Record<string, unknown>> };
+      for (const jwk of keys) {
+        const pub = crypto.createPublicKey({ key: jwk as crypto.JsonWebKeyInput['key'], format: 'jwk' });
+        const pem = pub.export({ type: 'spki', format: 'pem' }) as string;
+        this.jwksCache.set(jwk['kid'] as string, pem);
+      }
+      return this.jwksCache.get(kid) ?? null;
+    } catch (e) {
+      console.error('[AuthGuard] Erro ao buscar JWKS:', (e as Error).message);
+      return null;
+    }
+  }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const isPublic = this.reflector.getAllAndOverride<boolean>('isPublic', [
@@ -61,15 +87,24 @@ export class AuthGuard implements CanActivate {
     } catch (nestErr) {
       if (nestErr instanceof UnauthorizedException) throw nestErr;
 
-      // Bridge: aceita token Supabase durante a migração
-      if (!env.SUPABASE_JWT_SECRET) throw AuthException.unauthorized();
+      // Bridge: aceita token Supabase (ES256 via JWKS) durante a migração
       try {
+        const headerB64 = token.split('.')[0];
+        const header = JSON.parse(Buffer.from(headerB64, 'base64url').toString()) as { kid?: string; alg?: string };
+        const kid = header.kid;
+        if (!kid) throw new Error('Token sem kid');
+
+        const publicKey = await this.getSupabasePublicKey(kid);
+        if (!publicKey) throw new Error('Chave pública não encontrada para kid: ' + kid);
+
         const sbPayload = await this.jwtService.verifyAsync(token, {
-          secret: env.SUPABASE_JWT_SECRET,
+          publicKey,
+          algorithms: ['ES256'],
         });
-        if (!sbPayload?.sub) throw AuthException.unauthorized();
+        if (!sbPayload?.sub) throw new Error('Token sem sub');
         authId = sbPayload.sub as string;
-      } catch {
+      } catch (sbErr) {
+        console.error('[AuthGuard] Supabase bridge falhou:', (sbErr as Error).message);
         throw AuthException.unauthorized();
       }
     }
@@ -81,9 +116,8 @@ export class AuthGuard implements CanActivate {
         include: { papeis_usuarios: true },
       });
 
-      if (!usuario?.ativo) {
-        throw AuthException.unauthorized();
-      }
+      if (!usuario) throw AuthException.unauthorized();
+      if (!usuario.ativo) throw AuthException.unauthorized();
 
       // Injeta no request (id = domínio; authId = identidade externa do token)
       request['user'] = {

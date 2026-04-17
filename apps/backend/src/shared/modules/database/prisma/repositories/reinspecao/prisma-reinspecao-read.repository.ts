@@ -17,7 +17,7 @@ export class PrismaReinspecaoReadRepository implements ReinspecaoReadRepository 
     const raw = await this.prisma.client.reinspecoes_programadas.findUnique({
       where: { id },
     });
-    return raw ? PrismaReinspecaoMapper.toDomain(raw as any) : null;
+    return raw ? PrismaReinspecaoMapper.toDomain(raw) : null;
   }
 
   async findAll(filters: FilterReinspecaoInput): Promise<Reinspecao[]> {
@@ -25,10 +25,12 @@ export class PrismaReinspecaoReadRepository implements ReinspecaoReadRepository 
       where: {
         ...(filters.clienteId && { cliente_id: filters.clienteId }),
         ...(filters.focoRiscoId && { foco_risco_id: filters.focoRiscoId }),
-        ...(filters.status && { status: filters.status }),
+        ...(filters.status?.length && {
+          status: filters.status.length === 1 ? filters.status[0] : { in: filters.status },
+        }),
       },
       orderBy: [{ data_prevista: 'asc' }, { created_at: 'desc' }],
     });
-    return rows.map((r) => PrismaReinspecaoMapper.toDomain(r as any));
+    return rows.map((r) => PrismaReinspecaoMapper.toDomain(r));
   }
 }

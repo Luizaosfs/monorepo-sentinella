@@ -22,6 +22,13 @@ import {
   Users, Settings2, BarChart2, Activity,
   ChevronRight, ChevronLeft, X,
 } from 'lucide-react';
+import {
+  ONBOARDING_VERSAO,
+  jaViuOnboarding,
+  marcarOnboardingVisto,
+  papelParaPerfil,
+  type PerfilOnboarding,
+} from '@/lib/onboarding';
 
 // ── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -33,8 +40,6 @@ interface OnboardingStep {
   description: string;
   tip?: string;
 }
-
-type PerfilOnboarding = 'admin' | 'supervisor' | 'agente' | 'notificador';
 
 // ── Conteúdo por perfil ───────────────────────────────────────────────────────
 
@@ -195,55 +200,6 @@ const STEPS: Record<PerfilOnboarding, OnboardingStep[]> = {
     },
   ],
 };
-
-// ── Versão do tour ────────────────────────────────────────────────────────────
-
-/** Incrementar quando o conteúdo do tour mudar significativamente. */
-export const ONBOARDING_VERSAO = '1.0';
-
-// ── Chave localStorage ────────────────────────────────────────────────────────
-
-function getOnboardingKey(userId: string, versao = ONBOARDING_VERSAO) {
-  return `sentinella_onboarding_visto_${userId}_${versao}`;
-}
-
-export function marcarOnboardingVisto(userId: string) {
-  try {
-    localStorage.setItem(getOnboardingKey(userId), '1');
-  } catch {
-    // silencioso
-  }
-}
-
-export function jaViuOnboarding(userId: string): boolean {
-  try {
-    return localStorage.getItem(getOnboardingKey(userId)) === '1';
-  } catch {
-    return true; // em caso de erro, não bloqueia
-  }
-}
-
-/** Apaga o flag local para que o modal reapareça — usado em "Como usar". */
-export function resetarOnboarding(userId: string) {
-  try {
-    localStorage.removeItem(getOnboardingKey(userId));
-  } catch {
-    // silencioso
-  }
-}
-
-// ── Mapeamento papel → perfil ─────────────────────────────────────────────────
-
-export function papelParaPerfil(papel: string | null): PerfilOnboarding | null {
-  switch (papel) {
-    case 'admin':        return 'admin';
-    case 'supervisor':   return 'supervisor';
-    case 'agente':
-    case 'operador':     return 'agente'; // operador: dado legado pré-migration
-    case 'notificador':  return 'notificador';
-    default:             return null;
-  }
-}
 
 // ── Componente ────────────────────────────────────────────────────────────────
 

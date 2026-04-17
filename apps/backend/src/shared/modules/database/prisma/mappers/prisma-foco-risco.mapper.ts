@@ -1,62 +1,15 @@
+import { Prisma, focos_risco as PrismaFocoRiscoModel, foco_risco_historico as PrismaFocoRiscoHistoricoModel } from '@prisma/client';
 import {
   FocoRisco,
   FocoRiscoHistorico,
   FocoRiscoStatus,
 } from 'src/modules/foco-risco/entities/foco-risco';
 
-type RawHistorico = {
-  id: string;
-  foco_risco_id: string;
-  cliente_id: string;
-  status_anterior: string | null;
-  status_novo: string;
-  alterado_por: string | null;
-  alterado_em: Date;
-  tipo_evento: string | null;
-  classificacao_anterior: string | null;
-  classificacao_nova: string | null;
-  motivo: string | null;
-};
-
-type RawFocoRisco = {
-  id: string;
-  cliente_id: string;
-  imovel_id: string | null;
-  regiao_id: string | null;
-  origem_tipo: string;
-  origem_levantamento_item_id: string | null;
-  origem_vistoria_id: string | null;
-  status: string;
-  prioridade: string | null;
-  prioridade_original_antes_caso: string | null;
-  ciclo: number | null;
-  latitude: number | null;
-  longitude: number | null;
-  endereco_normalizado: string | null;
-  suspeita_em: Date;
-  dados_minimos_em: Date | null;
-  inspecao_em: Date | null;
-  confirmado_em: Date | null;
-  resolvido_em: Date | null;
-  responsavel_id: string | null;
-  desfecho: string | null;
-  foco_anterior_id: string | null;
-  casos_ids: string[];
-  observacao: string | null;
-  classificacao_inicial: string;
-  score_prioridade: number;
-  codigo_foco: string | null;
-  payload: unknown;
-  created_at: Date;
-  updated_at: Date;
-  deleted_at: Date | null;
-  deleted_by: string | null;
-  created_by: string | null;
-  historico?: RawHistorico[];
-};
+/** Tipo Prisma nativo com relação historico opcional (presente quando include: { historico: true }). */
+type FocoRiscoRaw = PrismaFocoRiscoModel & { historico?: PrismaFocoRiscoHistoricoModel[] };
 
 export class PrismaFocoRiscoMapper {
-  static historicToDomain(raw: RawHistorico): FocoRiscoHistorico {
+  static historicToDomain(raw: PrismaFocoRiscoHistoricoModel): FocoRiscoHistorico {
     return {
       id: raw.id,
       focoRiscoId: raw.foco_risco_id,
@@ -72,7 +25,7 @@ export class PrismaFocoRiscoMapper {
     };
   }
 
-  static toDomain(raw: RawFocoRisco): FocoRisco {
+  static toDomain(raw: FocoRiscoRaw): FocoRisco {
     return new FocoRisco(
       {
         clienteId: raw.cliente_id,
@@ -115,7 +68,7 @@ export class PrismaFocoRiscoMapper {
     );
   }
 
-  static toPrisma(entity: FocoRisco) {
+  static toPrisma(entity: FocoRisco): Prisma.focos_riscoUncheckedCreateInput {
     return {
       cliente_id: entity.clienteId,
       imovel_id: entity.imovelId || null,
@@ -143,13 +96,13 @@ export class PrismaFocoRiscoMapper {
       classificacao_inicial: entity.classificacaoInicial,
       score_prioridade: entity.scorePrioridade,
       codigo_foco: entity.codigoFoco || null,
-      payload: entity.payload === undefined ? undefined : entity.payload,
+      payload: entity.payload !== undefined ? (entity.payload as Prisma.InputJsonValue) : undefined,
       created_by: entity.createdBy || null,
       updated_at: new Date(),
     };
   }
 
-  static historicToPrisma(h: FocoRiscoHistorico) {
+  static historicToPrisma(h: FocoRiscoHistorico): Prisma.foco_risco_historicoUncheckedCreateInput {
     return {
       foco_risco_id: h.focoRiscoId!,
       cliente_id: h.clienteId,

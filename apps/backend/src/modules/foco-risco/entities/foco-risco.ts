@@ -72,6 +72,8 @@ interface FocoRiscoProps {
    */
   payload?: unknown;
   historico?: FocoRiscoHistorico[];
+  /** URL da imagem do levantamento_item de origem (join externo, não coluna). */
+  origemImageUrl?: string | null;
 }
 
 export class FocoRisco extends BaseEntity<FocoRiscoProps> {
@@ -222,6 +224,12 @@ export class FocoRisco extends BaseEntity<FocoRiscoProps> {
   }
   get historico() {
     return this.props.historico;
+  }
+  get origemImageUrl() {
+    return this.props.origemImageUrl;
+  }
+  set origemImageUrl(v: string | null | undefined) {
+    this.props.origemImageUrl = v;
   }
 
   podeTransicionar(paraStatus: FocoRiscoStatus): boolean {

@@ -20,7 +20,7 @@ export class PrismaCicloWriteRepository implements CicloWriteRepository {
   async create(ciclo: Ciclo): Promise<Ciclo> {
     const data = PrismaCicloMapper.toPrisma(ciclo);
     const created = await this.prisma.client.ciclos.create({ data });
-    return PrismaCicloMapper.toDomain(created as any);
+    return PrismaCicloMapper.toDomain(created);
   }
 
   async save(ciclo: Ciclo): Promise<void> {
@@ -36,8 +36,7 @@ export class PrismaCicloWriteRepository implements CicloWriteRepository {
   }
 
   async abrirCiclo(entity: Ciclo): Promise<Ciclo> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const result = await (this.prisma.client.ciclos.upsert as any)({
+    const result = await this.prisma.client.ciclos.upsert({
       where: {
         cliente_id_numero_ano: {
           cliente_id: entity.clienteId,
@@ -63,7 +62,7 @@ export class PrismaCicloWriteRepository implements CicloWriteRepository {
         updated_at: new Date(),
       },
     });
-    return PrismaCicloMapper.toDomain(result as any);
+    return PrismaCicloMapper.toDomain(result);
   }
 
   async fecharCiclo(

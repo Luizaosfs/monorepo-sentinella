@@ -58,6 +58,7 @@ import {
   UpdateFocoRiscoBody,
   updateFocoRiscoSchema,
 } from './dtos/update-foco-risco.body';
+import { ContagemPorStatus } from './use-cases/contagem-por-status';
 import { AtribuirAgente } from './use-cases/atribuir-agente';
 import { AtribuirAgenteLote } from './use-cases/atribuir-agente-lote';
 import { AtualizarClassificacao } from './use-cases/atualizar-classificacao';
@@ -81,6 +82,7 @@ import { FocoRiscoViewModel } from './view-model/foco-risco';
 @Controller('focos-risco')
 export class FocoRiscoController {
   constructor(
+    private contagemPorStatusUc: ContagemPorStatus,
     private atribuirAgente: AtribuirAgente,
     private atribuirAgenteLote: AtribuirAgenteLote,
     private atualizarClassificacao: AtualizarClassificacao,
@@ -100,9 +102,39 @@ export class FocoRiscoController {
 
   @Get()
   @Roles('admin', 'supervisor', 'agente')
-  @ApiOperation({ summary: 'Listar focos de risco com filtros' })
+  @ApiOperation({ summary: 'Listar focos de risco com filtros (suporta page/pageSize/orderBy)' })
   async filter(@Query() filters: FilterFocoRiscoInput) {
     const parsed = filterFocoRiscoSchema.parse(filters);
+
+    // Se o frontend enviou page/pageSize, retorna resposta paginada
+    if (parsed.page != null || parsed.pageSize != null) {
+      // Derivar orderKey + orderValue de ?orderBy=suspeita_em_asc
+      let orderKey = 'created_at';
+      let orderValue: 'asc' | 'desc' = 'desc';
+      if (parsed.orderBy) {
+        const lastUnderscore = parsed.orderBy.lastIndexOf('_');
+        if (lastUnderscore > 0) {
+          const direction = parsed.orderBy.slice(lastUnderscore + 1);
+          if (direction === 'asc' || direction === 'desc') {
+            orderKey = parsed.orderBy.slice(0, lastUnderscore);
+            orderValue = direction;
+          }
+        }
+      }
+      // Bypass paginationSchema para não clampear pageSize (mapa precisa de até 5000)
+      const pagination = {
+        currentPage: Math.max(1, parsed.page ?? 1),
+        perPage: Math.min(Math.max(1, parsed.pageSize ?? 30), 5000),
+        orderKey,
+        orderValue,
+      } as PaginationProps;
+      const result = await this.paginationFocoRisco.execute(parsed, pagination);
+      return {
+        items: result.items.map((f) => FocoRiscoViewModel.toHttp(f)),
+        pagination: result.pagination,
+      };
+    }
+
     const { focos } = await this.filterFocoRisco.execute(parsed);
     return focos.map((f) => FocoRiscoViewModel.toHttp(f));
   }
@@ -132,6 +164,13 @@ export class FocoRiscoController {
   async contagemTriagem(@Query() filters: FilterFocoRiscoInput) {
     const parsed = filterFocoRiscoSchema.parse(filters);
     return this.contagemTriagemFilaUc.execute(parsed);
+  }
+
+  @Get('contagem-por-status')
+  @Roles('admin', 'supervisor', 'agente')
+  @ApiOperation({ summary: 'Contagem de focos agrupados por status' })
+  async contagemPorStatus(@Query('clienteId') clienteId: string) {
+    return this.contagemPorStatusUc.execute(clienteId);
   }
 
   @Get('by-ids')

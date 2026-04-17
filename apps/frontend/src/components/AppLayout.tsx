@@ -50,7 +50,8 @@ import {
 import { IconDrone } from '@/components/icons/IconDrone';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { QuotaBanner } from '@/components/QuotaBanner';
-import { OnboardingModal, resetarOnboarding } from '@/components/OnboardingModal';
+import { OnboardingModal } from '@/components/OnboardingModal';
+import { resetarOnboarding } from '@/lib/onboarding';
 import { useOfflineQueue } from '@/hooks/useOfflineQueue';
 import { drainQueue } from '@/lib/offlineQueue';
 import {

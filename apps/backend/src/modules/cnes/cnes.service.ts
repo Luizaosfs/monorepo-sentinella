@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 
 interface CnesEstabelecimento {
@@ -20,12 +21,12 @@ export class CnesService {
   constructor(private prisma: PrismaService) {}
 
   async sync(clienteId?: string): Promise<{ clientes: number; upserts: number }> {
-    const where = clienteId
+    const where: Prisma.clientesWhereInput = clienteId
       ? { id: clienteId, deleted_at: null }
       : { deleted_at: null, ibge_municipio: { not: null } };
 
     const clientes = await this.prisma.client.clientes.findMany({
-      where: where as any,
+      where,
       select: { id: true, ibge_municipio: true },
     });
 
@@ -83,7 +84,7 @@ export class CnesService {
 
         await this.prisma.client.clientes.update({
           where: { id: cliente.id },
-          data: { ultima_sync_cnes_em: new Date() } as any,
+          data: { updated_at: new Date() },
         });
       } catch (err: any) {
         this.logger.warn(`[CnesService.sync] Falha cliente ${cliente.id}: ${err?.message}`);
