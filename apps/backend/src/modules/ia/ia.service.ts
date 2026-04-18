@@ -65,6 +65,69 @@ export class IaService {
     }
   }
 
+  async insightsRegional(clienteId: string): Promise<{ insights: string[] }> {
+    const [totalFocos, totalVistorias] = await this.prisma.client.$transaction([
+      this.prisma.client.focos_risco.count({ where: { cliente_id: clienteId, deleted_at: null } }),
+      this.prisma.client.vistorias.count({ where: { cliente_id: clienteId } }),
+    ]);
+
+    const insights: string[] = [];
+    if (totalFocos > 0) insights.push(`${totalFocos} foco(s) de risco ativo(s) registrado(s).`);
+    if (totalVistorias > 0) insights.push(`${totalVistorias} vistoria(s) realizadas no período.`);
+    if (!insights.length) insights.push('Nenhum dado disponível para o período.');
+
+    try {
+      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'x-api-key': process.env.ANTHROPIC_API_KEY ?? '',
+          'anthropic-version': '2023-06-01',
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 400,
+          messages: [{
+            role: 'user',
+            content: `Gere 3 insights estratégicos concisos (1 frase cada) para vigilância entomológica municipal: ${totalFocos} focos de risco, ${totalVistorias} vistorias realizadas. Formato JSON: {"insights": ["...", "...", "..."]}`,
+          }],
+        }),
+      });
+      if (resp.ok) {
+        const d = (await resp.json()) as any;
+        const text: string = d.content?.[0]?.text ?? '';
+        const parsed = JSON.parse(text);
+        if (Array.isArray(parsed.insights)) return { insights: parsed.insights };
+      }
+    } catch {
+      // usa insights padrão
+    }
+
+    return { insights };
+  }
+
+  async graficosRegionais(clienteId: string): Promise<{ labels: string[]; values: number[]; tipo: string }> {
+    const regioes = await this.prisma.client.regioes.findMany({
+      where: { cliente_id: clienteId, deleted_at: null },
+      select: { id: true, nome: true },
+      take: 10,
+    });
+
+    const counts = await Promise.all(
+      regioes.map((r) =>
+        this.prisma.client.focos_risco.count({
+          where: { cliente_id: clienteId, regiao_id: r.id, deleted_at: null },
+        }),
+      ),
+    );
+
+    return {
+      tipo: 'focos_por_regiao',
+      labels: regioes.map((r) => r.nome),
+      values: counts,
+    };
+  }
+
   async triagemPosVoo(
     levantamentoId: string,
     clienteId: string,

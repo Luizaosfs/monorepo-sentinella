@@ -1,4 +1,7 @@
 import { AuthModule } from '@modules/auth/auth.module';
+import { DenunciaModule } from '@modules/denuncia/denuncia.module';
+import { PilotoModule } from '@modules/piloto/piloto.module';
+import { SeedModule } from '@modules/seed/seed.module';
 import { BillingModule } from '@modules/billing/billing.module';
 import { CicloModule } from '@modules/ciclo/ciclo.module';
 import { ClienteModule } from '@modules/cliente/cliente.module';
@@ -59,6 +62,9 @@ import { ClsModule } from 'nestjs-cls';
     PlanoAcaoModule,
     IaModule,
     ImportLogModule,
+    DenunciaModule,
+    PilotoModule,
+    SeedModule,
   ],
   controllers: [],
   providers: [JwtService],

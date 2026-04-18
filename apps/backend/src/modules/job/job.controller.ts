@@ -18,6 +18,8 @@ import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 
 import { Roles } from '@/decorators/roles.decorator';
 
+import { PluvioSchedulerService } from '@modules/pluvio/pluvio-scheduler.service';
+
 import { CreateJobBody, createJobSchema } from './dtos/create-job.body';
 import { CreateJob } from './use-cases/create-job';
 import { FilterJob } from './use-cases/filter-job';
@@ -34,6 +36,7 @@ export class JobController {
     private jobFilter: FilterJob,
     private jobGet: GetJob,
     private jobCreate: CreateJob,
+    private pluvioScheduler: PluvioSchedulerService,
   ) {}
 
   @Get()
@@ -50,6 +53,13 @@ export class JobController {
   async getJob(@Param('id') id: string) {
     const { job } = await this.jobGet.execute(id);
     return job ? JobViewModel.toHttp(job) : null;
+  }
+
+  @Post('pluvio-risco-daily')
+  @Roles('admin')
+  @ApiOperation({ summary: 'Executar job pluvio-risco-daily manualmente' })
+  async pluvioRiscoDaily() {
+    return this.pluvioScheduler.riscoDaily();
   }
 
   @Post()

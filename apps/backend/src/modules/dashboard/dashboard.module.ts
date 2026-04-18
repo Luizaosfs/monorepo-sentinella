@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { DatabaseModule } from '@shared/modules/database/database.module';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 
+import { AnalyticsController } from './analytics.controller';
 import { DashboardController } from './dashboard.controller';
 import { HealthController } from './health.controller';
 import { CalcularLiraa } from './use-cases/calcular-liraa';
@@ -47,7 +48,7 @@ import { ScoreSurtoRegioes } from './use-cases/score-surto-regioes';
     JwtService,
     PrismaService,
   ],
-  controllers: [DashboardController, HealthController],
+  controllers: [DashboardController, HealthController, AnalyticsController],
   exports: [DashboardSchedulerService, HealthCheckService, LiraaExportService],
   imports: [DatabaseModule],
 })

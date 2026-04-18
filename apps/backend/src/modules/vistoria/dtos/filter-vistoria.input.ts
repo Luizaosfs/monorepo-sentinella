@@ -27,6 +27,11 @@ export const filterVistoriaSchema = z.object({
     .describe('Filtrar por foco de risco vinculado'),
   dataInicio: z.coerce.date().optional().describe('Data inicial do período'),
   dataFim: z.coerce.date().optional().describe('Data final do período'),
+  createdAfter: z.coerce.date().optional().describe('Filtrar por created_at >= data'),
+  acessoRealizado: z
+    .preprocess((v) => v === 'true' || v === true, z.boolean())
+    .optional()
+    .describe('Filtrar por acesso_realizado'),
 });
 
 export type FilterVistoriaInput = z.infer<typeof filterVistoriaSchema>;

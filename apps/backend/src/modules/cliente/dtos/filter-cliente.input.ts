@@ -20,6 +20,10 @@ export const filterClienteSchema = z.object({
     .string()
     .describe('Filtrar por código IBGE do município')
     .optional(),
+  cidade: z
+    .string()
+    .describe('Filtrar por nome da cidade (busca parcial, case-insensitive)')
+    .optional(),
 });
 
 export class FilterClienteInput extends createZodDto(filterClienteSchema) {}

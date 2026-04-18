@@ -87,6 +87,14 @@ export class PrismaVistoriaReadRepository implements VistoriaReadRepository {
           ...(filters.dataFim && { lte: filters.dataFim }),
         },
       }),
+      ...(filters.createdAfter && { created_at: { gte: filters.createdAfter } }),
+      ...(filters.acessoRealizado !== undefined && {
+        acesso_realizado: filters.acessoRealizado,
+      }),
     };
+  }
+
+  async count(filters: FilterVistoriaInput): Promise<number> {
+    return this.prisma.client.vistorias.count({ where: this.buildWhere(filters) });
   }
 }

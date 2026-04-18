@@ -19,14 +19,17 @@ const envSchema = z.object({
   VAPID_PUBLIC_KEY: z.string().optional(),
   VAPID_PRIVATE_KEY: z.string().optional(),
   VAPID_SUBJECT: z.string().optional(),
-  /** Bridge de migração: JWT secret do projeto Supabase (Settings → API → JWT Secret).
-   *  Quando definido, o AuthGuard aceita tokens Supabase além dos NestJS JWT.
-   *  Remover após migração completa do auth. */
+  // === SMTP (envio de email próprio) ===
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.string().optional().default('587'),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  SMTP_FROM: z.string().optional(),
+  // === Bridge Supabase (manter enquanto tokens antigos circulam) ===
+  /** AuthGuard aceita tokens Supabase enquanto migração não está 100% concluída. */
   SUPABASE_JWT_SECRET: z.string().optional(),
-  /** Bridge de migração: URL base do projeto Supabase (ex: https://xyz.supabase.co).
-   *  Necessário para verificar tokens ES256 via JWKS endpoint.
-   *  Remover após migração completa do auth. */
   SUPABASE_URL: z.string().optional(),
+  SUPABASE_ANON_KEY: z.string().optional(),
 });
 
 const getEnv = () => {

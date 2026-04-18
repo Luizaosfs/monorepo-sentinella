@@ -204,14 +204,14 @@ const AdminUsuarios = () => {
 
       // Criação via NestJS (service_role no backend)
       const isAnalista = formData.papel === 'analista_regional';
-      const fnData = await api.usuarios.create({
+      const fnData = await api.usuarios.insert({
         nome: formData.nome.trim(),
         email: emailNormalizado,
         senha: formData.senha,
         papel: formData.papel,
         cliente_id: isAnalista || formData.papel === 'admin' ? null : (formData.cliente_id || null),
         agrupamento_id: isAnalista ? (formData.agrupamento_id || null) : null,
-      } as Parameters<typeof api.usuarios.create>[0]);
+      } as Parameters<typeof api.usuarios.insert>[0]);
 
       if ((fnData as { error?: string })?.error === 'EMAIL_EXISTS') throw new EmailExistsError(emailNormalizado);
 

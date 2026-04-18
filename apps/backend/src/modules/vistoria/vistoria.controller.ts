@@ -39,6 +39,7 @@ import {
   SaveVistoriaBody,
   saveVistoriaSchema,
 } from './dtos/save-vistoria.body';
+import { CountVistoria } from './use-cases/count-vistoria';
 import { CreateVistoria } from './use-cases/create-vistoria';
 import { CreateVistoriaCompleta } from './use-cases/create-vistoria-completa';
 import { FilterVistoria } from './use-cases/filter-vistoria';
@@ -60,7 +61,16 @@ export class VistoriaController {
     private filterVistoria: FilterVistoria,
     private paginationVistoria: PaginationVistoria,
     private saveVistoria: SaveVistoria,
+    private countVistoria: CountVistoria,
   ) {}
+
+  @Get('count')
+  @Roles('admin', 'supervisor', 'agente')
+  @ApiOperation({ summary: 'Contar vistorias com filtros' })
+  async count(@Query() filters: FilterVistoriaQuery) {
+    const parsed = filterVistoriaSchema.parse(filters);
+    return this.countVistoria.execute(parsed);
+  }
 
   @Get()
   @Roles('admin', 'supervisor', 'agente')

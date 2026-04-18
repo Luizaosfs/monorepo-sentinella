@@ -63,6 +63,22 @@ export class IaController {
     return this.iaService.identifyLarva({ ...parsed, clienteId });
   }
 
+  @Post('insights-regional')
+  @Roles('admin', 'supervisor', 'analista_regional')
+  @ApiOperation({ summary: 'Gerar insights regionais via IA' })
+  async insightsRegional() {
+    const clienteId = this.req['tenantId'] as string;
+    return this.iaService.insightsRegional(clienteId);
+  }
+
+  @Post('graficos-regionais')
+  @Roles('admin', 'supervisor', 'analista_regional')
+  @ApiOperation({ summary: 'Gerar dados de gráficos regionais' })
+  async graficosRegionais() {
+    const clienteId = this.req['tenantId'] as string;
+    return this.iaService.graficosRegionais(clienteId);
+  }
+
   @Post('triagem-pos-voo')
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Triagem pós-voo com clustering geográfico e IA' })

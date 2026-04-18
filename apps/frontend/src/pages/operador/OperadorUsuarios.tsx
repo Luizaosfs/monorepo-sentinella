@@ -151,13 +151,13 @@ const OperadorUsuarios = () => {
       }
 
       // Criação via NestJS (service_role no backend)
-      const fnData = await api.usuarios.create({
+      const fnData = await api.usuarios.insert({
         nome: formData.nome.trim(),
         email: emailNormalizado,
         senha: formData.senha,
         cliente_id: clienteId,
         papel: formData.papel,
-      } as Parameters<typeof api.usuarios.create>[0]);
+      } as Parameters<typeof api.usuarios.insert>[0]);
 
       if ((fnData as { error?: string })?.error === 'EMAIL_EXISTS') throw new EmailExistsError(emailNormalizado);
 

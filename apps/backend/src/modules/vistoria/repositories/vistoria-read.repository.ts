@@ -13,4 +13,5 @@ export abstract class VistoriaReadRepository {
     filters: FilterVistoriaInput,
     pagination: PaginationProps,
   ): Promise<VistoriaPaginated>;
+  abstract count(filters: FilterVistoriaInput): Promise<number>;
 }

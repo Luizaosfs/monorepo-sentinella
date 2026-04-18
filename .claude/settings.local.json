@@ -46,7 +46,8 @@
       "Bash(\"/c/Program Files/PostgreSQL/17/bin/psql.exe\" \"postgresql://postgres:147852369@localhost:5432/sentinella\")",
       "Bash(grep -v \"^DROP TRIGGER$\")",
       "Bash(grep -v \"^DROP FUNCTION$\")",
-      "Bash(grep -E \"\\\\.ts$\")"
+      "Bash(grep -E \"\\\\.ts$\")",
+      "Bash(pnpm generate *)"
     ]
   }
 }

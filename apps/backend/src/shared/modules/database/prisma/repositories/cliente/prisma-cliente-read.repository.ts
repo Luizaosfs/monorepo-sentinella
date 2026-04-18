@@ -111,6 +111,9 @@ export class PrismaClienteReadRepository implements ClienteReadRepository {
       ...(filters.ativo !== undefined && { ativo: filters.ativo }),
       ...(filters.uf && { uf: filters.uf }),
       ...(filters.ibgeMunicipio && { ibge_municipio: filters.ibgeMunicipio }),
+      ...(filters.cidade && {
+        cidade: { contains: filters.cidade, mode: 'insensitive' as const },
+      }),
     };
   }
 }
