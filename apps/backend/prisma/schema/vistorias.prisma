@@ -65,4 +65,5 @@ model vistorias {
   calhas       vistoria_calhas[]
 
   @@map("vistorias")
+  @@schema("public")
 }

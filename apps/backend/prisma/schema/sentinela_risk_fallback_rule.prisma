@@ -12,4 +12,5 @@ model sentinela_risk_fallback_rule {
 
   policy sentinela_risk_policy @relation(fields: [policy_id], references: [id])
   @@map("sentinela_risk_fallback_rule")
+  @@schema("public")
 }

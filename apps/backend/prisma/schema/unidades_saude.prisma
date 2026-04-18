@@ -24,4 +24,5 @@ model unidades_saude {
   casos_notificados casos_notificados[]
 
   @@map("unidades_saude")
+  @@schema("public")
 }

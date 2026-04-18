@@ -10,4 +10,5 @@ model vistoria_calhas {
   vistoria vistorias @relation(fields: [vistoria_id], references: [id])
 
   @@map("vistoria_calhas")
+  @@schema("public")
 }

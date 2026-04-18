@@ -11,4 +11,5 @@ model consolidacao_pesos_config {
   criado_em  DateTime @default(now()) @db.Timestamptz
 
   @@map("consolidacao_pesos_config")
+  @@schema("public")
 }

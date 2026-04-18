@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Droplets, Search, BarChart3, MapPin, WifiOff, ClipboardList, Info, Target, Clock } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
+import { http } from '@sentinella/api-client';
 import { STALE } from '@/lib/queryConfig';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -79,14 +79,10 @@ export default function OperadorInicioTurno() {
     queryFn: async () => {
       if (!clienteId || !usuario?.id) return 0;
       const hoje = new Date().toISOString().split('T')[0];
-      const { count } = await supabase
-        .from('vistorias')
-        .select('id', { count: 'exact', head: true })
-        .eq('cliente_id', clienteId)
-        .eq('agente_id', usuario.id)
-        .gte('created_at', hoje)
-        .eq('acesso_realizado', true);
-      return count ?? 0;
+      const res = await http.get<{ count: number }>(
+        `/vistorias/count?clienteId=${clienteId}&agenteId=${usuario.id}&createdAfter=${hoje}&acessoRealizado=true`
+      );
+      return (res as { count?: number }).count ?? 0;
     },
     enabled: !!clienteId && !!usuario?.id,
     staleTime: STALE.SHORT,

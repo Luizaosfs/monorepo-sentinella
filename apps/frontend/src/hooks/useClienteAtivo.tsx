@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, forwardRef, type ReactNode } from 'react';
-import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
+import { api } from '@/services/api';
 import { Cliente } from '@/types/database';
 
 /** Estado do contrato SaaS do tenant. Exposto globalmente via useClienteAtivo(). */
@@ -55,42 +55,27 @@ export const ClienteAtivoProvider = forwardRef<HTMLDivElement, { children: React
     if (authLoading) return;
 
     const load = async () => {
-      if (isAdmin) {
-        const { data } = await supabase
-          .from('clientes')
-          .select('*')
-          .eq('ativo', true)
-          .order('nome');
+      try {
+        const list = (await api.clientes.list()) as Cliente[];
+        const sorted = [...list].sort((a, b) => a.nome.localeCompare(b.nome));
 
-        const list = data || [];
-        setClientes(list);
-
-        // Valida seleção persistida
-        if (selectedId && !list.find((c) => c.id === selectedId)) {
-          setSelectedId(list[0]?.id || null);
-        } else if (!selectedId && list.length > 0) {
-          setSelectedId(list[0].id);
+        if (isAdmin) {
+          setClientes(sorted);
+          if (selectedId && !sorted.find((c) => c.id === selectedId)) {
+            setSelectedId(sorted[0]?.id || null);
+          } else if (!selectedId && sorted.length > 0) {
+            setSelectedId(sorted[0].id);
+          }
+        } else {
+          const userClienteId = usuario?.cliente_id || null;
+          const userCliente = sorted.find((c) => c.id === userClienteId);
+          setClientes(userCliente ? [userCliente] : []);
         }
-        setLoading(false);
-        return;
-      }
-
-      // Não-admin: carrega apenas o cliente do usuário (para ter latitude/longitude, área, etc.)
-      const userClienteId = usuario?.cliente_id || null;
-      if (!userClienteId) {
+      } catch {
         setClientes([]);
+      } finally {
         setLoading(false);
-        return;
       }
-
-      const { data } = await supabase
-        .from('clientes')
-        .select('*')
-        .eq('id', userClienteId)
-        .maybeSingle();
-
-      setClientes(data ? [data] : []);
-      setLoading(false);
     };
 
     load();
@@ -106,51 +91,15 @@ export const ClienteAtivoProvider = forwardRef<HTMLDivElement, { children: React
   useEffect(() => {
     if (!clienteId) { setTenantStatus(null); return; }
 
-    supabase.rpc('fn_get_tenant_context', { p_cliente_id: clienteId })
-      .then(({ data, error }) => {
-        if (error || !data) {
-          // Fail-safe conservador: preserva o estado anterior se existir,
-          // especialmente isBlocked=true — não reseta bloqueio em caso de erro de rede.
-          // Se não há estado anterior (primeira carga), assume acesso liberado mas sem plano.
-          console.warn('[TenantContext] fn_get_tenant_context falhou — preservando estado anterior:', error?.message);
-          setTenantStatus(prev => prev ?? {
-            status: 'ativo',
-            planoNome: null,
-            isBlocked: false,
-            isInadimplente: false,
-            isTrialing: false,
-            trialDaysLeft: null,
-          });
-          return;
-        }
-        const d = data as {
-          status: string;
-          plano_nome: string | null;
-          is_blocked: boolean;
-          is_inadimplente: boolean;
-          is_trialing: boolean;
-          trial_days_left: number | null;
-        };
-        setTenantStatus({
-          status: d.status as TenantStatus['status'],
-          planoNome: d.plano_nome,
-          isBlocked: d.is_blocked,
-          isInadimplente: d.is_inadimplente,
-          isTrialing: d.is_trialing,
-          trialDaysLeft: d.trial_days_left,
-        });
-      })
-      .catch((err) => {
-        console.warn('[TenantContext] Erro inesperado ao buscar contexto de tenant:', err);
-        setTenantStatus(prev => prev ?? {
-          status: 'ativo',
-          planoNome: null,
-          isBlocked: false,
-          isInadimplente: false,
-          isTrialing: false,
-          trialDaysLeft: null,
-        });
-      });
+    // Tenant context via NestJS (billing endpoint pendente — usa safe default por enquanto)
+    setTenantStatus({
+      status: 'ativo',
+      planoNome: null,
+      isBlocked: false,
+      isInadimplente: false,
+      isTrialing: false,
+      trialDaysLeft: null,
+    });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clienteId]);
 

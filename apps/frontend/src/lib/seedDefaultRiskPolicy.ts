@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { http } from '@sentinella/api-client';
 
 const DEFAULT_POLICY_JSON = {
   defaults: {
@@ -76,72 +76,7 @@ const DEFAULT_POLICY_JSON = {
  */
 export async function seedDefaultRiskPolicy(clienteId: string): Promise<void> {
   try {
-    const d = DEFAULT_POLICY_JSON;
-
-    // 1. Create policy
-    const { data: policy, error: pErr } = await supabase
-      .from('sentinela_risk_policy')
-      .insert({ cliente_id: clienteId, name: 'default', version: 'v1', is_active: true })
-      .select()
-      .single();
-    if (pErr) throw pErr;
-    const pid = policy.id;
-
-    // 2. Defaults
-    await supabase.from('sentinela_risk_defaults').insert({
-      policy_id: pid,
-      chuva_relevante_mm: d.defaults.chuva_relevante_mm,
-      dias_lookup_max: d.defaults.dias_lookup_max,
-      tendencia_dias: d.defaults.tendencia_dias,
-    });
-
-    // 3. Bins
-    await Promise.all([
-      supabase.from('sentinela_risk_bin_sem_chuva').insert(
-        d.defaults.janela_sem_chuva_bins.map((b, i) => ({ policy_id: pid, idx: i, min_val: b[0], max_val: b[1] }))
-      ),
-      supabase.from('sentinela_risk_bin_intensidade_chuva').insert(
-        d.defaults.intensidade_chuva_bins.map((b, i) => ({ policy_id: pid, idx: i, min_val: b[0], max_val: b[1] }))
-      ),
-      supabase.from('sentinela_risk_bin_persistencia_7d').insert(
-        d.defaults.persistencia_7d_bins.map((b, i) => ({ policy_id: pid, idx: i, min_val: b[0], max_val: b[1] }))
-      ),
-    ]);
-
-    // 4. Fallback + Rules
-    await Promise.all([
-      supabase.from('sentinela_risk_fallback_rule').insert({ policy_id: pid, ...d.fallback_rule }),
-      supabase.from('sentinela_risk_rule').insert(
-        d.rules.map((r, i) => ({ policy_id: pid, idx: i, ...r }))
-      ),
-    ]);
-
-    // 5. Factors
-    await Promise.all([
-      supabase.from('sentinela_risk_temp_factor').insert(
-        d.temp_factors.map((r, i) => ({ policy_id: pid, idx: i, ...r }))
-      ),
-      supabase.from('sentinela_risk_vento_factor').insert(
-        d.vento_factors.map((r, i) => ({ policy_id: pid, idx: i, ...r }))
-      ),
-    ]);
-
-    // 6. Adjustments
-    await Promise.all([
-      supabase.from('sentinela_risk_temp_adjust_pp').insert(
-        d.temp_adjust_pp.map((r, i) => ({ policy_id: pid, idx: i, ...r }))
-      ),
-      supabase.from('sentinela_risk_vento_adjust_pp').insert(
-        d.vento_adjust_pp.map((r, i) => ({ policy_id: pid, idx: i, ...r }))
-      ),
-      supabase.from('sentinela_risk_persistencia_adjust_pp').insert(
-        d.persistencia_adjust_pp.map((r, i) => ({ policy_id: pid, idx: i, ...r }))
-      ),
-      supabase.from('sentinela_risk_tendencia_adjust_pp').insert(
-        d.tendencia_adjust_pp.map((r) => ({ policy_id: pid, ...r }))
-      ),
-    ]);
-
+    await http.post('/seed/risk-policy', { clienteId, policy: DEFAULT_POLICY_JSON });
   } catch (err) {
     console.error('[seedDefaultRiskPolicy] Erro ao criar política padrão:', err);
   }

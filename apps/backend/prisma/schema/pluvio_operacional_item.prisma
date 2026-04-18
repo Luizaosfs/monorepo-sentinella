@@ -28,4 +28,5 @@ model pluvio_operacional_item {
 
   run pluvio_operacional_run @relation(fields: [run_id], references: [id])
   @@map("pluvio_operacional_item")
+  @@schema("public")
 }

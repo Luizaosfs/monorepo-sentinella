@@ -7,7 +7,7 @@
  */
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
+import { http } from '@sentinella/api-client';
 import { api } from '@/services/api';
 import { useAuth } from '@/hooks/useAuth';
 import { useClienteAtivo } from '@/hooks/useClienteAtivo';
@@ -29,7 +29,6 @@ import { Loader2, Users, Plus, Pencil, Search, ArrowLeft } from 'lucide-react';
 import AdminPageHeader from '@/components/AdminPageHeader';
 import MobileListCard from '@/components/admin/MobileListCard';
 import { getPapelLabel } from '@/lib/labels';
-import { supabaseUrl, supabaseAnonKey } from '@/lib/supabase';
 
 type PapelCliente = 'supervisor' | 'agente' | 'notificador';
 
@@ -151,29 +150,16 @@ const OperadorUsuarios = () => {
         return { isNew: false };
       }
 
-      // Criação via Edge Function (service_role no backend)
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) throw new Error('Sessão expirada. Faça login novamente.');
+      // Criação via NestJS (service_role no backend)
+      const fnData = await api.usuarios.create({
+        nome: formData.nome.trim(),
+        email: emailNormalizado,
+        senha: formData.senha,
+        cliente_id: clienteId,
+        papel: formData.papel,
+      } as Parameters<typeof api.usuarios.create>[0]);
 
-      const resp = await fetch(`${supabaseUrl}/functions/v1/criar-usuario`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': supabaseAnonKey,
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          nome: formData.nome.trim(),
-          email: emailNormalizado,
-          senha: formData.senha,
-          cliente_id: clienteId,
-          papel: formData.papel,
-        }),
-      });
-      const fnData = await resp.json() as Record<string, unknown>;
-
-      if (fnData?.error === 'EMAIL_EXISTS') throw new EmailExistsError(emailNormalizado);
-      if (!resp.ok) throw new Error(String(fnData?.error ?? `Erro ${resp.status}`));
+      if ((fnData as { error?: string })?.error === 'EMAIL_EXISTS') throw new EmailExistsError(emailNormalizado);
 
       return {
         isNew: true,
@@ -320,10 +306,10 @@ const OperadorUsuarios = () => {
                   onClick={async () => {
                     setSendingRecovery(true);
                     try {
-                      const { error } = await supabase.auth.resetPasswordForEmail(emailExistsWarning, {
+                      await http.post('/auth/forgot-password', {
+                        email: emailExistsWarning,
                         redirectTo: `${window.location.origin}/reset-password`,
                       });
-                      if (error) throw error;
                       toast.success(`Email de recuperação enviado para ${emailExistsWarning}`);
                       setEmailExistsWarning(null);
                     } catch (err: unknown) {
@@ -348,10 +334,10 @@ const OperadorUsuarios = () => {
                   variant="outline"
                   onClick={async () => {
                     try {
-                      const { error } = await supabase.auth.resetPasswordForEmail(editing.email, {
+                      await http.post('/auth/forgot-password', {
+                        email: editing.email,
                         redirectTo: `${window.location.origin}/reset-password`,
                       });
-                      if (error) throw error;
                       toast.success(`Link de redefinição enviado para ${editing.email}`);
                     } catch (err: unknown) {
                       toast.error(err instanceof Error ? err.message : 'Erro ao enviar email');

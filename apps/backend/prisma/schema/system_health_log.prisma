@@ -6,4 +6,5 @@ model system_health_log {
   criado_em DateTime @default(now()) @db.Timestamptz
 
   @@map("system_health_log")
+  @@schema("public")
 }

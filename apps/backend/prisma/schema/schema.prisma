@@ -4,6 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  schemas  = ["public"]
 }
 
 // ── Enums ──────────────────────────────────────────────
@@ -13,6 +14,8 @@ enum papel_app {
   agente
   notificador
   analista_regional
+
+  @@schema("public")
 }
 
 enum foco_risco_status {
@@ -24,6 +27,8 @@ enum foco_risco_status {
   em_tratamento
   resolvido
   descartado
+
+  @@schema("public")
 }
 
 enum foco_origem_tipo {
@@ -32,6 +37,8 @@ enum foco_origem_tipo {
   cidadao
   pluvio
   manual
+
+  @@schema("public")
 }
 
 enum foco_prioridade {
@@ -40,6 +47,8 @@ enum foco_prioridade {
   P3
   P4
   P5
+
+  @@schema("public")
 }
 
 enum tipo_imovel {
@@ -47,6 +56,8 @@ enum tipo_imovel {
   comercial
   terreno
   ponto_estrategico
+
+  @@schema("public")
 }
 
 enum classificacao_inicial {
@@ -54,4 +65,6 @@ enum classificacao_inicial {
   risco
   foco
   caso_notificado
+
+  @@schema("public")
 }

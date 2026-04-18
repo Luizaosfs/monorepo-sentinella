@@ -16,4 +16,5 @@ model unidades_saude_sync_controle {
 
   logs unidades_saude_sync_log[]
   @@map("unidades_saude_sync_controle")
+  @@schema("public")
 }

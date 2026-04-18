@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { supabase } from '@/lib/supabase';
 import { api } from '@/services/api';
 import { FocoRiscoAtivo } from '@/types/database';
 
@@ -98,44 +97,23 @@ export function usePainelSLA({ clienteId, enabled = true }: Options) {
   // Fetch inicial
   useEffect(() => { fetch(); }, [fetch]);
 
-  // Supabase Realtime — atualiza ao receber INSERT/UPDATE em focos_risco
+  // Polling — atualiza a cada 30s
   useEffect(() => {
     if (!clienteId || !enabled) return;
-
-    const channel = supabase
-      .channel(`painel_sla_${clienteId}`)
-      .on(
-        'postgres_changes',
-        {
-          event:  '*',
-          schema: 'public',
-          table:  'focos_risco',
-          filter: `cliente_id=eq.${clienteId}`,
-        },
-        () => { fetch(); },
-      )
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
+    const id = setInterval(() => { fetch(); }, 30_000);
+    return () => clearInterval(id);
   }, [clienteId, enabled, fetch]);
 
-  // Emite push via Edge Function quando foco entra em 'critico'
+  // Rastreia focos críticos para notificações futuras (push NestJS pendente)
   useEffect(() => {
     statuses.forEach(({ foco, severidade }) => {
-      if (severidade === 'critico' && !notifiedCritico.current.has(foco.id)) {
-        notifiedCritico.current.add(foco.id);
-        supabase.functions
-          .invoke('sla-push-critico', {
-            body: { cliente_id: clienteId, foco_risco_id: foco.id },
-          })
-          .catch(() => undefined);
-      }
-      // Limpa da ref quando volta para ok/atencao
-      if (severidade === 'ok' || severidade === 'atencao') {
+      if (severidade !== 'critico') {
         notifiedCritico.current.delete(foco.id);
+      } else {
+        notifiedCritico.current.add(foco.id);
       }
     });
-  }, [statuses, clienteId]);
+  }, [statuses]);
 
   const counts = statuses.reduce(
     (acc, s) => { acc[s.severidade] = (acc[s.severidade] ?? 0) + 1; return acc; },

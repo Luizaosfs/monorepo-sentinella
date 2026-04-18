@@ -15,7 +15,7 @@ import {
 } from 'recharts';
 import { useRegionalKpi, useRegionalSla, useRegionalUso } from '@/hooks/queries/useRegionalData';
 import { useClienteAtivo } from '@/hooks/useClienteAtivo';
-import { supabase } from '@/lib/supabase';
+import { http } from '@sentinella/api-client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -592,12 +592,7 @@ export default function RegionalDashboard() {
     setInsightsLoading(true);
     setInsightsError(null);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const { data, error } = await supabase.functions.invoke('insights-regional', {
-        method: 'POST',
-        headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {},
-      });
-      if (error) throw error;
+      const data = await http.post<{ insights?: string | null; gerado_em?: string | null }>('/ia/insights-regional', {});
       setInsights(data?.insights ?? null);
       setGeradoEm(data?.gerado_em ?? null);
     } catch (err) {
@@ -613,12 +608,7 @@ export default function RegionalDashboard() {
     setGraficosLoading(true);
     setGraficosError(null);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const { data, error } = await supabase.functions.invoke('graficos-regionais', {
-        method: 'POST',
-        headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {},
-      });
-      if (error) throw error;
+      const data = await http.post<{ graficos?: unknown; resumo?: unknown; gerado_em?: string | null }>('/ia/graficos-regionais', {});
       setGraficos(data?.graficos ?? null);
       setGraficosResumo(data?.resumo ?? null);
       setGraficosGeradoEm(data?.gerado_em ?? null);

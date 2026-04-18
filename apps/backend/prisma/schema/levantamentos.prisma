@@ -24,4 +24,5 @@ model levantamentos {
   itens    levantamento_itens[]
 
   @@map("levantamentos")
+  @@schema("public")
 }

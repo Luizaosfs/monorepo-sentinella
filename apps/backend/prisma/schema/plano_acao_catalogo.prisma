@@ -10,4 +10,5 @@ model plano_acao_catalogo {
   updated_at DateTime @default(now()) @db.Timestamptz
 
   @@map("plano_acao_catalogo")
+  @@schema("public")
 }

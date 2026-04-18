@@ -6,4 +6,5 @@ model levantamento_item_tags {
   tag tags @relation(fields: [tag_id], references: [id])
   @@id([levantamento_item_id, tag_id])
   @@map("levantamento_item_tags")
+  @@schema("public")
 }

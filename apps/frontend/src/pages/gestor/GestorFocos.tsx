@@ -41,8 +41,6 @@ import {
 } from '@/lib/slaInteligenteVisual';
 import { api } from '@/services/api';
 import { STALE } from '@/lib/queryConfig';
-// Exceção justificada: supabase usado exclusivamente para realtime subscription (não para queries de dados)
-import { supabase } from '@/lib/supabase';
 
 type FiltroStatus = 'todos' | FocoRiscoStatus;
 type FiltroPrioridade = 'todos' | FocoRiscoPrioridade;
@@ -107,35 +105,7 @@ export default function GestorFocos() {
   const isMobile = useIsMobile();
   const qc = useQueryClient();
 
-  // ── Realtime: toast quando chega foco de cidadão ─────────────────────────────
-  useEffect(() => {
-    if (!clienteId) return;
-    const channel = supabase
-      .channel(`focos-cidadao-${clienteId}`)
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'focos_risco', filter: `cliente_id=eq.${clienteId}` },
-        (payload) => {
-          if (payload.new?.origem_tipo !== 'cidadao') return;
-          const id = payload.new.id as string;
-          const endereco = (payload.new?.endereco_normalizado as string | undefined) ?? 'Localização registrada';
-          queueMicrotask(() => {
-            toast.info('🦟 Nova denúncia de cidadão recebida', {
-              description: endereco,
-              action: {
-                label: 'Ver foco',
-                onClick: () => navigate(`/gestor/focos/${id}`),
-              },
-              duration: 10_000,
-            });
-            qc.invalidateQueries({ queryKey: ['focos_risco'] });
-            qc.invalidateQueries({ queryKey: ['focos_risco_kpi'] });
-          });
-        },
-      )
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [clienteId, navigate, qc]);
+  // Novos focos de cidadão detectados via polling das queries abaixo (refetchInterval)
 
   // ── Filtros ──────────────────────────────────────────────────────────────────
   const [busca, setBusca] = useState('');

@@ -6,4 +6,5 @@ model canal_cidadao_rate_limit {
 
   @@id([ip_hash, cliente_id, janela_hora])
   @@map("canal_cidadao_rate_limit")
+  @@schema("public")
 }

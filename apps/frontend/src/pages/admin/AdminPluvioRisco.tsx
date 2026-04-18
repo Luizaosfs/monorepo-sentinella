@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/lib/supabase';
+import { http } from '@sentinella/api-client';
 import { api } from '@/services/api';
 import { useClienteAtivo } from '@/hooks/useClienteAtivo';
 import { usePagination } from '@/hooks/usePagination';
@@ -345,14 +345,13 @@ const AdminPluvioRisco = () => {
       onConfirm: async () => {
         setRunningJob(true);
         try {
-          let { data, error: fnErr } = await supabase.functions.invoke('pluvio-risco-daily', { body: {} });
-          if (fnErr) throw fnErr;
+          let data = await http.post('/jobs/pluvio-risco-daily', {}) as Record<string, unknown>;
           if (!data?.ok) {
-            throw new Error(data?.error || 'Erro desconhecido');
+            throw new Error(String(data?.error ?? 'Erro desconhecido'));
           }
 
           // Auto-seed clientes sem policy e retentar
-          const semPolicy: string[] = (data.errors ?? [])
+          const semPolicy: string[] = ((data.errors as string[] | undefined) ?? [])
             .filter((e: string) => String(e).includes('sem policy ativa'))
             .map((e: string) => e.replace(/^Cliente\s+/, '').replace(/:\s*sem policy ativa$/, '').trim());
 
@@ -360,9 +359,9 @@ const AdminPluvioRisco = () => {
             toast.info(`Inicializando policy padrão para ${semPolicy.length} cliente(s)...`);
             await Promise.all(semPolicy.map((id) => seedDefaultRiskPolicy(id)));
             // Retentar o job após seed
-            const retry = await supabase.functions.invoke('pluvio-risco-daily', { body: {} });
-            if (!retry.error && retry.data?.ok) {
-              data = retry.data;
+            const retry = await http.post('/jobs/pluvio-risco-daily', {}).catch(() => null) as Record<string, unknown> | null;
+            if (retry?.ok) {
+              data = retry;
             }
           }
 

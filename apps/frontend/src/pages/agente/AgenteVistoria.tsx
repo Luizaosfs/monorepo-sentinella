@@ -15,7 +15,7 @@ import { useClienteAtivo } from '@/hooks/useClienteAtivo';
 import { useAuth } from '@/hooks/useAuth';
 import { STALE } from '@/lib/queryConfig';
 import { getCurrentCiclo } from '@/lib/ciclo';
-import { supabase } from '@/lib/supabase';
+import { api } from '@/services/api';
 import type { Etapa1Data } from '@/components/vistoria/VistoriaEtapa1Responsavel';
 import type { TipoAtividade } from '@/types/database';
 
@@ -27,17 +27,18 @@ function ReincidenteBanner({ imovelId, clienteId }: { imovelId: string; clienteI
   const { data: focos = [] } = useQuery({
     queryKey: ['focos-risco-imovel-reincidente', imovelId, clienteId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('focos_risco')
-        .select('id, status, created_at, foco_anterior_id')
-        .eq('cliente_id', clienteId)
-        .eq('imovel_id', imovelId)
-        .in('status', ['confirmado', 'em_tratamento', 'resolvido'])
-        .is('deleted_at', null)
-        .gte('created_at', since60d)
-        .limit(50);
-      if (error) throw error;
-      return data ?? [];
+      const result = await api.focosRisco.list(clienteId, {
+        status: ['confirmado', 'em_tratamento', 'resolvido'],
+        pageSize: 50,
+      });
+      return (result.data ?? []).filter(
+        (f) => f.imovel_id === imovelId && f.created_at >= since60d && !f.deleted_at
+      ).map((f) => ({
+        id: f.id,
+        status: f.status,
+        created_at: f.created_at,
+        foco_anterior_id: f.foco_anterior_id ?? null,
+      }));
     },
     enabled: !!imovelId && !!clienteId,
     staleTime: STALE.MEDIUM,

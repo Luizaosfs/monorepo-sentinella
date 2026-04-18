@@ -20,4 +20,5 @@ model billing_usage_snapshot {
   payload_detalhado     Json?
 
   @@map("billing_usage_snapshot")
+  @@schema("public")
 }

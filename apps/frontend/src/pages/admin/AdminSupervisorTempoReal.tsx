@@ -3,7 +3,7 @@ import { Radio, ExternalLink, Clock } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useClienteAtivo } from '@/hooks/useClienteAtivo';
-import { supabase } from '@/lib/supabase';
+import { http } from '@sentinella/api-client';
 import { STALE } from '@/lib/queryConfig';
 import AdminPageHeader from '@/components/AdminPageHeader';
 import { Card, CardContent } from '@/components/ui/card';
@@ -29,49 +29,32 @@ export default function AdminSupervisorTempoReal() {
     queryFn: async () => {
       if (!clienteId) return [];
       const hoje = new Date().toISOString().split('T')[0];
+      try {
+        const vistorias = await http.get(
+          `/vistorias?clienteId=${encodeURIComponent(clienteId)}&createdAfter=${encodeURIComponent(hoje)}`,
+        ) as Array<Record<string, unknown>>;
 
-      const { data: vistorias } = await supabase
-        .from('vistorias')
-        .select(`
-          id, agente_id, status, created_at,
-          lat_chegada, lng_chegada, checkin_em,
-          imovel:imoveis(logradouro, numero, bairro),
-          agente:usuarios(id, nome)
-        `)
-        .eq('cliente_id', clienteId)
-        .gte('created_at', hoje)
-        .order('created_at', { ascending: false });
-
-      const byAgente = new Map<string, AgenteStatus>();
-
-      for (const v of (vistorias ?? [])) {
-        const ag = v.agente as { id: string; nome: string } | null;
-        if (!ag) continue;
-
-        if (!byAgente.has(ag.id)) {
-          byAgente.set(ag.id, {
-            agente: ag,
-            total: 0,
-            ultima_lat: null,
-            ultima_lng: null,
-            ultima_endereco: null,
-            ultima_em: null,
-          });
+        const byAgente = new Map<string, AgenteStatus>();
+        for (const v of (vistorias ?? [])) {
+          const ag = (v.agente ?? { id: v.agente_id, nome: null }) as { id: string; nome: string } | null;
+          if (!ag?.id) continue;
+          if (!byAgente.has(ag.id)) {
+            byAgente.set(ag.id, { agente: ag, total: 0, ultima_lat: null, ultima_lng: null, ultima_endereco: null, ultima_em: null });
+          }
+          const entry = byAgente.get(ag.id)!;
+          entry.total++;
+          if (!entry.ultima_em) {
+            const im = v.imovel as { logradouro: string; numero: string; bairro: string } | null;
+            entry.ultima_lat = (v.lat_chegada ?? v.latChegada) as number | null;
+            entry.ultima_lng = (v.lng_chegada ?? v.lngChegada) as number | null;
+            entry.ultima_endereco = im ? `${im.logradouro}, ${im.numero} — ${im.bairro}` : null;
+            entry.ultima_em = (v.checkin_em ?? v.checkinEm ?? v.created_at ?? v.createdAt) as string | null;
+          }
         }
-
-        const entry = byAgente.get(ag.id)!;
-        entry.total++;
-
-        if (!entry.ultima_em) {
-          const im = v.imovel as { logradouro: string; numero: string; bairro: string } | null;
-          entry.ultima_lat = v.lat_chegada;
-          entry.ultima_lng = v.lng_chegada;
-          entry.ultima_endereco = im ? `${im.logradouro}, ${im.numero} — ${im.bairro}` : null;
-          entry.ultima_em = v.checkin_em ?? v.created_at;
-        }
+        return [...byAgente.values()];
+      } catch {
+        return [];
       }
-
-      return [...byAgente.values()];
     },
     enabled: !!clienteId,
     staleTime: STALE.SHORT,

@@ -11,4 +11,5 @@ model sentinela_yolo_class_config {
   updated_at DateTime @default(now()) @db.Timestamptz
 
   @@map("sentinela_yolo_class_config")
+  @@schema("public")
 }

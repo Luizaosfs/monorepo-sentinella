@@ -34,10 +34,15 @@ export class LoginUseCase {
       throw AuthException.notLinked();
     }
 
-    // TODO: Na migração, o campo senha será adicionado à tabela usuarios.
-    // Por ora, durante a transição do Supabase Auth, validar contra auth.users.
-    // Quando a migração estiver completa, usar:
-    // const senhaValida = await bcrypt.compare(input.password, usuario.senha_hash)
+    // Valida senha contra auth.users.encrypted_password (hash bcrypt do Supabase)
+    const authRows = await this.prisma.client.$queryRaw<Array<{ encrypted_password: string | null }>>`
+      SELECT encrypted_password FROM auth.users WHERE id = ${usuario.auth_id}::uuid LIMIT 1
+    `;
+    const encryptedPassword = authRows[0]?.encrypted_password;
+    if (!encryptedPassword) throw AuthException.invalidCredentials();
+
+    const senhaValida = await bcrypt.compare(input.password, encryptedPassword);
+    if (!senhaValida) throw AuthException.invalidCredentials();
 
     const papeis = usuario.papeis_usuarios.map((p) => p.papel);
 

@@ -28,4 +28,5 @@ model usuarios {
   voos_piloto             voos[]              @relation("voo_piloto")
 
   @@map("usuarios")
+  @@schema("public")
 }

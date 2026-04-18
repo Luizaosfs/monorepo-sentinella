@@ -8,4 +8,5 @@ model system_alerts {
   criado_em    DateTime  @default(now()) @db.Timestamptz
 
   @@map("system_alerts")
+  @@schema("public")
 }

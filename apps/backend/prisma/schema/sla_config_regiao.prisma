@@ -10,4 +10,5 @@ model sla_config_regiao {
   regiao  regioes  @relation(fields: [regiao_id], references: [id])
 
   @@map("sla_config_regiao")
+  @@schema("public")
 }

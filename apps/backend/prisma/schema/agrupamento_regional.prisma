@@ -9,4 +9,5 @@ model agrupamento_regional {
 
   clientes agrupamento_cliente[]
   @@map("agrupamento_regional")
+  @@schema("public")
 }

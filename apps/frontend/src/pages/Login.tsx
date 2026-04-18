@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/lib/supabase";
+import { http } from "@sentinella/api-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -60,10 +60,10 @@ const Login = React.forwardRef<HTMLDivElement>((_props, _ref) => {
     }
     setForgotLoading(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+      await http.post('/auth/forgot-password', {
+        email: email.trim().toLowerCase(),
         redirectTo: `${window.location.origin}/reset-password`,
       });
-      if (error) throw error;
       toast.success("Email de redefinição enviado! Verifique sua caixa de entrada.");
       setForgotMode(false);
     } catch (err: unknown) {

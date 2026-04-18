@@ -42,4 +42,5 @@ model focos_risco {
   sla_operacional sla_operacional[]
 
   @@map("focos_risco")
+  @@schema("public")
 }

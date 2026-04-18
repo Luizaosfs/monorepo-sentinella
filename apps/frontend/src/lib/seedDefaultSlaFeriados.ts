@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { http } from '@sentinella/api-client';
 
 /**
  * Semeia feriados nacionais brasileiros para um cliente recém-criado.
@@ -9,10 +9,7 @@ import { supabase } from '@/lib/supabase';
  */
 export async function seedDefaultSlaFeriados(clienteId: string): Promise<void> {
   try {
-    const { error } = await supabase.rpc('seed_sla_feriados_nacionais', {
-      p_cliente_id: clienteId,
-    });
-    if (error) throw error;
+    await http.post('/seed/sla-feriados', { clienteId });
   } catch (err) {
     console.error('[seedDefaultSlaFeriados] Erro ao criar feriados padrão:', err);
   }

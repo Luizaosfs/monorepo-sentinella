@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { http } from '@sentinella/api-client';
 
 /**
  * Configuração padrão de scoring de risco para drones.
@@ -98,45 +98,12 @@ const DEFAULT_YOLO_SYNONYMS = [
  */
 export async function seedDefaultDroneRiskConfig(clienteId: string): Promise<void> {
   try {
-    // 1. Scoring config (uma linha por cliente)
-    const { error: configErr } = await supabase
-      .from('sentinela_drone_risk_config')
-      .insert({ cliente_id: clienteId, ...DEFAULT_DRONE_RISK_CONFIG });
-
-    if (configErr) {
-      // Pode já existir se o trigger do banco rodou primeiro — não é erro fatal
-      if (!configErr.message?.includes('duplicate') && !configErr.message?.includes('unique')) {
-        throw configErr;
-      }
-    }
-
-    // 2. Classes YOLO
-    const { error: classErr } = await supabase
-      .from('sentinela_yolo_class_config')
-      .insert(DEFAULT_YOLO_CLASSES.map((c) => ({ cliente_id: clienteId, ...c })));
-
-    if (classErr && !classErr.message?.includes('duplicate') && !classErr.message?.includes('unique')) {
-      throw classErr;
-    }
-
-    // 3. Sinônimos
-    const { error: synErr } = await supabase
-      .from('sentinela_yolo_synonym')
-      .insert(DEFAULT_YOLO_SYNONYMS.map((s) => ({ cliente_id: clienteId, ...s })));
-
-    if (synErr && !synErr.message?.includes('duplicate') && !synErr.message?.includes('unique')) {
-      throw synErr;
-    }
-
-    // 4. Ações por tipo no catálogo do operador (espelho do YOLO config)
-    const { error: catalogErr } = await supabase.rpc('seed_plano_acao_catalogo_por_tipo', {
-      p_cliente_id: clienteId,
+    await http.post('/seed/drone-risk-config', {
+      clienteId,
+      config: DEFAULT_DRONE_RISK_CONFIG,
+      yoloClasses: DEFAULT_YOLO_CLASSES,
+      synonyms: DEFAULT_YOLO_SYNONYMS,
     });
-
-    if (catalogErr) {
-      console.warn('[seedDefaultDroneRiskConfig] Aviso ao seed catálogo por tipo:', catalogErr.message);
-    }
-
   } catch (err) {
     console.error('[seedDefaultDroneRiskConfig] Erro ao criar config drone padrão:', err);
   }

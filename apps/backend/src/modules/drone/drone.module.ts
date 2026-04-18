@@ -9,6 +9,7 @@ import { CreateDrone } from './use-cases/create-drone';
 import { CreateVoo } from './use-cases/create-voo';
 import { CreateYoloFeedback } from './use-cases/create-yolo-feedback';
 import { DeleteDrone } from './use-cases/delete-drone';
+import { DeleteVoo } from './use-cases/delete-voo';
 import { FilterDrones } from './use-cases/filter-drones';
 import { FilterPipelines } from './use-cases/filter-pipelines';
 import { FilterVoos } from './use-cases/filter-voos';
@@ -25,6 +26,7 @@ import { SaveVoo } from './use-cases/save-voo';
     FilterVoos,
     CreateVoo,
     SaveVoo,
+    DeleteVoo,
     FilterPipelines,
     GetPipeline,
     CreateYoloFeedback,

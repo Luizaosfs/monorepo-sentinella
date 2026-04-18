@@ -16,4 +16,5 @@ model levantamento_analise_ia {
   clusters_redacted_at DateTime? @db.Timestamptz
 
   @@map("levantamento_analise_ia")
+  @@schema("public")
 }

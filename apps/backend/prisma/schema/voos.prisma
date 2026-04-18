@@ -23,4 +23,5 @@ model voos {
   piloto       usuarios?     @relation("voo_piloto", fields: [piloto_id], references: [id])
 
   @@map("voos")
+  @@schema("public")
 }

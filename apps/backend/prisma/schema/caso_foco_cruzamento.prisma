@@ -7,4 +7,5 @@ model caso_foco_cruzamento {
 
   @@unique([caso_id, levantamento_item_id])
   @@map("caso_foco_cruzamento")
+  @@schema("public")
 }

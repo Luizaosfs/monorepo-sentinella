@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { http } from '@sentinella/api-client';
 import { DEFAULT_SLA_CONFIG } from '@/types/sla-config';
 
 /**
@@ -10,17 +10,7 @@ import { DEFAULT_SLA_CONFIG } from '@/types/sla-config';
  */
 export async function seedDefaultSlaConfig(clienteId: string): Promise<void> {
   try {
-    const { error } = await supabase
-      .from('sla_config')
-      .insert({ cliente_id: clienteId, config: DEFAULT_SLA_CONFIG });
-
-    if (error) {
-      // Ignora conflito de unicidade (pode já existir via trigger do banco)
-      if (!error.message?.includes('duplicate') && !error.message?.includes('unique')) {
-        throw error;
-      }
-    }
-
+    await http.post('/seed/sla-config', { clienteId, config: DEFAULT_SLA_CONFIG });
   } catch (err) {
     console.error('[seedDefaultSlaConfig] Erro ao criar sla_config padrão:', err);
   }

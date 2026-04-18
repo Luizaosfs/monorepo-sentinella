@@ -7,4 +7,5 @@ model tags {
 
   levantamento_item_tags levantamento_item_tags[]
   @@map("tags")
+  @@schema("public")
 }

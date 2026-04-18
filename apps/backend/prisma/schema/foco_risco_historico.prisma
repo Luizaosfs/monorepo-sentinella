@@ -15,4 +15,5 @@ model foco_risco_historico {
   cliente clientes    @relation(fields: [cliente_id], references: [id])
 
   @@map("foco_risco_historico")
+  @@schema("public")
 }

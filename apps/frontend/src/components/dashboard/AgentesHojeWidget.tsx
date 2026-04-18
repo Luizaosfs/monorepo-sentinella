@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Clock, ExternalLink, Users } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { supabase } from '@/lib/supabase';
+import { http } from '@sentinella/api-client';
 import { STALE } from '@/lib/queryConfig';
 import { useClienteAtivo } from '@/hooks/useClienteAtivo';
 import { Card, CardContent } from '@/components/ui/card';
@@ -33,49 +33,32 @@ export function AgentesHojeWidget() {
     queryFn: async () => {
       if (!clienteId) return [];
       const hoje = new Date().toISOString().split('T')[0];
+      try {
+        const vistorias = await http.get(
+          `/vistorias?clienteId=${encodeURIComponent(clienteId)}&createdAfter=${encodeURIComponent(hoje)}`,
+        ) as Array<Record<string, unknown>>;
 
-      const { data: vistorias } = await supabase
-        .from('vistorias')
-        .select(`
-          id, agente_id, status, created_at,
-          lat_chegada, lng_chegada, checkin_em,
-          imovel:imoveis(logradouro, numero, bairro),
-          agente:usuarios(id, nome)
-        `)
-        .eq('cliente_id', clienteId)
-        .gte('created_at', hoje)
-        .order('created_at', { ascending: false });
-
-      const byAgente = new Map<string, AgenteStatus>();
-
-      for (const v of (vistorias ?? [])) {
-        const ag = v.agente as { id: string; nome: string } | null;
-        if (!ag) continue;
-
-        if (!byAgente.has(ag.id)) {
-          byAgente.set(ag.id, {
-            agente: ag,
-            total: 0,
-            ultima_lat: null,
-            ultima_lng: null,
-            ultima_endereco: null,
-            ultima_em: null,
-          });
+        const byAgente = new Map<string, AgenteStatus>();
+        for (const v of (vistorias ?? [])) {
+          const ag = (v.agente ?? { id: v.agente_id, nome: null }) as { id: string; nome: string } | null;
+          if (!ag?.id) continue;
+          if (!byAgente.has(ag.id)) {
+            byAgente.set(ag.id, { agente: ag, total: 0, ultima_lat: null, ultima_lng: null, ultima_endereco: null, ultima_em: null });
+          }
+          const entry = byAgente.get(ag.id)!;
+          entry.total++;
+          if (!entry.ultima_em) {
+            const im = v.imovel as { logradouro: string; numero: string; bairro: string } | null;
+            entry.ultima_lat = (v.lat_chegada ?? v.latChegada) as number | null;
+            entry.ultima_lng = (v.lng_chegada ?? v.lngChegada) as number | null;
+            entry.ultima_endereco = im ? `${im.logradouro}, ${im.numero} — ${im.bairro}` : null;
+            entry.ultima_em = (v.checkin_em ?? v.checkinEm ?? v.created_at ?? v.createdAt) as string | null;
+          }
         }
-
-        const entry = byAgente.get(ag.id)!;
-        entry.total++;
-
-        if (!entry.ultima_em) {
-          const im = v.imovel as { logradouro: string; numero: string; bairro: string } | null;
-          entry.ultima_lat = v.lat_chegada;
-          entry.ultima_lng = v.lng_chegada;
-          entry.ultima_endereco = im ? `${im.logradouro}, ${im.numero} — ${im.bairro}` : null;
-          entry.ultima_em = v.checkin_em ?? v.created_at;
-        }
+        return [...byAgente.values()];
+      } catch {
+        return [];
       }
-
-      return [...byAgente.values()];
     },
     enabled: !!clienteId,
     staleTime: STALE.SHORT,
@@ -87,21 +70,19 @@ export function AgentesHojeWidget() {
     queryKey: ['agentes-lista-cliente', clienteId],
     queryFn: async () => {
       if (!clienteId) return [];
-      // Passo 1: auth_ids com papel 'agente'
-      const { data: papeis } = await supabase
-        .from('papeis_usuarios')
-        .select('usuario_id')
-        .eq('papel', 'agente');
-      const authIds = (papeis ?? []).map((p: { usuario_id: string }) => p.usuario_id);
-      if (authIds.length === 0) return [];
-      // Passo 2: usuários do cliente que têm esse papel
-      const { data: usuarios } = await supabase
-        .from('usuarios')
-        .select('id, nome')
-        .eq('cliente_id', clienteId)
-        .eq('ativo', true)
-        .in('auth_id', authIds);
-      return usuarios ?? [];
+      try {
+        const papeis = await http.get(
+          `/usuarios/papeis?clienteId=${encodeURIComponent(clienteId)}`,
+        ) as Array<{ usuario_id: string; papel: string }>;
+        const agenteIds = new Set((papeis ?? []).filter(p => p.papel === 'agente').map(p => p.usuario_id));
+        if (agenteIds.size === 0) return [];
+        const usuarios = await http.get(
+          `/usuarios?clienteId=${encodeURIComponent(clienteId)}&ativo=true`,
+        ) as Array<{ id: string; nome: string }>;
+        return (usuarios ?? []).filter(u => agenteIds.has(u.id));
+      } catch {
+        return [];
+      }
     },
     enabled: !!clienteId,
     staleTime: STALE.LONG,

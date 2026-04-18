@@ -7,4 +7,5 @@ model sentinela_risk_bin_intensidade_chuva {
 
   policy sentinela_risk_policy @relation(fields: [policy_id], references: [id])
   @@map("sentinela_risk_bin_intensidade_chuva")
+  @@schema("public")
 }

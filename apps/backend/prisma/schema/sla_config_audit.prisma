@@ -10,4 +10,5 @@ model sla_config_audit {
   cliente clientes @relation(fields: [cliente_id], references: [id])
 
   @@map("sla_config_audit")
+  @@schema("public")
 }

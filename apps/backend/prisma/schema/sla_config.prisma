@@ -8,4 +8,5 @@ model sla_config {
   cliente clientes @relation(fields: [cliente_id], references: [id])
 
   @@map("sla_config")
+  @@schema("public")
 }

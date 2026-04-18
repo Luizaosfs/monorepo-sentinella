@@ -1,4 +1,4 @@
-import { supabaseUrl } from '@/lib/supabase';
+const _supabaseUrl = (import.meta.env.VITE_SUPABASE_URL as string | undefined) || '';
 
 export const resolveMediaUrl = (value?: string | null) => {
   if (!value) return null;
@@ -7,11 +7,12 @@ export const resolveMediaUrl = (value?: string | null) => {
 
   if (/^https?:\/\//i.test(raw)) return raw;
 
+  // Legacy Supabase Storage paths — resolved via env var if still present in DB
   const normalized = raw.replace(/^\/+/, '');
   if (normalized.startsWith('storage/v1/object/')) {
-    return `${supabaseUrl}/${normalized}`;
+    return _supabaseUrl ? `${_supabaseUrl}/${normalized}` : null;
   }
 
-  // Expected format: bucket/path/to/file.jpg
-  return `${supabaseUrl}/storage/v1/object/public/${normalized}`;
+  // Expected format: bucket/path/to/file.jpg (Supabase Storage legacy)
+  return _supabaseUrl ? `${_supabaseUrl}/storage/v1/object/public/${normalized}` : null;
 };

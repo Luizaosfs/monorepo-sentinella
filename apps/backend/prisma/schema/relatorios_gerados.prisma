@@ -8,4 +8,5 @@ model relatorios_gerados {
   created_at     DateTime @default(now()) @db.Timestamptz
 
   @@map("relatorios_gerados")
+  @@schema("public")
 }

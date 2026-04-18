@@ -11,12 +11,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { api } from '@/services/api';
-import { supabase } from '@/lib/supabase';
+import { invokeUploadEvidencia } from '@/lib/uploadEvidencia';
 import { Loader2, Upload, X } from 'lucide-react';
 import { SlaOperacional, getSlaLocalLabel } from '@/types/sla';
 import { cn } from '@/lib/utils';
-
-const BUCKET_EVIDENCIAS = 'evidencias';
 
 export type FileWithPreview = { file: File; preview: string; legenda: string };
 
@@ -99,19 +97,21 @@ export function ConcluirSlaDialog({
   };
 
   const uploadEvidencias = async (operacaoId: string) => {
-    const basePath = `${operacaoId}`;
     for (let i = 0; i < files.length; i++) {
       const { file, legenda } = files[i];
-      const ext = file.name.split('.').pop() || 'jpg';
-      const path = `${basePath}/${crypto.randomUUID()}.${ext}`;
-      const { error: upError } = await supabase.storage
-        .from(BUCKET_EVIDENCIAS)
-        .upload(path, file, { contentType: file.type, upsert: false });
-      if (upError) throw upError;
-      const { data: urlData } = supabase.storage
-        .from(BUCKET_EVIDENCIAS)
-        .getPublicUrl(path);
-      await api.operacoesSla.addEvidencia(operacaoId, urlData.publicUrl, legenda || null);
+      const reader = new FileReader();
+      const file_base64 = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve((reader.result as string).split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      const result = await invokeUploadEvidencia({
+        file_base64,
+        filename: file.name,
+        folder: operacaoId,
+      });
+      if ('error' in result) throw result.error;
+      await api.operacoesSla.addEvidencia(operacaoId, result.url, legenda || null);
     }
   };
 

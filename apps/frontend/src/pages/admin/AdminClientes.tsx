@@ -2,7 +2,7 @@ import { useState, Suspense, lazy } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/services/api';
-import { supabase, supabaseUrl, supabaseAnonKey } from '@/lib/supabase';
+import { tokenStore } from '@sentinella/api-client';
 import { useClienteAtivo } from '@/hooks/useClienteAtivo';
 import { usePagination } from '@/hooks/usePagination';
 import TablePagination from '@/components/TablePagination';
@@ -113,32 +113,17 @@ const AdminClientes = () => {
       // ── 2. Criar supervisor inicial (obrigatório) ─────────────────────────
       // Falha aqui → rollback (soft-delete do cliente) → throw → onError
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session?.access_token) throw new Error('Sessão expirada. Faça login novamente.');
-
-        const resp = await fetch(`${supabaseUrl}/functions/v1/criar-usuario`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': supabaseAnonKey,
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({
-            nome: payload.supervisor!.nome.trim(),
-            email: payload.supervisor!.email.trim().toLowerCase(),
-            senha: payload.supervisor!.senha,
-            cliente_id: newCliente.id,
-            papel: 'supervisor',
-          }),
+        if (!tokenStore.getAccessToken()) throw new Error('Sessão expirada. Faça login novamente.');
+        await api.usuarios.create({
+          nome: payload.supervisor!.nome.trim(),
+          email: payload.supervisor!.email.trim().toLowerCase(),
+          senha: payload.supervisor!.senha,
+          cliente_id: newCliente.id,
+          papel: 'supervisor',
         });
-        const fnData = await resp.json() as Record<string, unknown>;
-        if (!resp.ok) throw new Error(String(fnData?.error ?? `Erro ${resp.status}`));
       } catch (supervisorErr) {
         // Rollback: soft-delete do cliente recém-criado para não deixar órfão
-        await supabase
-          .from('clientes')
-          .update({ ativo: false, deleted_at: new Date().toISOString() })
-          .eq('id', newCliente.id);
+        await api.clientes.update(newCliente.id, { ativo: false, deleted_at: new Date().toISOString() } as never);
         throw new Error(
           `Falha ao criar supervisor: ${supervisorErr instanceof Error ? supervisorErr.message : String(supervisorErr)}. ` +
           `O cliente foi removido automaticamente.`
@@ -176,11 +161,7 @@ const AdminClientes = () => {
   const deleteMutation = useMutation({
     // QW-10A: soft delete — DELETE físico bloqueado por trigger no banco
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('clientes')
-        .update({ ativo: false, deleted_at: new Date().toISOString() })
-        .eq('id', id);
-      if (error) throw error;
+      await api.clientes.update(id, { ativo: false, deleted_at: new Date().toISOString() } as never);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin_clientes', clienteId] });

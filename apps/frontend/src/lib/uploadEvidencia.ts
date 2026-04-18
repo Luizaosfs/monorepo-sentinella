@@ -1,5 +1,7 @@
-import { supabase, supabaseAnonKey, supabaseUrl } from '@/lib/supabase';
+import { tokenStore } from '@sentinella/api-client';
 import { captureError } from '@/lib/sentry';
+
+const BACKEND_URL = (import.meta.env.VITE_API_URL as string | undefined) || 'http://localhost:3333';
 
 type UploadBody = {
   file_base64: string;
@@ -8,30 +10,22 @@ type UploadBody = {
 };
 
 /**
- * Invoca a Edge Function upload-evidencia com JWT atualizado.
- * Evita 401 quando a sessão expirou durante um formulário longo em campo.
+ * Envia arquivo para o endpoint NestJS /cloudinary/upload com JWT atual.
  */
 export async function invokeUploadEvidencia(
   body: UploadBody,
 ): Promise<{ url: string; public_id?: string } | { error: Error }> {
-  const { data: sessionData } = await supabase.auth.getSession();
-  let accessToken = sessionData.session?.access_token;
+  const accessToken = tokenStore.getAccessToken();
 
   if (!accessToken) {
     return { error: new Error('Sessão não encontrada. Faça login novamente.') };
   }
 
-  const { data: refreshed } = await supabase.auth.refreshSession();
-  if (refreshed.session?.access_token) {
-    accessToken = refreshed.session.access_token;
-  }
-
-  const res = await fetch(`${supabaseUrl}/functions/v1/upload-evidencia`, {
+  const res = await fetch(`${BACKEND_URL}/cloudinary/upload`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${accessToken}`,
-      apikey: supabaseAnonKey,
     },
     body: JSON.stringify(body),
   });

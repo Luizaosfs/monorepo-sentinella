@@ -46,4 +46,5 @@ model levantamento_itens {
   evidencias   levantamento_item_evidencias[]
 
   @@map("levantamento_itens")
+  @@schema("public")
 }

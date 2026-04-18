@@ -10,4 +10,5 @@ model offline_sync_log {
   idempotency_key String?   @db.Uuid
 
   @@map("offline_sync_log")
+  @@schema("public")
 }

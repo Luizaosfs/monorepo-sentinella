@@ -51,6 +51,10 @@ export class PrismaDroneWriteRepository implements DroneWriteRepository {
     });
   }
 
+  async deleteVoo(id: string): Promise<void> {
+    await this.prisma.client.voos.delete({ where: { id } });
+  }
+
   async createYoloFeedback(entity: YoloFeedback): Promise<YoloFeedback> {
     const row = await this.prisma.client.yolo_feedback.create({
       data: {

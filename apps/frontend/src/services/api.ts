@@ -21,7 +21,7 @@
 import '@/lib/api-client-config';
 import { http } from '@sentinella/api-client';
 import { logFallback } from '@/lib/fallbackLogger';
-import { api as _sb } from './api-supabase';
+import { api as _sb } from './api-stub';
 
 /** Monta query string, ignorando undefined/null. Arrays → múltiplos params. */
 function qs(params: Record<string, unknown>): string {
@@ -514,11 +514,15 @@ export const api = {
      */
     listarComVinculos: _sb.operacoes.listarComVinculos.bind(_sb.operacoes),
 
-    /**
-     * @fallback Backend Zod enum não aceita 'cancelado' em PUT.
-     * Mantido em Supabase.
-     */
-    cancelar: _sb.operacoes.cancelar.bind(_sb.operacoes),
+    /** Cancela (soft delete) operação. */
+    cancelar: async (id: string): Promise<void> => {
+      try {
+        return await http.delete(`/operacoes/${id}`);
+      } catch (err) {
+        logFallback('operacoes', 'cancelar', err, `DELETE /operacoes/${id}`);
+        return _sb.operacoes.cancelar(id);
+      }
+    },
 
     /** Cria operação vinculada a item de levantamento (verifica duplicata). */
     criarParaItem: async (
@@ -670,7 +674,10 @@ export const api = {
     // ── Fallback Supabase ──────────────────────────────────────────────────
     /** @fallback Configuração de fonte: sem endpoint NestJS equivalente. */
     listConfigFonteMap: _sb.levantamentos.listConfigFonteMap.bind(_sb.levantamentos),
-    delete: _sb.levantamentos.delete?.bind(_sb.levantamentos),
+    delete: async (id: string): Promise<void> => {
+      try { await http.delete(`/levantamentos/${id}`); }
+      catch { return _sb.levantamentos.delete?.(id); }
+    },
   },
 
   // ── itens — HTTP parcial + fallback Supabase ───────────────────────────────
@@ -703,11 +710,27 @@ export const api = {
     // ── Fallback Supabase ──────────────────────────────────────────────────
     /** @fallback updateAtendimento é no-op legado. */
     updateAtendimento: _sb.itens.updateAtendimento.bind(_sb.itens),
-    /** @fallback Demais métodos de itens: sem endpoint NestJS mapeado. */
-    getById: _sb.itens.getById?.bind(_sb.itens),
-    update: _sb.itens.update?.bind(_sb.itens),
-    delete: _sb.itens.delete?.bind(_sb.itens),
-    addEvidencia: _sb.itens.addEvidencia?.bind(_sb.itens),
+    getById: async (id: string) => {
+      try {
+        const raw = await http.get(`/levantamentos/itens/${id}`);
+        return deepToSnake(raw) as Ret<typeof _sb.itens.getById>;
+      } catch { return _sb.itens.getById?.(id); }
+    },
+    update: async (id: string, payload: Parameters<NonNullable<typeof _sb.itens.update>>[1]) => {
+      try { await http.put(`/levantamentos/itens/${id}`, deepToCamel(payload)); }
+      catch { return _sb.itens.update?.(id, payload); }
+    },
+    delete: async (id: string) => {
+      try { await http.delete(`/levantamentos/itens/${id}`); }
+      catch { return _sb.itens.delete?.(id); }
+    },
+    addEvidencia: async (itemId: string, payload: Parameters<NonNullable<typeof _sb.itens.addEvidencia>>[1]) => {
+      try {
+        const raw = await http.post(`/levantamentos/itens/${itemId}/evidencias`, deepToCamel(payload));
+        return deepToSnake(raw) as Ret<typeof _sb.itens.addEvidencia>;
+      } catch { return _sb.itens.addEvidencia?.(itemId, payload); }
+    },
+    /** @fallback listByFoco: join via foco_risco sem campo direto no item — usa Supabase. */
     listByFoco: _sb.itens.listByFoco?.bind(_sb.itens),
     /** @fallback Métodos analíticos e de enriquecimento: sem endpoint NestJS. */
     listByCliente: _sb.itens.listByCliente.bind(_sb.itens),
@@ -1079,27 +1102,106 @@ export const api = {
       } catch { return _sb.usuarios.listAll(); }
     },
 
-    // ── Fallback Supabase — sem endpoint NestJS equivalente ────────────────
-    /** @fallback Lógica RPC + filtro agente/operador sem equivalente NestJS. */
-    listAgentes: _sb.usuarios.listAgentes.bind(_sb.usuarios),
-    /** @fallback Sem endpoint NestJS (listAllPapeis sem filtro de cliente). */
-    listAllPapeis: _sb.usuarios.listAllPapeis.bind(_sb.usuarios),
-    /** @fallback Sem endpoint NestJS. */
-    checkEmailExists: _sb.usuarios.checkEmailExists.bind(_sb.usuarios),
-    /** @fallback Insert raw — comportamento diferente do POST /usuarios (que provisiona auth). */
-    insert: _sb.usuarios.insert.bind(_sb.usuarios),
-    /** @fallback Sem PUT /usuarios/:id no backend. */
-    update: _sb.usuarios.update.bind(_sb.usuarios),
-    /** @fallback Sem endpoint de papel update no backend. */
-    updatePapel: _sb.usuarios.updatePapel.bind(_sb.usuarios),
-    /** @fallback Idem updatePapel (RPC rpc_set_papel_usuario). */
-    setPapel: _sb.usuarios.setPapel.bind(_sb.usuarios),
-    /** @fallback Sem endpoint de deleção de papéis no backend. */
-    deletePapeis: _sb.usuarios.deletePapeis.bind(_sb.usuarios),
-    /** @fallback Sem DELETE /usuarios/:id (soft delete) no backend. */
-    remove: _sb.usuarios.remove.bind(_sb.usuarios),
-    /** @fallback Sem endpoint de onboarding no backend. */
-    marcarOnboardingConcluido: _sb.usuarios.marcarOnboardingConcluido.bind(_sb.usuarios),
+    /** Lista agentes/operadores do cliente. */
+    listAgentes: async (clienteId: string): Promise<Ret<typeof _sb.usuarios.listAgentes>> => {
+      try {
+        const raw = await http.get(`/usuarios${qs({ clienteId, papel: 'agente' })}`);
+        return deepToSnake(raw) as Ret<typeof _sb.usuarios.listAgentes>;
+      } catch (err) {
+        logFallback('usuarios', 'listAgentes', err, '/usuarios?papel=agente');
+        return _sb.usuarios.listAgentes(clienteId);
+      }
+    },
+
+    /** Lista todos os papéis configurados no cliente. */
+    listAllPapeis: async (clienteId: string): Promise<Ret<typeof _sb.usuarios.listAllPapeis>> => {
+      try {
+        return await http.get(`/usuarios/papeis${qs({ clienteId })}`);
+      } catch (err) {
+        logFallback('usuarios', 'listAllPapeis', err, '/usuarios/papeis');
+        return _sb.usuarios.listAllPapeis(clienteId);
+      }
+    },
+
+    /** Verifica se email já existe. */
+    checkEmailExists: async (email: string): Promise<boolean> => {
+      try {
+        const raw = await http.get(`/usuarios${qs({ email })}`) as unknown[];
+        return Array.isArray(raw) ? raw.length > 0 : false;
+      } catch {
+        return _sb.usuarios.checkEmailExists(email);
+      }
+    },
+
+    /** Cria usuário (alias de create). */
+    insert: async (payload: Parameters<typeof _sb.usuarios.insert>[0]): Promise<Ret<typeof _sb.usuarios.insert>> => {
+      try {
+        return deepToSnake(await http.post('/usuarios', payload)) as Ret<typeof _sb.usuarios.insert>;
+      } catch (err) {
+        logFallback('usuarios', 'insert', err, 'POST /usuarios');
+        return _sb.usuarios.insert(payload);
+      }
+    },
+
+    /** Atualiza campos do usuário. */
+    update: async (id: string, payload: Parameters<typeof _sb.usuarios.update>[1]): Promise<Ret<typeof _sb.usuarios.update>> => {
+      try {
+        return deepToSnake(await http.patch(`/usuarios/${id}`, payload)) as Ret<typeof _sb.usuarios.update>;
+      } catch (err) {
+        logFallback('usuarios', 'update', err, `PATCH /usuarios/${id}`);
+        return _sb.usuarios.update(id, payload);
+      }
+    },
+
+    /** Atualiza papel do usuário. */
+    updatePapel: async (id: string, papel: string): Promise<void> => {
+      try {
+        await http.patch(`/usuarios/${id}`, { papeis: [papel] });
+      } catch (err) {
+        logFallback('usuarios', 'updatePapel', err, `PATCH /usuarios/${id}`);
+        return _sb.usuarios.updatePapel(id, papel);
+      }
+    },
+
+    /** Define papel do usuário (alias de updatePapel). */
+    setPapel: async (id: string, papel: string): Promise<void> => {
+      try {
+        await http.patch(`/usuarios/${id}`, { papeis: [papel] });
+      } catch (err) {
+        logFallback('usuarios', 'setPapel', err, `PATCH /usuarios/${id}`);
+        return _sb.usuarios.setPapel(id, papel);
+      }
+    },
+
+    /** Remove todos os papéis do usuário. */
+    deletePapeis: async (id: string): Promise<void> => {
+      try {
+        await http.patch(`/usuarios/${id}`, { papeis: [] });
+      } catch (err) {
+        logFallback('usuarios', 'deletePapeis', err, `PATCH /usuarios/${id}`);
+        return _sb.usuarios.deletePapeis(id);
+      }
+    },
+
+    /** Desativa usuário (soft delete). */
+    remove: async (id: string): Promise<void> => {
+      try {
+        await http.delete(`/usuarios/${id}`);
+      } catch (err) {
+        logFallback('usuarios', 'remove', err, `DELETE /usuarios/${id}`);
+        return _sb.usuarios.remove(id);
+      }
+    },
+
+    /** Marca onboarding como concluído. */
+    marcarOnboardingConcluido: async (id: string): Promise<void> => {
+      try {
+        await http.patch(`/usuarios/${id}`, { onboardingConcluido: true } as any);
+      } catch (err) {
+        logFallback('usuarios', 'marcarOnboardingConcluido', err, `PATCH /usuarios/${id}`);
+        return _sb.usuarios.marcarOnboardingConcluido(id);
+      }
+    },
   },
 
   // ── regioes — HTTP /regioes + fallback Supabase ────────────────────────────
@@ -1137,8 +1239,10 @@ export const api = {
       try { await http.put(`/regioes/${id}`, deepToCamel(payload)); }
       catch { return _sb.regioes.update(id, payload); }
     },
-    /** @fallback Sem DELETE /regioes/:id no backend. */
-    remove: _sb.regioes.remove.bind(_sb.regioes),
+    remove: async (id: string): Promise<void> => {
+      try { await http.delete(`/regioes/${id}`); }
+      catch { return _sb.regioes.remove(id); }
+    },
     /** @fallback Sem endpoint de bulk insert no backend. */
     bulkInsert: _sb.regioes.bulkInsert.bind(_sb.regioes),
   },
@@ -1468,8 +1572,10 @@ export const api = {
       try { await http.put(`/drones/voos/${id}`, deepToCamel(payload)); }
       catch { await _sb.voos.update(id, payload); }
     },
-    /** @fallback DELETE /drones/voos/:id — não confirmado no controller; usa Supabase. */
-    remove: _sb.voos.remove.bind(_sb.voos),
+    remove: async (id: string): Promise<void> => {
+      try { await http.delete(`/drones/voos/${id}`); }
+      catch { return _sb.voos.remove(id); }
+    },
     /** @fallback bulk não suportado pelo backend — usa Supabase. */
     bulkCreate: _sb.voos.bulkCreate.bind(_sb.voos),
   },

@@ -7,4 +7,5 @@ model resumos_diarios {
   created_at DateTime @default(now()) @db.Timestamptz
 
   @@map("resumos_diarios")
+  @@schema("public")
 }

@@ -10,4 +10,5 @@ model unidades_saude_sync_log {
 
   controle unidades_saude_sync_controle @relation(fields: [controle_id], references: [id])
   @@map("unidades_saude_sync_log")
+  @@schema("public")
 }

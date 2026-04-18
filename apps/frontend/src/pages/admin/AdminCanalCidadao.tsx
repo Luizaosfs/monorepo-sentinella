@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useClienteAtivo } from '@/hooks/useClienteAtivo';
 import { api } from '@/services/api';
-import { supabase } from '@/lib/supabase';
+import { http } from '@sentinella/api-client';
 import AdminPageHeader from '@/components/AdminPageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -147,13 +147,9 @@ const AdminCanalCidadao: React.FC = () => {
     queryKey: ['cliente_slug', clienteId],
     queryFn: async () => {
       if (!clienteId) return null;
-      const { data, error } = await supabase
-        .from('clientes')
-        .select('id, nome, slug')
-        .eq('id', clienteId)
-        .single();
-      if (error) throw error;
-      return data as ClienteComSlug;
+      const raw = await http.get(`/clientes/${encodeURIComponent(clienteId)}`) as Record<string, unknown>;
+      if (!raw) return null;
+      return { id: raw.id as string, nome: raw.nome as string, slug: (raw.slug as string | null) ?? null } as ClienteComSlug;
     },
     enabled: !!clienteId,
     staleTime: STALE.STATIC,
@@ -168,29 +164,24 @@ const AdminCanalCidadao: React.FC = () => {
     queryKey: ['canal_cidadao_denuncias', clienteId],
     queryFn: async () => {
       if (!clienteId) return [];
-      const { data, error } = await supabase
-        .from('levantamento_itens')
-        .select(`
-          id, item, endereco_curto, latitude, longitude, payload, created_at,
-          levantamento:levantamentos!inner(cliente_id),
-          foco:focos_risco(status, desfecho, resolvido_em)
-        `)
-        .eq('levantamento.cliente_id', clienteId)
-        .eq('item', 'Denúncia Cidadão')
-        .order('created_at', { ascending: false })
-        .limit(200);
-      if (error) throw error;
-      return ((data as Array<Record<string, unknown>>) || []).map((row) => {
-        const focoRaw = row.foco as Record<string, unknown> | Array<Record<string, unknown>> | null;
-        const foco = Array.isArray(focoRaw) ? (focoRaw[0] ?? null) : focoRaw;
-        const status = mapFocoStatusToAtendimento((foco?.status as string | undefined) ?? null);
-        return {
-          ...(row as unknown as LevantamentoItem),
-          status_atendimento: status,
-          acao_aplicada: (foco?.desfecho as string | null) ?? null,
-          data_resolucao: (foco?.resolvido_em as string | null) ?? null,
-        } as LevantamentoItem;
-      });
+      try {
+        const data = await http.get(
+          `/levantamentos/itens?clienteId=${encodeURIComponent(clienteId)}&tipo=${encodeURIComponent('Denúncia Cidadão')}&limit=200`,
+        ) as Array<Record<string, unknown>>;
+        return ((data) || []).map((row) => {
+          const focoRaw = row.foco as Record<string, unknown> | Array<Record<string, unknown>> | null;
+          const foco = Array.isArray(focoRaw) ? (focoRaw[0] ?? null) : focoRaw;
+          const status = mapFocoStatusToAtendimento((foco?.status as string | undefined) ?? null);
+          return {
+            ...(row as unknown as LevantamentoItem),
+            status_atendimento: status,
+            acao_aplicada: (foco?.desfecho as string | null) ?? null,
+            data_resolucao: (foco?.resolvido_em as string | null) ?? null,
+          } as LevantamentoItem;
+        });
+      } catch {
+        return [];
+      }
     },
     enabled: !!clienteId,
     staleTime: STALE.SHORT,

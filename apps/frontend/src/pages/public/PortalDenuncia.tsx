@@ -3,7 +3,7 @@ import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 import { Link } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import { http, tokenStore } from '@sentinella/api-client';
 import { api } from '@/services/api';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -204,21 +204,18 @@ const PortalDenuncia: React.FC = () => {
     if (!buscarManual.trim()) return;
     setResolvendoCliente(true);
     try {
-      const { data } = await supabase
-        .from('clientes')
-        .select('id, nome, cidade, uf, slug')
-        .eq('ativo', true)
-        .is('deleted_at', null)
-        .ilike('cidade', `%${buscarManual.trim()}%`)
-        .limit(1)
-        .single();
+      const res = await http.get<{ id: string; nome: string; cidade?: string; uf?: string; slug?: string }[]>(
+        `/clientes?cidade=${encodeURIComponent(buscarManual.trim())}&ativo=true&limit=1`
+      );
+      const list = Array.isArray(res) ? res : ((res as { data?: unknown[] }).data ?? []);
+      const data = list[0] as { id: string; nome: string; cidade?: string; uf?: string; slug?: string } | undefined;
       if (data) {
         setClienteResolvido({
           cliente_id: data.id,
           cliente_nome: data.nome,
           cidade: data.cidade ?? data.nome,
           uf: data.uf ?? '',
-          slug: (data as Record<string, unknown>).slug as string ?? '',
+          slug: data.slug ?? '',
           metodo: 'manual',
         });
         setEtapa('confirmando');
@@ -247,8 +244,8 @@ const PortalDenuncia: React.FC = () => {
     if (!foto) return null;
     setFotoUploading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      return await uploadDenunciaFoto(foto, session?.access_token);
+      const token = tokenStore.getAccessToken() ?? undefined;
+      return await uploadDenunciaFoto(foto, token);
     } finally {
       setFotoUploading(false);
     }
@@ -264,19 +261,17 @@ const PortalDenuncia: React.FC = () => {
     try {
       const fotoResult = await uploadFoto();
 
-      const { data, error } = await supabase.rpc('denunciar_cidadao', {
-        p_slug: clienteResolvido.slug,
-        p_bairro_id: null,
-        p_descricao: endereco.trim()
+      const result = await http.post<DenunciaResult>('/denuncias/cidadao', {
+        slug: clienteResolvido.slug,
+        bairroId: null,
+        descricao: endereco.trim()
           ? `${descricao.trim()} — Endereço: ${endereco.trim()}`
           : descricao.trim(),
-        p_latitude: coords?.latitude ?? null,
-        p_longitude: coords?.longitude ?? null,
-        p_foto_url: fotoResult?.url ?? null,
-        p_foto_public_id: fotoResult?.public_id ?? null,
+        latitude: coords?.latitude ?? null,
+        longitude: coords?.longitude ?? null,
+        fotoUrl: fotoResult?.url ?? null,
+        fotoPublicId: fotoResult?.public_id ?? null,
       });
-      if (error) throw new Error(extractErrorMessage(error));
-      const result = data as DenunciaResult;
       if (!result.ok) { setSubmitError(result.error ?? 'Erro ao registrar. Tente novamente.'); return; }
       setJaExistia(result.deduplicado === true);
       if (foto && !fotoResult) setFotoFoiPerdida(true);

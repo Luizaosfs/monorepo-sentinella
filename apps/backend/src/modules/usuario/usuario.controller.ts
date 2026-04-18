@@ -1,9 +1,12 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  HttpCode,
   Inject,
   Param,
+  Patch,
   Post,
   Put,
   Query,
@@ -34,10 +37,17 @@ import {
   FilterUsuarioInput,
   filterUsuarioSchema,
 } from './dtos/filter-usuario.input';
+import {
+  SaveUsuarioBody,
+  saveUsuarioSchema,
+} from './dtos/save-usuario.body';
 import { CreateUsuario } from './use-cases/create-usuario';
+import { DeleteUsuario } from './use-cases/delete-usuario';
 import { FilterUsuario } from './use-cases/filter-usuario';
 import { GetPapeisCliente } from './use-cases/get-papeis-cliente';
+import { GetUsuario } from './use-cases/get-usuario';
 import { PaginationUsuario } from './use-cases/pagination-usuario';
+import { SaveUsuario } from './use-cases/save-usuario';
 import { UsuarioViewModel } from './view-model/usuario';
 
 @UseGuards(AuthGuard, RolesGuard, TenantGuard)
@@ -51,6 +61,9 @@ export class UsuarioController {
     private filterUsuario: FilterUsuario,
     private paginationUsuario: PaginationUsuario,
     private getPapeisCliente: GetPapeisCliente,
+    private getUsuario: GetUsuario,
+    private saveUsuario: SaveUsuario,
+    private deleteUsuario: DeleteUsuario,
     @Inject(REQUEST) private req: Request,
   ) {}
 
@@ -96,6 +109,14 @@ export class UsuarioController {
     return papeis;
   }
 
+  @Get(':id')
+  @Roles('admin', 'supervisor')
+  @ApiOperation({ summary: 'Buscar usuário por ID' })
+  async findById(@Param('id') id: string) {
+    const { usuario } = await this.getUsuario.execute(id);
+    return UsuarioViewModel.toHttp(usuario);
+  }
+
   @Post()
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Criar usuário' })
@@ -103,5 +124,22 @@ export class UsuarioController {
     const parsed = createUsuarioSchema.parse(body);
     const { usuario } = await this.createUsuario.execute(parsed);
     return UsuarioViewModel.toHttp(usuario);
+  }
+
+  @Patch(':id')
+  @Roles('admin', 'supervisor')
+  @ApiOperation({ summary: 'Atualizar usuário (nome, ativo, papeis)' })
+  async update(@Param('id') id: string, @Body() body: SaveUsuarioBody) {
+    const parsed = saveUsuarioSchema.parse(body);
+    const { usuario } = await this.saveUsuario.execute(id, parsed);
+    return UsuarioViewModel.toHttp(usuario);
+  }
+
+  @Delete(':id')
+  @Roles('admin')
+  @HttpCode(204)
+  @ApiOperation({ summary: 'Desativar usuário (soft delete)' })
+  async remove(@Param('id') id: string) {
+    await this.deleteUsuario.execute(id);
   }
 }

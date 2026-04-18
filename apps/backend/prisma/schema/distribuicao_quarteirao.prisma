@@ -11,4 +11,5 @@ model distribuicao_quarteirao {
   quarteirao_rel quarteiroes? @relation(fields: [cliente_id, quarteirao], references: [cliente_id, codigo])
   @@unique([cliente_id, ciclo, quarteirao])
   @@map("distribuicao_quarteirao")
+  @@schema("public")
 }

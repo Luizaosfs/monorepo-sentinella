@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { http, tokenStore } from '@sentinella/api-client';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,14 +15,6 @@ const TrocarSenha = () => {
   const [confirm, setConfirm] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [saving, setSaving] = useState(false);
-
-  const logTelemetry = (step: string, payload: Record<string, unknown>) => {
-    console.info('[TrocarSenha][telemetria]', {
-      step,
-      at: new Date().toISOString(),
-      ...payload,
-    });
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,68 +47,13 @@ const TrocarSenha = () => {
 
     setSaving(true);
     try {
-      logTelemetry('submit:start', {
-        hasCurrentPassword: Boolean(currentPassword),
-        newPasswordLength: password.length,
-        confirmMatches: password === confirm,
-      });
-
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      logTelemetry('getSession', {
-        hasSession: Boolean(sessionData.session),
-        error: sessionError?.message ?? null,
-        mustChangePassword: sessionData.session?.user?.user_metadata?.must_change_password ?? null,
-      });
-
-      const {
-        data: { user: currentUser },
-      } = await supabase.auth.getUser();
-
-      if (!currentUser?.email) {
-        throw new Error('Sessão inválida. Faça login novamente.');
-      }
-
-      // Reautentica para garantir uma sessão ativa no auth
-      const { data: reloginData, error: reloginError } = await supabase.auth.signInWithPassword({
-        email: currentUser.email,
-        password: currentPassword,
-      });
-      logTelemetry('signInWithPassword', {
-        ok: !reloginError,
-        error: reloginError?.message ?? null,
-        hasSession: Boolean(reloginData.session),
-        mustChangePassword: reloginData.user?.user_metadata?.must_change_password ?? null,
-      });
-      if (reloginError) {
-        throw new Error('Senha atual inválida. Faça login novamente e tente de novo.');
-      }
-
-      // Atualiza senha + metadado em uma única chamada
-      const { data: updateData, error: updateError } = await supabase.auth.updateUser({
-        password,
-        data: { must_change_password: false },
-      });
-      logTelemetry('updateUser', {
-        ok: !updateError,
-        error: updateError?.message ?? null,
-        mustChangePassword: updateData.user?.user_metadata?.must_change_password ?? null,
-      });
-      if (updateError) throw updateError;
-
-      const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-      logTelemetry('refreshSession', {
-        ok: !refreshError,
-        error: refreshError?.message ?? null,
-        mustChangePassword: refreshData.session?.user?.user_metadata?.must_change_password ?? null,
-      });
-
+      await http.post('/auth/change-password', { currentPassword, newPassword: password });
       toast.success('Senha alterada com sucesso!');
       navigate('/', { replace: true });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Erro ao alterar senha';
-      logTelemetry('submit:catch', { message: msg });
-      if (msg.toLowerCase().includes('auth session missing') || msg.toLowerCase().includes('session_not_found')) {
-        await supabase.auth.signOut({ scope: 'local' });
+      if (msg.toLowerCase().includes('session') || msg.toLowerCase().includes('token') || msg.toLowerCase().includes('unauthorized')) {
+        tokenStore.clear();
         toast.error('Sua sessão expirou. Faça login novamente.');
         navigate('/login', { replace: true });
       } else {

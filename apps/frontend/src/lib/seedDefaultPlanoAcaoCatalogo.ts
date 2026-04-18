@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { http } from '@sentinella/api-client';
 
 /**
  * Popula o catálogo de ações padrão de combate à dengue para um cliente recém-criado.
@@ -9,11 +9,7 @@ import { supabase } from '@/lib/supabase';
  */
 export async function seedDefaultPlanoAcaoCatalogo(clienteId: string): Promise<void> {
   try {
-    const { error } = await supabase.rpc('seed_plano_acao_catalogo', {
-      p_cliente_id: clienteId,
-    });
-
-    if (error) throw error;
+    await http.post('/seed/plano-acao-catalogo', { clienteId });
   } catch (err) {
     console.error('[seedDefaultPlanoAcaoCatalogo] Erro ao criar catálogo de ações padrão:', err);
   }

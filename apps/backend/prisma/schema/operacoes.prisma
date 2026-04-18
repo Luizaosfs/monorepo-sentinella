@@ -23,4 +23,5 @@ model operacoes {
   evidencias   operacao_evidencias[]
 
   @@map("operacoes")
+  @@schema("public")
 }

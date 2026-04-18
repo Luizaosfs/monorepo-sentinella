@@ -22,4 +22,5 @@ model planejamento {
   voos      voos[]
 
   @@map("planejamento")
+  @@schema("public")
 }

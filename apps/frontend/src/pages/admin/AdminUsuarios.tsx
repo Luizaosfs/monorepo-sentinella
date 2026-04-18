@@ -7,7 +7,7 @@
  */
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase, supabaseUrl, supabaseAnonKey } from '@/lib/supabase';
+import { http } from '@sentinella/api-client';
 import { api } from '@/services/api';
 import { useClienteAtivo } from '@/hooks/useClienteAtivo';
 import { useAuth } from '@/hooks/useAuth';
@@ -202,31 +202,18 @@ const AdminUsuarios = () => {
         return { isNew: false };
       }
 
-      // Criação via Edge Function (service_role no backend)
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) throw new Error('Sessão expirada. Faça login novamente.');
-
+      // Criação via NestJS (service_role no backend)
       const isAnalista = formData.papel === 'analista_regional';
-      const resp = await fetch(`${supabaseUrl}/functions/v1/criar-usuario`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': supabaseAnonKey,
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          nome: formData.nome.trim(),
-          email: emailNormalizado,
-          senha: formData.senha,
-          papel: formData.papel,
-          cliente_id: isAnalista || formData.papel === 'admin' ? null : (formData.cliente_id || null),
-          agrupamento_id: isAnalista ? (formData.agrupamento_id || null) : null,
-        }),
-      });
-      const fnData = await resp.json() as Record<string, unknown>;
+      const fnData = await api.usuarios.create({
+        nome: formData.nome.trim(),
+        email: emailNormalizado,
+        senha: formData.senha,
+        papel: formData.papel,
+        cliente_id: isAnalista || formData.papel === 'admin' ? null : (formData.cliente_id || null),
+        agrupamento_id: isAnalista ? (formData.agrupamento_id || null) : null,
+      } as Parameters<typeof api.usuarios.create>[0]);
 
-      if (fnData?.error === 'EMAIL_EXISTS') throw new EmailExistsError(emailNormalizado);
-      if (!resp.ok) throw new Error(String(fnData?.error ?? `Erro ${resp.status}`));
+      if ((fnData as { error?: string })?.error === 'EMAIL_EXISTS') throw new EmailExistsError(emailNormalizado);
 
       return {
         isNew: true,
@@ -413,10 +400,10 @@ const AdminUsuarios = () => {
                   onClick={async () => {
                     setSendingRecovery(true);
                     try {
-                      const { error } = await supabase.auth.resetPasswordForEmail(emailExistsWarning, {
+                      await http.post('/auth/forgot-password', {
+                        email: emailExistsWarning,
                         redirectTo: `${window.location.origin}/reset-password`,
                       });
-                      if (error) throw error;
                       toast.success(`Email de recuperação enviado para ${emailExistsWarning}`);
                       setEmailExistsWarning(null);
                     } catch (err: unknown) {
@@ -441,10 +428,10 @@ const AdminUsuarios = () => {
                   variant="outline"
                   onClick={async () => {
                     try {
-                      const { error } = await supabase.auth.resetPasswordForEmail(editing.email, {
+                      await http.post('/auth/forgot-password', {
+                        email: editing.email,
                         redirectTo: `${window.location.origin}/reset-password`,
                       });
-                      if (error) throw error;
                       toast.success(`Link de redefinição enviado para ${editing.email}`);
                     } catch (err: unknown) {
                       toast.error(err instanceof Error ? err.message : 'Erro ao enviar email');

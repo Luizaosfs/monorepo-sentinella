@@ -7,4 +7,5 @@ model papeis_usuarios {
   usuario usuarios @relation(fields: [usuario_id], references: [auth_id])
 
   @@map("papeis_usuarios")
+  @@schema("public")
 }

@@ -7,4 +7,6 @@ export const LevantamentoException = createExceptionFactory({
   planejamentoNotFound: { type: 'notFound', message: 'Planejamento não encontrado' },
   /** Planejamento inativo */
   planejamentoInativo: { type: 'conflict', message: 'Planejamento não está ativo' },
+  /** Item não encontrado */
+  itemNotFound: { type: 'notFound', message: 'Item de levantamento não encontrado' },
 });

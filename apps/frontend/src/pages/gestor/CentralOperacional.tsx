@@ -9,7 +9,7 @@ import {
   LayoutDashboard, ArrowRight, TrendingUp, MessageSquare,
   Stethoscope, ChevronRight, GitMerge, FileText, Info, MapPinOff, ClipboardCheck,
 } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { http } from '@sentinella/api-client';
 import { STALE } from '@/lib/queryConfig';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -129,17 +129,13 @@ export default function CentralOperacional() {
     queryFn: async () => {
       if (!clienteAtivo?.id) return [];
       const hoje = new Date().toISOString().split('T')[0];
-      const { data: regioes } = await supabase
-        .from('regioes')
-        .select('id, regiao')
-        .eq('cliente_id', clienteAtivo.id)
-        .is('deleted_at', null);
+      const regioes = await http.get<{ id: string; regiao: string }[]>(
+        `/regioes?clienteId=${clienteAtivo.id}`
+      ).then((r) => Array.isArray(r) ? r : (r as { data?: unknown[] }).data ?? []).catch(() => []) as { id: string; regiao: string }[];
       if (!regioes || regioes.length === 0) return [];
-      const { data: vistoriasHoje } = await supabase
-        .from('vistorias')
-        .select('imovel:imoveis!inner(regiao_id)')
-        .eq('cliente_id', clienteAtivo.id)
-        .gte('created_at', hoje);
+      const vistoriasHoje = await http.get<{ imovel?: { regiao_id: string } | null }[]>(
+        `/vistorias?clienteId=${clienteAtivo.id}&createdAfter=${hoje}`
+      ).then((r) => Array.isArray(r) ? r : (r as { data?: unknown[] }).data ?? []).catch(() => []) as { imovel?: { regiao_id: string } | null }[];
       const comAtividade = new Set(
         (vistoriasHoje ?? []).map((v: { imovel: { regiao_id: string } | null }) => v.imovel?.regiao_id).filter(Boolean),
       );

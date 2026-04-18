@@ -26,4 +26,5 @@ model casos_notificados {
   regiao        regioes?       @relation(fields: [regiao_id], references: [id])
 
   @@map("casos_notificados")
+  @@schema("public")
 }

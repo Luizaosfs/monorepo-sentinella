@@ -31,6 +31,7 @@ export abstract class LevantamentoReadRepository {
   abstract findItensByLevantamentoId(
     levantamentoId: string,
   ): Promise<LevantamentoItem[]>;
+  abstract findItemById(id: string): Promise<LevantamentoItem | null>;
   abstract findPlanejamento(id: string): Promise<PlanejamentoInfo | null>;
   abstract findByPlanejamentoDataTipo(
     clienteId: string,

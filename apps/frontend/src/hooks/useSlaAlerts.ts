@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { supabase } from '@/lib/supabase';
 import { api } from '@/services/api';
 import { SlaOperacional, getSlaVisualStatus, getSlaLocalLabel, getTempoRestante } from '@/types/sla';
 import { toast } from 'sonner';
@@ -55,24 +54,10 @@ export function useSlaAlerts({ clienteId, usuarioId, enabled = true }: UseSlaAle
       // Marca SLAs expirados como 'vencido' antes de buscar (silencioso)
       await api.sla.verificarVencidos(cid).catch(() => undefined);
 
-      const { data, error } = await supabase
-        .from('sla_operacional')
-        .select(`
-          *,
-          item:pluvio_operacional_item(id, bairro_nome, prioridade_operacional, run_id,
-            run:pluvio_operacional_run(id, cliente_id)
-          ),
-          levantamento_item:levantamento_itens(id, item, prioridade, endereco_curto,
-            levantamento:levantamentos(id, cliente_id)
-          )
-        `)
-        .eq('cliente_id', cid)
-        .in('status', ['pendente', 'em_atendimento'])
-        .order('prazo_final', { ascending: true });
-
-      if (error) throw error;
-
-      const filtered = (data || []) as SlaOperacional[];
+      const raw = await api.sla.listByCliente(cid);
+      const filtered = ((raw as SlaOperacional[] | null) ?? [])
+        .filter(s => s.status === 'pendente' || s.status === 'em_atendimento')
+        .sort((a, b) => new Date(a.prazo_final ?? '').getTime() - new Date(b.prazo_final ?? '').getTime());
 
       // Find warning + expired + escalated SLAs
       const urgent = filtered.filter(s => {

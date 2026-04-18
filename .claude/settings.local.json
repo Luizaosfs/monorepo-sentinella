@@ -29,7 +29,24 @@
       "Bash(xargs grep:*)",
       "Bash(pnpm tsc:*)",
       "Bash(mkdir -p /tmp/sentinella_audit)",
-      "Bash(unzip -o \"D:/sentinella/backup_20260417_225324/monorepo-sentinella_sources.zip\" -d /tmp/sentinella_audit/)"
+      "Bash(unzip -o \"D:/sentinella/backup_20260417_225324/monorepo-sentinella_sources.zip\" -d /tmp/sentinella_audit/)",
+      "Bash(/c/Program Files/PostgreSQL/17/bin/createdb *)",
+      "Bash(\"/c/Program Files/PostgreSQL/17/bin/psql\" -U postgres -d sentinella -f \"C:/Users/luiz/Downloads/database_clean_local.sql\")",
+      "Bash(pnpm prisma:push)",
+      "Bash(npx prisma *)",
+      "Bash(psql *)",
+      "Read(//c/Program Files/PostgreSQL//**)",
+      "Read(//c/Program Files//**)",
+      "Bash(/c/Program Files/PostgreSQL/17/bin/psql.exe *)",
+      "Bash(pnpm prisma *)",
+      "Bash('/c/Program Files/PostgreSQL/17/bin/psql.exe' postgresql://postgres:147852369@localhost:5432/sentinella -c ' *)",
+      "Bash(grep -v \"^ALTER TABLE$\")",
+      "Bash('/c/Program Files/PostgreSQL/17/bin/psql.exe' postgresql://postgres:147852369@localhost:5432/sentinella -t -A -c ' *)",
+      "Bash(\"/c/Program Files/PostgreSQL/17/bin/psql.exe\" \"postgresql://postgres:147852369@localhost:5432/sentinella\" -c \"ALTER TABLE public.pipeline_runs ALTER COLUMN duracao_s DROP EXPRESSION;\")",
+      "Bash(\"/c/Program Files/PostgreSQL/17/bin/psql.exe\" \"postgresql://postgres:147852369@localhost:5432/sentinella\")",
+      "Bash(grep -v \"^DROP TRIGGER$\")",
+      "Bash(grep -v \"^DROP FUNCTION$\")",
+      "Bash(grep -E \"\\\\.ts$\")"
     ]
   }
 }

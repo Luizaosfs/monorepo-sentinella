@@ -6,6 +6,7 @@ import { env } from 'src/lib/env/server';
 
 import { AuthController } from './auth.controller';
 import { LoginUseCase } from './use-cases/login.use-case';
+import { MeUseCase } from './use-cases/me.use-case';
 import { RefreshTokenUseCase } from './use-cases/refresh-token.use-case';
 
 @Module({
@@ -18,6 +19,6 @@ import { RefreshTokenUseCase } from './use-cases/refresh-token.use-case';
     }),
   ],
   controllers: [AuthController],
-  providers: [LoginUseCase, RefreshTokenUseCase, PrismaService],
+  providers: [LoginUseCase, RefreshTokenUseCase, MeUseCase, PrismaService],
 })
 export class AuthModule {}

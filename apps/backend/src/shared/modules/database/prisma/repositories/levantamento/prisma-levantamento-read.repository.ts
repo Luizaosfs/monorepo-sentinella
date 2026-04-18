@@ -76,6 +76,14 @@ export class PrismaLevantamentoReadRepository implements LevantamentoReadReposit
     };
   }
 
+  async findItemById(id: string): Promise<LevantamentoItem | null> {
+    const raw = await this.prisma.client.levantamento_itens.findFirst({
+      where: { id, deleted_at: null },
+      include: { detecoes: true, evidencias: true },
+    });
+    return raw ? PrismaLevantamentoMapper.itemToDomain(raw as any) : null;
+  }
+
   async findItensByLevantamentoId(
     levantamentoId: string,
   ): Promise<LevantamentoItem[]> {

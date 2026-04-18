@@ -6,4 +6,5 @@ model agrupamento_cliente {
   agrupamento agrupamento_regional @relation(fields: [agrupamento_id], references: [id])
   @@id([agrupamento_id, cliente_id])
   @@map("agrupamento_cliente")
+  @@schema("public")
 }

@@ -31,4 +31,5 @@ model imoveis {
   vistorias    vistorias[]
 
   @@map("imoveis")
+  @@schema("public")
 }

@@ -1,7 +1,7 @@
 model regioes {
   id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   cliente_id   String   @db.Uuid
-  nome         String
+  nome         String   @default("")
   tipo         String?
   cor          String?
   geojson      Json?
@@ -23,4 +23,5 @@ model regioes {
   casos_notificados casos_notificados[]
 
   @@map("regioes")
+  @@schema("public")
 }

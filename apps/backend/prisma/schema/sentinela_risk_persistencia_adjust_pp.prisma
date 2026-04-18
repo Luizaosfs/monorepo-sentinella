@@ -8,4 +8,5 @@ model sentinela_risk_persistencia_adjust_pp {
 
   policy sentinela_risk_policy @relation(fields: [policy_id], references: [id])
   @@map("sentinela_risk_persistencia_adjust_pp")
+  @@schema("public")
 }

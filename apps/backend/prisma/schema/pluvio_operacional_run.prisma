@@ -8,4 +8,5 @@ model pluvio_operacional_run {
 
   itens pluvio_operacional_item[]
   @@map("pluvio_operacional_run")
+  @@schema("public")
 }

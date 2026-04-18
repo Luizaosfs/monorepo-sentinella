@@ -5,4 +5,5 @@ model foco_sequencia {
 
   @@id([cliente_id, ano])
   @@map("foco_sequencia")
+  @@schema("public")
 }

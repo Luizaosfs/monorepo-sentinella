@@ -11,4 +11,5 @@ model push_subscriptions {
   cliente  clientes @relation(fields: [cliente_id], references: [id])
 
   @@map("push_subscriptions")
+  @@schema("public")
 }

@@ -9,5 +9,6 @@ export abstract class DroneWriteRepository {
   abstract deleteDrone(id: string): Promise<void>;
   abstract createVoo(entity: Voo): Promise<Voo>;
   abstract saveVoo(entity: Voo): Promise<void>;
+  abstract deleteVoo(id: string): Promise<void>;
   abstract createYoloFeedback(entity: YoloFeedback): Promise<YoloFeedback>;
 }

@@ -1,6 +1,6 @@
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
+import { http } from '@sentinella/api-client';
 import { api } from '@/services/api';
 import { STALE } from '@/lib/queryConfig';
 import { Logo } from '@/components/Logo';
@@ -12,13 +12,12 @@ export default function MunicipioPublico() {
   const { data: cliente, isLoading: clienteLoading } = useQuery({
     queryKey: ['municipio-publico-cliente', slug],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('clientes')
-        .select('id, nome, slug')
-        .eq('slug', slug!)
-        .single();
-      if (error) throw error;
-      return data as { id: string; nome: string; slug: string };
+      const res = await http.get<{ id: string; nome: string; slug: string }[]>(
+        `/clientes?slug=${encodeURIComponent(slug!)}`
+      );
+      const list = Array.isArray(res) ? res : ((res as { data?: unknown[] }).data ?? []);
+      if (!list.length) throw new Error('Município não encontrado');
+      return list[0] as { id: string; nome: string; slug: string };
     },
     enabled: !!slug,
     staleTime: STALE.STATIC,

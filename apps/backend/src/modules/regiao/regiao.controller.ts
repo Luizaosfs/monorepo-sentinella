@@ -1,7 +1,9 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  HttpCode,
   Param,
   Post,
   Put,
@@ -33,6 +35,7 @@ import {
 } from './dtos/filter-regiao.input';
 import { SaveRegiaoBody, saveRegiaoSchema } from './dtos/save-regiao.body';
 import { CreateRegiao } from './use-cases/create-regiao';
+import { DeleteRegiao } from './use-cases/delete-regiao';
 import { FilterRegiao } from './use-cases/filter-regiao';
 import { GetRegiao } from './use-cases/get-regiao';
 import { PaginationRegiao } from './use-cases/pagination-regiao';
@@ -47,6 +50,7 @@ import { RegiaoViewModel } from './view-model/regiao';
 export class RegiaoController {
   constructor(
     private createRegiao: CreateRegiao,
+    private deleteRegiao: DeleteRegiao,
     private filterRegiao: FilterRegiao,
     private getRegiao: GetRegiao,
     private paginationRegiao: PaginationRegiao,
@@ -105,5 +109,13 @@ export class RegiaoController {
     const parsed = saveRegiaoSchema.parse(body);
     const { regiao } = await this.saveRegiao.execute(id, parsed);
     return RegiaoViewModel.toHttp(regiao);
+  }
+
+  @Delete(':id')
+  @Roles('admin', 'supervisor')
+  @HttpCode(204)
+  @ApiOperation({ summary: 'Desativar região (soft delete)' })
+  async remove(@Param('id') id: string) {
+    await this.deleteRegiao.execute(id);
   }
 }

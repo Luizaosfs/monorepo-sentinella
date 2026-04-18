@@ -1,7 +1,9 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  HttpCode,
   Param,
   Post,
   Put,
@@ -24,6 +26,10 @@ import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 import { Roles } from '@/decorators/roles.decorator';
 
 import {
+  AddItemEvidenciaBody,
+  addItemEvidenciaSchema,
+} from './dtos/add-item-evidencia.body';
+import {
   CreateLevantamentoBody,
   createLevantamentoSchema,
 } from './dtos/create-levantamento.body';
@@ -43,10 +49,19 @@ import {
   SaveLevantamentoBody,
   saveLevantamentoSchema,
 } from './dtos/save-levantamento.body';
+import {
+  UpdateItemBody,
+  updateItemSchema,
+} from './dtos/update-item.body';
+import { AddItemEvidencia } from './use-cases/add-item-evidencia';
 import { CreateLevantamento } from './use-cases/create-levantamento';
 import { CreateLevantamentoItem } from './use-cases/create-levantamento-item';
 import { CriarItemManual } from './use-cases/criar-item-manual';
+import { DeleteItem } from './use-cases/delete-item';
+import { DeleteLevantamento } from './use-cases/delete-levantamento';
 import { FilterLevantamento } from './use-cases/filter-levantamento';
+import { GetItem } from './use-cases/get-item';
+import { UpdateItem } from './use-cases/update-item';
 import { GetLevantamento } from './use-cases/get-levantamento';
 import { PaginationLevantamento } from './use-cases/pagination-levantamento';
 import { SaveLevantamento } from './use-cases/save-levantamento';
@@ -59,13 +74,18 @@ import { LevantamentoViewModel } from './view-model/levantamento';
 @Controller('levantamentos')
 export class LevantamentoController {
   constructor(
+    private addItemEvidencia: AddItemEvidencia,
     private createLevantamento: CreateLevantamento,
     private createLevantamentoItem: CreateLevantamentoItem,
     private criarItemManual: CriarItemManual,
+    private deleteItem: DeleteItem,
+    private deleteLevantamento: DeleteLevantamento,
     private filterLevantamento: FilterLevantamento,
+    private getItem: GetItem,
     private getLevantamento: GetLevantamento,
     private paginationLevantamento: PaginationLevantamento,
     private saveLevantamento: SaveLevantamento,
+    private updateItem: UpdateItem,
   ) {}
 
   @Get()
@@ -94,6 +114,43 @@ export class LevantamentoController {
       items: result.items.map(LevantamentoViewModel.toHttp),
       pagination: result.pagination,
     };
+  }
+
+  @Get('itens/:itemId')
+  @Roles('admin', 'supervisor', 'agente')
+  @ApiOperation({ summary: 'Buscar item por ID' })
+  async getItemById(@Param('itemId') itemId: string) {
+    const { item } = await this.getItem.execute(itemId);
+    return LevantamentoViewModel.itemToHttp(item);
+  }
+
+  @Put('itens/:itemId')
+  @Roles('admin', 'supervisor', 'agente')
+  @ApiOperation({ summary: 'Atualizar item de levantamento' })
+  async updateItemRoute(@Param('itemId') itemId: string, @Body() body: UpdateItemBody) {
+    const parsed = updateItemSchema.parse(body);
+    const { item } = await this.updateItem.execute(itemId, parsed);
+    return LevantamentoViewModel.itemToHttp(item);
+  }
+
+  @Delete('itens/:itemId')
+  @Roles('admin', 'supervisor')
+  @HttpCode(204)
+  @ApiOperation({ summary: 'Remover item de levantamento (soft delete)' })
+  async deleteItemRoute(@Param('itemId') itemId: string) {
+    await this.deleteItem.execute(itemId);
+  }
+
+  @Post('itens/:itemId/evidencias')
+  @Roles('admin', 'supervisor', 'agente')
+  @ApiOperation({ summary: 'Adicionar evidência fotográfica ao item' })
+  async addItemEvidenciaRoute(
+    @Param('itemId') itemId: string,
+    @Body() body: AddItemEvidenciaBody,
+  ) {
+    const parsed = addItemEvidenciaSchema.parse(body);
+    const { evidencia } = await this.addItemEvidencia.execute(itemId, parsed);
+    return evidencia;
   }
 
   @Get(':id')
@@ -152,5 +209,13 @@ export class LevantamentoController {
     const { levantamentoItem, levantamentoCriado, levantamentoId } =
       await this.criarItemManual.execute(parsed);
     return { levantamentoItem, levantamentoCriado, levantamentoId };
+  }
+
+  @Delete(':id')
+  @Roles('admin', 'supervisor')
+  @HttpCode(204)
+  @ApiOperation({ summary: 'Remover levantamento' })
+  async remove(@Param('id') id: string) {
+    await this.deleteLevantamento.execute(id);
   }
 }

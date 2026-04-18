@@ -16,4 +16,5 @@ model import_log {
   finished_at    DateTime? @db.Timestamptz
 
   @@map("import_log")
+  @@schema("public")
 }

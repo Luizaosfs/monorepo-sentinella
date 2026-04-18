@@ -21,4 +21,5 @@ model sentinela_risk_policy {
   tendencia_adjust_pp    sentinela_risk_tendencia_adjust_pp[]
 
   @@map("sentinela_risk_policy")
+  @@schema("public")
 }

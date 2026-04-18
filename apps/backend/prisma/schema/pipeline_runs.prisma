@@ -13,8 +13,9 @@ model pipeline_runs {
   versao_pipeline      String?
   iniciado_em          DateTime  @default(now()) @db.Timestamptz
   concluido_em         DateTime? @db.Timestamptz
-  duracao_s            Int?      @default(dbgenerated("(CASE WHEN (concluido_em IS NOT NULL) THEN (EXTRACT(epoch FROM (concluido_em - iniciado_em)))::integer ELSE NULL::integer END)"))
+  duracao_s            Int?
   created_at           DateTime  @default(now()) @db.Timestamptz
 
   @@map("pipeline_runs")
+  @@schema("public")
 }

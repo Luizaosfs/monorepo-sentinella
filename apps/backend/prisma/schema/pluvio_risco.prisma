@@ -30,4 +30,5 @@ model pluvio_risco {
 
   @@unique([regiao_id, dt_ref], name: "regiao_id_dt_ref")
   @@map("pluvio_risco")
+  @@schema("public")
 }

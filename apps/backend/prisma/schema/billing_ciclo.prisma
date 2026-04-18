@@ -18,4 +18,5 @@ model billing_ciclo {
   cliente_plano cliente_plano? @relation(fields: [cliente_plano_id], references: [id])
 
   @@map("billing_ciclo")
+  @@schema("public")
 }

@@ -41,6 +41,7 @@ import { CreateDrone } from './use-cases/create-drone';
 import { CreateVoo } from './use-cases/create-voo';
 import { CreateYoloFeedback } from './use-cases/create-yolo-feedback';
 import { DeleteDrone } from './use-cases/delete-drone';
+import { DeleteVoo } from './use-cases/delete-voo';
 import { FilterDrones } from './use-cases/filter-drones';
 import { FilterPipelines } from './use-cases/filter-pipelines';
 import { FilterVoos } from './use-cases/filter-voos';
@@ -63,6 +64,7 @@ export class DroneController {
     private vooFilter: FilterVoos,
     private vooCreate: CreateVoo,
     private vooSave: SaveVoo,
+    private vooDelete: DeleteVoo,
     private pipelineFilter: FilterPipelines,
     private pipelineGet: GetPipeline,
     private feedbackCreate: CreateYoloFeedback,
@@ -150,6 +152,14 @@ export class DroneController {
     const parsed = saveVooSchema.parse(body);
     const { voo } = await this.vooSave.execute(id, parsed);
     return DroneViewModel.vooToHttp(voo);
+  }
+
+  @Delete('voos/:id')
+  @Roles('admin', 'supervisor')
+  @ApiOperation({ summary: 'Remover voo' })
+  async deleteVoo(@Param('id') id: string) {
+    await this.vooDelete.execute(id);
+    return { deleted: true };
   }
 
   // ── Pipelines ────────────────────────────────────────────────────────────

@@ -1,7 +1,7 @@
 model vistoria_depositos {
   id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   vistoria_id     String   @db.Uuid
-  tipo_deposito   String
+  tipo_deposito   String   @default("")
   quantidade      Int?     @default(1)
   com_larva       Boolean? @default(false)
   eliminado       Boolean? @default(false)
@@ -13,4 +13,5 @@ model vistoria_depositos {
   vistoria vistorias @relation(fields: [vistoria_id], references: [id])
 
   @@map("vistoria_depositos")
+  @@schema("public")
 }

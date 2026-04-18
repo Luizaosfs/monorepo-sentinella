@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { http } from '@sentinella/api-client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -97,16 +97,14 @@ const ConsultaProtocolo: React.FC = () => {
     setNaoEncontrado(false);
 
     try {
-      const { data, error } = await supabase.rpc('consultar_denuncia_cidadao', {
-        p_protocolo: p.toLowerCase(),
-      });
-
-      if (error) throw error;
+      const data = await http.get<ResultadoConsulta | null>(
+        `/denuncias/consultar?protocolo=${encodeURIComponent(p.toLowerCase())}`
+      );
 
       if (!data) {
         setNaoEncontrado(true);
       } else {
-        setResultado(data as ResultadoConsulta);
+        setResultado(data);
       }
     } catch {
       setNaoEncontrado(true);

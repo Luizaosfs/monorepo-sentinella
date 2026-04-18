@@ -10,4 +10,5 @@ model levantamento_item_status_historico {
   alterado_em            DateTime @default(now()) @db.Timestamptz
 
   @@map("levantamento_item_status_historico")
+  @@schema("public")
 }

@@ -12,4 +12,5 @@ model levantamento_item_detecoes {
 
   @@unique([levantamento_item_id, ordem])
   @@map("levantamento_item_detecoes")
+  @@schema("public")
 }

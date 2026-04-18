@@ -17,7 +17,6 @@ import { toast } from 'sonner';
 import { useClienteAtivo } from '@/hooks/useClienteAtivo';
 import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/services/api';
-import { supabase } from '@/lib/supabase';
 import { invokeUploadEvidencia } from '@/lib/uploadEvidencia';
 import { getCurrentCiclo } from '@/lib/ciclo';
 import {

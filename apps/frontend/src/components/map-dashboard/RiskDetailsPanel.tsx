@@ -16,7 +16,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { supabase } from "@/lib/supabase";
+import { http } from "@sentinella/api-client";
 import { api } from "@/services/api";
 import { useClienteAtivo } from "@/hooks/useClienteAtivo";
 
@@ -52,39 +52,34 @@ export function RiskDetailsPanel({ item, onClose, onOpenImage, onCreateTask, onS
 
   useEffect(() => {
     if (!clienteId) return;
-    supabase
-      .from('usuarios')
-      .select('id, nome')
-      .eq('cliente_id', clienteId)
-      .order('nome')
-      .then(({ data }) => setOperadores((data as Operador[]) || []));
+    http.get(`/usuarios?clienteId=${encodeURIComponent(clienteId)}&ativo=true`)
+      .then((data) => setOperadores((data as Operador[]) || []))
+      .catch(() => setOperadores([]));
   }, [clienteId]);
 
   // Fetch operation status for this item
   useEffect(() => {
     if (!item?.id || !clienteId) { setOpStatus(null); return; }
-    supabase
-      .from('operacoes')
-      .select('id, status, iniciado_em, concluido_em, responsavel_id')
-      .eq('item_levantamento_id', item.id)
-      .eq('cliente_id', clienteId)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .then(async ({ data }) => {
-        if (!data || data.length === 0) { setOpStatus(null); return; }
-        const op = data[0] as { id: string; status: string; iniciado_em: string | null; concluido_em: string | null; responsavel_id: string | null };
+    http.get(`/operacoes?clienteId=${encodeURIComponent(clienteId)}&itemLevantamentoId=${encodeURIComponent(item.id)}&limit=1`)
+      .then(async (data) => {
+        const list = (data as Array<Record<string, unknown>>) ?? [];
+        if (list.length === 0) { setOpStatus(null); return; }
+        const op = list[0];
+        const responsavelId = (op.responsavel_id ?? op.responsavelId) as string | null;
         let nome: string | null = null;
-        if (op.responsavel_id) {
-          const { data: usr } = await supabase
-            .from('usuarios')
-            .select('nome')
-            .eq('id', op.responsavel_id)
-            .limit(1)
-            .single();
-          nome = (usr as { nome: string } | null)?.nome || null;
+        if (responsavelId) {
+          const usr = await http.get(`/usuarios/${encodeURIComponent(responsavelId)}`).catch(() => null) as Record<string, unknown> | null;
+          nome = (usr?.nome as string | null) ?? null;
         }
-        setOpStatus({ id: op.id, status: op.status, responsavel_nome: nome, iniciado_em: op.iniciado_em, concluido_em: op.concluido_em });
-      });
+        setOpStatus({
+          id: op.id as string,
+          status: op.status as string,
+          responsavel_nome: nome,
+          iniciado_em: (op.iniciado_em ?? op.iniciadoEm) as string | null,
+          concluido_em: (op.concluido_em ?? op.concluidoEm) as string | null,
+        });
+      })
+      .catch(() => setOpStatus(null));
   }, [item?.id, clienteId, sendingTeam, resolving, cancelling, refreshKey]);
 
   if (!item) return null;

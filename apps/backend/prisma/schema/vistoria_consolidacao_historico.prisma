@@ -12,4 +12,5 @@ model vistoria_consolidacao_historico {
   reprocessado_por       String?   @db.Uuid
 
   @@map("vistoria_consolidacao_historico")
+  @@schema("public")
 }

@@ -18,4 +18,5 @@ model cliente_plano {
   billing_ciclo billing_ciclo[]
 
   @@map("cliente_plano")
+  @@schema("public")
 }

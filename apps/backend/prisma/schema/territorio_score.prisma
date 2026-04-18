@@ -10,4 +10,5 @@ model territorio_score {
 
   @@id([cliente_id, imovel_id])
   @@map("territorio_score")
+  @@schema("public")
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { http } from '@sentinella/api-client';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,29 +16,18 @@ const ResetPassword = () => {
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState(false);
   const [validSession, setValidSession] = useState<boolean | null>(null);
+  const [resetToken, setResetToken] = useState<string | null>(null);
 
   useEffect(() => {
-    // Supabase automatically handles the token from the URL hash
-    // and establishes a session of type "recovery"
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        setValidSession(true);
-      }
-    });
-
-    // Also check if there's already an active session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) setValidSession(true);
-    });
-
-    const timeout = setTimeout(() => {
-      setValidSession((prev) => prev ?? false);
-    }, 4000);
-
-    return () => {
-      subscription.unsubscribe();
-      clearTimeout(timeout);
-    };
+    // Token vem como query param ?token=... ou no hash #access_token=...
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token') ?? new URLSearchParams(window.location.hash.replace('#', '')).get('access_token');
+    if (token) {
+      setResetToken(token);
+      setValidSession(true);
+    } else {
+      setValidSession(false);
+    }
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -66,8 +55,7 @@ const ResetPassword = () => {
 
     setSaving(true);
     try {
-      const { error } = await supabase.auth.updateUser({ password });
-      if (error) throw error;
+      await http.post('/auth/reset-password', { token: resetToken, newPassword: password });
       setDone(true);
       toast.success('Senha redefinida com sucesso!');
     } catch (err: unknown) {

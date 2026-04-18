@@ -51,4 +51,5 @@ model clientes {
   cliente_quotas         cliente_quotas[]
 
   @@map("clientes")
+  @@schema("public")
 }

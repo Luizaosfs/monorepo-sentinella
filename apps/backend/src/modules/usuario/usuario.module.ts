@@ -4,9 +4,12 @@ import { DatabaseModule } from '@shared/modules/database/database.module';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 
 import { CreateUsuario } from './use-cases/create-usuario';
+import { DeleteUsuario } from './use-cases/delete-usuario';
 import { FilterUsuario } from './use-cases/filter-usuario';
 import { GetPapeisCliente } from './use-cases/get-papeis-cliente';
+import { GetUsuario } from './use-cases/get-usuario';
 import { PaginationUsuario } from './use-cases/pagination-usuario';
+import { SaveUsuario } from './use-cases/save-usuario';
 import { UsuarioController } from './usuario.controller';
 
 @Module({
@@ -15,6 +18,9 @@ import { UsuarioController } from './usuario.controller';
     FilterUsuario,
     PaginationUsuario,
     GetPapeisCliente,
+    GetUsuario,
+    SaveUsuario,
+    DeleteUsuario,
     JwtService,
     PrismaService,
   ],

@@ -3,7 +3,7 @@ import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 import { useParams, Link } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import { http, tokenStore } from '@sentinella/api-client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -140,8 +140,8 @@ const DenunciaCidadao: React.FC = () => {
     if (!foto) return null;
     setFotoUploading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      return await uploadDenunciaFoto(foto, session?.access_token);
+      const token = tokenStore.getAccessToken() ?? undefined;
+      return await uploadDenunciaFoto(foto, token);
     } finally {
       setFotoUploading(false);
     }
@@ -164,23 +164,17 @@ const DenunciaCidadao: React.FC = () => {
       // Upload foto antes do RPC
       const fotoResult = await uploadFoto();
 
-      const { data, error } = await supabase.rpc('denunciar_cidadao', {
-        p_slug: slug,
-        p_bairro_id: bairroId,
-        p_descricao: endereco.trim()
+      const result = await http.post<DenunciaResult>('/denuncias/cidadao', {
+        slug,
+        bairroId,
+        descricao: endereco.trim()
           ? `${descricao.trim()} — Endereço: ${endereco.trim()}`
           : descricao.trim(),
-        p_latitude: coords?.latitude ?? null,
-        p_longitude: coords?.longitude ?? null,
-        p_foto_url: fotoResult?.url ?? null,
-        p_foto_public_id: fotoResult?.public_id ?? null,
+        latitude: coords?.latitude ?? null,
+        longitude: coords?.longitude ?? null,
+        fotoUrl: fotoResult?.url ?? null,
+        fotoPublicId: fotoResult?.public_id ?? null,
       });
-
-      if (error) {
-        throw new Error(extractErrorMessage(error));
-      }
-
-      const result = data as DenunciaResult;
 
       if (!result.ok) {
         setSubmitError(result.error ?? 'Erro ao registrar denúncia. Tente novamente.');

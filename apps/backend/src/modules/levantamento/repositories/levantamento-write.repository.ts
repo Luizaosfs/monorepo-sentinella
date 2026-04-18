@@ -69,4 +69,13 @@ export abstract class LevantamentoWriteRepository {
   ): Promise<ItemManualResult>;
   abstract incrementTotalItens(levantamentoId: string): Promise<void>;
   abstract criarItemTags(itemId: string, tags: string[]): Promise<void>;
+  abstract delete(id: string): Promise<void>;
+  abstract updateItem(id: string, data: Partial<{
+    item: string; risco: string; acao: string; prioridade: string;
+    slaHoras: number; enderecoCurto: string; enderecoCompleto: string;
+    latitude: number; longitude: number; maps: string; waze: string;
+    imageUrl: string; imagePublicId: string; scoreFinal: number; peso: number;
+  }>): Promise<void>;
+  abstract deleteItem(id: string): Promise<void>;
+  abstract addItemEvidencia(itemId: string, data: { url: string; publicId?: string; tipo?: string }): Promise<import('../entities/levantamento').LevantamentoItemEvidencia>;
 }

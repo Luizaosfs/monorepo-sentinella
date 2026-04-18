@@ -4,7 +4,7 @@
  * logEvento() é fire-and-forget: nunca lança exceção, nunca bloqueia o fluxo.
  * Chame sem await sempre que possível.
  */
-import { supabase } from '@/lib/supabase';
+import { http } from '@sentinella/api-client';
 
 export type PilotoEventoTipo =
   // Resumo IA
@@ -56,17 +56,7 @@ export function logEvento(
 ): void {
   if (!clienteId) return;
 
-  supabase.auth.getUser().then(({ data }) => {
-    supabase
-      .from('piloto_eventos')
-      .insert({
-        tipo,
-        cliente_id: clienteId,
-        usuario_id: data.user?.id ?? null,
-        payload,
-      })
-      .then(() => {
-        // fire-and-forget — resultado ignorado intencionalmente
-      });
+  http.post('/piloto/eventos', { tipo, cliente_id: clienteId, payload }).catch(() => {
+    // fire-and-forget — resultado ignorado intencionalmente
   });
 }

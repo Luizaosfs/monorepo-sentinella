@@ -5,4 +5,5 @@ model notificacao_protocolo_seq {
 
   @@id([cliente_id, ano_mes])
   @@map("notificacao_protocolo_seq")
+  @@schema("public")
 }

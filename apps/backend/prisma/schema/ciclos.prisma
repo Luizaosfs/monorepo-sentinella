@@ -23,4 +23,5 @@ model ciclos {
 
   @@unique([cliente_id, numero, ano])
   @@map("ciclos")
+  @@schema("public")
 }

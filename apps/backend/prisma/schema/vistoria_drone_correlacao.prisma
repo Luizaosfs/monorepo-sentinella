@@ -10,4 +10,5 @@ model vistoria_drone_correlacao {
 
   @@unique([vistoria_id, levantamento_item_id])
   @@map("vistoria_drone_correlacao")
+  @@schema("public")
 }

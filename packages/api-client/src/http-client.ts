@@ -33,11 +33,11 @@ async function refreshTokens(): Promise<boolean> {
     const res = await fetch(`${baseUrl}/auth/refresh`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refresh_token: refresh }),
+      body: JSON.stringify({ refreshToken: refresh }),
     });
     if (!res.ok) return false;
-    const data = (await res.json()) as { access_token: string; refresh_token: string };
-    tokenStore.setTokens(data.access_token, data.refresh_token);
+    const data = (await res.json()) as { accessToken: string; refreshToken: string };
+    tokenStore.setTokens(data.accessToken, data.refreshToken);
     return true;
   } catch {
     return false;
@@ -89,32 +89,34 @@ export async function httpRequest<T>(
   return res.json() as Promise<T>;
 }
 
+type HttpOpts = RequestInit & { skipAuth?: boolean };
+
 /** Atalhos HTTP */
 export const http = {
-  get: <T>(path: string, opts?: RequestInit) =>
+  get: <T>(path: string, opts?: HttpOpts) =>
     httpRequest<T>(path, { ...opts, method: 'GET' }),
 
-  post: <T>(path: string, body?: unknown, opts?: RequestInit) =>
+  post: <T>(path: string, body?: unknown, opts?: HttpOpts) =>
     httpRequest<T>(path, {
       ...opts,
       method: 'POST',
       body: body !== undefined ? JSON.stringify(body) : undefined,
     }),
 
-  patch: <T>(path: string, body?: unknown, opts?: RequestInit) =>
+  patch: <T>(path: string, body?: unknown, opts?: HttpOpts) =>
     httpRequest<T>(path, {
       ...opts,
       method: 'PATCH',
       body: body !== undefined ? JSON.stringify(body) : undefined,
     }),
 
-  put: <T>(path: string, body?: unknown, opts?: RequestInit) =>
+  put: <T>(path: string, body?: unknown, opts?: HttpOpts) =>
     httpRequest<T>(path, {
       ...opts,
       method: 'PUT',
       body: body !== undefined ? JSON.stringify(body) : undefined,
     }),
 
-  delete: <T>(path: string, opts?: RequestInit) =>
+  delete: <T>(path: string, opts?: HttpOpts) =>
     httpRequest<T>(path, { ...opts, method: 'DELETE' }),
 };

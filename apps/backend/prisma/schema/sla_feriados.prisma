@@ -9,4 +9,5 @@ model sla_feriados {
   cliente clientes @relation(fields: [cliente_id], references: [id])
 
   @@map("sla_feriados")
+  @@schema("public")
 }

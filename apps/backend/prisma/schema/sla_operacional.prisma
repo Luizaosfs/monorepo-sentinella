@@ -28,4 +28,5 @@ model sla_operacional {
   cliente    clientes?    @relation(fields: [cliente_id], references: [id])
 
   @@map("sla_operacional")
+  @@schema("public")
 }

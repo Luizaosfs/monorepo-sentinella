@@ -143,6 +143,53 @@ export class PrismaLevantamentoWriteRepository implements LevantamentoWriteRepos
     });
   }
 
+  async delete(id: string): Promise<void> {
+    await this.prisma.client.levantamentos.delete({ where: { id } });
+  }
+
+  async updateItem(id: string, data: Parameters<LevantamentoWriteRepository['updateItem']>[1]): Promise<void> {
+    await this.prisma.client.levantamento_itens.update({
+      where: { id },
+      data: {
+        ...(data.item !== undefined && { item: data.item }),
+        ...(data.risco !== undefined && { risco: data.risco }),
+        ...(data.acao !== undefined && { acao: data.acao }),
+        ...(data.prioridade !== undefined && { prioridade: data.prioridade }),
+        ...(data.slaHoras !== undefined && { sla_horas: data.slaHoras }),
+        ...(data.enderecoCurto !== undefined && { endereco_curto: data.enderecoCurto }),
+        ...(data.enderecoCompleto !== undefined && { endereco_completo: data.enderecoCompleto }),
+        ...(data.latitude !== undefined && { latitude: data.latitude }),
+        ...(data.longitude !== undefined && { longitude: data.longitude }),
+        ...(data.maps !== undefined && { maps: data.maps }),
+        ...(data.waze !== undefined && { waze: data.waze }),
+        ...(data.imageUrl !== undefined && { image_url: data.imageUrl }),
+        ...(data.imagePublicId !== undefined && { image_public_id: data.imagePublicId }),
+        ...(data.scoreFinal !== undefined && { score_final: data.scoreFinal }),
+        ...(data.peso !== undefined && { peso: data.peso }),
+        updated_at: new Date(),
+      },
+    });
+  }
+
+  async deleteItem(id: string): Promise<void> {
+    await this.prisma.client.levantamento_itens.update({
+      where: { id },
+      data: { deleted_at: new Date() },
+    });
+  }
+
+  async addItemEvidencia(itemId: string, data: { url: string; publicId?: string; tipo?: string }) {
+    const raw = await this.prisma.client.levantamento_item_evidencias.create({
+      data: {
+        item_id: itemId,
+        url: data.url,
+        public_id: data.publicId ?? null,
+        tipo: data.tipo ?? null,
+      },
+    });
+    return PrismaLevantamentoMapper.evidenciaToDomain(raw as any);
+  }
+
   async criarItemTags(itemId: string, tags: string[]): Promise<void> {
     for (const tag of tags) {
       await this.prisma.client.$executeRaw(

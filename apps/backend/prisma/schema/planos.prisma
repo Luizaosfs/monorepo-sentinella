@@ -21,4 +21,5 @@ model planos {
   cliente_plano cliente_plano[]
 
   @@map("planos")
+  @@schema("public")
 }
