@@ -8,6 +8,8 @@ model canal_cidadao_rate_log {
   created_at DateTime @default(now()) @db.Timestamptz
 
   @@index([cliente_id])
+  @@index([ip_hash, created_at])
+  @@index([motivo])
   @@map("canal_cidadao_rate_log")
   @@schema("public")
 }

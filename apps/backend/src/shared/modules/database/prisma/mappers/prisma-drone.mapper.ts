@@ -95,7 +95,7 @@ export class PrismaDroneMapper {
     return {
       cliente_id: entity.clienteId,
       nome: entity.nome,
-      modelo: entity.modelo ?? null,
+      modelo: entity.modelo ?? '',
       serial: entity.serial ?? null,
       ativo: entity.ativo,
       updated_at: new Date(),

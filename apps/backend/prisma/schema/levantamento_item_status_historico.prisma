@@ -12,6 +12,7 @@ model levantamento_item_status_historico {
   @@index([cliente_id])
   @@index([cliente_id, alterado_em])
   @@index([levantamento_item_id])
+  @@index([levantamento_item_id, alterado_em])
   @@map("levantamento_item_status_historico")
   @@schema("public")
 }

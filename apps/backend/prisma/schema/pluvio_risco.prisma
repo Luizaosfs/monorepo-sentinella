@@ -1,6 +1,7 @@
 model pluvio_risco {
   id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   regiao_id           String    @db.Uuid
+  // PENDENTE: coluna existe no Prisma mas não no banco — avaliar se é adição futura ou drift a reverter
   cliente_id          String?   @db.Uuid
   dt_ref              DateTime  @db.Date
   chuva_24h           Decimal?  @default(0)
@@ -10,6 +11,7 @@ model pluvio_risco {
   janela_sem_chuva    String?
   persistencia_7d     Int?      @default(0)
   tendencia           String?
+  // PENDENTE: coluna existe no Prisma mas não no banco — avaliar se é adição futura ou drift a reverter
   nivel_risco         String?
   situacao_ambiental  String?
   prob_label          String?
@@ -30,6 +32,8 @@ model pluvio_risco {
 
   @@unique([regiao_id, dt_ref], name: "regiao_id_dt_ref")
   @@index([cliente_id])
+  @@index([regiao_id, dt_ref])
+  @@index([dt_ref])
   @@map("pluvio_risco")
   @@schema("public")
 }

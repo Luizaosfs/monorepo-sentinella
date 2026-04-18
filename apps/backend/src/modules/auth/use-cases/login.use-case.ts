@@ -6,6 +6,7 @@ import { AuthException } from 'src/guards/errors/auth.exception';
 import { env } from 'src/lib/env/server';
 
 import { LoginBody } from '../dtos/login.body';
+import { buildAuthUser } from './_helpers/build-auth-user';
 
 @Injectable()
 export class LoginUseCase {
@@ -65,15 +66,7 @@ export class LoginUseCase {
     return {
       accessToken,
       refreshToken,
-      user: {
-        id: usuario.id,
-        authId: usuario.auth_id,
-        email: usuario.email,
-        nome: usuario.nome,
-        clienteId: usuario.cliente_id,
-        agrupamentoId: usuario.agrupamento_id ?? null,
-        papeis,
-      },
+      user: buildAuthUser(usuario, papeis),
     };
   }
 }

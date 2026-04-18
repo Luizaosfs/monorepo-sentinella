@@ -3,6 +3,7 @@ model usuarios {
   auth_id               String?   @unique @db.Uuid
   nome                  String
   email                 String
+  // PENDENTE: coluna existe no Prisma mas não no banco — avaliar se é adição futura ou drift a reverter
   // Fase 2: senha armazenada localmente — elimina dependência de auth.users.encrypted_password
   senha_hash            String?
   cliente_id            String?   @db.Uuid
@@ -30,6 +31,9 @@ model usuarios {
   voos_piloto             voos[]              @relation("voo_piloto")
 
   @@index([cliente_id])
+  @@index([cliente_id, ativo])
+  @@index([email])
+  @@index([agrupamento_id])
   @@map("usuarios")
   @@schema("public")
 }

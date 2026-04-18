@@ -17,6 +17,7 @@ model foco_risco_historico {
   @@index([cliente_id])
   @@index([cliente_id, alterado_em])
   @@index([foco_risco_id])
+  @@index([foco_risco_id, alterado_em])
   @@map("foco_risco_historico")
   @@schema("public")
 }

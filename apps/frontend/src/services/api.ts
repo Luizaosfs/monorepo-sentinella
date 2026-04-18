@@ -1123,13 +1123,13 @@ export const api = {
       }
     },
 
-    /** Lista todos os papéis configurados no cliente. */
-    listAllPapeis: async (clienteId: string): Promise<Ret<typeof _sb.usuarios.listAllPapeis>> => {
+    /** Lista todos os papéis da plataforma — exclusivo para admin (sem filtro de cliente). */
+    listAllPapeis: async (): Promise<Ret<typeof _sb.usuarios.listAllPapeis>> => {
       try {
-        return await http.get(`/usuarios/papeis${qs({ clienteId })}`);
+        return await http.get('/usuarios/papeis');
       } catch (err) {
         logFallback('usuarios', 'listAllPapeis', err, '/usuarios/papeis');
-        return _sb.usuarios.listAllPapeis(clienteId);
+        return _sb.usuarios.listAllPapeis();
       }
     },
 

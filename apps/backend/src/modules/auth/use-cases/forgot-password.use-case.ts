@@ -14,10 +14,11 @@ export class ForgotPasswordUseCase {
   ) {}
 
   async execute(input: ForgotPasswordBody): Promise<{ ok: true }> {
+    const emailNormalizado = input.email.trim().toLowerCase();
     // Fase 3: busca auth_id em usuarios (não mais em auth.users)
     // Funciona para usuários novos (sem auth.users) e legados (com auth.users)
     const usuarioRow = await this.prisma.client.usuarios.findFirst({
-      where: { email: { equals: input.email.trim(), mode: 'insensitive' } },
+      where: { email: { equals: emailNormalizado, mode: 'insensitive' } },
       select: { auth_id: true },
     });
 
@@ -41,7 +42,7 @@ export class ForgotPasswordUseCase {
       const redirectTo = input.redirectTo ?? `${baseUrl}/reset-password`;
       const resetUrl = `${redirectTo}?token=${token}`;
 
-      await this.emailService.sendPasswordReset(input.email, resetUrl);
+      await this.emailService.sendPasswordReset(emailNormalizado, resetUrl);
     }
 
     return { ok: true };

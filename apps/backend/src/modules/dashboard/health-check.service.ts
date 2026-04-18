@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
+import { env } from 'src/lib/env/server';
 
 @Injectable()
 export class HealthCheckService {
@@ -37,5 +38,31 @@ export class HealthCheckService {
 
     this.logger.log(`[HealthCheckService.check] status=${status} checks=${JSON.stringify(checks)}`);
     return { status, checks };
+  }
+
+  async migrationHealth(): Promise<{
+    senha_hash: { total: number; pendentes: number; percentual_migrado: number };
+    supabase_bridge_ativa: boolean;
+    canal_cidadao_v2_ativo: boolean;
+  }> {
+    const result = await this.prisma.client.$queryRaw<
+      Array<{ total: bigint; pendentes: bigint }>
+    >`
+      SELECT
+        COUNT(*)                                                              AS total,
+        COUNT(*) FILTER (WHERE auth_id IS NOT NULL AND senha_hash IS NULL)   AS pendentes
+      FROM public.usuarios
+    `;
+
+    const total = Number(result[0]?.total ?? 0);
+    const pendentes = Number(result[0]?.pendentes ?? 0);
+    const migrados = total - pendentes;
+    const percentual_migrado = total === 0 ? 100 : Math.round((migrados / total) * 100);
+
+    return {
+      senha_hash: { total, pendentes, percentual_migrado },
+      supabase_bridge_ativa: Boolean(env.SUPABASE_JWT_SECRET),
+      canal_cidadao_v2_ativo: env.CANAL_CIDADAO_V2_ENABLED,
+    };
   }
 }

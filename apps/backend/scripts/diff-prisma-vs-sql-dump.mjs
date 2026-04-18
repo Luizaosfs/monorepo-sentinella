@@ -16,7 +16,7 @@ const sqlPath =
 /** Extrai corpo (...) do CREATE TABLE; ignora parênteses dentro de strings SQL ('...'). */
 function extractCreateTableBodies(sql) {
   const tables = {}
-  const re = /CREATE TABLE public\.(\w+) \(/g
+  const re = /CREATE TABLE (?:IF NOT EXISTS )?"?public"?\."?(\w+)"? \(/gi
   let m
   while ((m = re.exec(sql)) !== null) {
     const name = m[1]
@@ -84,9 +84,16 @@ function parsePgColumns(inner) {
     const kw = raw.split(/\s+/)[0]?.toUpperCase()
     if (['CASE', 'WHEN', 'ELSE', 'END'].includes(kw)) continue
 
-    const m = /^([a-z_][a-z0-9_]*)\s+(\S+)/.exec(raw)
+    const m = /^"?([a-z_][a-z0-9_]*)"?\s+(.+)$/i.exec(raw)
     if (!m) continue
-    const typeTok = m[2].replace(/[,;].*$/, '')
+    // Tipo pode vir entre aspas ("uuid") ou como public.enum ("public"."papel_app")
+    let typeTok = m[2].trim()
+    // Remove public. schema prefix (quoted ou não)
+    typeTok = typeTok.replace(/^"?public"?\./i, '')
+    // Remove aspas em volta do tipo
+    typeTok = typeTok.replace(/^"([^"]+)"/, '$1')
+    typeTok = typeTok.split(/\s+/)[0] ?? ''
+    typeTok = typeTok.replace(/[,;].*$/, '')
     if (!isPgTypeToken(typeTok)) continue
     cols.push(m[1])
   }

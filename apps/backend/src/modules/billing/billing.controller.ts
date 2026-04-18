@@ -15,6 +15,8 @@ import { REQUEST } from '@nestjs/core';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
 import { Request } from 'express';
+import { AuthGuard } from 'src/guards/auth.guard';
+import { RolesGuard } from 'src/guards/roles.guard';
 import { TenantGuard } from 'src/guards/tenant.guard';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 
@@ -50,7 +52,7 @@ import {
 } from './dtos/verificar-quota.input';
 import { BillingViewModel } from './view-model/billing';
 
-@UseGuards(TenantGuard)
+@UseGuards(AuthGuard, RolesGuard, TenantGuard)
 @UseInterceptors(PrismaInterceptor)
 @UsePipes(MyZodValidationPipe)
 @ApiTags('Billing')
@@ -172,7 +174,7 @@ export class BillingController {
   // ── Quotas ───────────────────────────────────────────────────────────────
 
   @Get('quotas')
-  @Roles('admin', 'supervisor')
+  @Roles('admin', 'supervisor', 'agente')
   @ApiOperation({ summary: 'Obter quotas do cliente' })
   async getQuotas() {
     const clienteId = this.req['tenantId'] as string;

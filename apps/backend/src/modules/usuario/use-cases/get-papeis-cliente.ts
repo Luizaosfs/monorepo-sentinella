@@ -6,7 +6,7 @@ import { UsuarioReadRepository } from '../repositories/usuario-read.repository';
 export class GetPapeisCliente {
   constructor(private readRepository: UsuarioReadRepository) {}
 
-  async execute(clienteId: string) {
+  async execute(clienteId: string | null) {
     const papeis = await this.readRepository.findPapeisCliente(clienteId);
     return { papeis };
   }

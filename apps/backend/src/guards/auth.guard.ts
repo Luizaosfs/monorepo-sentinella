@@ -83,6 +83,9 @@ export class AuthGuard implements CanActivate {
     // Tenta validar como NestJS JWT primeiro; se falhar e SUPABASE_JWT_SECRET
     // estiver configurado, tenta como Supabase JWT (bridge de migração).
     let authId: string | undefined;
+    let tokenSource: 'nestjs' | 'supabase_hs256' | 'supabase_es256' = 'nestjs';
+    let bridgeKid: string | undefined;
+    const t0 = Date.now();
 
     try {
       const payload = await this.jwtService.verifyAsync(token, {
@@ -90,6 +93,9 @@ export class AuthGuard implements CanActivate {
       });
       if (!payload?.sub) throw AuthException.unauthorized();
       authId = payload.sub as string;
+      this.logger.debug(
+        JSON.stringify({ event: 'auth.jwt.nestjs', authId, latencyMs: Date.now() - t0 }),
+      );
     } catch (nestErr) {
       if (nestErr instanceof UnauthorizedException) throw nestErr;
 
@@ -109,6 +115,7 @@ export class AuthGuard implements CanActivate {
           });
           if (!sbPayload?.sub) throw new Error('Token sem sub');
           authId = sbPayload.sub as string;
+          tokenSource = 'supabase_hs256';
         } else {
           // ES256: projetos Supabase modernos com JWKS
           const publicKey = await this.getSupabasePublicKey(kid);
@@ -119,6 +126,19 @@ export class AuthGuard implements CanActivate {
           });
           if (!sbPayload?.sub) throw new Error('Token sem sub');
           authId = sbPayload.sub as string;
+          tokenSource = 'supabase_es256';
+          bridgeKid = kid;
+        }
+
+        const latencyMs = Date.now() - t0;
+        if (tokenSource === 'supabase_hs256') {
+          this.logger.warn(
+            JSON.stringify({ event: 'auth.jwt.supabase_hs256', authId, latencyMs }),
+          );
+        } else {
+          this.logger.warn(
+            JSON.stringify({ event: 'auth.jwt.supabase_es256', authId, latencyMs, kid: bridgeKid }),
+          );
         }
       } catch (sbErr) {
         this.logger.warn(`Supabase bridge falhou: ${(sbErr as Error).message}`);
@@ -133,8 +153,14 @@ export class AuthGuard implements CanActivate {
         include: { papeis_usuarios: true },
       });
 
-      if (!usuario) throw AuthException.unauthorized();
-      if (!usuario.ativo) throw AuthException.unauthorized();
+      if (!usuario) {
+        this.logger.warn(`AuthGuard: usuario nao encontrado para auth_id=${authId}`);
+        throw AuthException.unauthorized();
+      }
+      if (!usuario.ativo) {
+        this.logger.warn(`AuthGuard: usuario inativo auth_id=${authId}`);
+        throw AuthException.unauthorized();
+      }
 
       // Injeta no request (id = domínio; authId = identidade externa do token)
       const papeis = usuario.papeis_usuarios.map((p) => p.papel as PapelApp);

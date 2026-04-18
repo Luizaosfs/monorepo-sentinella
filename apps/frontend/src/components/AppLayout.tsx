@@ -692,79 +692,97 @@ const AppLayout = () => {
           )}
         </nav>
 
-        {/* Footer */}
-        <div className="shrink-0 p-4 border-t border-white/10 bg-black/10 mt-auto">
-          <div className="flex items-center gap-3 px-3 py-3 mb-3 rounded-xl bg-white/5 backdrop-blur-sm border border-white/10">
-            <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-sm font-black text-white shadow-lg shrink-0 border border-white/10">
-              {usuario?.nome?.charAt(0)?.toUpperCase() || 'U'}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-white truncate">
-                {usuario?.nome || 'Usuário'}
-              </p>
-              {papel && (
-                <p className="text-[10px] text-white/50 font-medium mt-0.5 truncate" title={`Papel: ${PAPEL_LABEL[papel] ?? papel}`}>
-                  {PAPEL_LABEL[papel] ?? papel}
+        {/* Footer — conta + atalhos (alinhamento com ícone fixo como o menu principal) */}
+        <div className="shrink-0 mt-auto border-t border-white/[0.12] bg-gradient-to-b from-black/5 to-black/20 backdrop-blur-[2px]">
+          <div className="space-y-2 p-2">
+            <div className="flex items-center gap-2 rounded-xl bg-white/[0.07] px-2 py-2 ring-1 ring-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-white/25 to-white/10 text-xs font-black text-white shadow-sm ring-1 ring-white/15">
+                {usuario?.nome?.charAt(0)?.toUpperCase() || 'U'}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-xs font-semibold leading-tight text-white">
+                  {usuario?.nome || 'Usuário'}
                 </p>
-              )}
+                {papel && (
+                  <p
+                    className="mt-0.5 truncate text-[10px] font-medium leading-tight text-emerald-50/85"
+                    title={`Papel: ${PAPEL_LABEL[papel] ?? papel}`}
+                  >
+                    {PAPEL_LABEL[papel] ?? papel}
+                  </p>
+                )}
+              </div>
             </div>
-          </div>
-          <div className="flex items-center gap-2 mb-2">
-            <button
-              type="button"
-              onClick={handleAbrirComoUsar}
-              className="flex-1 flex items-center justify-center gap-2 h-9 rounded-xl bg-white/5 text-white/70 hover:bg-white/15 hover:text-white transition-all text-xs font-semibold border border-white/10"
-              title="Ver tour de boas-vindas novamente"
-            >
-              <BookOpen className="h-3.5 w-3.5" /> Como usar
-            </button>
-          </div>
 
-          {/* Toggle análise de vistoria — apenas supervisor, admin e analista_regional */}
-          {(isAdminOrSupervisor || papel === 'analista_regional') && (
-            <div className="mb-2">
+            <div className="space-y-1">
               <button
                 type="button"
-                onClick={toggleModoAnalitico}
-                className={cn(
-                  'w-full flex items-center justify-center gap-2 h-9 rounded-xl text-xs font-semibold border transition-all',
-                  modoAnalitico
-                    ? 'bg-blue-500/20 text-blue-200 border-blue-400/30 hover:bg-blue-500/30'
-                    : 'bg-white/5 text-white/70 hover:bg-white/15 hover:text-white border-white/10',
-                )}
-                title={modoAnalitico
-                  ? 'Ocultar dimensões de risco nas telas de detalhe'
-                  : 'Exibir resultado operacional e dimensões de risco em cada vistoria'}
+                onClick={handleAbrirComoUsar}
+                className="group flex h-8 w-full items-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 text-[11px] font-semibold text-white/85 transition-all hover:border-white/20 hover:bg-white/12 hover:text-white"
+                title="Ver tour de boas-vindas novamente"
               >
-                {modoAnalitico
-                  ? <EyeOff className="h-3.5 w-3.5" />
-                  : <Eye className="h-3.5 w-3.5" />}
-                {modoAnalitico ? 'Ocultar análise' : 'Ver análise'}
+                <BookOpen className="h-3.5 w-3.5 shrink-0 opacity-90 group-hover:opacity-100" aria-hidden />
+                <span className="min-w-0 truncate text-left">Como usar</span>
               </button>
-              {modoAnalitico && (
-                <p className="text-center text-[10px] text-blue-300/70 mt-1 leading-tight">
-                  Dimensões visíveis nas vistorias
-                </p>
+
+              {(isAdminOrSupervisor || papel === 'analista_regional') && (
+                <div className="space-y-0.5">
+                  <button
+                    type="button"
+                    onClick={toggleModoAnalitico}
+                    className={cn(
+                      'group flex h-8 w-full items-center gap-2 rounded-lg border px-2.5 text-[11px] font-semibold transition-all',
+                      modoAnalitico
+                        ? 'border-blue-400/35 bg-blue-500/18 text-blue-100 hover:bg-blue-500/28'
+                        : 'border-white/10 bg-white/[0.04] text-white/85 hover:border-white/20 hover:bg-white/12 hover:text-white',
+                    )}
+                    title={
+                      modoAnalitico
+                        ? 'Ocultar dimensões de risco nas telas de detalhe'
+                        : 'Exibir resultado operacional e dimensões de risco em cada vistoria'
+                    }
+                  >
+                    {modoAnalitico ? (
+                      <EyeOff className="h-3.5 w-3.5 shrink-0 opacity-90" aria-hidden />
+                    ) : (
+                      <Eye className="h-3.5 w-3.5 shrink-0 opacity-90 group-hover:opacity-100" aria-hidden />
+                    )}
+                    <span className="min-w-0 truncate text-left">
+                      {modoAnalitico ? 'Ocultar análise' : 'Ver análise'}
+                    </span>
+                  </button>
+                  {modoAnalitico && (
+                    <p className="px-0.5 text-center text-[9px] leading-tight text-blue-200/75">
+                      Dimensões visíveis nas vistorias
+                    </p>
+                  )}
+                </div>
               )}
+
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                  className="group flex h-8 min-w-0 flex-1 items-center gap-2 rounded-md border border-transparent bg-transparent px-2 text-[10px] font-medium text-white/45 transition-colors hover:bg-white/[0.06] hover:text-white/70 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/25"
+                  title={theme === 'dark' ? 'Alternar para modo claro' : 'Alternar para modo escuro'}
+                >
+                  {theme === 'dark' ? (
+                    <Sun className="h-3 w-3 shrink-0 text-white/40 group-hover:text-white/65" aria-hidden />
+                  ) : (
+                    <Moon className="h-3 w-3 shrink-0 text-white/40 group-hover:text-white/65" aria-hidden />
+                  )}
+                  <span className="min-w-0 truncate text-left">{theme === 'dark' ? 'Modo claro' : 'Modo escuro'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-red-400/25 bg-red-500/12 text-red-300 transition-all hover:border-red-400/50 hover:bg-red-500 hover:text-white"
+                  title="Sair"
+                >
+                  <LogOut className="h-3.5 w-3.5" aria-hidden />
+                </button>
+              </div>
             </div>
-          )}
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="flex-1 flex items-center justify-center gap-2 h-10 rounded-xl bg-white/5 text-white/80 hover:bg-white/15 hover:text-white transition-all text-xs font-semibold border border-white/10"
-              title={theme === 'dark' ? 'Alternar para modo claro' : 'Alternar para modo escuro'}
-            >
-              {theme === 'dark' ? <><Sun className="h-3.5 w-3.5" /> Modo claro</> : <><Moon className="h-3.5 w-3.5" /> Modo escuro</>}
-            </button>
-            <button
-              type="button"
-              onClick={handleSignOut}
-              className="w-10 h-10 flex items-center justify-center rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition-all shadow-sm border border-red-500/10"
-              title="Sair"
-            >
-              <LogOut className="h-4 w-4" />
-            </button>
           </div>
         </div>
       </aside>

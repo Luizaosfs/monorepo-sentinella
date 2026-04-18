@@ -76,12 +76,12 @@ export class PrismaUsuarioReadRepository implements UsuarioReadRepository {
     };
   }
 
-  async findPapeisCliente(clienteId: string): Promise<{ usuarioId: string; papel: string }[]> {
+  async findPapeisCliente(clienteId: string | null): Promise<{ usuario_id: string; papel: string }[]> {
     const rows = await this.prisma.client.papeis_usuarios.findMany({
-      where: { usuario: { cliente_id: clienteId } },
+      where: clienteId != null ? { usuario: { cliente_id: clienteId } } : undefined,
       select: { usuario_id: true, papel: true },
     });
-    return rows.map((r) => ({ usuarioId: r.usuario_id, papel: r.papel }));
+    return rows.map((r) => ({ usuario_id: r.usuario_id, papel: r.papel }));
   }
 
   private buildWhere(filters: FilterUsuarioInput) {

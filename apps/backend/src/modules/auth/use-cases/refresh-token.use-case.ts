@@ -5,6 +5,7 @@ import { AuthException } from 'src/guards/errors/auth.exception';
 import { env } from 'src/lib/env/server';
 
 import { RefreshBody } from '../dtos/refresh.body';
+import { buildAuthUser } from './_helpers/build-auth-user';
 
 @Injectable()
 export class RefreshTokenUseCase {
@@ -57,6 +58,6 @@ export class RefreshTokenUseCase {
       { secret: env.SECRET_JWT, expiresIn: '30d' },
     );
 
-    return { accessToken, refreshToken };
+    return { accessToken, refreshToken, user: buildAuthUser(usuario, papeis) };
   }
 }

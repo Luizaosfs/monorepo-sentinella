@@ -125,7 +125,8 @@ function EditQuotaDialog({
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function AdminQuotas() {
-  const { data: rows = [], isLoading } = useClienteQuotasAll();
+  const { data: rawRows, isLoading } = useClienteQuotasAll();
+  const rows = rawRows ?? [];
   const [editing, setEditing] = useState<ClienteUsoMensal | null>(null);
 
   const anyExceeded = (r: ClienteUsoMensal) =>

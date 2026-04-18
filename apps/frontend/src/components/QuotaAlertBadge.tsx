@@ -8,7 +8,8 @@ import { Gauge } from 'lucide-react';
  * Visível apenas para admins da plataforma.
  */
 export function QuotaAlertBadge() {
-  const { data: rows = [] } = useClienteQuotasAll();
+  const { data: rawRows } = useClienteQuotasAll();
+  const rows = rawRows ?? [];
 
   const excedidos = rows.filter(
     (r) => r.voos_excedido || r.levantamentos_excedido || r.itens_excedido || r.usuarios_excedido

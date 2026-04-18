@@ -1,17 +1,26 @@
 model regioes {
   id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   cliente_id   String   @db.Uuid
-  nome         String   @default("")
+  // SQL: coluna nomeada "regiao" — mapeada para nome no domínio
+  nome         String   @map("regiao") @default("")
+  // PENDENTE: coluna existe no Prisma mas não no banco — avaliar se é adição futura ou drift a reverter
   tipo         String?
+  // PENDENTE: coluna existe no Prisma mas não no banco — avaliar se é adição futura ou drift a reverter
   cor          String?
+  // PENDENTE: coluna existe no Prisma mas não no banco — avaliar se é adição futura ou drift a reverter
   geojson      Json?
+  // PENDENTE: coluna existe no Prisma mas não no banco — avaliar se é adição futura ou drift a reverter
   ativo         Boolean   @default(true)
   created_at    DateTime  @default(now()) @db.Timestamptz
   updated_at    DateTime  @default(now()) @db.Timestamptz
-  lat_centroid  Float?
-  lng_centroid  Float?
+  lat_centroid  Float?    @map("latitude")
+  lng_centroid  Float?    @map("longitude")
+  // PENDENTE: coluna existe no Prisma mas não no banco — avaliar se é adição futura ou drift a reverter
   municipio     String?
+  // PENDENTE: coluna existe no Prisma mas não no banco — avaliar se é adição futura ou drift a reverter
   uf            String?
+  // SQL: geometry(Polygon,4326) — usar Unsupported para PostGIS
+  area          Unsupported("geometry(Polygon,4326)")?
   deleted_at    DateTime? @db.Timestamptz
   deleted_by    String?   @db.Uuid
 
@@ -23,6 +32,7 @@ model regioes {
   casos_notificados casos_notificados[]
 
   @@index([cliente_id])
+  @@index([cliente_id, deleted_at])
   @@map("regioes")
   @@schema("public")
 }

@@ -6,6 +6,7 @@ export class UsuarioViewModel {
   static toHttp(usuario: Usuario) {
     return {
       id: usuario.id,
+      authId: usuario.authId,
       nome: usuario.nome,
       email: usuario.email,
       clienteId: usuario.clienteId,

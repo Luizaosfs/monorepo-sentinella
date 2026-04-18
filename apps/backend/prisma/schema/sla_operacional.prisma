@@ -29,6 +29,7 @@ model sla_operacional {
 
   @@index([cliente_id])
   @@index([cliente_id, status])
+  @@index([cliente_id, prazo_final])
   @@index([foco_risco_id])
   @@index([status])
   @@map("sla_operacional")

@@ -14,5 +14,5 @@ export abstract class UsuarioReadRepository {
     pagination: PaginationProps,
   ): Promise<UsuarioPaginated>;
   abstract findByClienteId(clienteId: string): Promise<Usuario[]>;
-  abstract findPapeisCliente(clienteId: string): Promise<{ usuarioId: string; papel: string }[]>;
+  abstract findPapeisCliente(clienteId: string | null): Promise<{ usuario_id: string; papel: string }[]>;
 }

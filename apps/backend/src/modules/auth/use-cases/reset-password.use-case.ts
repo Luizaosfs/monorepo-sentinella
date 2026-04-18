@@ -23,12 +23,15 @@ export class ResetPasswordUseCase {
 
     const novoHash = await bcrypt.hash(input.newPassword, 10);
 
-    const usuarioAtualizado = await this.prisma.client.usuarios.updateMany({
-      where: { auth_id: record.auth_id },
-      data: { senha_hash: novoHash, updated_at: new Date() },
-    });
-
-    if (usuarioAtualizado.count === 0) throw AuthException.unauthorized();
+    try {
+      await this.prisma.client.usuarios.update({
+        where: { auth_id: record.auth_id },
+        data: { senha_hash: novoHash, updated_at: new Date() },
+      });
+    } catch (err: any) {
+      if (err?.code === 'P2025') throw AuthException.unauthorized();
+      throw err;
+    }
 
     // Invalida o token
     await this.prisma.client.password_reset_tokens.update({

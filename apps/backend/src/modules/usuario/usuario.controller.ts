@@ -102,7 +102,7 @@ export class UsuarioController {
   @ApiOperation({ summary: 'Lista papéis dos usuários de um cliente' })
   async getPapeis() {
     // MT-03: clienteId vem do TenantGuard, não de query param
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = this.req['tenantId'] as string | null;
     const { papeis } = await this.getPapeisCliente.execute(clienteId);
     return papeis;
   }

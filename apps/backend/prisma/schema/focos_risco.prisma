@@ -43,6 +43,7 @@ model focos_risco {
 
   @@index([cliente_id])
   @@index([cliente_id, status])
+  @@index([cliente_id, responsavel_id, status])
   @@index([cliente_id, created_at])
   @@index([imovel_id])
   @@index([regiao_id])
