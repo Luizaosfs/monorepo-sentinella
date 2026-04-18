@@ -3,6 +3,8 @@ model usuarios {
   auth_id               String?   @unique @db.Uuid
   nome                  String
   email                 String
+  // Fase 2: senha armazenada localmente — elimina dependência de auth.users.encrypted_password
+  senha_hash            String?
   cliente_id            String?   @db.Uuid
   created_at            DateTime  @default(now()) @db.Timestamptz
   updated_at            DateTime  @default(now()) @db.Timestamptz

@@ -2,13 +2,12 @@ import { Usuario } from '@modules/usuario/entities/usuario';
 import { UsuarioReadRepository } from '@modules/usuario/repositories/usuario-read.repository';
 import { UsuarioWriteRepository } from '@modules/usuario/repositories/usuario-write.repository';
 import { Injectable } from '@nestjs/common';
+import * as crypto from 'crypto';
 
 import { PrismaRepository } from '@/decorators/prisma-repository.decorator';
 
 import { PrismaUsuarioMapper } from '../../mappers/prisma-usuario.mapper';
 import { PrismaService } from '../../prisma.service';
-
-const INCLUDE_PAPEIS = { papeis_usuarios: true } as const;
 
 @PrismaRepository(UsuarioWriteRepository)
 @Injectable()
@@ -19,16 +18,24 @@ export class PrismaUsuarioWriteRepository implements UsuarioWriteRepository {
   ) {}
 
   async create(usuario: Usuario): Promise<Usuario> {
-    const data = PrismaUsuarioMapper.toPrisma(usuario);
+    if (!usuario.senhaHash) {
+      throw new Error('senhaHash é obrigatório para criar usuário');
+    }
+
+    // Fase 3: auth_id gerado localmente — sem INSERT em auth.users
+    // auth.users não é mais necessário para novos usuários
+    const authId = crypto.randomUUID();
+
+    const data = PrismaUsuarioMapper.toCreatePrisma(usuario);
     const created = await this.prisma.client.usuarios.create({
-      data,
-      include: INCLUDE_PAPEIS,
+      data: { ...data, auth_id: authId },
     });
 
+    // papeis_usuarios.usuario_id = auth_id (FK aponta para usuarios.auth_id)
     if (usuario.papeis.length > 0) {
       await this.prisma.client.papeis_usuarios.createMany({
         data: usuario.papeis.map((papel) => ({
-          usuario_id: created.id,
+          usuario_id: authId,
           papel,
         })),
       });
@@ -43,5 +50,20 @@ export class PrismaUsuarioWriteRepository implements UsuarioWriteRepository {
       where: { id: usuario.id },
       data,
     });
+
+    // Sincronizar papeis_usuarios quando papeis mudam
+    if (usuario.authId) {
+      await this.prisma.client.papeis_usuarios.deleteMany({
+        where: { usuario_id: usuario.authId },
+      });
+      if (usuario.papeis.length > 0) {
+        await this.prisma.client.papeis_usuarios.createMany({
+          data: usuario.papeis.map((papel) => ({
+            usuario_id: usuario.authId!,
+            papel,
+          })),
+        });
+      }
+    }
   }
 }

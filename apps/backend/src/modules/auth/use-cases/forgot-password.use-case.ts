@@ -14,23 +14,24 @@ export class ForgotPasswordUseCase {
   ) {}
 
   async execute(input: ForgotPasswordBody): Promise<{ ok: true }> {
-    // Busca auth_id pelo email — nunca revela se o email existe (anti-enumeration)
-    const rows = await this.prisma.client.$queryRaw<Array<{ id: string }>>`
-      SELECT id FROM auth.users WHERE email = ${input.email} LIMIT 1
-    `;
+    // Fase 3: busca auth_id em usuarios (não mais em auth.users)
+    // Funciona para usuários novos (sem auth.users) e legados (com auth.users)
+    const usuarioRow = await this.prisma.client.usuarios.findFirst({
+      where: { email: { equals: input.email.trim(), mode: 'insensitive' } },
+      select: { auth_id: true },
+    });
 
-    if (rows.length) {
-      const authId = rows[0].id;
+    if (usuarioRow?.auth_id) {
+      const authId = usuarioRow.auth_id;
       const token = crypto.randomBytes(32).toString('hex');
       const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
       const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1h
 
       // Invalida tokens anteriores não usados para o mesmo usuário
-      await this.prisma.client.$executeRaw`
-        UPDATE password_reset_tokens
-        SET used_at = now()
-        WHERE auth_id = ${authId}::uuid AND used_at IS NULL
-      `;
+      await this.prisma.client.password_reset_tokens.updateMany({
+        where: { auth_id: authId, used_at: null },
+        data: { used_at: new Date() },
+      });
 
       await this.prisma.client.password_reset_tokens.create({
         data: { auth_id: authId, token_hash: tokenHash, expires_at: expiresAt },

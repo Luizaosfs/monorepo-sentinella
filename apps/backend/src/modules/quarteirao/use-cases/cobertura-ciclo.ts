@@ -13,7 +13,7 @@ export class CoberturaCiclo {
   ) {}
 
   async execute(input: CoberturaCicloInput) {
-    const isAdmin = this.req['user']?.papeis?.includes('admin');
+    const isAdmin = this.req['user']?.isPlatformAdmin ?? false;
     if (
       input.clienteId &&
       !isAdmin &&
@@ -38,7 +38,7 @@ export class CoberturaCiclo {
 
   private assertTenant(clienteId: string) {
     const user = this.req['user'];
-    if (user?.papeis?.includes('admin')) return;
+    if (user?.isPlatformAdmin) return;
     if (clienteId !== this.req['tenantId']) {
       throw QuarteiraoException.forbiddenTenant();
     }

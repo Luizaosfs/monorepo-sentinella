@@ -21,7 +21,7 @@ export class CreateDistribuicao {
       throw QuarteiraoException.badRequest();
     }
 
-    const isAdmin = this.req['user']?.papeis?.includes('admin');
+    const isAdmin = this.req['user']?.isPlatformAdmin ?? false;
     if (
       input.clienteId &&
       !isAdmin &&

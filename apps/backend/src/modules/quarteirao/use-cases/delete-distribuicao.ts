@@ -27,7 +27,7 @@ export class DeleteDistribuicao {
 
   private assertTenant(clienteId: string) {
     const user = this.req['user'];
-    if (user?.papeis?.includes('admin')) return;
+    if (user?.isPlatformAdmin) return;
     if (clienteId !== this.req['tenantId']) {
       throw QuarteiraoException.forbiddenTenant();
     }

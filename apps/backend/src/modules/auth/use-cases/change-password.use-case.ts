@@ -11,31 +11,25 @@ export class ChangePasswordUseCase {
   constructor(private prisma: PrismaService) {}
 
   async execute(user: AuthenticatedUser, input: ChangePasswordBody): Promise<{ ok: true }> {
-    const authId = user.sub;
+    const authId = user.authId;
 
-    const rows = await this.prisma.client.$queryRaw<
-      Array<{ encrypted_password: string | null }>
-    >`
-      SELECT encrypted_password
-      FROM auth.users
-      WHERE id = ${authId}::uuid
-      LIMIT 1
-    `;
+    const usuarioRow = await this.prisma.client.usuarios.findUnique({
+      where: { auth_id: authId },
+      select: { senha_hash: true },
+    });
 
-    const hash = rows[0]?.encrypted_password;
-    if (!hash) throw AuthException.invalidCredentials();
+    const hashAtual = usuarioRow?.senha_hash ?? null;
+    if (!hashAtual) throw AuthException.invalidCredentials();
 
-    const senhaValida = await bcrypt.compare(input.currentPassword, hash);
+    const senhaValida = await bcrypt.compare(input.currentPassword, hashAtual);
     if (!senhaValida) throw AuthException.invalidCredentials();
 
     const novoHash = await bcrypt.hash(input.newPassword, 10);
 
-    await this.prisma.client.$executeRaw`
-      UPDATE auth.users
-      SET encrypted_password = ${novoHash},
-          updated_at          = now()
-      WHERE id = ${authId}::uuid
-    `;
+    await this.prisma.client.usuarios.update({
+      where: { auth_id: authId },
+      data: { senha_hash: novoHash, updated_at: new Date() },
+    });
 
     return { ok: true };
   }

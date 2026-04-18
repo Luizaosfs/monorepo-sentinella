@@ -25,7 +25,8 @@ export class RolesGuard implements CanActivate {
       throw AuthException.unauthorized();
     }
 
-    const hasRole = requiredRoles.some((role) => user.papeis.includes(role));
+    // H-02 fix: admin tem acesso total — bypassa verificação de papéis
+    const hasRole = user.isPlatformAdmin || requiredRoles.some((role) => user.papeis.includes(role));
 
     if (!hasRole) {
       throw AuthException.unauthorized();

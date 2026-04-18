@@ -19,18 +19,18 @@ const Login = React.forwardRef<HTMLDivElement>((_props, _ref) => {
   const [loading, setLoading] = useState(false);
   const [forgotMode, setForgotMode] = useState(false);
   const [forgotLoading, setForgotLoading] = useState(false);
-  const { signIn, session, papel, loading: authLoading } = useAuth();
+  const { signIn, usuario, papel, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [dismissedBanner, setDismissedBanner] = useState(false);
   const [isStandalone] = useState(() => window.matchMedia("(display-mode: standalone)").matches);
 
-  // Redirect when session + papel are both resolved
+  // Redirect quando já autenticado (JWT + /auth/me) — session está deprecado e é sempre null
   const [redirecting, setRedirecting] = useState(false);
   useEffect(() => {
-    if (!session || authLoading) return;
+    if (authLoading || !usuario) return;
     setRedirecting(true);
     navigate(getHomeByPapel(papel), { replace: true });
-  }, [session, papel, authLoading, navigate]);
+  }, [usuario, papel, authLoading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,7 +48,7 @@ const Login = React.forwardRef<HTMLDivElement>((_props, _ref) => {
         setError(err.message || "Erro ao fazer login.");
       }
     }
-    // Don't navigate here — the useEffect above handles it when session updates
+    // Navegação após login: o useEffect acima redireciona quando `usuario` é preenchido
     setLoading(false);
   };
 

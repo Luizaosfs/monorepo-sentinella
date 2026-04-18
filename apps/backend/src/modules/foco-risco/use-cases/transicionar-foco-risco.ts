@@ -57,7 +57,7 @@ export class TransicionarFocoRisco {
   private assertFocoDoTenant(foco: FocoRisco) {
     const user = this.req['user'] as AuthenticatedUser | undefined;
     const tenantId = this.req['tenantId'] as string | undefined;
-    if (user?.papeis?.includes('admin')) return;
+    if (user?.isPlatformAdmin) return;
     if (!tenantId || foco.clienteId !== tenantId) {
       throw FocoRiscoException.notFound();
     }

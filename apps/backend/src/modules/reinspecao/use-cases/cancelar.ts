@@ -26,7 +26,7 @@ export class CancelarReinspecao {
       throw ReinspecaoException.badRequest();
     }
 
-    const isAdmin = this.req['user']?.papeis?.includes('admin');
+    const isAdmin = this.req['user']?.isPlatformAdmin ?? false;
     const canceladoPor =
       input.canceladoPor && isAdmin
         ? input.canceladoPor
@@ -46,7 +46,7 @@ export class CancelarReinspecao {
 
   private assertTenant(clienteId: string) {
     const user = this.req['user'];
-    if (user?.papeis?.includes('admin')) return;
+    if (user?.isPlatformAdmin) return;
     if (clienteId !== this.req['tenantId']) {
       throw ReinspecaoException.forbiddenTenant();
     }

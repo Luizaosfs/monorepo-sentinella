@@ -43,4 +43,12 @@ export class PrismaUsuarioMapper {
       updated_at: new Date(),
     };
   }
+
+  /** Usado apenas na criação — inclui senha_hash para fase 2 da migração de auth. */
+  static toCreatePrisma(entity: Usuario) {
+    return {
+      ...PrismaUsuarioMapper.toPrisma(entity),
+      ...(entity.senhaHash && { senha_hash: entity.senhaHash }),
+    };
+  }
 }

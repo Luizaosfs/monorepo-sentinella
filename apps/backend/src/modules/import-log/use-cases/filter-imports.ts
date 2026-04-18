@@ -13,7 +13,7 @@ export class FilterImports {
   ) {}
 
   async execute(filters: FilterImportLogInput) {
-    const isAdmin = this.req['user']?.papeis?.includes('admin');
+    const isAdmin = this.req['user']?.isPlatformAdmin ?? false;
     const clienteId = isAdmin ? filters.clienteId : this.req['tenantId'];
 
     const items = await this.repository.findAll({

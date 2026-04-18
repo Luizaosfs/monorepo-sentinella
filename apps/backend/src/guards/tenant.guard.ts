@@ -21,7 +21,7 @@ export class TenantGuard implements CanActivate {
 
     if (!user) return false;
 
-    const isAdmin = user.papeis?.includes('admin');
+    const isAdmin = user.isPlatformAdmin;
 
     if (isAdmin) {
       // Admin pode escolher tenant via query param ou body.

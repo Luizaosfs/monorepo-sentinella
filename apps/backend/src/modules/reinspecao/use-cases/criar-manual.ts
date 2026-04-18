@@ -24,7 +24,7 @@ export class CriarManual {
       throw ReinspecaoException.payloadInvalido();
     }
 
-    const isAdmin = this.req['user']?.papeis?.includes('admin');
+    const isAdmin = this.req['user']?.isPlatformAdmin ?? false;
     if (
       input.clienteId &&
       !isAdmin &&

@@ -13,7 +13,7 @@ export class FilterDistribuicoes {
   ) {}
 
   async execute(filters: FilterDistribuicaoInput) {
-    const isAdmin = this.req['user']?.papeis?.includes('admin');
+    const isAdmin = this.req['user']?.isPlatformAdmin ?? false;
     if (
       filters.clienteId &&
       !isAdmin &&

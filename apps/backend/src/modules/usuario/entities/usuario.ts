@@ -31,6 +31,12 @@ export class Usuario extends BaseEntity<UsuarioProps> {
   get authId() {
     return this.props.authId;
   }
+  set authId(v: string | undefined) {
+    this.props.authId = v;
+  }
+  get senhaHash() {
+    return this.props.senhaHash;
+  }
   get nome() {
     return this.props.nome;
   }

@@ -27,6 +27,8 @@ export type AuthenticatedUser = {
   nome: string;
   clienteId: string | null;
   papeis: PapelApp[];
+  /** `true` quando `papeis` inclui `'admin'`. Use este campo — nunca `papeis.includes('admin')` direto. */
+  isPlatformAdmin: boolean;
 };
 
 @Injectable()
@@ -133,13 +135,15 @@ export class AuthGuard implements CanActivate {
       if (!usuario.ativo) throw AuthException.unauthorized();
 
       // Injeta no request (id = domínio; authId = identidade externa do token)
+      const papeis = usuario.papeis_usuarios.map((p) => p.papel as PapelApp);
       request['user'] = {
         id: usuario.id,
         authId: usuario.auth_id!,
         email: usuario.email,
         nome: usuario.nome,
         clienteId: usuario.cliente_id,
-        papeis: usuario.papeis_usuarios.map((p) => p.papel),
+        papeis,
+        isPlatformAdmin: papeis.includes('admin'),
       } satisfies AuthenticatedUser;
     } catch (error) {
       if (error instanceof UnauthorizedException) throw error;

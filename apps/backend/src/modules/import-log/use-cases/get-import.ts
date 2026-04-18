@@ -19,7 +19,7 @@ export class GetImport {
       throw ImportLogException.notFound();
     }
 
-    const isAdmin = this.req['user']?.papeis?.includes('admin');
+    const isAdmin = this.req['user']?.isPlatformAdmin ?? false;
     if (!isAdmin && log.clienteId !== this.req['tenantId']) {
       throw ImportLogException.notFound();
     }

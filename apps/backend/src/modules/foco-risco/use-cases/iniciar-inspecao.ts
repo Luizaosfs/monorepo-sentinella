@@ -23,7 +23,7 @@ export class IniciarInspecao {
     this.assertFocoDoTenant(foco);
 
     const user = this.req['user'] as AuthenticatedUser | undefined;
-    const isAdmin = user?.papeis?.includes('admin') ?? false;
+    const isAdmin = user?.isPlatformAdmin ?? false;
 
     if (!isAdmin) {
       if (!foco.responsavelId) {
@@ -61,7 +61,7 @@ export class IniciarInspecao {
   private assertFocoDoTenant(foco: FocoRisco) {
     const user = this.req['user'] as AuthenticatedUser | undefined;
     const tenantId = this.req['tenantId'] as string | undefined;
-    if (user?.papeis?.includes('admin')) return;
+    if (user?.isPlatformAdmin) return;
     if (!tenantId || foco.clienteId !== tenantId) {
       throw FocoRiscoException.notFound();
     }

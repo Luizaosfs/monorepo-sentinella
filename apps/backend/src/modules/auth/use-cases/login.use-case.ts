@@ -15,9 +15,12 @@ export class LoginUseCase {
   ) {}
 
   async execute(input: LoginBody) {
-    // Busca o usuário pelo email
+    // Busca por email (case-insensitive — registros legados podem não estar em minúsculas)
+    const emailTrim = input.email.trim();
     const usuario = await this.prisma.client.usuarios.findFirst({
-      where: { email: input.email.toLowerCase().trim() },
+      where: {
+        email: { equals: emailTrim, mode: 'insensitive' },
+      },
       include: { papeis_usuarios: true },
     });
 
@@ -29,19 +32,14 @@ export class LoginUseCase {
       throw AuthException.inactiveUser();
     }
 
-    // Garante que o usuario tem auth_id vinculado (auth.users.id)
     if (!usuario.auth_id) {
       throw AuthException.notLinked();
     }
 
-    // Valida senha contra auth.users.encrypted_password (hash bcrypt do Supabase)
-    const authRows = await this.prisma.client.$queryRaw<Array<{ encrypted_password: string | null }>>`
-      SELECT encrypted_password FROM auth.users WHERE id = ${usuario.auth_id}::uuid LIMIT 1
-    `;
-    const encryptedPassword = authRows[0]?.encrypted_password;
-    if (!encryptedPassword) throw AuthException.invalidCredentials();
+    const senhaHash = usuario.senha_hash;
+    if (!senhaHash) throw AuthException.invalidCredentials();
 
-    const senhaValida = await bcrypt.compare(input.password, encryptedPassword);
+    const senhaValida = await bcrypt.compare(input.password, senhaHash);
     if (!senhaValida) throw AuthException.invalidCredentials();
 
     const papeis = usuario.papeis_usuarios.map((p) => p.papel);

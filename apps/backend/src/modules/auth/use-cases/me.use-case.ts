@@ -11,6 +11,7 @@ export class MeUseCase {
       nome: user.nome,
       clienteId: user.clienteId,
       papeis: user.papeis,
+      isPlatformAdmin: user.isPlatformAdmin,
     };
   }
 }

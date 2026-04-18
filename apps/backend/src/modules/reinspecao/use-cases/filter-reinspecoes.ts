@@ -13,7 +13,7 @@ export class FilterReinspecoes {
   ) {}
 
   async execute(filters: FilterReinspecaoInput) {
-    const isAdmin = this.req['user']?.papeis?.includes('admin');
+    const isAdmin = this.req['user']?.isPlatformAdmin ?? false;
     if (
       filters.clienteId &&
       !isAdmin &&
