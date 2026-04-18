@@ -14,6 +14,9 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // Permite que req.ip reflita o IP real atrás de proxy/load balancer
+  app.getHttpAdapter().getInstance().set('trust proxy', true);
+
   app.use(helmet());
   app.useGlobalPipes(new MyZodValidationPipe());
   app.useGlobalFilters(new GlobalExceptionFilter());

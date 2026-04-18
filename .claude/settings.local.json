@@ -50,7 +50,8 @@
       "Bash(pnpm generate *)",
       "Bash(node *)",
       "Bash(C:/Program Files/PostgreSQL/17/bin/psql.exe *)",
-      "Bash(pnpm test *)"
+      "Bash(pnpm test *)",
+      "Bash(pnpm build *)"
     ]
   }
 }

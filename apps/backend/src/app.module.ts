@@ -40,7 +40,14 @@ import { DatabaseModule } from '@shared/modules/database/database.module';
   imports: [
     ClsModule.forRoot({ middleware: { mount: true }, global: true }),
     ScheduleModule.forRoot(),
-    ThrottlerModule.forRoot([{ name: 'default', ttl: 60_000, limit: 300 }]),
+    ThrottlerModule.forRoot({
+      throttlers: [{ name: 'default', ttl: 60_000, limit: 300 }],
+      getTracker: (req) => {
+        const forwarded = req.headers?.['x-forwarded-for'];
+        if (forwarded) return String(forwarded).split(',')[0].trim();
+        return req.ip ?? 'unknown';
+      },
+    }),
     DatabaseModule,
     AuthModule,
     UsuarioModule,

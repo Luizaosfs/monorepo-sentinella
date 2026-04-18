@@ -25,6 +25,18 @@ const envSchema = z.object({
   SMTP_USER: z.string().optional(),
   SMTP_PASS: z.string().optional(),
   SMTP_FROM: z.string().optional(),
+  // === Canal Cidadão v2 ===
+  /** Salt para hash de IP no canal cidadão. Required em production. */
+  CANAL_CIDADAO_IP_SALT: z
+    .string()
+    .optional()
+    .default('sentinella-dev-salt'),
+  /** Liga use-case v2 TypeScript (desliga fallback SQL). Default false. */
+  CANAL_CIDADAO_V2_ENABLED: z
+    .string()
+    .optional()
+    .transform((v) => v === 'true')
+    .default('false'),
   // === Bridge Supabase (manter enquanto tokens antigos circulam) ===
   /** AuthGuard aceita tokens Supabase enquanto migração não está 100% concluída. */
   SUPABASE_JWT_SECRET: z.string().optional(),
