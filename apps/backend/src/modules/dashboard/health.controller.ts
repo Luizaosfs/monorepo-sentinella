@@ -2,6 +2,7 @@ import { Controller, Get, Res } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 
+import { Public } from '@/decorators/roles.decorator';
 import { HealthCheckService } from './health-check.service';
 
 /**
@@ -13,6 +14,7 @@ import { HealthCheckService } from './health-check.service';
 export class HealthController {
   constructor(private readonly healthCheckService: HealthCheckService) {}
 
+  @Public()
   @Get('health')
   @ApiOperation({ summary: 'Liveness / readiness check (público, sem autenticação)' })
   async health(@Res() res: Response) {

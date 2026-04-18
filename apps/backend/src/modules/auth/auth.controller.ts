@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Post, Req, UsePipes } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { AuthenticatedUser } from 'src/guards/auth.guard';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 import { Request } from 'express';
@@ -31,6 +32,7 @@ export class AuthController {
     private resetPasswordUseCase: ResetPasswordUseCase,
   ) {}
 
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @Public()
   @Post('login')
   @ApiOperation({ summary: 'Autenticar usuário (email + senha)' })
@@ -39,6 +41,7 @@ export class AuthController {
     return this.loginUseCase.execute(parsed);
   }
 
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Public()
   @Post('refresh')
   @ApiOperation({ summary: 'Renovar token JWT' })
@@ -53,6 +56,7 @@ export class AuthController {
     return this.meUseCase.execute(req['user'] as AuthenticatedUser);
   }
 
+  @Throttle({ default: { limit: 3, ttl: 300_000 } })
   @Public()
   @Post('forgot-password')
   @ApiOperation({ summary: 'Solicitar email de recuperação de senha' })
@@ -68,6 +72,7 @@ export class AuthController {
     return this.changePasswordUseCase.execute(req['user'] as AuthenticatedUser, parsed);
   }
 
+  @Throttle({ default: { limit: 5, ttl: 300_000 } })
   @Public()
   @Post('reset-password')
   @ApiOperation({ summary: 'Redefinir senha via token de recovery (link do email)' })

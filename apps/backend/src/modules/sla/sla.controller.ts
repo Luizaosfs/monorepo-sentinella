@@ -21,8 +21,6 @@ import {
   paginationSchema,
 } from '@shared/dtos/pagination-body';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
-import { AuthGuard } from 'src/guards/auth.guard';
-import { RolesGuard } from 'src/guards/roles.guard';
 import { TenantGuard } from 'src/guards/tenant.guard';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 
@@ -74,7 +72,7 @@ import {
 } from './view-model/sla-config';
 import { SlaOperacionalViewModel } from './view-model/sla-operacional';
 
-@UseGuards(AuthGuard, RolesGuard, TenantGuard)
+@UseGuards(TenantGuard)
 @UseInterceptors(PrismaInterceptor)
 @UsePipes(MyZodValidationPipe)
 @ApiTags('SLA')

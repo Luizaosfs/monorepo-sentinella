@@ -17,8 +17,6 @@ import {
   paginationSchema,
 } from '@shared/dtos/pagination-body';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
-import { AuthGuard } from 'src/guards/auth.guard';
-import { RolesGuard } from 'src/guards/roles.guard';
 import { TenantGuard } from 'src/guards/tenant.guard';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 
@@ -57,7 +55,7 @@ import { SaveOperacao } from './use-cases/save-operacao';
 import { StatsOperacao } from './use-cases/stats-operacao';
 import { OperacaoViewModel } from './view-model/operacao';
 
-@UseGuards(AuthGuard, RolesGuard, TenantGuard)
+@UseGuards(TenantGuard)
 @UseInterceptors(PrismaInterceptor)
 @UsePipes(MyZodValidationPipe)
 @ApiTags('Operações')

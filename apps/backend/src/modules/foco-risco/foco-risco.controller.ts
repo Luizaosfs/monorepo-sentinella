@@ -19,8 +19,6 @@ import {
 } from '@shared/dtos/pagination-body';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
 import { Request } from 'express';
-import { AuthGuard } from 'src/guards/auth.guard';
-import { RolesGuard } from 'src/guards/roles.guard';
 import { TenantGuard } from 'src/guards/tenant.guard';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 
@@ -76,7 +74,7 @@ import { TransicionarFocoRisco } from './use-cases/transicionar-foco-risco';
 import { UpdateFocoRisco } from './use-cases/update-foco-risco';
 import { FocoRiscoViewModel } from './view-model/foco-risco';
 
-@UseGuards(AuthGuard, RolesGuard, TenantGuard)
+@UseGuards(TenantGuard)
 @UseInterceptors(PrismaInterceptor)
 @UsePipes(MyZodValidationPipe)
 @ApiTags('Focos de Risco')

@@ -28,14 +28,20 @@ import { PlanoAcaoModule } from '@modules/plano-acao/plano-acao.module';
 import { IaModule } from '@modules/ia/ia.module';
 import { ImportLogModule } from '@modules/import-log/import-log.module';
 import { Module } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ClsModule } from 'nestjs-cls';
+import { AuthGuard } from 'src/guards/auth.guard';
+import { RolesGuard } from 'src/guards/roles.guard';
+import { DatabaseModule } from '@shared/modules/database/database.module';
 
 @Module({
   imports: [
     ClsModule.forRoot({ middleware: { mount: true }, global: true }),
     ScheduleModule.forRoot(),
+    ThrottlerModule.forRoot([{ name: 'default', ttl: 60_000, limit: 300 }]),
+    DatabaseModule,
     AuthModule,
     UsuarioModule,
     ClienteModule,
@@ -67,6 +73,11 @@ import { ClsModule } from 'nestjs-cls';
     SeedModule,
   ],
   controllers: [],
-  providers: [JwtService],
+  providers: [
+    // Guard order matters: throttle → auth → roles
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_GUARD, useClass: AuthGuard },
+    { provide: APP_GUARD, useClass: RolesGuard },
+  ],
 })
 export class AppModule {}

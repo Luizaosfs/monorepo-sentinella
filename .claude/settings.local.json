@@ -47,7 +47,8 @@
       "Bash(grep -v \"^DROP TRIGGER$\")",
       "Bash(grep -v \"^DROP FUNCTION$\")",
       "Bash(grep -E \"\\\\.ts$\")",
-      "Bash(pnpm generate *)"
+      "Bash(pnpm generate *)",
+      "Bash(node *)"
     ]
   }
 }
