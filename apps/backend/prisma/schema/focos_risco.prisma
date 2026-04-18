@@ -41,6 +41,13 @@ model focos_risco {
   historico     foco_risco_historico[]
   sla_operacional sla_operacional[]
 
+  @@index([cliente_id])
+  @@index([cliente_id, status])
+  @@index([cliente_id, created_at])
+  @@index([imovel_id])
+  @@index([regiao_id])
+  @@index([responsavel_id])
+  @@index([status])
   @@map("focos_risco")
   @@schema("public")
 }

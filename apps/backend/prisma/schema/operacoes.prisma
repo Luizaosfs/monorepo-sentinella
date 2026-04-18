@@ -22,6 +22,11 @@ model operacoes {
   responsavel  usuarios?         @relation("operacao_responsavel", fields: [responsavel_id], references: [id])
   evidencias   operacao_evidencias[]
 
+  @@index([cliente_id])
+  @@index([cliente_id, status])
+  @@index([responsavel_id])
+  @@index([regiao_id])
+  @@index([status])
   @@map("operacoes")
   @@schema("public")
 }

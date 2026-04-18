@@ -9,6 +9,8 @@ model offline_sync_log {
   retry_count     Int       @default(0)
   idempotency_key String?   @db.Uuid
 
+  @@index([cliente_id])
+  @@index([usuario_id])
   @@map("offline_sync_log")
   @@schema("public")
 }

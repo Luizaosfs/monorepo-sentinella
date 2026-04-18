@@ -10,6 +10,8 @@ model push_subscriptions {
   usuario  usuarios @relation(fields: [usuario_id], references: [id])
   cliente  clientes @relation(fields: [cliente_id], references: [id])
 
+  @@index([cliente_id])
+  @@index([usuario_id])
   @@map("push_subscriptions")
   @@schema("public")
 }

@@ -9,6 +9,7 @@ model vistoria_drone_correlacao {
   created_at           DateTime @default(now()) @db.Timestamptz
 
   @@unique([vistoria_id, levantamento_item_id])
+  @@index([cliente_id])
   @@map("vistoria_drone_correlacao")
   @@schema("public")
 }

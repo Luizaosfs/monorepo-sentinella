@@ -23,6 +23,10 @@ model levantamentos {
   ciclo    ciclos?   @relation(fields: [ciclo_id], references: [id])
   itens    levantamento_itens[]
 
+  @@index([cliente_id])
+  @@index([cliente_id, created_at])
+  @@index([usuario_id])
+  @@index([ciclo_id])
   @@map("levantamentos")
   @@schema("public")
 }

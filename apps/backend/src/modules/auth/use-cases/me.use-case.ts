@@ -10,6 +10,7 @@ export class MeUseCase {
       email: user.email,
       nome: user.nome,
       clienteId: user.clienteId,
+      agrupamentoId: user.agrupamentoId,
       papeis: user.papeis,
       isPlatformAdmin: user.isPlatformAdmin,
     };

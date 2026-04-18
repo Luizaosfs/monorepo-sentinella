@@ -21,6 +21,7 @@ model score_config {
   cap_historico           Int      @default(20)
   updated_at              DateTime @default(now()) @db.Timestamptz
 
+  @@index([cliente_id])
   @@map("score_config")
   @@schema("public")
 }

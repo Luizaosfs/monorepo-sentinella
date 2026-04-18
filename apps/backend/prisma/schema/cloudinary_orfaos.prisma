@@ -12,6 +12,7 @@ model cloudinary_orfaos {
   erro            String?
   created_at      DateTime  @default(now()) @db.Timestamptz
 
+  @@index([cliente_id])
   @@map("cloudinary_orfaos")
   @@schema("public")
 }

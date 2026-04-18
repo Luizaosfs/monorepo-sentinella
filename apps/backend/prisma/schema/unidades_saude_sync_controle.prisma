@@ -15,6 +15,7 @@ model unidades_saude_sync_controle {
   retention_until   DateTime  @db.Timestamptz
 
   logs unidades_saude_sync_log[]
+  @@index([cliente_id])
   @@map("unidades_saude_sync_controle")
   @@schema("public")
 }

@@ -36,7 +36,7 @@ export class PrismaVistoriaWriteRepository implements VistoriaWriteRepository {
   }
 
   async createDeposito(
-    deposito: VistoriaDeposito & { vistoriaId: string },
+    deposito: VistoriaDeposito & { vistoriaId: string; clienteId: string },
   ): Promise<VistoriaDeposito> {
     const raw = await this.prisma.client.vistoria_depositos.create({
       data: PrismaVistoriaMapper.depositoToPrisma(deposito),
@@ -45,7 +45,7 @@ export class PrismaVistoriaWriteRepository implements VistoriaWriteRepository {
   }
 
   async createSintoma(
-    sintoma: VistoriaSintoma & { vistoriaId: string },
+    sintoma: VistoriaSintoma & { vistoriaId: string; clienteId: string },
   ): Promise<VistoriaSintoma> {
     const raw = await this.prisma.client.vistoria_sintomas.create({
       data: PrismaVistoriaMapper.sintomaToPrisma(sintoma),
@@ -54,7 +54,7 @@ export class PrismaVistoriaWriteRepository implements VistoriaWriteRepository {
   }
 
   async createRisco(
-    risco: VistoriaRisco & { vistoriaId: string },
+    risco: VistoriaRisco & { vistoriaId: string; clienteId: string },
   ): Promise<VistoriaRisco> {
     const raw = await this.prisma.client.vistoria_riscos.create({
       data: PrismaVistoriaMapper.riscoToPrisma(risco),
@@ -63,7 +63,7 @@ export class PrismaVistoriaWriteRepository implements VistoriaWriteRepository {
   }
 
   async createCalha(
-    calha: VistoriaCalha & { vistoriaId: string },
+    calha: VistoriaCalha & { vistoriaId: string; clienteId: string },
   ): Promise<VistoriaCalha> {
     const raw = await this.prisma.client.vistoria_calhas.create({
       data: PrismaVistoriaMapper.calhaToPrisma(calha),
@@ -92,13 +92,12 @@ export class PrismaVistoriaWriteRepository implements VistoriaWriteRepository {
         },
       });
 
+      const clienteId = raw.cliente_id;
+
       if (subItems.depositos?.length) {
         await tx.vistoria_depositos.createMany({
           data: subItems.depositos.map((d) =>
-            PrismaVistoriaMapper.depositoToPrisma({
-              ...d,
-              vistoriaId: raw.id,
-            }),
+            PrismaVistoriaMapper.depositoToPrisma({ ...d, vistoriaId: raw.id, clienteId }),
           ),
         });
       }
@@ -106,10 +105,7 @@ export class PrismaVistoriaWriteRepository implements VistoriaWriteRepository {
       if (subItems.sintomas?.length) {
         await tx.vistoria_sintomas.createMany({
           data: subItems.sintomas.map((s) =>
-            PrismaVistoriaMapper.sintomaToPrisma({
-              ...s,
-              vistoriaId: raw.id,
-            }),
+            PrismaVistoriaMapper.sintomaToPrisma({ ...s, vistoriaId: raw.id, clienteId }),
           ),
         });
       }
@@ -117,10 +113,7 @@ export class PrismaVistoriaWriteRepository implements VistoriaWriteRepository {
       if (subItems.riscos?.length) {
         await tx.vistoria_riscos.createMany({
           data: subItems.riscos.map((r) =>
-            PrismaVistoriaMapper.riscoToPrisma({
-              ...r,
-              vistoriaId: raw.id,
-            }),
+            PrismaVistoriaMapper.riscoToPrisma({ ...r, vistoriaId: raw.id, clienteId }),
           ),
         });
       }
@@ -128,10 +121,7 @@ export class PrismaVistoriaWriteRepository implements VistoriaWriteRepository {
       if (subItems.calhas?.length) {
         await tx.vistoria_calhas.createMany({
           data: subItems.calhas.map((c) =>
-            PrismaVistoriaMapper.calhaToPrisma({
-              ...c,
-              vistoriaId: raw.id,
-            }),
+            PrismaVistoriaMapper.calhaToPrisma({ ...c, vistoriaId: raw.id, clienteId }),
           ),
         });
       }

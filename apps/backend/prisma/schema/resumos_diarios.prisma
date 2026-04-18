@@ -6,6 +6,7 @@ model resumos_diarios {
   metricas   Json?
   created_at DateTime @default(now()) @db.Timestamptz
 
+  @@index([cliente_id])
   @@map("resumos_diarios")
   @@schema("public")
 }

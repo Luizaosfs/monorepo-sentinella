@@ -30,6 +30,9 @@ model imoveis {
   focos_risco  focos_risco[]
   vistorias    vistorias[]
 
+  @@index([cliente_id])
+  @@index([cliente_id, created_at])
+  @@index([regiao_id])
   @@map("imoveis")
   @@schema("public")
 }

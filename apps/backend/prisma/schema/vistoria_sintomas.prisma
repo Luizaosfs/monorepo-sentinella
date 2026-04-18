@@ -1,12 +1,24 @@
 model vistoria_sintomas {
-  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  vistoria_id  String   @db.Uuid
-  sintoma      String   @default("")
-  observacao   String?
-  created_at   DateTime @default(now()) @db.Timestamptz
+  id                      String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  vistoria_id             String    @db.Uuid
+  cliente_id              String    @db.Uuid
+  febre                   Boolean   @default(false)
+  manchas_vermelhas       Boolean   @default(false)
+  dor_articulacoes        Boolean   @default(false)
+  dor_cabeca              Boolean   @default(false)
+  moradores_sintomas_qtd  Int       @default(0)
+  gerou_caso_notificado_id String?  @db.Uuid
+  deleted_at              DateTime? @db.Timestamptz
+  created_at              DateTime  @default(now()) @db.Timestamptz
+
+  // PENDENTE: verificar migration — colunas legacy abaixo não estão no SQL atual
+  // sintoma    String @default("")
+  // observacao String?
 
   vistoria vistorias @relation(fields: [vistoria_id], references: [id])
 
+  @@index([vistoria_id])
+  @@index([cliente_id])
   @@map("vistoria_sintomas")
   @@schema("public")
 }

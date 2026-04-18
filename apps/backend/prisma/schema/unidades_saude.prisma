@@ -23,6 +23,7 @@ model unidades_saude {
   cliente          clientes           @relation(fields: [cliente_id], references: [id])
   casos_notificados casos_notificados[]
 
+  @@index([cliente_id])
   @@map("unidades_saude")
   @@schema("public")
 }

@@ -9,6 +9,8 @@ model territorio_score {
   updated_at    DateTime  @default(now()) @db.Timestamptz
 
   @@id([cliente_id, imovel_id])
+  @@index([cliente_id])
+  @@index([imovel_id])
   @@map("territorio_score")
   @@schema("public")
 }

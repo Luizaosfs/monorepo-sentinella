@@ -19,6 +19,8 @@ model billing_usage_snapshot {
   calculado_em          DateTime @default(now()) @db.Timestamptz
   payload_detalhado     Json?
 
+  @@index([cliente_id])
+  @@index([billing_ciclo_id])
   @@map("billing_usage_snapshot")
   @@schema("public")
 }

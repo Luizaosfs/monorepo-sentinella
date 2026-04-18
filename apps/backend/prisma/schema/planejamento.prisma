@@ -21,6 +21,8 @@ model planejamento {
   vistorias vistorias[]
   voos      voos[]
 
+  @@index([cliente_id])
+  @@index([regiao_id])
   @@map("planejamento")
   @@schema("public")
 }

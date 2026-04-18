@@ -5,12 +5,8 @@
  * Todos os métodos retornam null/[] — nenhuma chamada ao Supabase via api.ts.
  * Módulos afetados degradam graciosamente até que seus endpoints NestJS sejam implementados.
  *
- * NOTA: @supabase/supabase-js permanece no projeto para:
- *   - Realtime (useMapaFocosRealtime, useRealtimeInvalidator)
- *   - Páginas públicas (DenunciaCidadao, PortalDenuncia, ConsultaProtocolo)
- *   - Reset de senha (TrocarSenha, ResetPassword)
- *   - pilotoEventos (fire-and-forget logging)
- *   Esses módulos serão migrados ao NestJS em fases posteriores.
+ * NOTA: @supabase/supabase-js permanece no projeto SOMENTE para api-supabase.ts (legado).
+ *   Realtime, páginas públicas, reset de senha e pilotoEventos já foram migrados ao NestJS.
  */
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

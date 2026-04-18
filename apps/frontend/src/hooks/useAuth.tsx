@@ -11,6 +11,7 @@ type AuthMeResult = {
   email: string;
   nome: string;
   clienteId: string | null;
+  agrupamentoId: string | null;
   papeis: string[];
 };
 

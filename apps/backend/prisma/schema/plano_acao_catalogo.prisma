@@ -9,6 +9,7 @@ model plano_acao_catalogo {
   created_at DateTime @default(now()) @db.Timestamptz
   updated_at DateTime @default(now()) @db.Timestamptz
 
+  @@index([cliente_id])
   @@map("plano_acao_catalogo")
   @@schema("public")
 }

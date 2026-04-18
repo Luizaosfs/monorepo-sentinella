@@ -17,6 +17,7 @@ model cliente_plano {
 
   billing_ciclo billing_ciclo[]
 
+  @@index([cliente_id])
   @@map("cliente_plano")
   @@schema("public")
 }

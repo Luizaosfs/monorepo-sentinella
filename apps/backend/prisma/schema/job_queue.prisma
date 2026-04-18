@@ -13,6 +13,8 @@ model job_queue {
   criado_em      DateTime @default(now()) @db.Timestamptz
   updated_at     DateTime @default(now()) @updatedAt @db.Timestamptz
 
+  @@index([status])
+  @@index([status, executar_em])
   @@map("job_queue")
   @@schema("public")
 }

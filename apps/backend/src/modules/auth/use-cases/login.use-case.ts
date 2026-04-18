@@ -66,11 +66,12 @@ export class LoginUseCase {
       accessToken,
       refreshToken,
       user: {
-        id: usuario.id,        // ID interno — para uso em relações do banco
+        id: usuario.id,
         authId: usuario.auth_id,
         email: usuario.email,
         nome: usuario.nome,
         clienteId: usuario.cliente_id,
+        agrupamentoId: usuario.agrupamento_id ?? null,
         papeis,
       },
     };

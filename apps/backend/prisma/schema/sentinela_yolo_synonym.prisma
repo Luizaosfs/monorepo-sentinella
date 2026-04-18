@@ -5,6 +5,7 @@ model sentinela_yolo_synonym {
   maps_to    String
   created_at DateTime @default(now()) @db.Timestamptz
 
+  @@index([cliente_id])
   @@map("sentinela_yolo_synonym")
   @@schema("public")
 }

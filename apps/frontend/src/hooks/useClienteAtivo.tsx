@@ -52,14 +52,13 @@ export const ClienteAtivoProvider = forwardRef<HTMLDivElement, { children: React
   // - Admin: todos os clientes ativos, seleção persistida em localStorage
   // - Demais papéis (supervisor, operador, notificador): apenas o cliente vinculado ao usuário
   useEffect(() => {
-    if (authLoading) return;
+    if (authLoading || !usuario) return;
 
     const load = async () => {
       try {
-        const list = (await api.clientes.list()) as Cliente[];
-        const sorted = [...list].sort((a, b) => a.nome.localeCompare(b.nome));
-
         if (isAdmin) {
+          const list = (await api.clientes.list()) as Cliente[];
+          const sorted = [...list].sort((a, b) => a.nome.localeCompare(b.nome));
           setClientes(sorted);
           if (selectedId && !sorted.find((c) => c.id === selectedId)) {
             setSelectedId(sorted[0]?.id || null);
@@ -67,9 +66,8 @@ export const ClienteAtivoProvider = forwardRef<HTMLDivElement, { children: React
             setSelectedId(sorted[0].id);
           }
         } else {
-          const userClienteId = usuario?.cliente_id || null;
-          const userCliente = sorted.find((c) => c.id === userClienteId);
-          setClientes(userCliente ? [userCliente] : []);
+          const meu = await api.clientes.me() as Cliente | null;
+          setClientes(meu ? [meu] : []);
         }
       } catch {
         setClientes([]);
@@ -80,11 +78,9 @@ export const ClienteAtivoProvider = forwardRef<HTMLDivElement, { children: React
 
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAdmin, authLoading, usuario?.cliente_id]);
+  }, [isAdmin, authLoading, usuario, usuario?.clienteId]);
 
-
-
-  const clienteId = isAdmin ? selectedId : usuario?.cliente_id || null;
+  const clienteId = isAdmin ? selectedId : usuario?.clienteId || null;
 
   // P1-2: busca contexto do contrato SaaS sempre que o clienteId ativo mudar.
   // Depende do clienteId computado acima (que por sua vez depende de isAdmin + selectedId).
@@ -109,7 +105,7 @@ export const ClienteAtivoProvider = forwardRef<HTMLDivElement, { children: React
   };
 
   const clienteAtivo = clientes.find(c => c.id === clienteId) || null;
-  const agrupamentoId = usuario?.agrupamento_id ?? null;
+  const agrupamentoId = usuario?.agrupamentoId ?? null;
 
   return (
     <ClienteAtivoContext.Provider value={{

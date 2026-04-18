@@ -6,12 +6,15 @@ import {
   Post,
   Put,
   Query,
+  Req,
   UseGuards,
   UseInterceptors,
   UsePipes,
 } from '@nestjs/common';
 import { z } from 'zod';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Request } from 'express';
+import { AuthenticatedUser } from 'src/guards/auth.guard';
 import {
   PaginationProps,
   paginationSchema,
@@ -102,6 +105,16 @@ export class ClienteController {
       items: result.items.map(ClienteViewModel.toHttp),
       pagination: result.pagination,
     };
+  }
+
+  @Get('me')
+  @Roles('supervisor', 'agente', 'notificador', 'analista_regional')
+  @ApiOperation({ summary: 'Retorna o cliente vinculado ao usuário autenticado' })
+  async getMyCliente(@Req() req: Request) {
+    const user = req['user'] as AuthenticatedUser;
+    if (!user.clienteId) return null;
+    const { cliente } = await this.getCliente.execute(user.clienteId);
+    return ClienteViewModel.toHttp(cliente);
   }
 
   @Get(':id')

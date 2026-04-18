@@ -8,6 +8,7 @@ model operacao_evidencias {
 
   operacao operacoes @relation(fields: [operacao_id], references: [id])
 
+  @@index([operacao_id])
   @@map("operacao_evidencias")
   @@schema("public")
 }

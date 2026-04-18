@@ -63,5 +63,34 @@ export class RegiaoGeocodeService {
     return { total: regioes.length, geocodificadas };
   }
 
+  async geocodeLote(
+    nomes: string[],
+    cidade: string,
+  ): Promise<{ results: { nome: string; latitude: number | null; longitude: number | null }[] }> {
+    const results: { nome: string; latitude: number | null; longitude: number | null }[] = [];
+
+    for (const nome of nomes) {
+      try {
+        const query = [nome, cidade, 'Brasil'].filter(Boolean).join(', ');
+        const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`;
+        const res = await fetch(url, {
+          headers: { 'User-Agent': 'Sentinella/1.0 (suporte@sentinella.com.br)' },
+        });
+
+        if (!res.ok) { results.push({ nome, latitude: null, longitude: null }); continue; }
+        const rows: NominatimResult[] = (await res.json()) as NominatimResult[];
+        if (rows.length === 0) { results.push({ nome, latitude: null, longitude: null }); continue; }
+
+        results.push({ nome, latitude: parseFloat(rows[0].lat), longitude: parseFloat(rows[0].lon) });
+        await new Promise((r) => setTimeout(r, 1100));
+      } catch (err: unknown) {
+        this.logger.warn(`[geocodeLote] Falha para "${nome}": ${(err as Error)?.message}`);
+        results.push({ nome, latitude: null, longitude: null });
+      }
+    }
+
+    return { results };
+  }
+
   constructor(private prisma: PrismaService) {}
 }

@@ -6,6 +6,7 @@ model tags {
   created_at DateTime @default(now()) @db.Timestamptz
 
   levantamento_item_tags levantamento_item_tags[]
+  @@index([cliente_id])
   @@map("tags")
   @@schema("public")
 }

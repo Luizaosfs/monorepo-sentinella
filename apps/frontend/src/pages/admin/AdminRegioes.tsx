@@ -1,5 +1,6 @@
 import { useState, lazy, Suspense } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { http } from '@sentinella/api-client';
 import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/services/api';
 import { useClienteAtivo } from '@/hooks/useClienteAtivo';
@@ -247,13 +248,14 @@ const AdminRegioes = () => {
       if (semCoords.length > 0) {
         toast.info(`Buscando coordenadas para ${semCoords.length} região(ões)...`);
         try {
-          const { data, error: geoError } = await supabase.functions.invoke('geocode-regioes', {
-            body: {
+          const data = await http.post<{ results: { nome: string; latitude: number | null; longitude: number | null }[] }>(
+            '/regioes/geocode-lote',
+            {
               nomes: semCoords.map(r => String(r.regiao)),
               cidade: clienteAtivo?.cidade || clienteAtivo?.nome || '',
             },
-          });
-          if (!geoError && data?.results) {
+          );
+          if (data?.results) {
             const coordMap = new Map<string, { latitude: number; longitude: number }>(
               (data.results as { nome: string; latitude: number | null; longitude: number | null }[])
                 .filter(r => r.latitude !== null)

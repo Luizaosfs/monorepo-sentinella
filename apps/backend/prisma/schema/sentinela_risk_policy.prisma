@@ -20,6 +20,7 @@ model sentinela_risk_policy {
   persistencia_adjust_pp sentinela_risk_persistencia_adjust_pp[]
   tendencia_adjust_pp    sentinela_risk_tendencia_adjust_pp[]
 
+  @@index([cliente_id])
   @@map("sentinela_risk_policy")
   @@schema("public")
 }

@@ -63,34 +63,22 @@ export class CreateVistoria {
 
     if (data.depositos?.length) {
       for (const dep of data.depositos) {
-        await this.writeRepository.createDeposito({
-          ...dep,
-          vistoriaId: created.id!,
-        });
+        await this.writeRepository.createDeposito({ ...dep, vistoriaId: created.id!, clienteId });
       }
     }
     if (data.sintomas?.length) {
       for (const sint of data.sintomas) {
-        await this.writeRepository.createSintoma({
-          ...sint,
-          vistoriaId: created.id!,
-        });
+        await this.writeRepository.createSintoma({ ...sint, vistoriaId: created.id!, clienteId });
       }
     }
     if (data.riscos?.length) {
       for (const risco of data.riscos) {
-        await this.writeRepository.createRisco({
-          ...risco,
-          vistoriaId: created.id!,
-        });
+        await this.writeRepository.createRisco({ ...risco, vistoriaId: created.id!, clienteId });
       }
     }
     if (data.calhas?.length) {
       for (const calha of data.calhas) {
-        await this.writeRepository.createCalha({
-          ...calha,
-          vistoriaId: created.id!,
-        });
+        await this.writeRepository.createCalha({ ...calha, vistoriaId: created.id!, clienteId });
       }
     }
 

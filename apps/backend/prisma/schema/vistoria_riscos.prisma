@@ -1,12 +1,32 @@
 model vistoria_riscos {
-  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  vistoria_id  String   @db.Uuid
-  tipo_risco   String   @default("")
-  descricao    String?
-  created_at   DateTime @default(now()) @db.Timestamptz
+  id                       String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  vistoria_id              String    @db.Uuid
+  menor_incapaz            Boolean   @default(false)
+  idoso_incapaz            Boolean   @default(false)
+  dep_quimico              Boolean   @default(false)
+  risco_alimentar          Boolean   @default(false)
+  risco_moradia            Boolean   @default(false)
+  criadouro_animais        Boolean   @default(false)
+  lixo                     Boolean   @default(false)
+  residuos_organicos       Boolean   @default(false)
+  residuos_quimicos        Boolean   @default(false)
+  residuos_medicos         Boolean   @default(false)
+  acumulo_material_organico Boolean  @default(false)
+  animais_sinais_lv        Boolean   @default(false)
+  caixa_destampada         Boolean   @default(false)
+  outro_risco_vetorial     String?
+  deleted_at               DateTime? @db.Timestamptz
+  cliente_id               String    @db.Uuid
+  created_at               DateTime  @default(now()) @db.Timestamptz
+
+  // PENDENTE: verificar migration — colunas legacy abaixo não estão no SQL atual
+  // tipo_risco String @default("")
+  // descricao  String?
 
   vistoria vistorias @relation(fields: [vistoria_id], references: [id])
 
+  @@index([vistoria_id])
+  @@index([cliente_id])
   @@map("vistoria_riscos")
   @@schema("public")
 }

@@ -3,6 +3,7 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 import { Request } from 'express';
+import { AuthenticatedUser } from 'src/guards/auth.guard';
 import { TenantGuard } from 'src/guards/tenant.guard';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 import { z } from 'zod';
@@ -28,7 +29,7 @@ export class PilotoController {
   async logEvento(@Body() body: unknown, @Req() req: Request) {
     const parsed = pilotoEventoSchema.parse(body);
     const clienteId = req['tenantId'] as string;
-    const usuarioId = (req['user'] as any)?.sub as string | undefined;
+    const usuarioId = (req['user'] as AuthenticatedUser).id;
 
     // fire-and-forget — não bloqueia, nunca lança exceção
     this.prisma.client.piloto_eventos

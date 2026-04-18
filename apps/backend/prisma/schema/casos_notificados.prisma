@@ -25,6 +25,10 @@ model casos_notificados {
   notificador   usuarios?      @relation("caso_notificador", fields: [notificador_id], references: [id])
   regiao        regioes?       @relation(fields: [regiao_id], references: [id])
 
+  @@index([cliente_id])
+  @@index([cliente_id, status])
+  @@index([cliente_id, created_at])
+  @@index([regiao_id])
   @@map("casos_notificados")
   @@schema("public")
 }

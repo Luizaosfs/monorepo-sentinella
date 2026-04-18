@@ -7,6 +7,8 @@ model yolo_feedback {
   registrado_por        String?  @db.Uuid
   created_at            DateTime @default(now()) @db.Timestamptz
 
+  @@index([cliente_id])
+  @@index([levantamento_item_id])
   @@map("yolo_feedback")
   @@schema("public")
 }

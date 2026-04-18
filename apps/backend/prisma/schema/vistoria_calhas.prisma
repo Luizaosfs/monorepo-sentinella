@@ -1,14 +1,27 @@
 model vistoria_calhas {
-  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  vistoria_id     String   @db.Uuid
-  tipo            String?
-  estado          String?
-  com_acumulo     Boolean? @default(false)
-  observacao      String?
-  created_at      DateTime @default(now()) @db.Timestamptz
+  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  vistoria_id          String    @db.Uuid
+  posicao              String    // CHECK: frente|lateral_dir|lateral_esq|fundo|todas
+  condicao             String    // CHECK: limpa|entupida|com_folhas|danificada|com_agua_parada
+  com_foco             Boolean   @default(false)
+  acessivel            Boolean   @default(true)
+  tratamento_realizado Boolean   @default(false)
+  foto_url             String?
+  observacao           String?
+  foto_public_id       String?
+  deleted_at           DateTime? @db.Timestamptz
+  cliente_id           String    @db.Uuid
+  created_at           DateTime  @default(now()) @db.Timestamptz
+
+  // PENDENTE: verificar migration — colunas legacy abaixo não estão no SQL atual
+  // tipo        String?
+  // estado      String?
+  // com_acumulo Boolean?
 
   vistoria vistorias @relation(fields: [vistoria_id], references: [id])
 
+  @@index([vistoria_id])
+  @@index([cliente_id])
   @@map("vistoria_calhas")
   @@schema("public")
 }

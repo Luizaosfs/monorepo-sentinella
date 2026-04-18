@@ -12,6 +12,7 @@ model quarteiroes {
 
   distribuicoes distribuicao_quarteirao[]
   @@unique([cliente_id, codigo])
+  @@index([regiao_id])
   @@map("quarteiroes")
   @@schema("public")
 }

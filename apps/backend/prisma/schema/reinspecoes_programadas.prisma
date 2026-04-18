@@ -16,6 +16,11 @@ model reinspecoes_programadas {
   created_at          DateTime  @default(now()) @db.Timestamptz
   updated_at          DateTime  @default(now()) @db.Timestamptz
 
+  @@index([cliente_id])
+  @@index([cliente_id, status])
+  @@index([foco_risco_id])
+  @@index([responsavel_id])
+  @@index([status])
   @@map("reinspecoes_programadas")
   @@schema("public")
 }

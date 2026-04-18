@@ -27,6 +27,10 @@ model sla_operacional {
   foco_risco focos_risco? @relation(fields: [foco_risco_id], references: [id])
   cliente    clientes?    @relation(fields: [cliente_id], references: [id])
 
+  @@index([cliente_id])
+  @@index([cliente_id, status])
+  @@index([foco_risco_id])
+  @@index([status])
   @@map("sla_operacional")
   @@schema("public")
 }

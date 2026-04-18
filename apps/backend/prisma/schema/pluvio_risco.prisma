@@ -29,6 +29,7 @@ model pluvio_risco {
   updated_at          DateTime? @default(now()) @db.Timestamptz
 
   @@unique([regiao_id, dt_ref], name: "regiao_id_dt_ref")
+  @@index([cliente_id])
   @@map("pluvio_risco")
   @@schema("public")
 }

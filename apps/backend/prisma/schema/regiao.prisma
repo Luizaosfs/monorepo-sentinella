@@ -22,6 +22,7 @@ model regioes {
   planejamento      planejamento[]
   casos_notificados casos_notificados[]
 
+  @@index([cliente_id])
   @@map("regioes")
   @@schema("public")
 }

@@ -854,6 +854,16 @@ export const api = {
     },
 
     /**
+     * Retorna o cliente vinculado ao usuário autenticado (não-admin).
+     * Chama GET /clientes/me.
+     */
+    me: async (): Promise<Ret<typeof _sb.clientes.getById>> => {
+      const raw = await http.get('/clientes/me') as Record<string, unknown> | null;
+      if (!raw) return null;
+      return deepToSnake(raw) as Ret<typeof _sb.clientes.getById>;
+    },
+
+    /**
      * Retorna id e nome de um cliente.
      * Chama GET /clientes/:id (retorna cliente completo) e extrai apenas id, nome.
      */

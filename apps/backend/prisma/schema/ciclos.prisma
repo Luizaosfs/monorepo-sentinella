@@ -22,6 +22,7 @@ model ciclos {
   fechado_usuario usuarios?       @relation("ciclo_fechado_por", fields: [fechado_por], references: [id])
 
   @@unique([cliente_id, numero, ano])
+  @@index([cliente_id, status])
   @@map("ciclos")
   @@schema("public")
 }

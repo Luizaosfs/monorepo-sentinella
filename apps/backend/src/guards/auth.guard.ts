@@ -26,6 +26,8 @@ export type AuthenticatedUser = {
   email: string;
   nome: string;
   clienteId: string | null;
+  /** Preenchido apenas para `analista_regional` — null para todos os outros papéis. */
+  agrupamentoId: string | null;
   papeis: PapelApp[];
   /** `true` quando `papeis` inclui `'admin'`. Use este campo — nunca `papeis.includes('admin')` direto. */
   isPlatformAdmin: boolean;
@@ -142,6 +144,7 @@ export class AuthGuard implements CanActivate {
         email: usuario.email,
         nome: usuario.nome,
         clienteId: usuario.cliente_id,
+        agrupamentoId: usuario.agrupamento_id ?? null,
         papeis,
         isPlatformAdmin: papeis.includes('admin'),
       } satisfies AuthenticatedUser;

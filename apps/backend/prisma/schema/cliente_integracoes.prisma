@@ -13,6 +13,7 @@ model cliente_integracoes {
   created_at           DateTime  @default(now()) @db.Timestamptz
   updated_at           DateTime  @default(now()) @db.Timestamptz
 
+  @@index([cliente_id])
   @@map("cliente_integracoes")
   @@schema("public")
 }

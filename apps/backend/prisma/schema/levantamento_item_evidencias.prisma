@@ -8,6 +8,7 @@ model levantamento_item_evidencias {
 
   item levantamento_itens @relation(fields: [item_id], references: [id])
 
+  @@index([item_id])
   @@map("levantamento_item_evidencias")
   @@schema("public")
 }

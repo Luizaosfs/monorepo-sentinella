@@ -29,6 +29,7 @@ model usuarios {
   ciclos_fechados         ciclos[]            @relation("ciclo_fechado_por")
   voos_piloto             voos[]              @relation("voo_piloto")
 
+  @@index([cliente_id])
   @@map("usuarios")
   @@schema("public")
 }

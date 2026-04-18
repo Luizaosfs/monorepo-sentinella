@@ -125,7 +125,7 @@ PageLoader.displayName = 'PageLoader';
 const queryClient = new QueryClient({ defaultOptions: queryClientDefaults });
 
 export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { session, loading, mustChangePassword } = useAuth();
+  const { usuario, loading, mustChangePassword } = useAuth();
 
   if (loading) {
     return (
@@ -135,7 +135,7 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  if (!session) return <Navigate to="/login" replace />;
+  if (!usuario) return <Navigate to="/login" replace />;
   if (mustChangePassword) return <Navigate to="/trocar-senha" replace />;
   return <>{children}</>;
 };
@@ -158,9 +158,9 @@ const VistoriaRedirect = () => {
 
 // Autenticado em "/" → home por papel (admin → /admin/dashboard; demais → getHomeByPapel)
 const RootRedirect = forwardRef<HTMLDivElement>((_props, _ref) => {
-  const { session, loading, papel } = useAuth();
+  const { usuario, loading, papel } = useAuth();
   if (loading) return null;
-  if (session) return <Navigate to={getHomeByPapel(papel)} replace />;
+  if (usuario) return <Navigate to={getHomeByPapel(papel)} replace />;
   return <LandingPage />;
 });
 RootRedirect.displayName = 'RootRedirect';

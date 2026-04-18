@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import React, { useState } from "react";
+import { Navigate, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { http } from "@sentinella/api-client";
 import { Button } from "@/components/ui/button";
@@ -20,17 +20,8 @@ const Login = React.forwardRef<HTMLDivElement>((_props, _ref) => {
   const [forgotMode, setForgotMode] = useState(false);
   const [forgotLoading, setForgotLoading] = useState(false);
   const { signIn, usuario, papel, loading: authLoading } = useAuth();
-  const navigate = useNavigate();
   const [dismissedBanner, setDismissedBanner] = useState(false);
   const [isStandalone] = useState(() => window.matchMedia("(display-mode: standalone)").matches);
-
-  // Redirect quando já autenticado (JWT + /auth/me) — session está deprecado e é sempre null
-  const [redirecting, setRedirecting] = useState(false);
-  useEffect(() => {
-    if (authLoading || !usuario) return;
-    setRedirecting(true);
-    navigate(getHomeByPapel(papel), { replace: true });
-  }, [usuario, papel, authLoading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,12 +70,17 @@ const Login = React.forwardRef<HTMLDivElement>((_props, _ref) => {
     { icon: MapPin, label: "Pontos Críticos" },
   ];
 
-  if (redirecting) {
+  // Redirect declarativo — sem useEffect, sem loop de render
+  if (!authLoading && usuario) {
+    return <Navigate to={getHomeByPapel(papel)} replace />;
+  }
+
+  if (authLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen min-h-[100dvh] bg-background">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Entrando...</p>
+          <p className="text-sm text-muted-foreground">Carregando...</p>
         </div>
       </div>
     );

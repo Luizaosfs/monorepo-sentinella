@@ -9,6 +9,8 @@ model sla_config_regiao {
   cliente clientes @relation(fields: [cliente_id], references: [id])
   regiao  regioes  @relation(fields: [regiao_id], references: [id])
 
+  @@index([cliente_id])
+  @@index([regiao_id])
   @@map("sla_config_regiao")
   @@schema("public")
 }

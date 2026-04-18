@@ -7,6 +7,7 @@ model relatorios_gerados {
   payload        Json
   created_at     DateTime @default(now()) @db.Timestamptz
 
+  @@index([cliente_id])
   @@map("relatorios_gerados")
   @@schema("public")
 }

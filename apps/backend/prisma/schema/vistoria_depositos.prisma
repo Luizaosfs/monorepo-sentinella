@@ -1,17 +1,33 @@
 model vistoria_depositos {
-  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  vistoria_id     String   @db.Uuid
-  tipo_deposito   String   @default("")
-  quantidade      Int?     @default(1)
-  com_larva       Boolean? @default(false)
-  eliminado       Boolean? @default(false)
-  tratado         Boolean? @default(false)
-  observacao      String?
-  foto_url        String?
-  created_at      DateTime @default(now()) @db.Timestamptz
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  vistoria_id       String   @db.Uuid
+  tipo              String   @default("") // SQL: tipo text NOT NULL (A1,A2,B,C,D1,D2,E)
+  qtd_inspecionados Int      @default(0)
+  qtd_com_focos     Int      @default(0)
+  qtd_eliminados    Int      @default(0)
+  usou_larvicida    Boolean  @default(false)
+  qtd_larvicida_g   Float?
+  qtd_com_agua      Int      @default(0)
+  eliminado         Boolean  @default(false)
+  vedado            Boolean  @default(false)
+  ia_identificacao  Json?
+  deleted_at        DateTime? @db.Timestamptz
+  cliente_id        String   @db.Uuid
+  created_at        DateTime @default(now()) @db.Timestamptz
+
+  // PENDENTE: verificar migration — colunas legacy abaixo não estão no SQL atual
+  // tipo_deposito String @default("")   // substituída por "tipo"
+  // quantidade    Int?                  // substituída por qtd_inspecionados
+  // com_larva     Boolean?              // substituída por qtd_com_focos
+  // tratado       Boolean?              // substituída por usou_larvicida
+  // observacao    String?
+  // foto_url      String?
 
   vistoria vistorias @relation(fields: [vistoria_id], references: [id])
 
+  @@index([vistoria_id])
+  @@index([cliente_id])
+  @@index([cliente_id, created_at])
   @@map("vistoria_depositos")
   @@schema("public")
 }

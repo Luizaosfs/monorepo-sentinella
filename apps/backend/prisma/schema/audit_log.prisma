@@ -1,14 +1,22 @@
 model audit_log {
   id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tabela      String
-  operacao    String
-  registro_id String?
-  usuario_id  String?  @db.Uuid
   cliente_id  String?  @db.Uuid
-  dados_antes Json?
-  dados_depois Json?
+  usuario_id  String?  @db.Uuid
+  auth_uid    String?  @db.Uuid
+  acao        String
+  tabela      String?
+  registro_id String?  @db.Uuid
+  ip_hash     String?
+  descricao   String?
+  payload     Json?
+  dados_antes  Json?   // PENDENTE: verificar migration
+  dados_depois Json?   // PENDENTE: verificar migration
+  operacao    String?  // PENDENTE: verificar migration
   created_at  DateTime @default(now()) @db.Timestamptz
 
+  @@index([cliente_id])
+  @@index([cliente_id, created_at])
+  @@index([auth_uid])
   @@map("audit_log")
   @@schema("public")
 }

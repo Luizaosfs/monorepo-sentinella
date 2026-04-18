@@ -20,6 +20,7 @@ import {
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
 import { TenantGuard } from 'src/guards/tenant.guard';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
+import { z } from 'zod';
 
 import { Roles } from '@/decorators/roles.decorator';
 
@@ -32,6 +33,7 @@ import {
   filterRegiaoSchema,
 } from './dtos/filter-regiao.input';
 import { SaveRegiaoBody, saveRegiaoSchema } from './dtos/save-regiao.body';
+import { RegiaoGeocodeService } from './regiao-geocode.service';
 import { CreateRegiao } from './use-cases/create-regiao';
 import { DeleteRegiao } from './use-cases/delete-regiao';
 import { FilterRegiao } from './use-cases/filter-regiao';
@@ -39,6 +41,11 @@ import { GetRegiao } from './use-cases/get-regiao';
 import { PaginationRegiao } from './use-cases/pagination-regiao';
 import { SaveRegiao } from './use-cases/save-regiao';
 import { RegiaoViewModel } from './view-model/regiao';
+
+const geocodeLoteSchema = z.object({
+  nomes: z.array(z.string().min(1)).min(1).max(100),
+  cidade: z.string().default(''),
+});
 
 @UseGuards(TenantGuard)
 @UseInterceptors(PrismaInterceptor)
@@ -53,6 +60,7 @@ export class RegiaoController {
     private getRegiao: GetRegiao,
     private paginationRegiao: PaginationRegiao,
     private saveRegiao: SaveRegiao,
+    private regiaoGeocodeService: RegiaoGeocodeService,
   ) {}
 
   @Get()
@@ -89,6 +97,14 @@ export class RegiaoController {
   async findById(@Param('id') id: string) {
     const { regiao } = await this.getRegiao.execute(id);
     return RegiaoViewModel.toHttp(regiao);
+  }
+
+  @Post('geocode-lote')
+  @Roles('admin', 'supervisor')
+  @ApiOperation({ summary: 'Geocodificar lista de nomes de regiões via Nominatim' })
+  async geocodeLote(@Body() body: unknown) {
+    const { nomes, cidade } = geocodeLoteSchema.parse(body);
+    return this.regiaoGeocodeService.geocodeLote(nomes, cidade);
   }
 
   @Post()

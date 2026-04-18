@@ -64,6 +64,13 @@ model vistorias {
   riscos       vistoria_riscos[]
   calhas       vistoria_calhas[]
 
+  @@index([cliente_id])
+  @@index([cliente_id, status])
+  @@index([cliente_id, created_at])
+  @@index([imovel_id])
+  @@index([agente_id])
+  @@index([planejamento_id])
+  @@index([status])
   @@map("vistorias")
   @@schema("public")
 }

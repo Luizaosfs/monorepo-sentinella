@@ -282,41 +282,62 @@ export class PrismaVistoriaMapper {
     };
   }
 
-  static depositoToPrisma(dep: VistoriaDeposito & { vistoriaId: string }) {
+  static depositoToPrisma(dep: VistoriaDeposito & { vistoriaId: string; clienteId: string }) {
     return {
       vistoria_id: dep.vistoriaId,
-      tipo_deposito: dep.tipoDeposito,
-      quantidade: dep.quantidade ?? null,
-      com_larva: dep.comLarva ?? null,
-      eliminado: dep.eliminado ?? null,
-      tratado: dep.tratado ?? null,
-      observacao: dep.observacao ?? null,
-      foto_url: dep.fotoUrl ?? null,
+      cliente_id: dep.clienteId,
+      tipo: dep.tipoDeposito ?? '',
+      qtd_inspecionados: dep.quantidade ?? 0,
+      qtd_com_focos: dep.comLarva ? 1 : 0,
+      qtd_eliminados: 0,
+      usou_larvicida: dep.tratado ?? false,
+      qtd_com_agua: 0,
+      eliminado: dep.eliminado ?? false,
+      vedado: false,
     };
   }
 
-  static sintomaToPrisma(sint: VistoriaSintoma & { vistoriaId: string }) {
+  static sintomaToPrisma(sint: VistoriaSintoma & { vistoriaId: string; clienteId: string }) {
     return {
       vistoria_id: sint.vistoriaId,
-      sintoma: sint.sintoma,
-      observacao: sint.observacao ?? null,
+      cliente_id: sint.clienteId,
+      febre: false,
+      manchas_vermelhas: false,
+      dor_articulacoes: false,
+      dor_cabeca: false,
+      moradores_sintomas_qtd: 0,
     };
   }
 
-  static riscoToPrisma(risco: VistoriaRisco & { vistoriaId: string }) {
+  static riscoToPrisma(risco: VistoriaRisco & { vistoriaId: string; clienteId: string }) {
     return {
       vistoria_id: risco.vistoriaId,
-      tipo_risco: risco.tipoRisco,
-      descricao: risco.descricao ?? null,
+      cliente_id: risco.clienteId,
+      menor_incapaz: false,
+      idoso_incapaz: false,
+      dep_quimico: false,
+      risco_alimentar: false,
+      risco_moradia: false,
+      criadouro_animais: false,
+      lixo: false,
+      residuos_organicos: false,
+      residuos_quimicos: false,
+      residuos_medicos: false,
+      acumulo_material_organico: false,
+      animais_sinais_lv: false,
+      caixa_destampada: false,
     };
   }
 
-  static calhaToPrisma(calha: VistoriaCalha & { vistoriaId: string }) {
+  static calhaToPrisma(calha: VistoriaCalha & { vistoriaId: string; clienteId: string }) {
     return {
       vistoria_id: calha.vistoriaId,
-      tipo: calha.tipo ?? null,
-      estado: calha.estado ?? null,
-      com_acumulo: calha.comAcumulo ?? null,
+      cliente_id: calha.clienteId,
+      posicao: 'frente',
+      condicao: 'limpa',
+      com_foco: false,
+      acessivel: true,
+      tratamento_realizado: false,
       observacao: calha.observacao ?? null,
     };
   }

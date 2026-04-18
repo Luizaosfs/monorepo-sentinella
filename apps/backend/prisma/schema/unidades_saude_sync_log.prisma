@@ -9,6 +9,8 @@ model unidades_saude_sync_log {
   retention_until DateTime @db.Timestamptz
 
   controle unidades_saude_sync_controle @relation(fields: [controle_id], references: [id])
+  @@index([cliente_id])
+  @@index([controle_id])
   @@map("unidades_saude_sync_log")
   @@schema("public")
 }

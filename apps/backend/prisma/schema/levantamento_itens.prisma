@@ -45,6 +45,8 @@ model levantamento_itens {
   detecoes     levantamento_item_detecoes[]
   evidencias   levantamento_item_evidencias[]
 
+  @@index([cliente_id])
+  @@index([levantamento_id])
   @@map("levantamento_itens")
   @@schema("public")
 }

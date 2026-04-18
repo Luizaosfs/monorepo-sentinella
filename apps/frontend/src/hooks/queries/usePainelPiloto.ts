@@ -21,7 +21,7 @@ export function usePilotoDespachosSupervisor() {
   const { clienteId } = useClienteAtivo();
   return useQuery<PilotoDespachoSupervisor[]>({
     queryKey: ['piloto-despachos-supervisor', clienteId],
-    queryFn:  () => api.piloto.getDespachosSupervisor(clienteId!),
+    queryFn:  () => api.piloto.getDespachosSupervisor(clienteId!).then((r: PilotoDespachoSupervisor[] | null) => r ?? []),
     enabled:  !!clienteId,
     staleTime: STALE.SHORT,
   });
@@ -32,7 +32,7 @@ export function usePilotoProdAgentes() {
   const { clienteId } = useClienteAtivo();
   return useQuery<PilotoProdAgente[]>({
     queryKey: ['piloto-prod-agentes', clienteId],
-    queryFn:  () => api.piloto.getProdAgentes(clienteId!),
+    queryFn:  () => api.piloto.getProdAgentes(clienteId!).then((r: PilotoProdAgente[] | null) => r ?? []),
     enabled:  !!clienteId,
     staleTime: STALE.SHORT,
   });

@@ -9,6 +9,9 @@ model levantamento_item_status_historico {
   alterado_por           String?  @db.Uuid
   alterado_em            DateTime @default(now()) @db.Timestamptz
 
+  @@index([cliente_id])
+  @@index([cliente_id, alterado_em])
+  @@index([levantamento_item_id])
   @@map("levantamento_item_status_historico")
   @@schema("public")
 }

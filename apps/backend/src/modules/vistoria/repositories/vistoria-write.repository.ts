@@ -20,16 +20,16 @@ export abstract class VistoriaWriteRepository {
   abstract create(entity: Vistoria): Promise<Vistoria>;
   abstract save(entity: Vistoria): Promise<void>;
   abstract createDeposito(
-    deposito: VistoriaDeposito & { vistoriaId: string },
+    deposito: VistoriaDeposito & { vistoriaId: string; clienteId: string },
   ): Promise<VistoriaDeposito>;
   abstract createSintoma(
-    sintoma: VistoriaSintoma & { vistoriaId: string },
+    sintoma: VistoriaSintoma & { vistoriaId: string; clienteId: string },
   ): Promise<VistoriaSintoma>;
   abstract createRisco(
-    risco: VistoriaRisco & { vistoriaId: string },
+    risco: VistoriaRisco & { vistoriaId: string; clienteId: string },
   ): Promise<VistoriaRisco>;
   abstract createCalha(
-    calha: VistoriaCalha & { vistoriaId: string },
+    calha: VistoriaCalha & { vistoriaId: string; clienteId: string },
   ): Promise<VistoriaCalha>;
   /** Cria vistoria + sub-itens em uma única transação. Suporta idempotência. */
   abstract createCompleta(

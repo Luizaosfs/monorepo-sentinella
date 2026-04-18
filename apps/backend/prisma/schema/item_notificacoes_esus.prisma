@@ -16,6 +16,8 @@ model item_notificacoes_esus {
 
   cliente clientes @relation(fields: [cliente_id], references: [id])
 
+  @@index([cliente_id])
+  @@index([levantamento_item_id])
   @@map("item_notificacoes_esus")
   @@schema("public")
 }

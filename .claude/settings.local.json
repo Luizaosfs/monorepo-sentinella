@@ -48,7 +48,9 @@
       "Bash(grep -v \"^DROP FUNCTION$\")",
       "Bash(grep -E \"\\\\.ts$\")",
       "Bash(pnpm generate *)",
-      "Bash(node *)"
+      "Bash(node *)",
+      "Bash(C:/Program Files/PostgreSQL/17/bin/psql.exe *)",
+      "Bash(pnpm test *)"
     ]
   }
 }

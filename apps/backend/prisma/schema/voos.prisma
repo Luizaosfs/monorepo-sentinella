@@ -22,6 +22,8 @@ model voos {
   planejamento planejamento? @relation(fields: [planejamento_id], references: [id])
   piloto       usuarios?     @relation("voo_piloto", fields: [piloto_id], references: [id])
 
+  @@index([planejamento_id])
+  @@index([piloto_id])
   @@map("voos")
   @@schema("public")
 }

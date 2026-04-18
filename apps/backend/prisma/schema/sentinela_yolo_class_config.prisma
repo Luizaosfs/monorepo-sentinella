@@ -10,6 +10,7 @@ model sentinela_yolo_class_config {
   created_at DateTime @default(now()) @db.Timestamptz
   updated_at DateTime @default(now()) @db.Timestamptz
 
+  @@index([cliente_id])
   @@map("sentinela_yolo_class_config")
   @@schema("public")
 }

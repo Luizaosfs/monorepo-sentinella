@@ -148,7 +148,7 @@ export function PainelPilotoFunil() {
       ) : null}
 
       {/* ── Produtividade por agente ── */}
-      {agentes.length > 0 && (
+      {(agentes ?? []).length > 0 && (
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <Users className="h-4 w-4 text-primary" />

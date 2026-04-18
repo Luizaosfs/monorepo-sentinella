@@ -9,6 +9,7 @@ model sla_foco_config {
 
   cliente clientes @relation(fields: [cliente_id], references: [id])
 
+  @@index([cliente_id])
   @@map("sla_foco_config")
   @@schema("public")
 }
