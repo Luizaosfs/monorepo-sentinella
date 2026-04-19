@@ -4,7 +4,7 @@ import { STALE } from '@/lib/queryConfig';
 import type { UsuarioComPapel } from '@/services/api';
 
 /**
- * Lista agentes/operadores de um cliente para seleção de responsável.
+ * Lista agentes de um cliente para seleção de responsável.
  */
 export function useAgentes(
   clienteId: string | null | undefined,

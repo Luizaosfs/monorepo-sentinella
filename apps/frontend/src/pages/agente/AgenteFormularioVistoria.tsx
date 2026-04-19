@@ -127,7 +127,7 @@ const FOCO_ORIGEM_MAP: Partial<Record<FocoRiscoOrigem, 'denuncia' | 'liraa' | 'd
   cidadao: 'denuncia',
 };
 
-export default function OperadorFormularioVistoria() {
+export default function AgenteFormularioVistoria() {
   const { imovelId: imovelIdParam } = useParams<{ imovelId: string }>();
   const [searchParams] = useSearchParams();
   const atividade = (searchParams.get('atividade') as TipoAtividade) || 'pesquisa';
@@ -635,7 +635,7 @@ export default function OperadorFormularioVistoria() {
       setDone(true);
     } catch (err) {
       const message = extractErrorMessage(err);
-      console.error('[OperadorFormularioVistoria] erro ao finalizar', err);
+      console.error('[AgenteFormularioVistoria] erro ao finalizar', err);
       toast.error(`Erro ao salvar vistoria: ${message}`);
     } finally {
       setIsSaving(false);

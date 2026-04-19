@@ -29,7 +29,7 @@ import {
   CheckCircle2, PlusCircle, Map as MapIcon, Navigation, Send, Loader2, UserCheck, XCircle, History, ChevronDown
 } from "lucide-react";
 
-interface Operador { id: string; nome: string; }
+interface Agente { id: string; nome: string; }
 
 interface OperacaoStatus {
   id: string;
@@ -57,7 +57,7 @@ interface Props {
   item: LevantamentoItem | null;
   onClose: () => void;
   onOpenImage: (url: string) => void;
-  /** Cria tarefa de correção avulsa (pendente, sem operador). A operação pode ser atribuída depois em Operações. */
+  /** Cria tarefa de correção avulsa (pendente, sem agente). A operação pode ser atribuída depois em Operações. */
   onCreateTask?: () => Promise<void>;
   onSendFieldTeam?: (responsavelId?: string) => Promise<void>;
   onMarkResolved?: () => Promise<void>;
@@ -69,8 +69,8 @@ export function ItemDetailsPanel({ item, onClose, onOpenImage, onCreateTask, onS
   const [sendingTeam, setSendingTeam] = useState(false);
   const [resolving, setResolving] = useState(false);
   const [cancelling, setCancelling] = useState(false);
-  const [operadores, setOperadores] = useState<Operador[]>([]);
-  const [selectedOperador, setSelectedOperador] = useState<string>('');
+  const [agentes, setAgentes] = useState<Agente[]>([]);
+  const [selectedAgente, setSelectedAgente] = useState<string>('');
   const [opStatus, setOpStatus] = useState<OperacaoStatus | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -83,8 +83,8 @@ export function ItemDetailsPanel({ item, onClose, onOpenImage, onCreateTask, onS
   useEffect(() => {
     if (!clienteId) return;
     http.get(`/usuarios?clienteId=${encodeURIComponent(clienteId)}&ativo=true`)
-      .then((data) => setOperadores((data as Operador[]) || []))
-      .catch(() => setOperadores([]));
+      .then((data) => setAgentes((data as Agente[]) || []))
+      .catch(() => setAgentes([]));
   }, [clienteId]);
 
   // Fetch operation status for this item
@@ -129,7 +129,7 @@ export function ItemDetailsPanel({ item, onClose, onOpenImage, onCreateTask, onS
   const handleSendTeam = async () => {
     if (!onSendFieldTeam) return;
     setSendingTeam(true);
-    try { await onSendFieldTeam(selectedOperador || undefined); } finally { setSendingTeam(false); setSelectedOperador(''); }
+    try { await onSendFieldTeam(selectedAgente || undefined); } finally { setSendingTeam(false); setSelectedAgente(''); }
   };
 
   const handleResolve = async () => {
@@ -421,21 +421,21 @@ export function ItemDetailsPanel({ item, onClose, onOpenImage, onCreateTask, onS
               <div className="py-2">
                 <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1.5 block">
                   <UserCheck className="w-3.5 h-3.5 inline mr-1.5" />
-                  Operador responsável
+                  Agente responsável
                 </Label>
-                <Select value={selectedOperador} onValueChange={setSelectedOperador}>
+                <Select value={selectedAgente} onValueChange={setSelectedAgente}>
                   <SelectTrigger className="rounded-xl">
-                    <SelectValue placeholder="Selecionar operador (opcional)" />
+                    <SelectValue placeholder="Selecionar agente (opcional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    {operadores.map(op => (
+                    {agentes.map(op => (
                       <SelectItem key={op.id} value={op.id}>{op.nome}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <AlertDialogFooter>
-                <AlertDialogCancel onClick={() => setSelectedOperador('')}>Cancelar</AlertDialogCancel>
+                <AlertDialogCancel onClick={() => setSelectedAgente('')}>Cancelar</AlertDialogCancel>
                 <AlertDialogAction onClick={handleSendTeam}>Confirmar envio</AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>

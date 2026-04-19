@@ -194,7 +194,7 @@ const ItemDetailPanel = ({
     setSavingAtendimento(true);
     try {
       if (focoRisco) {
-        await avancarFocoAte(focoRisco.id, focoRisco.status as FocoRiscoStatus, 'descartado', 'Cancelado pelo operador');
+        await avancarFocoAte(focoRisco.id, focoRisco.status as FocoRiscoStatus, 'descartado', 'Cancelado pelo agente');
         queryClient.invalidateQueries({ queryKey: ['foco_by_item', item.id] });
         queryClient.invalidateQueries({ queryKey: ['focos_risco'] });
       }

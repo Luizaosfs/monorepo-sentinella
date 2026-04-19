@@ -11,6 +11,6 @@ export function useItemStatusHistorico(itemId: string | null | undefined) {
     queryKey: ['item_status_historico', itemId],
     queryFn: () => api.itens.listStatusHistorico(itemId!),
     enabled: !!itemId,
-    staleTime: 30 * 1000, // 30s — muda quando operador salva status
+    staleTime: 30 * 1000, // 30s — muda quando agente salva status
   });
 }

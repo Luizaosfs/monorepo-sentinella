@@ -38,7 +38,7 @@ export function AtendimentoStatusWidget({ counts, recentes, isLoading }: Props) 
           <CardTitle className="text-base font-bold text-foreground">Atendimentos</CardTitle>
           <p className="text-xs text-muted-foreground mt-0.5">Status dos itens identificados</p>
           <p className="text-[10px] text-muted-foreground/90 mt-1 leading-snug">
-            Visão geral de todos os itens do cliente (contagem no servidor, sem limite de páginas). No app do operador, &quot;Meus itens&quot; mostra só os direcionados a você.
+            Visão geral de todos os itens do cliente (contagem no servidor, sem limite de páginas). No app do agente, &quot;Meus itens&quot; mostra só os direcionados a você.
           </p>
         </div>
         <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">

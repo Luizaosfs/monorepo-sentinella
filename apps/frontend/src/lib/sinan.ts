@@ -5,7 +5,7 @@
  *  1. Prefeitura obtém credenciais via Portal de Serviços DATASUS
  *     (servicos-datasus.saude.gov.br)
  *  2. Admin configura as credenciais em /admin/integracoes
- *  3. Operador clica "Notificar ao e-SUS" em um item confirmado
+ *  3. Agente clica "Notificar ao e-SUS" em um item confirmado
  *  4. Este módulo monta o payload e envia via api.notificacoesESUS.enviar()
  *
  * Documentação: https://datasus.saude.gov.br/wp-content/uploads/2022/02/Manual-de-Utilizacao-da-API-e-Sus-Notifica.pdf

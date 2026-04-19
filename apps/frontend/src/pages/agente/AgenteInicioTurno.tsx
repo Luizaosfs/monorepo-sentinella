@@ -45,7 +45,7 @@ const ATIVIDADES = [
 
 const META_DIARIA = 15;
 
-export default function OperadorInicioTurno() {
+export default function AgenteInicioTurno() {
   const currentCiclo = getCurrentCiclo();
   const navigate = useNavigate();
   const { clienteId } = useClienteAtivo();

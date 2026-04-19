@@ -80,8 +80,8 @@ export const itens = {
   registrarCheckin: (itemId: string): Promise<{ ok: boolean; focoId: string | null }> =>
     http.post(`/levantamentos/itens/${itemId}/checkin`, {}),
 
-  listByOperador: (usuarioId: string): Promise<Record<string, unknown>[]> =>
-    http.get(`/levantamentos/itens/por-operador${qs({ usuarioId })}`),
+  listByAgente: (usuarioId: string): Promise<Record<string, unknown>[]> =>
+    http.get(`/levantamentos/itens/por-agente${qs({ usuarioId })}`),
 
   listMapByCliente: (_clienteId: string): Promise<Record<string, unknown>[]> =>
     http.get('/levantamentos/itens/mapa'),

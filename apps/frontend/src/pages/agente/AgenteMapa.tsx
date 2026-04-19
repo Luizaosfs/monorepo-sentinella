@@ -14,7 +14,7 @@ import { ImageModal } from "@/components/map-v3/ImageModal";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { useItensOperador } from "@/hooks/queries/useItensOperador";
+import { useItensAgente } from "@/hooks/queries/useItensAgente";
 import { useFocosAtribuidos } from "@/hooks/queries/useFocosAtribuidos";
 
 const PRIORIDADE_RISCO: Record<string, string> = {
@@ -74,17 +74,17 @@ function nearestNeighbor(items: LevantamentoItem[]): LevantamentoItem[] {
   return result;
 }
 
-/** Mapa exclusivo do operador: apenas itens ligados a operações onde ele é o responsável. */
+/** Mapa exclusivo do agente: apenas itens ligados a operações onde ele é o responsável. */
 /** Item convertido de foco_risco tem levantamento_id vazio — usado para distinguir tipo. */
 function isFocoRiscoItem(item: LevantamentoItem) {
   return item.levantamento_id === '';
 }
 
-export default function OperadorMapa() {
+export default function AgenteMapa() {
   const navigate = useNavigate();
   const { clienteId, clienteAtivo } = useClienteAtivo();
   const { usuario } = useAuth();
-  const { data: itens = [], isLoading, refetch } = useItensOperador(clienteId, usuario?.id ?? null);
+  const { data: itens = [], isLoading, refetch } = useItensAgente(clienteId, usuario?.id ?? null);
   const { data: focosAtribuidos = [] } = useFocosAtribuidos(clienteId, usuario?.id ?? null);
   const focosComoItens = useMemo(
     () => focosAtribuidos.filter((f) => f.latitude != null || f.longitude != null).map(focoToItem),
@@ -136,7 +136,7 @@ export default function OperadorMapa() {
       ? [clienteAtivo.latitude_centro, clienteAtivo.longitude_centro]
       : [-15.78, -47.93];
 
-  /** Cria tarefa de correção avulsa (pendente, sem operador). Pode ser atribuída depois em Operações. */
+  /** Cria tarefa de correção avulsa (pendente, sem agente). Pode ser atribuída depois em Operações. */
   const handleCreateTask = useCallback(async () => {
     if (!selectedItem || !clienteId) return;
     try {
@@ -146,7 +146,7 @@ export default function OperadorMapa() {
         prioridade: selectedItem.prioridade || "Média",
         observacao: `Tarefa de correção — ${selectedItem.item || "Item"}`,
       });
-      toast.success("Tarefa de correção criada. Atribua um operador em Operações.");
+      toast.success("Tarefa de correção criada. Atribua um agente em Operações.");
     } catch (err: unknown) {
       if (err instanceof Error && err.message === "ALREADY_EXISTS") {
         toast.info("Já existe uma tarefa aberta para este ponto.");

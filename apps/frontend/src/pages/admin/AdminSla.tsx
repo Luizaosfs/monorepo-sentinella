@@ -47,7 +47,7 @@ function formatSlaHoras(horas: number): string {
   return `${horas}h`;
 }
 
-interface Operador {
+interface Agente {
   id: string;
   nome: string;
   email: string;
@@ -84,21 +84,21 @@ const AdminSla = () => {
     staleTime: 0,
   });
 
-  /* ── Fetch SLAs + operadores ── */
+  /* ── Fetch SLAs + agentes ── */
   const { data, isLoading: loading } = useQuery({
     queryKey: ['admin_sla', clienteId],
     queryFn: async () => {
-      const [slas, operadores] = await Promise.all([
+      const [slas, agentes] = await Promise.all([
         api.sla.listWithJoins(clienteId ?? null),
-        api.sla.listOperadoresByCliente(clienteId ?? null),
+        api.usuarios.listAgentes(clienteId!),
       ]);
-      return { slas, operadores: operadores as Operador[] };
+      return { slas, agentes: agentes as Agente[] };
     },
     staleTime: 0,
   });
 
   const slas = data?.slas ?? [];
-  const operadores = data?.operadores ?? [];
+  const agentes = data?.agentes ?? [];
 
   /* ── Gerar SLAs (RPC) ── */
   const handleGerarSlas = async () => {
@@ -115,25 +115,23 @@ const AdminSla = () => {
     }
   };
 
-  /* ── Atribuir operador ── */
+  /* ── Atribuir agente ── */
   const assignMutation = useMutation({
-    mutationFn: async ({ slaId, operadorId }: { slaId: string; operadorId: string }) => {
-      const sla = slas.find(s => s.id === slaId);
-      const avancar = !!operadorId && sla?.status === 'pendente';
-      await api.sla.atribuirOperador(slaId, operadorId, avancar);
-      return operadorId;
+    mutationFn: async ({ slaId, agenteId }: { slaId: string; agenteId: string }) => {
+      await api.sla.atribuirAgente(slaId, agenteId);
+      return agenteId;
     },
-    onSuccess: (operadorId, { slaId }) => {
+    onSuccess: (agenteId, { slaId }) => {
       setUpdatingId(null);
-      toast.success(operadorId ? 'Agente atribuído' : 'Atribuição removida');
+      toast.success(agenteId ? 'Agente atribuído' : 'Atribuição removida');
       queryClient.invalidateQueries({ queryKey: ['admin_sla', clienteId] });
     },
     onError: () => { setUpdatingId(null); toast.error('Erro ao atribuir agente'); },
   });
 
-  const handleAssign = (slaId: string, operadorId: string) => {
+  const handleAssign = (slaId: string, agenteId: string) => {
     setUpdatingId(slaId);
-    assignMutation.mutate({ slaId, operadorId });
+    assignMutation.mutate({ slaId, agenteId });
   };
 
   /* ── Forçar status ── */
@@ -203,11 +201,11 @@ const AdminSla = () => {
   /* ── Metrics ── */
   const metrics = useMemo(() => {
     const total = slas.length;
-    const semOperador = slas.filter(s => !s.agente_id && s.status !== 'concluido').length;
+    const semAgente = slas.filter(s => !s.agente_id && s.status !== 'concluido').length;
     const violados = slas.filter(s => s.violado).length;
     const pendentes = slas.filter(s => s.status === 'pendente').length;
     const escalonados = slas.filter(s => s.escalonado).length;
-    return { total, semOperador, violados, pendentes, escalonados };
+    return { total, semAgente, violados, pendentes, escalonados };
   }, [slas]);
 
   /* ── Ranking ── */
@@ -264,7 +262,7 @@ const AdminSla = () => {
         s.levantamento_item?.item?.toLowerCase().includes(q);
       const matchStatus = filterStatus === 'all'
         ? true
-        : filterStatus === 'sem_operador'
+        : filterStatus === 'sem_agente'
           ? !s.agente_id && s.status !== 'concluido'
           : filterStatus === 'escalonado'
             ? s.escalonado
@@ -287,7 +285,7 @@ const AdminSla = () => {
     <div className="space-y-5 animate-fade-in">
       <AdminPageHeader
         title="Gestão de SLA"
-        description="Atribua operadores, gerencie prazos e configure regras de SLA."
+        description="Atribua agentes, gerencie prazos e configure regras de SLA."
         icon={Timer}
       />
 
@@ -376,7 +374,7 @@ const AdminSla = () => {
           <TooltipProvider delayDuration={300}>
             <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
               <SummaryCard label="Total SLAs" value={metrics.total} icon={Timer} color="text-primary" tooltip="Total de SLAs cadastrados para este cliente, incluindo todos os status." />
-              <SummaryCard label="Sem Agente" value={metrics.semOperador} icon={UserPlus} color="text-warning" tooltip="SLAs abertos (não concluídos) que ainda não têm um agente de campo atribuído. Requerem ação imediata." />
+              <SummaryCard label="Sem Agente" value={metrics.semAgente} icon={UserPlus} color="text-warning" tooltip="SLAs abertos (não concluídos) que ainda não têm um agente de campo atribuído. Requerem ação imediata." />
               <SummaryCard label="Pendentes" value={metrics.pendentes} icon={Clock} color="text-muted-foreground" tooltip="SLAs com status 'pendente' — criados mas ainda não iniciados por nenhum agente." />
               <SummaryCard label="Violados" value={metrics.violados} icon={AlertTriangle} color="text-destructive" tooltip="SLAs cujo prazo foi ultrapassado sem conclusão. Cada violação pode impactar o indicador de cumprimento do cliente." />
               <SummaryCard label="Escalonados" value={metrics.escalonados} icon={ArrowUpRight} color="text-destructive" tooltip="SLAs que tiveram a prioridade elevada automaticamente após persistência sem resolução. Exigem atenção urgente." />
@@ -459,7 +457,7 @@ const AdminSla = () => {
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
-                    placeholder="Buscar bairro, prioridade, operador..."
+                    placeholder="Buscar bairro, prioridade, agente..."
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                     className="pl-9"
@@ -471,7 +469,7 @@ const AdminSla = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todos</SelectItem>
-                    <SelectItem value="sem_operador">⚠ Sem agente</SelectItem>
+                    <SelectItem value="sem_agente">⚠ Sem agente</SelectItem>
                     <SelectItem value="escalonado">🔺 Escalonados</SelectItem>
                     <SelectItem value="pendente">Pendente</SelectItem>
                     <SelectItem value="em_atendimento">Em Atendimento</SelectItem>
@@ -558,7 +556,7 @@ const AdminSla = () => {
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="none" className="text-xs text-muted-foreground">Nenhum</SelectItem>
-                                {operadores.map(op => (
+                                {agentes.map(op => (
                                   <SelectItem key={op.id} value={op.id} className="text-xs">{op.nome}</SelectItem>
                                 ))}
                               </SelectContent>
@@ -658,11 +656,11 @@ const AdminSla = () => {
                           disabled={isUpdating || sla.status === 'concluido'}
                         >
                           <SelectTrigger className="h-8 text-xs">
-                            <SelectValue placeholder="Atribuir operador..." />
+                            <SelectValue placeholder="Atribuir agente..." />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="none" className="text-xs text-muted-foreground">Nenhum</SelectItem>
-                            {operadores.map(op => (
+                            {agentes.map(op => (
                               <SelectItem key={op.id} value={op.id} className="text-xs">{op.nome}</SelectItem>
                             ))}
                           </SelectContent>

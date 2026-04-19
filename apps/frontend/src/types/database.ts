@@ -333,7 +333,7 @@ export interface LevantamentoItemStatusHistorico {
   usuario?: Pick<Usuario, 'id' | 'nome'>;
 }
 
-/** Ação corretiva do catálogo configurável por cliente. Operador seleciona ao concluir atendimento. */
+/** Ação corretiva do catálogo configurável por cliente. Agente seleciona ao concluir atendimento. */
 export interface PlanoAcaoCatalogo {
   id: string;
   cliente_id: string;
@@ -615,7 +615,7 @@ export interface PushSubscription {
   created_at: string;
 }
 
-/** Feedback de operador sobre detecção YOLO — base para re-treino. */
+/** Feedback de agente sobre detecção YOLO — base para re-treino. */
 export interface YoloFeedback {
   id: string;
   levantamento_item_id: string;
@@ -1613,7 +1613,7 @@ export interface FocoRisco {
   updated_at: string;
   /** M07: Usuário que criou o foco. Preenchido por trigger BEFORE INSERT. */
   created_by: string | null;
-  /** Observação livre do operador sobre o atendimento. Migration 20260923. */
+  /** Observação livre do agente sobre o atendimento. Migration 20260923. */
   observacao?: string | null;
   /** QW-10A: Soft delete. Null = ativo. */
   deleted_at?: string | null;

@@ -31,7 +31,7 @@ export const sla = {
   concluir: (slaId: string): Promise<void> =>
     http.post(`/sla/${slaId}/concluir`, {}),
 
-  atribuir: (slaId: string, agenteId: string): Promise<void> =>
+  atribuirAgente: (slaId: string, agenteId: string): Promise<void> =>
     http.patch(`/sla/${slaId}/atribuir`, { agenteId }),
 
   errosCriacao: async (clienteId: string): Promise<Ret<typeof _sb.sla.errosCriacao>> => {

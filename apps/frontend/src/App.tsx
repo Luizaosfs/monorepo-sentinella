@@ -66,15 +66,15 @@ const AdminSlaFeriados = safeLazy(() => import("@/pages/admin/AdminSlaFeriados")
 const NotificadorHome = safeLazy(() => import("@/pages/notificador/NotificadorHome"));
 const NotificadorRegistroCaso = safeLazy(() => import("@/pages/notificador/NotificadorRegistroCaso"));
 const Levantamentos = safeLazy(() => import("@/pages/Levantamentos"));
-const OperadorPage = safeLazy(() => import("@/pages/Operador"));
-const OperadorGuard = safeLazy(() => import("@/pages/OperadorGuard"));
-const OperadorLevantamentos = safeLazy(() => import("@/pages/operador/OperadorLevantamentos"));
-const OperadorNovoItemManual = safeLazy(() => import("@/pages/operador/OperadorNovoItemManual"));
-const OperadorMapa = safeLazy(() => import("@/pages/operador/OperadorMapa"));
-const OperadorUsuarios = safeLazy(() => import("@/pages/operador/OperadorUsuarios"));
-const OperadorListaImoveis = safeLazy(() => import("@/pages/operador/OperadorListaImoveis"));
-const OperadorFormularioVistoria = safeLazy(() => import("@/pages/operador/OperadorFormularioVistoria"));
-const OperadorRotaDiaria = safeLazy(() => import("@/pages/operador/OperadorRotaDiaria"));
+const AgentePage = safeLazy(() => import("@/pages/Agente"));
+const AgenteGuard = safeLazy(() => import("@/pages/AgenteGuard"));
+const AgenteLevantamentos = safeLazy(() => import("@/pages/agente/AgenteLevantamentos"));
+const AgenteNovoItemManual = safeLazy(() => import("@/pages/agente/AgenteNovoItemManual"));
+const AgenteMapa = safeLazy(() => import("@/pages/agente/AgenteMapa"));
+const AgenteUsuarios = safeLazy(() => import("@/pages/agente/AgenteUsuarios"));
+const AgenteListaImoveis = safeLazy(() => import("@/pages/agente/AgenteListaImoveis"));
+const AgenteFormularioVistoria = safeLazy(() => import("@/pages/agente/AgenteFormularioVistoria"));
+const AgenteRotaDiaria = safeLazy(() => import("@/pages/agente/AgenteRotaDiaria"));
 const NotFound = safeLazy(() => import("./pages/NotFound"));
 const Install = safeLazy(() => import("./pages/Install"));
 const ResetPassword = safeLazy(() => import("./pages/ResetPassword"));
@@ -204,12 +204,12 @@ const App = () => (
               <Route path="/dashboard" element={<QueryRedirect />} />
               <Route path="/levantamentos" element={<AdminOrSupervisorGuard><Levantamentos /></AdminOrSupervisorGuard>} />
               {/* Agente — rotas canônicas /agente/* */}
-              <Route path="/agente/imoveis" element={<OperadorGuard><OperadorListaImoveis /></OperadorGuard>} />
-              <Route path="/agente/levantamentos" element={<OperadorGuard><OperadorLevantamentos /></OperadorGuard>} />
-              <Route path="/agente/levantamentos/novo-item" element={<OperadorGuard><OperadorNovoItemManual /></OperadorGuard>} />
-              <Route path="/agente/mapa" element={<OperadorGuard><OperadorMapa /></OperadorGuard>} />
-              <Route path="/agente/rota" element={<OperadorGuard><OperadorRotaDiaria /></OperadorGuard>} />
-              <Route path="/agente/focos/:focoId" element={<OperadorGuard><AgenteFocoDetalhe /></OperadorGuard>} />
+              <Route path="/agente/imoveis" element={<AgenteGuard><AgenteListaImoveis /></AgenteGuard>} />
+              <Route path="/agente/levantamentos" element={<AgenteGuard><AgenteLevantamentos /></AgenteGuard>} />
+              <Route path="/agente/levantamentos/novo-item" element={<AgenteGuard><AgenteNovoItemManual /></AgenteGuard>} />
+              <Route path="/agente/mapa" element={<AgenteGuard><AgenteMapa /></AgenteGuard>} />
+              <Route path="/agente/rota" element={<AgenteGuard><AgenteRotaDiaria /></AgenteGuard>} />
+              <Route path="/agente/focos/:focoId" element={<AgenteGuard><AgenteFocoDetalhe /></AgenteGuard>} />
               {/* Aliases legados /operador/* → redirect para /agente/* */}
               <Route path="/operador" element={<Navigate to="/agente/hoje" replace />} />
               <Route path="/operador/inicio" element={<Navigate to="/agente/hoje" replace />} />
@@ -218,8 +218,8 @@ const App = () => (
               <Route path="/operador/levantamentos/novo-item" element={<Navigate to="/agente/levantamentos/novo-item" replace />} />
               <Route path="/operador/mapa" element={<Navigate to="/agente/mapa" replace />} />
               <Route path="/operador/rota" element={<Navigate to="/agente/rota" replace />} />
-              <Route path="/operador/vistoria/:imovelId" element={<OperadorGuard><VistoriaRedirect /></OperadorGuard>} />
-              <Route path="/operador/usuarios" element={<AdminOrSupervisorGuard><OperadorUsuarios /></AdminOrSupervisorGuard>} />
+              <Route path="/operador/vistoria/:imovelId" element={<AgenteGuard><VistoriaRedirect /></AgenteGuard>} />
+              <Route path="/operador/usuarios" element={<AdminOrSupervisorGuard><AgenteUsuarios /></AdminOrSupervisorGuard>} />
               <Route path="/mapa" element={<Navigate to="/gestor/mapa" replace />} />
               {/* ── /admin/* ── exclusivo plataforma SaaS (isAdmin) ──────────────────── */}
               <Route path="/admin" element={<AdminGuard />}>
@@ -303,11 +303,11 @@ const App = () => (
               <Route path="/gestor/plano-acao"              element={<AdminOrSupervisorGuard><AdminPlanoAcaoCatalogo /></AdminOrSupervisorGuard>} />
               <Route path="/gestor/score-config"            element={<AdminOrSupervisorGuard><AdminScoreConfig /></AdminOrSupervisorGuard>} />
               {/* Agente — vistoria de campo */}
-              <Route path="/agente/hoje" element={<OperadorGuard><AgenteHoje /></OperadorGuard>} />
-              <Route path="/agente/imoveis/:id" element={<OperadorGuard><FichaImovel360 /></OperadorGuard>} />
-              <Route path="/agente/vistoria/:imovelId" element={<OperadorGuard><AgenteVistoria /></OperadorGuard>} />
-              <Route path="/agente/vistoria" element={<OperadorGuard><AgenteVistoria /></OperadorGuard>} />
-              <Route path="/agente/reinspecao/:reinspecaoId" element={<OperadorGuard><AgenteReinspecao /></OperadorGuard>} />
+              <Route path="/agente/hoje" element={<AgenteGuard><AgenteHoje /></AgenteGuard>} />
+              <Route path="/agente/imoveis/:id" element={<AgenteGuard><FichaImovel360 /></AgenteGuard>} />
+              <Route path="/agente/vistoria/:imovelId" element={<AgenteGuard><AgenteVistoria /></AgenteGuard>} />
+              <Route path="/agente/vistoria" element={<AgenteGuard><AgenteVistoria /></AgenteGuard>} />
+              <Route path="/agente/reinspecao/:reinspecaoId" element={<AgenteGuard><AgenteReinspecao /></AgenteGuard>} />
               {/* Notificador — home + registro + consulta */}
               <Route path="/notificador" element={<NotificadorGuard><NotificadorHome /></NotificadorGuard>} />
               <Route path="/notificador/registrar" element={<NotificadorGuard><NotificadorRegistroCaso /></NotificadorGuard>} />

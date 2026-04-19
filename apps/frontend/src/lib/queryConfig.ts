@@ -11,7 +11,7 @@
  *
  * gcTime (garbage collection) separado do staleTime:
  *   É quanto tempo o cache permanece na memória depois que o componente desmonta.
- *   Aumentado para operadores em campo — permite que dados fiquem disponíveis
+ *   Aumentado para agentes em campo — permite que dados fiquem disponíveis
  *   quando o dispositivo perde conexão temporariamente.
  */
 
@@ -33,7 +33,7 @@ export const STALE = {
 
 export const GC = {
   DEFAULT:   5  * MIN,  //  5 min — padrão React Query
-  EXTENDED:  30 * MIN,  // 30 min — rotas de operador em campo (suporte offline)
+  EXTENDED:  30 * MIN,  // 30 min — rotas de agente em campo (suporte offline)
   LONG:      60 * MIN,  //  1 h   — configurações estáticas
 } as const;
 

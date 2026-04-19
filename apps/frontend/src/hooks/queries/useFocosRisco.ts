@@ -184,7 +184,7 @@ export function useEvidenciasFoco(
 
 // ── useFocosDoImovel ──────────────────────────────────────────────────────────
 
-/** Focos ativos vinculados a um imóvel — para alertar agente/operador em campo. */
+/** Focos ativos vinculados a um imóvel — para alertar agente em campo. */
 export function useFocosDoImovel(
   imovelId: string | null | undefined,
   clienteId: string | null | undefined,

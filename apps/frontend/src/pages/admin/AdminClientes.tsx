@@ -536,7 +536,7 @@ const AdminClientes = () => {
                       <Users className="w-3.5 h-3.5" /> Supervisor Inicial (obrigatório)
                     </p>
                     <p className="text-xs text-muted-foreground mb-2">
-                      Este usuário será o administrador local da prefeitura. Poderá gerenciar operadores e acompanhar a operação.
+                      Este usuário será o administrador local da prefeitura. Poderá gerenciar agentes e acompanhar a operação.
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                       <div className="space-y-0.5">

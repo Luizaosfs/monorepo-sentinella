@@ -16,7 +16,7 @@ import { ListHistoricoPorCliente } from './use-cases/list-historico-por-cliente'
 import { ListHistoricoPorLocalizacao } from './use-cases/list-historico-por-localizacao';
 import { GetLevantamento } from './use-cases/get-levantamento';
 import { ListItensMapa } from './use-cases/list-itens-mapa';
-import { ListItensPorOperador } from './use-cases/list-itens-por-operador';
+import { ListItensPorAgente } from './use-cases/list-itens-por-agente';
 import { PaginationLevantamento } from './use-cases/pagination-levantamento';
 import { RegistrarCheckin } from './use-cases/registrar-checkin';
 import { SaveLevantamento } from './use-cases/save-levantamento';
@@ -36,7 +36,7 @@ import { ItemStatusesByCliente } from './use-cases/item-statuses-by-cliente';
     GetItem,
     GetLevantamento,
     ListItensMapa,
-    ListItensPorOperador,
+    ListItensPorAgente,
     PaginationLevantamento,
     RegistrarCheckin,
     SaveLevantamento,

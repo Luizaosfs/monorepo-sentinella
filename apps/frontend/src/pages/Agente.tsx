@@ -28,7 +28,7 @@ import {
 } from 'recharts';
 import { SlaOperacional, SlaStatus, getSlaVisualStatus, getSlaLocalLabel, getTempoRestante } from '@/types/sla';
 import PullToRefresh from '@/components/PullToRefresh';
-import { ConcluirSlaDialog } from '@/components/operador/ConcluirSlaDialog';
+import { ConcluirSlaDialog } from '@/components/agente/ConcluirSlaDialog';
 import { cn } from '@/lib/utils';
 
 /* ── Visual helpers ── */
@@ -45,7 +45,7 @@ const visualIndicator: Record<string, { emoji: string; color: string }> = {
   expired: { emoji: '🔴', color: 'text-destructive' },
 };
 
-const OperadorPage = () => {
+const AgentePage = () => {
   const { usuario, isAdmin, isAdminOrSupervisor, papel } = useAuth();
   const { clienteId } = useClienteAtivo();
   const queryClient = useQueryClient();
@@ -609,4 +609,4 @@ function MetricCard({ title, value, icon: Icon, color }: {
   );
 }
 
-export default OperadorPage;
+export default AgentePage;
