@@ -6,7 +6,11 @@ import {
   YoloClassConfig,
   YoloSynonym,
 } from '@modules/risk-engine/entities/risk-engine';
-import { RiskEngineWriteRepository } from '@modules/risk-engine/repositories/risk-engine-write.repository';
+import {
+  RiskEngineWriteRepository,
+  ScoreConfigInput,
+} from '@modules/risk-engine/repositories/risk-engine-write.repository';
+import { ScoreConfig } from '@modules/risk-engine/repositories/risk-engine-read.repository';
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 
@@ -210,5 +214,71 @@ export class PrismaRiskEngineWriteRepository implements RiskEngineWriteRepositor
 
   async deleteYoloSynonym(id: string): Promise<void> {
     await this.prisma.client.sentinela_yolo_synonym.delete({ where: { id } });
+  }
+
+  async upsertScoreConfig(clienteId: string, data: ScoreConfigInput): Promise<ScoreConfig> {
+    const payload: Record<string, unknown> = { updated_at: new Date() };
+    if (data.pesoFocoSuspeito !== undefined) payload.peso_foco_suspeito = data.pesoFocoSuspeito;
+    if (data.pesoFocoConfirmado !== undefined) payload.peso_foco_confirmado = data.pesoFocoConfirmado;
+    if (data.pesoFocoEmTratamento !== undefined) payload.peso_foco_em_tratamento = data.pesoFocoEmTratamento;
+    if (data.pesoFocoRecorrente !== undefined) payload.peso_foco_recorrente = data.pesoFocoRecorrente;
+    if (data.pesoHistorico3focos !== undefined) payload.peso_historico_3focos = data.pesoHistorico3focos;
+    if (data.pesoCaso300m !== undefined) payload.peso_caso_300m = data.pesoCaso300m;
+    if (data.pesoChuvaAlta !== undefined) payload.peso_chuva_alta = data.pesoChuvaAlta;
+    if (data.pesoTemperatura30 !== undefined) payload.peso_temperatura_30 = data.pesoTemperatura30;
+    if (data.pesoDenunciaCidadao !== undefined) payload.peso_denuncia_cidadao = data.pesoDenunciaCidadao;
+    if (data.pesoImovelRecusa !== undefined) payload.peso_imovel_recusa = data.pesoImovelRecusa;
+    if (data.pesoSlaVencido !== undefined) payload.peso_sla_vencido = data.pesoSlaVencido;
+    if (data.pesoFocoResolvido !== undefined) payload.peso_foco_resolvido = data.pesoFocoResolvido;
+    if (data.pesoVistoriaNegativa !== undefined) payload.peso_vistoria_negativa = data.pesoVistoriaNegativa;
+    if (data.janelaResolucaoDias !== undefined) payload.janela_resolucao_dias = data.janelaResolucaoDias;
+    if (data.janelaVistoriaDias !== undefined) payload.janela_vistoria_dias = data.janelaVistoriaDias;
+    if (data.janelaCasoDias !== undefined) payload.janela_caso_dias = data.janelaCasoDias;
+    if (data.capFocos !== undefined) payload.cap_focos = data.capFocos;
+    if (data.capEpidemio !== undefined) payload.cap_epidemio = data.capEpidemio;
+    if (data.capHistorico !== undefined) payload.cap_historico = data.capHistorico;
+
+    const raw = await this.prisma.client.score_config.upsert({
+      where: { cliente_id: clienteId },
+      update: payload as any,
+      create: { cliente_id: clienteId, ...payload } as any,
+    });
+
+    return {
+      clienteId: raw.cliente_id,
+      pesoFocoSuspeito: raw.peso_foco_suspeito,
+      pesoFocoConfirmado: raw.peso_foco_confirmado,
+      pesoFocoEmTratamento: raw.peso_foco_em_tratamento,
+      pesoFocoRecorrente: raw.peso_foco_recorrente,
+      pesoHistorico3focos: raw.peso_historico_3focos,
+      pesoCaso300m: raw.peso_caso_300m,
+      pesoChuvaAlta: raw.peso_chuva_alta,
+      pesoTemperatura30: raw.peso_temperatura_30,
+      pesoDenunciaCidadao: raw.peso_denuncia_cidadao,
+      pesoImovelRecusa: raw.peso_imovel_recusa,
+      pesoSlaVencido: raw.peso_sla_vencido,
+      pesoFocoResolvido: raw.peso_foco_resolvido,
+      pesoVistoriaNegativa: raw.peso_vistoria_negativa,
+      janelaResolucaoDias: raw.janela_resolucao_dias,
+      janelaVistoriaDias: raw.janela_vistoria_dias,
+      janelaCasoDias: raw.janela_caso_dias,
+      capFocos: raw.cap_focos,
+      capEpidemio: raw.cap_epidemio,
+      capHistorico: raw.cap_historico,
+      updatedAt: raw.updated_at,
+    };
+  }
+
+  async enqueueScoreRecalculo(clienteId: string): Promise<void> {
+    await this.prisma.client.job_queue.create({
+      data: {
+        tipo: 'score-worker',
+        payload: { clienteId } as any,
+        status: 'pendente',
+        tentativas: 0,
+        max_tentativas: 3,
+        executar_em: new Date(),
+      },
+    });
   }
 }

@@ -1,8 +1,11 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  HttpCode,
   Param,
+  Patch,
   Post,
   Query,
   UseGuards,
@@ -19,9 +22,11 @@ import { Roles } from '@/decorators/roles.decorator';
 import { PluvioSchedulerService } from '@modules/pluvio/pluvio-scheduler.service';
 
 import { CreateJobBody, createJobSchema } from './dtos/create-job.body';
+import { CancelJob } from './use-cases/cancel-job';
 import { CreateJob } from './use-cases/create-job';
 import { FilterJob } from './use-cases/filter-job';
 import { GetJob } from './use-cases/get-job';
+import { RetryJob } from './use-cases/retry-job';
 import { JobViewModel } from './view-model/job';
 
 @UseGuards(TenantGuard)
@@ -34,6 +39,8 @@ export class JobController {
     private jobFilter: FilterJob,
     private jobGet: GetJob,
     private jobCreate: CreateJob,
+    private jobRetry: RetryJob,
+    private jobCancel: CancelJob,
     private pluvioScheduler: PluvioSchedulerService,
   ) {}
 
@@ -51,6 +58,23 @@ export class JobController {
   async getJob(@Param('id') id: string) {
     const { job } = await this.jobGet.execute(id);
     return job ? JobViewModel.toHttp(job) : null;
+  }
+
+  @Patch(':id/retry')
+  @Roles('admin')
+  @ApiOperation({ summary: 'Reiniciar job com status "falhou"' })
+  async retryJob(@Param('id') id: string) {
+    const { job } = await this.jobRetry.execute(id);
+    return JobViewModel.toHttp(job);
+  }
+
+  @Delete(':id')
+  @Roles('admin')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Cancelar job pendente ou em execução' })
+  async cancelJob(@Param('id') id: string) {
+    const { job } = await this.jobCancel.execute(id);
+    return JobViewModel.toHttp(job);
   }
 
   @Post('pluvio-risco-daily')

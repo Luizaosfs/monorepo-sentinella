@@ -8,6 +8,10 @@ import {
   YoloClassConfig,
   YoloSynonym,
 } from '../entities/risk-engine';
+import { ScoreConfig } from './risk-engine-read.repository';
+
+// Partial input for upsertScoreConfig — all pesos optional
+export type ScoreConfigInput = Partial<Omit<ScoreConfig, 'clienteId' | 'updatedAt'>>;
 
 @Injectable()
 export abstract class RiskEngineWriteRepository {
@@ -25,4 +29,8 @@ export abstract class RiskEngineWriteRepository {
   abstract saveYoloClass(config: YoloClassConfig): Promise<void>;
   abstract createYoloSynonym(synonym: YoloSynonym): Promise<YoloSynonym>;
   abstract deleteYoloSynonym(id: string): Promise<void>;
+
+  // Score
+  abstract upsertScoreConfig(clienteId: string, data: ScoreConfigInput): Promise<ScoreConfig>;
+  abstract enqueueScoreRecalculo(clienteId: string): Promise<void>;
 }

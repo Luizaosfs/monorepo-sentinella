@@ -9,6 +9,7 @@ import {
 import {
   AgenteStat,
   CentralKpis,
+  CicloDisponivel,
   ConsumoLarvicidaRow,
   DashboardReadRepository,
   ImovelParaHoje,
@@ -571,6 +572,29 @@ export class PrismaDashboardReadRepository implements DashboardReadRepository {
       slaMaisUrgente: r.sla_mais_urgente,
       prioridadeFocoAtivo: r.prioridade_foco_ativo,
       focosAtivosCount: Number(r.focos_ativos_count),
+    }));
+  }
+
+  async listCiclosDisponiveis(clienteId: string): Promise<CicloDisponivel[]> {
+    const rows = await this.prisma.client.ciclos.findMany({
+      where: { cliente_id: clienteId },
+      select: {
+        id: true,
+        numero: true,
+        ano: true,
+        status: true,
+        data_inicio: true,
+        data_fim_prevista: true,
+      },
+      orderBy: [{ ano: 'desc' }, { numero: 'desc' }],
+    });
+    return rows.map((r) => ({
+      id: r.id,
+      numero: r.numero,
+      ano: r.ano,
+      status: r.status,
+      dataInicio: r.data_inicio ?? null,
+      dataFimPrevista: r.data_fim_prevista ?? null,
     }));
   }
 }

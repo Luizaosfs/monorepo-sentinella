@@ -6,7 +6,11 @@ import {
   YoloClassConfig,
   YoloSynonym,
 } from '@modules/risk-engine/entities/risk-engine';
-import { RiskEngineReadRepository } from '@modules/risk-engine/repositories/risk-engine-read.repository';
+import {
+  RiskEngineReadRepository,
+  ScoreConfig,
+  ScoreImovel,
+} from '@modules/risk-engine/repositories/risk-engine-read.repository';
 import { Injectable } from '@nestjs/common';
 
 import { PrismaRepository } from '@/decorators/prisma-repository.decorator';
@@ -110,5 +114,66 @@ export class PrismaRiskEngineReadRepository implements RiskEngineReadRepository 
       orderBy: { synonym: 'asc' },
     });
     return rows.map((r) => PrismaYoloSynonymMapper.toDomain(r as any));
+  }
+
+  async findScoreByImovel(imovelId: string, clienteId: string): Promise<ScoreImovel | null> {
+    const raw = await this.prisma.client.territorio_score.findFirst({
+      where: { imovel_id: imovelId, cliente_id: clienteId },
+    });
+    return raw ? this.scoreToDto(raw as any) : null;
+  }
+
+  async findTopCriticos(clienteId: string, limit = 20): Promise<ScoreImovel[]> {
+    const rows = await this.prisma.client.territorio_score.findMany({
+      where: { cliente_id: clienteId },
+      orderBy: { score: 'desc' },
+      take: limit,
+    });
+    return rows.map((r) => this.scoreToDto(r as any));
+  }
+
+  async findScoreConfig(clienteId: string): Promise<ScoreConfig | null> {
+    const raw = await this.prisma.client.score_config.findFirst({
+      where: { cliente_id: clienteId },
+    });
+    return raw ? this.scoreConfigToDto(raw as any) : null;
+  }
+
+  private scoreToDto(r: any): ScoreImovel {
+    return {
+      clienteId: r.cliente_id,
+      imovelId: r.imovel_id,
+      score: Number(r.score),
+      classificacao: r.classificacao,
+      fatores: r.fatores as Record<string, unknown>,
+      calculadoEm: r.calculado_em,
+      updatedAt: r.updated_at,
+    };
+  }
+
+  private scoreConfigToDto(r: any): ScoreConfig {
+    return {
+      clienteId: r.cliente_id,
+      pesoFocoSuspeito: r.peso_foco_suspeito,
+      pesoFocoConfirmado: r.peso_foco_confirmado,
+      pesoFocoEmTratamento: r.peso_foco_em_tratamento,
+      pesoFocoRecorrente: r.peso_foco_recorrente,
+      pesoHistorico3focos: r.peso_historico_3focos,
+      pesoCaso300m: r.peso_caso_300m,
+      pesoChuvaAlta: r.peso_chuva_alta,
+      pesoTemperatura30: r.peso_temperatura_30,
+      pesoDenunciaCidadao: r.peso_denuncia_cidadao,
+      pesoImovelRecusa: r.peso_imovel_recusa,
+      pesoSlaVencido: r.peso_sla_vencido,
+      pesoFocoResolvido: r.peso_foco_resolvido,
+      pesoVistoriaNegativa: r.peso_vistoria_negativa,
+      janelaResolucaoDias: r.janela_resolucao_dias,
+      janelaVistoriaDias: r.janela_vistoria_dias,
+      janelaCasoDias: r.janela_caso_dias,
+      capFocos: r.cap_focos,
+      capEpidemio: r.cap_epidemio,
+      capHistorico: r.cap_historico,
+      updatedAt: r.updated_at,
+    };
   }
 }

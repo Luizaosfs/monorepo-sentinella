@@ -19,6 +19,16 @@ export interface SlaConfigInfo {
   config: Record<string, unknown>;
 }
 
+export interface ItemEvidencia {
+  id: string;
+  itemId: string;
+  url: string;
+  tipo: string | null;
+  legenda: string | null;
+  publicId: string | null;
+  createdAt: Date;
+}
+
 @Injectable()
 export abstract class LevantamentoReadRepository {
   abstract findById(id: string): Promise<Levantamento | null>;
@@ -40,4 +50,5 @@ export abstract class LevantamentoReadRepository {
     tipoEntrada: string,
   ): Promise<Levantamento | null>;
   abstract findSlaConfig(clienteId: string): Promise<SlaConfigInfo | null>;
+  abstract findItemEvidencias(itemId: string): Promise<ItemEvidencia[]>;
 }

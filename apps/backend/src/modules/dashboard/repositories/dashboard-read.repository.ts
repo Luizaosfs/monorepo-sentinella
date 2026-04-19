@@ -122,6 +122,17 @@ export abstract class DashboardReadRepository {
     clienteId: string,
     limit: number,
   ): Promise<ImovelParaHoje[]>;
+
+  abstract listCiclosDisponiveis(clienteId: string): Promise<CicloDisponivel[]>;
+}
+
+export interface CicloDisponivel {
+  id: string;
+  numero: number;
+  ano: number;
+  status: string;
+  dataInicio: Date | null;
+  dataFimPrevista: Date | null;
 }
 
 export interface CentralKpis {

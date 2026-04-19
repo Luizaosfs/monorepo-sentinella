@@ -1,8 +1,11 @@
 import {
   Body,
   Controller,
+  Get,
   Inject,
+  Param,
   Post,
+  Query,
   UseGuards,
   UseInterceptors,
   UsePipes,
@@ -50,6 +53,22 @@ export class IaController {
     private iaService: IaService,
     @Inject(REQUEST) private req: Request,
   ) {}
+
+  @Get('analise/:levantamentoId')
+  @Roles('admin', 'supervisor', 'analista_regional')
+  @ApiOperation({ summary: 'Buscar análise IA de um levantamento' })
+  async getAnalise(@Param('levantamentoId') levantamentoId: string) {
+    const clienteId = this.req['tenantId'] as string;
+    return this.iaService.getAnaliseByLevantamento(levantamentoId, clienteId);
+  }
+
+  @Get('insights')
+  @Roles('admin', 'supervisor', 'analista_regional')
+  @ApiOperation({ summary: 'Buscar insights regionais em cache (valido_ate > now)' })
+  async getInsights(@Query('tipo') tipo?: string) {
+    const clienteId = this.req['tenantId'] as string;
+    return this.iaService.getInsights(clienteId, tipo);
+  }
 
   @Post('identify-larva')
   @Roles('admin', 'supervisor', 'agente')

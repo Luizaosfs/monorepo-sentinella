@@ -16,15 +16,19 @@ import { AuditCleanupService } from './audit-cleanup.service';
 import { JobController } from './job.controller';
 import { JobScheduler } from './job.scheduler';
 import { ScoreWorkerService } from './score-worker.service';
+import { CancelJob } from './use-cases/cancel-job';
 import { CreateJob } from './use-cases/create-job';
 import { FilterJob } from './use-cases/filter-job';
 import { GetJob } from './use-cases/get-job';
+import { RetryJob } from './use-cases/retry-job';
 
 @Module({
   providers: [
     FilterJob,
     GetJob,
     CreateJob,
+    RetryJob,
+    CancelJob,
     JobScheduler,
     ScoreWorkerService,
     AuditCleanupService,

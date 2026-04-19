@@ -128,6 +128,61 @@ export class IaService {
     };
   }
 
+  async getAnaliseByLevantamento(
+    levantamentoId: string,
+    clienteId: string,
+  ): Promise<{ analise: Record<string, unknown> | null }> {
+    const raw = await this.prisma.client.levantamento_analise_ia.findFirst({
+      where: { levantamento_id: levantamentoId, cliente_id: clienteId },
+      orderBy: { processado_em: 'desc' },
+    });
+    if (!raw) return { analise: null };
+    return {
+      analise: {
+        id: raw.id,
+        levantamentoId: raw.levantamento_id,
+        clienteId: raw.cliente_id,
+        modelo: raw.modelo,
+        totalFocos: raw.total_focos,
+        totalClusters: raw.total_clusters,
+        falsosPositivos: raw.falsos_positivos,
+        sumario: raw.sumario,
+        status: raw.status,
+        erro: raw.erro,
+        processadoEm: raw.processado_em,
+        createdAt: raw.created_at,
+      },
+    };
+  }
+
+  async getInsights(
+    clienteId: string,
+    tipo?: string,
+  ): Promise<{ insights: Record<string, unknown>[] }> {
+    const now = new Date();
+    const rows = await this.prisma.client.ia_insights.findMany({
+      where: {
+        cliente_id: clienteId,
+        valido_ate: { gte: now },
+        ...(tipo && { tipo }),
+      },
+      orderBy: { created_at: 'desc' },
+      take: 20,
+    });
+    return {
+      insights: rows.map((r) => ({
+        id: r.id,
+        clienteId: r.cliente_id,
+        tipo: r.tipo,
+        texto: r.texto,
+        payload: r.payload,
+        modelo: r.modelo,
+        validoAte: r.valido_ate,
+        createdAt: r.created_at,
+      })),
+    };
+  }
+
   async triagemPosVoo(
     levantamentoId: string,
     clienteId: string,

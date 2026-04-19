@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
   Inject,
   Param,
   Post,
@@ -25,6 +26,7 @@ import {
   FilterRiskPolicyInput,
   filterRiskPolicySchema,
 } from './dtos/filter-risk-policy.input';
+import { ScoreConfigInput } from './repositories/risk-engine-write.repository';
 import {
   SaveDroneConfigBody,
   saveDroneConfigSchema,
@@ -195,5 +197,49 @@ export class RiskEngineController {
   async deleteYoloSynonym(@Param('id') id: string) {
     await this.writeRepository.deleteYoloSynonym(id);
     return { success: true };
+  }
+
+  // ── Score territorial ─────────────────────────────────────────────────────
+
+  @Get('score')
+  @Roles('admin', 'supervisor', 'analista_regional')
+  @ApiOperation({ summary: 'Top imóveis críticos por score territorial' })
+  async listTopCriticos(@Query('limit') limit?: string) {
+    const clienteId = this.req['tenantId'] as string;
+    return this.readRepository.findTopCriticos(clienteId, limit ? parseInt(limit, 10) : 20);
+  }
+
+  @Get('score/imovel/:imovelId')
+  @Roles('admin', 'supervisor', 'agente', 'analista_regional')
+  @ApiOperation({ summary: 'Score territorial de um imóvel' })
+  async getScoreImovel(@Param('imovelId') imovelId: string) {
+    const clienteId = this.req['tenantId'] as string;
+    return this.readRepository.findScoreByImovel(imovelId, clienteId);
+  }
+
+  @Get('score/config')
+  @Roles('admin', 'supervisor')
+  @ApiOperation({ summary: 'Configuração de pesos do score territorial' })
+  async getScoreConfig() {
+    const clienteId = this.req['tenantId'] as string;
+    return this.readRepository.findScoreConfig(clienteId);
+  }
+
+  @Put('score/config')
+  @Roles('admin', 'supervisor')
+  @ApiOperation({ summary: 'Atualizar configuração de pesos do score territorial' })
+  async upsertScoreConfig(@Body() body: ScoreConfigInput) {
+    const clienteId = this.req['tenantId'] as string;
+    return this.writeRepository.upsertScoreConfig(clienteId, body);
+  }
+
+  @Post('score/recalcular')
+  @Roles('admin', 'supervisor')
+  @HttpCode(202)
+  @ApiOperation({ summary: 'Enfileirar recálculo do score territorial' })
+  async forcarRecalculo() {
+    const clienteId = this.req['tenantId'] as string;
+    await this.writeRepository.enqueueScoreRecalculo(clienteId);
+    return { queued: true };
   }
 }

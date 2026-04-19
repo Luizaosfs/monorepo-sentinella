@@ -2,7 +2,10 @@ import { Injectable } from '@nestjs/common';
 
 import { AddItemEvidenciaBody } from '../dtos/add-item-evidencia.body';
 import { LevantamentoException } from '../errors/levantamento.exception';
-import { LevantamentoReadRepository } from '../repositories/levantamento-read.repository';
+import {
+  ItemEvidencia,
+  LevantamentoReadRepository,
+} from '../repositories/levantamento-read.repository';
 import { LevantamentoWriteRepository } from '../repositories/levantamento-write.repository';
 
 @Injectable()
@@ -17,5 +20,9 @@ export class AddItemEvidencia {
     if (!item) throw LevantamentoException.itemNotFound();
     const evidencia = await this.writeRepository.addItemEvidencia(itemId, input);
     return { evidencia };
+  }
+
+  async listEvidencias(itemId: string): Promise<ItemEvidencia[]> {
+    return this.readRepository.findItemEvidencias(itemId);
   }
 }

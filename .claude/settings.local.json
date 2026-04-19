@@ -54,7 +54,8 @@
       "Bash(pnpm build *)",
       "Bash(node_modules/.bin/nest build *)",
       "Bash(dir \"D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend\\\\dist\" /s /b)",
-      "Bash(node_modules/.bin/tsc -p tsconfig.build.json --noEmit)"
+      "Bash(node_modules/.bin/tsc -p tsconfig.build.json --noEmit)",
+      "Read(//tmp/**)"
     ]
   }
 }

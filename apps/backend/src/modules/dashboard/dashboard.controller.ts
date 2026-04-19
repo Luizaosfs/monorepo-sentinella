@@ -40,6 +40,7 @@ import { ResumoAgente } from './use-cases/resumo-agente';
 import { ResumoRegional } from './use-cases/resumo-regional';
 import { ScoreSurtoRegioes } from './use-cases/score-surto-regioes';
 import { DashboardViewModel } from './view-model/dashboard';
+import { DashboardReadRepository } from './repositories/dashboard-read.repository';
 import {
   ComparativoAgentesQuery,
   comparativoAgentesQuerySchema,
@@ -79,6 +80,7 @@ export class DashboardController {
     private scoreSurtoRegioesUc: ScoreSurtoRegioes,
     private resumoAgenteUc: ResumoAgente,
     private gerarRelatorioAnaliticoUc: GerarRelatorioAnalitico,
+    private dashboardRead: DashboardReadRepository,
     @Inject(REQUEST) private req: Request,
   ) {}
 
@@ -222,5 +224,25 @@ export class DashboardController {
   async resolverAlert(@Param('id') id: string) {
     await this.alertResolve.execute(id);
     return { resolved: true };
+  }
+
+  // ── LIRAa extras ──────────────────────────────────────────────────────────
+
+  @Get('ciclos-disponiveis')
+  @Roles('admin', 'supervisor', 'analista_regional')
+  @ApiOperation({ summary: 'Listar ciclos disponíveis do cliente' })
+  async ciclosDisponiveis() {
+    const clienteId = this.req['tenantId'] as string;
+    return this.dashboardRead.listCiclosDisponiveis(clienteId);
+  }
+
+  @Get('liraa/export')
+  @Roles('admin', 'supervisor', 'analista_regional')
+  @ApiOperation({ summary: 'Dados LIRAa estruturados para exportação (substitui exportarPdf)' })
+  async liraaExportData(@Query() query: LiraaQuery) {
+    const parsed = liraaQuerySchema.parse(query);
+    const clienteId = this.req['tenantId'] as string;
+    const result = await this.dashboardRead.calcularLiraa(clienteId, parsed.ciclo);
+    return result;
   }
 }

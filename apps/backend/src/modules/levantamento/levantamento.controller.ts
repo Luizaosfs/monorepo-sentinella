@@ -139,6 +139,13 @@ export class LevantamentoController {
     await this.deleteItem.execute(itemId);
   }
 
+  @Get('itens/:itemId/evidencias')
+  @Roles('admin', 'supervisor', 'agente')
+  @ApiOperation({ summary: 'Listar evidências fotográficas de um item' })
+  async listItemEvidencias(@Param('itemId') itemId: string) {
+    return this.addItemEvidencia.listEvidencias(itemId);
+  }
+
   @Post('itens/:itemId/evidencias')
   @Roles('admin', 'supervisor', 'agente')
   @ApiOperation({ summary: 'Adicionar evidência fotográfica ao item' })

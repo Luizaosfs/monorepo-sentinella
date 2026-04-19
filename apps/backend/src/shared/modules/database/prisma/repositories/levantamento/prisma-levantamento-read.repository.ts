@@ -5,6 +5,7 @@ import {
   LevantamentoPaginated,
 } from '@modules/levantamento/entities/levantamento';
 import {
+  ItemEvidencia,
   LevantamentoReadRepository,
   PlanejamentoInfo,
   SlaConfigInfo,
@@ -125,6 +126,22 @@ export class PrismaLevantamentoReadRepository implements LevantamentoReadReposit
       },
     });
     return raw ? PrismaLevantamentoMapper.toDomain(raw as any) : null;
+  }
+
+  async findItemEvidencias(itemId: string): Promise<ItemEvidencia[]> {
+    const rows = await this.prisma.client.levantamento_item_evidencias.findMany({
+      where: { item_id: itemId },
+      orderBy: { created_at: 'asc' },
+    });
+    return rows.map((r) => ({
+      id: r.id,
+      itemId: r.item_id,
+      url: r.url,
+      tipo: r.tipo ?? null,
+      legenda: r.legenda ?? null,
+      publicId: r.public_id ?? null,
+      createdAt: r.created_at,
+    }));
   }
 
   async findSlaConfig(clienteId: string): Promise<SlaConfigInfo | null> {
