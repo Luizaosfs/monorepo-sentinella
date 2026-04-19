@@ -3,7 +3,7 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 
 @Injectable()
-export class ListItensPorOperador {
+export class ListItensPorAgente {
   constructor(private prisma: PrismaService) {}
 
   execute(usuarioId: string) {

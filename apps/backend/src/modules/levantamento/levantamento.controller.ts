@@ -67,7 +67,7 @@ import { ItemStatusesByCliente } from './use-cases/item-statuses-by-cliente';
 import { ListHistoricoPorCliente } from './use-cases/list-historico-por-cliente';
 import { ListHistoricoPorLocalizacao } from './use-cases/list-historico-por-localizacao';
 import { ListItensMapa } from './use-cases/list-itens-mapa';
-import { ListItensPorOperador } from './use-cases/list-itens-por-operador';
+import { ListItensPorAgente } from './use-cases/list-itens-por-agente';
 import { RegistrarCheckin } from './use-cases/registrar-checkin';
 import { UpdateItem } from './use-cases/update-item';
 import { GetLevantamento } from './use-cases/get-levantamento';
@@ -91,7 +91,7 @@ export class LevantamentoController {
     private filterLevantamento: FilterLevantamento,
     private getItem: GetItem,
     private listItensMapa: ListItensMapa,
-    private listItensPorOperador: ListItensPorOperador,
+    private listItensPorAgente: ListItensPorAgente,
     private registrarCheckin: RegistrarCheckin,
     private getLevantamento: GetLevantamento,
     private paginationLevantamento: PaginationLevantamento,
@@ -132,11 +132,11 @@ export class LevantamentoController {
     };
   }
 
-  @Get('itens/por-operador')
+  @Get('itens/por-agente')
   @Roles('admin', 'supervisor', 'agente')
-  @ApiOperation({ summary: 'Listar itens de levantamento atribuídos a um operador' })
-  async listItensPorOperadorRoute(@Query('usuarioId') usuarioId: string) {
-    return this.listItensPorOperador.execute(usuarioId);
+  @ApiOperation({ summary: 'Listar itens de levantamento atribuídos a um agente' })
+  async listItensPorAgenteRoute(@Query('usuarioId') usuarioId: string) {
+    return this.listItensPorAgente.execute(usuarioId);
   }
 
   @Get('itens/mapa')
