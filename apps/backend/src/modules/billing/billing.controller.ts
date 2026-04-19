@@ -39,9 +39,13 @@ import { FilterCiclos } from './use-cases/filter-ciclos';
 import { FilterPlanos } from './use-cases/filter-planos';
 import { GetClientePlano } from './use-cases/get-cliente-plano';
 import { GetQuotas } from './use-cases/get-quotas';
-import { SavePlano } from './use-cases/save-plano';
-import { UpsertQuotas } from './use-cases/upsert-quotas';
+import { GetUltimoSnapshot } from './use-cases/get-ultimo-snapshot';
+import { ListBillingResumo } from './use-cases/list-billing-resumo';
+import { ListSnapshots } from './use-cases/list-snapshots';
 import { MeuUsoMensal } from './use-cases/meu-uso-mensal';
+import { SavePlano } from './use-cases/save-plano';
+import { TriggerSnapshot } from './use-cases/trigger-snapshot';
+import { UpsertQuotas } from './use-cases/upsert-quotas';
 import { UsoMensalTodos } from './use-cases/uso-mensal-todos';
 import { VerificarQuota } from './use-cases/verificar-quota';
 import {
@@ -69,8 +73,45 @@ export class BillingController {
     private meuUsoMensal: MeuUsoMensal,
     private usoMensalTodos: UsoMensalTodos,
     private verificarQuota: VerificarQuota,
+    private listBillingResumoUc: ListBillingResumo,
+    private listSnapshotsUc: ListSnapshots,
+    private getUltimoSnapshotUc: GetUltimoSnapshot,
+    private triggerSnapshotUc: TriggerSnapshot,
     @Inject(REQUEST) private req: Request,
   ) {}
+
+  // ── Snapshots ────────────────────────────────────────────────────────────
+
+  @Get('resumo')
+  @Roles('admin', 'supervisor')
+  @ApiOperation({ summary: 'Resumo de billing de todos os clientes (último snapshot por cliente)' })
+  async listResumo() {
+    return this.listBillingResumoUc.execute();
+  }
+
+  @Get('snapshots/ultimo')
+  @Roles('admin', 'supervisor')
+  @ApiOperation({ summary: 'Último snapshot de uso do cliente' })
+  async getUltimoSnapshot() {
+    const clienteId = this.req['tenantId'] as string;
+    return this.getUltimoSnapshotUc.execute(clienteId);
+  }
+
+  @Get('snapshots')
+  @Roles('admin', 'supervisor')
+  @ApiOperation({ summary: 'Histórico de snapshots de uso do cliente (últimos 12)' })
+  async listSnapshots() {
+    const clienteId = this.req['tenantId'] as string;
+    return this.listSnapshotsUc.execute(clienteId);
+  }
+
+  @Post('snapshots/trigger')
+  @Roles('admin', 'supervisor')
+  @ApiOperation({ summary: 'Gerar snapshot de billing imediato para o cliente' })
+  async triggerSnapshot() {
+    const clienteId = this.req['tenantId'] as string;
+    return this.triggerSnapshotUc.execute(clienteId);
+  }
 
   // ── Uso mensal ───────────────────────────────────────────────────────────
 

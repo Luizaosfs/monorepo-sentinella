@@ -18,7 +18,8 @@ export const systemHealth = {
   },
   resolverAlerta: (...args: Parameters<typeof _sb.systemHealth.resolverAlerta>): Promise<void> =>
     http.put(`/dashboard/alerts/${args[0]}/resolver`, {}),
-  triggerHealthCheck: async () => { throw new Error('[sem endpoint NestJS] systemHealth.triggerHealthCheck'); },
+  triggerHealthCheck: async (): Promise<Ret<typeof _sb.systemHealth.triggerHealthCheck>> =>
+    http.post('/dashboard/health/trigger', {}),
 };
 
 export const importLog = {
@@ -26,7 +27,11 @@ export const importLog = {
     const raw = await http.post('/import-log', deepToCamel(payload));
     return deepToSnake(raw) as Ret<typeof _sb.importLog.criar>;
   },
-  finalizar: async () => { throw new Error('[sem endpoint NestJS] importLog.finalizar'); },
+  finalizar: async (...args: Parameters<typeof _sb.importLog.finalizar>) => {
+    const [id, resultado] = args as [string, Record<string, unknown>];
+    const raw = await http.patch(`/import-log/${id}/finalizar`, deepToCamel(resultado));
+    return deepToSnake(raw) as Ret<typeof _sb.importLog.finalizar>;
+  },
   listarByCliente: async (clienteId: string) => {
     const raw = await http.get(`/import-log${qs({ clienteId })}`);
     return deepToSnake(raw) as Ret<typeof _sb.importLog.listarByCliente>;
@@ -34,10 +39,20 @@ export const importLog = {
 };
 
 export const cnesSync = {
-  sincronizarManual: async () => { throw new Error('[sem endpoint NestJS] cnesSync.sincronizarManual'); },
-  listarControle: async () => { throw new Error('[sem endpoint NestJS] cnesSync.listarControle'); },
-  listarLog: async () => { throw new Error('[sem endpoint NestJS] cnesSync.listarLog'); },
-  emAndamento: async () => { throw new Error('[sem endpoint NestJS] cnesSync.emAndamento'); },
+  sincronizarManual: async (_clienteId?: string): Promise<Ret<typeof _sb.cnesSync.sincronizarManual>> =>
+    http.post('/cnes/sincronizar', {}),
+  listarControle: async (_clienteId?: string) => {
+    const raw = await http.get('/cnes/controle');
+    return deepToSnake(raw) as Ret<typeof _sb.cnesSync.listarControle>;
+  },
+  listarLog: async (_clienteId?: string) => {
+    const raw = await http.get('/cnes/log');
+    return deepToSnake(raw) as Ret<typeof _sb.cnesSync.listarLog>;
+  },
+  emAndamento: async (_clienteId?: string) => {
+    const raw = await http.get('/cnes/em-andamento');
+    return deepToSnake(raw) as Ret<typeof _sb.cnesSync.emAndamento>;
+  },
 };
 
 export const offlineSyncLog = {

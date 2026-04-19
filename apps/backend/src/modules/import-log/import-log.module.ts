@@ -5,11 +5,12 @@ import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 
 import { ImportLogController } from './import-log.controller';
 import { CreateImport } from './use-cases/create-import';
+import { FinalizarImport } from './use-cases/finalizar-import';
 import { FilterImports } from './use-cases/filter-imports';
 import { GetImport } from './use-cases/get-import';
 
 @Module({
-  providers: [CreateImport, FilterImports, GetImport, JwtService, PrismaService],
+  providers: [CreateImport, FilterImports, GetImport, FinalizarImport, JwtService, PrismaService],
   controllers: [ImportLogController],
   imports: [DatabaseModule],
 })

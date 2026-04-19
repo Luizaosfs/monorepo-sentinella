@@ -1,10 +1,12 @@
+import { REQUEST } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import { mock } from 'jest-mock-extended';
 
+import { expectHttpException } from '@test/utils/expect-http-exception';
+import { mockRequest } from '@test/utils/user-helpers';
+
 import { OperacaoException } from '../../errors/operacao.exception';
 import { OperacaoReadRepository } from '../../repositories/operacao-read.repository';
-import { expectHttpException } from '@test/utils/expect-http-exception';
-
 import { GetOperacao } from '../get-operacao';
 import { OperacaoBuilder } from './builders/operacao.builder';
 
@@ -15,7 +17,11 @@ describe('GetOperacao', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
-      providers: [GetOperacao, { provide: OperacaoReadRepository, useValue: readRepo }],
+      providers: [
+        GetOperacao,
+        { provide: OperacaoReadRepository, useValue: readRepo },
+        { provide: REQUEST, useValue: mockRequest() },
+      ],
     }).compile();
     useCase = module.get<GetOperacao>(GetOperacao);
   });

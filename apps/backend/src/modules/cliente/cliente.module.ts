@@ -8,9 +8,13 @@ import { CreateCliente } from './use-cases/create-cliente';
 import { FilterCliente } from './use-cases/filter-cliente';
 import { GetCliente } from './use-cases/get-cliente';
 import { GetIntegracaoApiKey } from './use-cases/get-integracao-api-key';
+import { GetIntegracoes } from './use-cases/get-integracoes';
 import { PaginationCliente } from './use-cases/pagination-cliente';
 import { ResolverPorCoordenada } from './use-cases/resolver-por-coordenada';
 import { SaveCliente } from './use-cases/save-cliente';
+import { TestarIntegracao } from './use-cases/testar-integracao';
+import { UpdateIntegracaoMeta } from './use-cases/update-integracao-meta';
+import { UpsertIntegracao } from './use-cases/upsert-integracao';
 
 @Module({
   providers: [
@@ -21,6 +25,10 @@ import { SaveCliente } from './use-cases/save-cliente';
     SaveCliente,
     ResolverPorCoordenada,
     GetIntegracaoApiKey,
+    GetIntegracoes,
+    UpsertIntegracao,
+    UpdateIntegracaoMeta,
+    TestarIntegracao,
     JwtService,
     PrismaService,
   ],

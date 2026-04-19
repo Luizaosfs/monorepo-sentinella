@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Inject,
   Param,
   Post,
   Put,
@@ -11,6 +12,7 @@ import {
   UseInterceptors,
   UsePipes,
 } from '@nestjs/common';
+import { REQUEST } from '@nestjs/core';
 import { z } from 'zod';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
@@ -37,10 +39,20 @@ import { SaveClienteBody, saveClienteSchema } from './dtos/save-cliente.body';
 import { CreateCliente } from './use-cases/create-cliente';
 import { FilterCliente } from './use-cases/filter-cliente';
 import { GetCliente } from './use-cases/get-cliente';
+import {
+  UpdateIntegracaoMetaBody,
+  updateIntegracaoMetaSchema,
+  UpsertIntegracaoBody,
+  upsertIntegracaoSchema,
+} from './dtos/integracao.body';
 import { GetIntegracaoApiKey } from './use-cases/get-integracao-api-key';
+import { GetIntegracoes } from './use-cases/get-integracoes';
 import { PaginationCliente } from './use-cases/pagination-cliente';
 import { ResolverPorCoordenada } from './use-cases/resolver-por-coordenada';
 import { SaveCliente } from './use-cases/save-cliente';
+import { TestarIntegracao } from './use-cases/testar-integracao';
+import { UpdateIntegracaoMeta } from './use-cases/update-integracao-meta';
+import { UpsertIntegracao } from './use-cases/upsert-integracao';
 import { ClienteViewModel } from './view-model/cliente';
 
 @UseGuards(TenantGuard)
@@ -57,6 +69,11 @@ export class ClienteController {
     private saveCliente: SaveCliente,
     private resolverPorCoordenada: ResolverPorCoordenada,
     private getIntegracaoApiKey: GetIntegracaoApiKey,
+    private getIntegracoesUc: GetIntegracoes,
+    private upsertIntegracaoUc: UpsertIntegracao,
+    private updateIntegracaoMetaUc: UpdateIntegracaoMeta,
+    private testarIntegracaoUc: TestarIntegracao,
+    @Inject(REQUEST) private req: Request,
   ) {}
 
   @Get('resolver-coordenada')
@@ -77,6 +94,40 @@ export class ClienteController {
   async getApiKey(@Param('id') id: string) {
     const { integracao } = await this.getIntegracaoApiKey.execute(id);
     return integracao;
+  }
+
+  @Get('integracoes')
+  @Roles('admin', 'supervisor')
+  @ApiOperation({ summary: 'Listar integrações do cliente (sem api_key)' })
+  async getIntegracoes() {
+    const clienteId = this.req['tenantId'] as string;
+    return this.getIntegracoesUc.execute(clienteId);
+  }
+
+  @Post('integracoes')
+  @Roles('admin', 'supervisor')
+  @ApiOperation({ summary: 'Criar ou atualizar integração do cliente (upsert por tipo)' })
+  async upsertIntegracao(@Body() body: UpsertIntegracaoBody) {
+    const clienteId = this.req['tenantId'] as string;
+    const parsed = upsertIntegracaoSchema.parse(body);
+    return this.upsertIntegracaoUc.execute(clienteId, parsed);
+  }
+
+  @Put('integracoes/:id/meta')
+  @Roles('admin', 'supervisor')
+  @ApiOperation({ summary: 'Atualizar metadados de uma integração (sem alterar api_key)' })
+  async updateIntegracaoMeta(@Param('id') id: string, @Body() body: UpdateIntegracaoMetaBody) {
+    const clienteId = this.req['tenantId'] as string;
+    const parsed = updateIntegracaoMetaSchema.parse(body);
+    return this.updateIntegracaoMetaUc.execute(id, clienteId, parsed);
+  }
+
+  @Post('integracoes/testar')
+  @Roles('admin')
+  @ApiOperation({ summary: 'Testar conectividade da integração ativa do cliente' })
+  async testarIntegracao() {
+    const clienteId = this.req['tenantId'] as string;
+    return this.testarIntegracaoUc.execute(clienteId);
   }
 
   @Get()

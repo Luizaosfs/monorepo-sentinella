@@ -91,10 +91,10 @@ describe('CreateVistoria', () => {
     );
   });
 
-  it('deve usar clienteId explícito quando enviado no body', async () => {
+  it('deve usar clienteId do tenant (MT-02) mesmo quando clienteId é enviado no body', async () => {
     const created = new VistoriaBuilder()
       .withId('00000000-0000-4000-8000-0000000000a2')
-      .withClienteId('00000000-0000-4000-8000-000000009999')
+      .withClienteId('00000000-0000-4000-8000-000000000001')
       .build();
     writeRepo.create.mockResolvedValue(created);
     readRepo.findByIdComDetalhes.mockResolvedValue(created);
@@ -106,7 +106,7 @@ describe('CreateVistoria', () => {
 
     expect(writeRepo.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        clienteId: '00000000-0000-4000-8000-000000009999',
+        clienteId: '00000000-0000-4000-8000-000000000001',
       }),
     );
   });

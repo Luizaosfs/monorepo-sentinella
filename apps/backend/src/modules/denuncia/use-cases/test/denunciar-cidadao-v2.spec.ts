@@ -80,7 +80,8 @@ describe('DenunciarCidadaoV2', () => {
   });
 
   it('cliente inativo / não encontrado — lança NotFoundException', async () => {
-    const prisma = makePrisma({ clienteResult: null });
+    // null (não undefined) para contornar o default de destructuring do makePrisma
+    const prisma = makePrisma({ clienteResult: null as any });
     const useCase = new DenunciarCidadaoV2(prisma);
 
     await expect(useCase.execute(makeInput(), 'ip-hash-abc')).rejects.toBeInstanceOf(

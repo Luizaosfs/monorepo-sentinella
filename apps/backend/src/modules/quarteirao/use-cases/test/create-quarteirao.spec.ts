@@ -27,31 +27,17 @@ describe('CreateQuarteirao', () => {
     useCase = module.get<CreateQuarteirao>(CreateQuarteirao);
   });
 
-  it('deve criar quarteirão com ativo=true padrão e usar clienteId do input ou fallback tenant', async () => {
-    const fromInput = new QuarteiraoBuilder()
-      .withClienteId('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')
-      .build();
-    writeRepo.createQuarteirao.mockResolvedValue(fromInput);
+  it('deve criar quarteirão com ativo=true padrão usando clienteId do tenant (MT-02)', async () => {
+    const q = new QuarteiraoBuilder().build();
+    writeRepo.createQuarteirao.mockResolvedValue(q);
 
-    await useCase.execute({
-      clienteId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
-      codigo: 'Q99',
-    });
+    await useCase.execute({ codigo: 'Q99' });
 
     expect(writeRepo.createQuarteirao).toHaveBeenCalledWith(
       expect.objectContaining({
-        clienteId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+        clienteId: 'test-cliente-id',
         ativo: true,
       }),
-    );
-
-    const fallback = new QuarteiraoBuilder().build();
-    writeRepo.createQuarteirao.mockResolvedValue(fallback);
-
-    await useCase.execute({ codigo: 'Q1' });
-
-    expect(writeRepo.createQuarteirao).toHaveBeenCalledWith(
-      expect.objectContaining({ clienteId: 'test-cliente-id' }),
     );
   });
 

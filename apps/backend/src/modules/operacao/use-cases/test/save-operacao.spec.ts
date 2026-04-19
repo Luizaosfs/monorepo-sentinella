@@ -1,12 +1,14 @@
+import { REQUEST } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import { mock } from 'jest-mock-extended';
+
+import { expectHttpException } from '@test/utils/expect-http-exception';
+import { mockRequest } from '@test/utils/user-helpers';
 
 import { SaveOperacaoBody } from '../../dtos/save-operacao.body';
 import { OperacaoException } from '../../errors/operacao.exception';
 import { OperacaoReadRepository } from '../../repositories/operacao-read.repository';
 import { OperacaoWriteRepository } from '../../repositories/operacao-write.repository';
-import { expectHttpException } from '@test/utils/expect-http-exception';
-
 import { SaveOperacao } from '../save-operacao';
 import { OperacaoBuilder } from './builders/operacao.builder';
 
@@ -23,6 +25,7 @@ describe('SaveOperacao', () => {
         SaveOperacao,
         { provide: OperacaoReadRepository, useValue: readRepo },
         { provide: OperacaoWriteRepository, useValue: writeRepo },
+        { provide: REQUEST, useValue: mockRequest() },
       ],
     }).compile();
     useCase = module.get<SaveOperacao>(SaveOperacao);

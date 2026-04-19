@@ -43,7 +43,7 @@ describe('PaginationVistoria', () => {
     useCase = await createModule();
   });
 
-  it('deve usar clienteId do filtro quando fornecido', async () => {
+  it('deve usar clienteId do tenant (MT-02) ignorando clienteId do filtro', async () => {
     useCase = await createModule(mockRequest({ tenantId: OTHER_TENANT }));
     const items = [new VistoriaBuilder().build()];
     const paginated = {
@@ -61,7 +61,7 @@ describe('PaginationVistoria', () => {
 
     expect(result).toBe(paginated);
     expect(readRepo.findPaginated).toHaveBeenCalledWith(
-      { clienteId: EXPLICIT_CLIENTE, ciclo: 2 },
+      { clienteId: OTHER_TENANT, ciclo: 2 },
       pagination,
     );
   });

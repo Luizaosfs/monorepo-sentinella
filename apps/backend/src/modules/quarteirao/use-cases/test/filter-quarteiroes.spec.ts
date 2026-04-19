@@ -26,23 +26,15 @@ describe('FilterQuarteiroes', () => {
     useCase = module.get<FilterQuarteiroes>(FilterQuarteiroes);
   });
 
-  it('deve usar clienteId do filtro ou fallback tenant e delegar ao findAllQuarteiroes', async () => {
+  it('deve usar clienteId do tenant (MT-02) e delegar ao findAllQuarteiroes', async () => {
     const list = [new QuarteiraoBuilder().build()];
     readRepo.findAllQuarteiroes.mockResolvedValue(list);
 
-    const withFilter = await useCase.execute({
-      clienteId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
-    });
-    expect(readRepo.findAllQuarteiroes).toHaveBeenCalledWith(
-      expect.objectContaining({ clienteId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' }),
-    );
-    expect(withFilter.quarteiroes).toEqual(list);
-
-    readRepo.findAllQuarteiroes.mockResolvedValue(list);
-    await useCase.execute({});
+    const result = await useCase.execute({});
     expect(readRepo.findAllQuarteiroes).toHaveBeenCalledWith(
       expect.objectContaining({ clienteId: 'test-cliente-id' }),
     );
+    expect(result.quarteiroes).toEqual(list);
   });
 
   it('deve rejeitar non-admin acessando outro tenant', async () => {

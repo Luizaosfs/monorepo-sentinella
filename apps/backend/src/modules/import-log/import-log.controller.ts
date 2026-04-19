@@ -2,15 +2,19 @@ import {
   Body,
   Controller,
   Get,
+  Inject,
   Param,
+  Patch,
   Post,
   Query,
   UseGuards,
   UseInterceptors,
   UsePipes,
 } from '@nestjs/common';
+import { REQUEST } from '@nestjs/core';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
+import { Request } from 'express';
 import { TenantGuard } from 'src/guards/tenant.guard';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 
@@ -21,10 +25,15 @@ import {
   createImportLogSchema,
 } from './dtos/create-import-log.body';
 import {
+  FinalizarImportBody,
+  finalizarImportSchema,
+} from './dtos/finalizar-import.body';
+import {
   FilterImportLogInput,
   filterImportLogSchema,
 } from './dtos/filter-import-log.input';
 import { CreateImport } from './use-cases/create-import';
+import { FinalizarImport } from './use-cases/finalizar-import';
 import { FilterImports } from './use-cases/filter-imports';
 import { GetImport } from './use-cases/get-import';
 import { ImportLogViewModel } from './view-model/import-log';
@@ -39,6 +48,8 @@ export class ImportLogController {
     private filterImports: FilterImports,
     private createImport: CreateImport,
     private getImport: GetImport,
+    private finalizarImportUc: FinalizarImport,
+    @Inject(REQUEST) private req: Request,
   ) {}
 
   @Get()
@@ -67,5 +78,14 @@ export class ImportLogController {
     const parsed = createImportLogSchema.parse(body);
     const { importLog } = await this.createImport.execute(parsed);
     return ImportLogViewModel.toHttp(importLog);
+  }
+
+  @Patch(':id/finalizar')
+  @Roles('admin', 'supervisor', 'agente')
+  @ApiOperation({ summary: 'Finalizar log de importação com totais e status' })
+  async finalizar(@Param('id') id: string, @Body() body: FinalizarImportBody) {
+    const clienteId = this.req['tenantId'] as string;
+    const parsed = finalizarImportSchema.parse(body);
+    return this.finalizarImportUc.execute(id, clienteId, parsed);
   }
 }

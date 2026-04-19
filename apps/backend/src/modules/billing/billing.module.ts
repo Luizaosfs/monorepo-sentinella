@@ -13,7 +13,11 @@ import { GetClientePlano } from './use-cases/get-cliente-plano';
 import { GetQuotas } from './use-cases/get-quotas';
 import { SavePlano } from './use-cases/save-plano';
 import { UpsertQuotas } from './use-cases/upsert-quotas';
+import { GetUltimoSnapshot } from './use-cases/get-ultimo-snapshot';
+import { ListBillingResumo } from './use-cases/list-billing-resumo';
+import { ListSnapshots } from './use-cases/list-snapshots';
 import { MeuUsoMensal } from './use-cases/meu-uso-mensal';
+import { TriggerSnapshot } from './use-cases/trigger-snapshot';
 import { UsoMensalTodos } from './use-cases/uso-mensal-todos';
 import { BillingSchedulerService } from './billing-scheduler.service';
 import { VerificarQuota } from './use-cases/verificar-quota';
@@ -32,6 +36,10 @@ import { VerificarQuota } from './use-cases/verificar-quota';
     MeuUsoMensal,
     UsoMensalTodos,
     VerificarQuota,
+    ListBillingResumo,
+    ListSnapshots,
+    GetUltimoSnapshot,
+    TriggerSnapshot,
     BillingSchedulerService,
     JwtService,
     PrismaService,

@@ -216,8 +216,9 @@ export class DroneController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Importar voos em lote (chunks de 50, skipDuplicates)' })
   async bulkCreateVoos(@Body() body: BulkCreateVoosBody) {
+    const clienteId = this.req['tenantId'] as string;
     const parsed = bulkCreateVoosSchema.parse(body);
-    return this.vooBulkCreate.execute(parsed);
+    return this.vooBulkCreate.execute(clienteId, parsed);
   }
 
   // ── YOLO Feedback ─────────────────────────────────────────────────────────

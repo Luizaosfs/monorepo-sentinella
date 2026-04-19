@@ -18,10 +18,22 @@ export const billing = {
     const raw = await http.get(`/billing/ciclos${qs({ clienteId })}`);
     return deepToSnake(raw) as Ret<typeof _sb.billing.listCiclos>;
   },
-  listResumo: async () => { throw new Error('[sem endpoint NestJS] billing.listResumo'); },
-  listSnapshots: async () => { throw new Error('[sem endpoint NestJS] billing.listSnapshots'); },
-  getUltimoSnapshot: async () => { throw new Error('[sem endpoint NestJS] billing.getUltimoSnapshot'); },
-  triggerSnapshot: async () => { throw new Error('[sem endpoint NestJS] billing.triggerSnapshot'); },
+  listResumo: async () => {
+    const raw = await http.get('/billing/resumo');
+    return deepToSnake(raw) as Ret<typeof _sb.billing.listResumo>;
+  },
+  listSnapshots: async () => {
+    const raw = await http.get('/billing/snapshots');
+    return deepToSnake(raw) as Ret<typeof _sb.billing.listSnapshots>;
+  },
+  getUltimoSnapshot: async () => {
+    const raw = await http.get('/billing/snapshots/ultimo');
+    return raw ? (deepToSnake(raw) as Ret<typeof _sb.billing.getUltimoSnapshot>) : null;
+  },
+  triggerSnapshot: async () => {
+    const raw = await http.post('/billing/snapshots/trigger', {});
+    return deepToSnake(raw) as Ret<typeof _sb.billing.triggerSnapshot>;
+  },
 };
 
 export const quotas = {

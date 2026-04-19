@@ -63,6 +63,7 @@ import { GetReincidenciaSazonalidade } from './use-cases/get-reincidencia-sazona
 
 // Eficácia
 import { GetEficaciaTratamento } from './use-cases/get-eficacia-tratamento';
+import { TriggerHealthCheck } from './use-cases/trigger-health-check';
 
 @Module({
   providers: [
@@ -114,6 +115,7 @@ import { GetEficaciaTratamento } from './use-cases/get-eficacia-tratamento';
     GetReincidenciaSazonalidade,
     // Eficácia
     GetEficaciaTratamento,
+    TriggerHealthCheck,
   ],
   controllers: [
     DashboardController,

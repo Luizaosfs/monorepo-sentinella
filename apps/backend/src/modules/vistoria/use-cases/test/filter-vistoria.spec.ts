@@ -34,7 +34,7 @@ describe('FilterVistoria', () => {
     useCase = await createModule();
   });
 
-  it('deve usar clienteId do filtro quando fornecido', async () => {
+  it('deve usar clienteId do tenant (MT-02) ignorando clienteId do filtro', async () => {
     useCase = await createModule(mockRequest({ tenantId: OTHER_TENANT }));
     const list = [new VistoriaBuilder().build()];
     readRepo.findAll.mockResolvedValue(list);
@@ -46,7 +46,7 @@ describe('FilterVistoria', () => {
 
     expect(result.vistorias).toBe(list);
     expect(readRepo.findAll).toHaveBeenCalledWith({
-      clienteId: EXPLICIT_CLIENTE,
+      clienteId: OTHER_TENANT,
       status: 'pendente',
     });
   });

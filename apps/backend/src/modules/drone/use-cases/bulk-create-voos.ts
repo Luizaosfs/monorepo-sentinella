@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 import { BulkCreateVoosInput } from '../dtos/drone-yolo.body';
+import { DroneException } from '../errors/drone.exception';
 
 const CHUNK = 50;
 
@@ -8,7 +9,18 @@ const CHUNK = 50;
 export class BulkCreateVoos {
   constructor(private prisma: PrismaService) {}
 
-  async execute(input: BulkCreateVoosInput): Promise<{ importados: number }> {
+  async execute(clienteId: string, input: BulkCreateVoosInput): Promise<{ importados: number }> {
+    const planIds = Array.from(new Set(
+      input.rows.map(r => r.planejamentoId).filter(Boolean) as string[],
+    ));
+
+    if (planIds.length > 0) {
+      const ownedCount = await this.prisma.client.planejamento.count({
+        where: { id: { in: planIds }, cliente_id: clienteId, deleted_at: null },
+      });
+      if (ownedCount !== planIds.length) throw DroneException.forbidden();
+    }
+
     let importados = 0;
     for (let i = 0; i < input.rows.length; i += CHUNK) {
       const chunk = input.rows.slice(i, i + CHUNK);

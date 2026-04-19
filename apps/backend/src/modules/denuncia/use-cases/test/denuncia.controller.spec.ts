@@ -1,7 +1,8 @@
 import { Test } from '@nestjs/testing';
 import { DenunciaController } from '../../denuncia.controller';
-import { DenunciarCidadao } from '../denunciar-cidadao';
 import { ConsultarDenuncia } from '../consultar-denuncia';
+import { DenunciarCidadao } from '../denunciar-cidadao';
+import { DenunciarCidadaoV2 } from '../denunciar-cidadao-v2';
 import { Reflector } from '@nestjs/core';
 
 describe('DenunciaController', () => {
@@ -15,6 +16,7 @@ describe('DenunciaController', () => {
       controllers: [DenunciaController],
       providers: [
         { provide: DenunciarCidadao, useValue: { execute: mockDenunciar } },
+        { provide: DenunciarCidadaoV2, useValue: { execute: jest.fn() } },
         { provide: ConsultarDenuncia, useValue: { execute: mockConsultar } },
         Reflector,
       ],
@@ -28,7 +30,7 @@ describe('DenunciaController', () => {
       slug: 'sao-paulo',
       descricao: 'Poco com larvas',
     } as any;
-    const result = await controller.denunciar(body);
+    const result = await controller.denunciar(body, {} as any);
     expect(result).toEqual({ protocolo: 'abc12345', id: 'foco-id' });
     // authId nao deve ser passado — execute chamado com apenas 1 argumento
     expect(mockDenunciar).toHaveBeenCalledWith(expect.any(Object));

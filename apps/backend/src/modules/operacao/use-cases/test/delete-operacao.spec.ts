@@ -16,10 +16,11 @@ describe('DeleteOperacao', () => {
   const readRepo = mock<OperacaoReadRepository>();
   const writeRepo = mock<OperacaoWriteRepository>();
 
-  const req = () => ({
-    ...mockRequest({ tenantId: 'test-cliente-id' }),
-    userId: 'deleter-user-id',
-  });
+  const req = () =>
+    mockRequest({
+      tenantId: 'test-cliente-id',
+      user: { id: 'deleter-user-id', email: 'del@test.com', nome: 'Deleter', clienteId: 'test-cliente-id', papeis: ['admin'] },
+    });
 
   beforeEach(async () => {
     jest.clearAllMocks();

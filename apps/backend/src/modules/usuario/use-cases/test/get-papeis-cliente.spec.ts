@@ -19,8 +19,8 @@ describe('GetPapeisCliente', () => {
 
   it('deve retornar papéis de um cliente via readRepository.findPapeisCliente', async () => {
     const papeis = [
-      { usuarioId: 'u1', papel: 'agente' },
-      { usuarioId: 'u2', papel: 'supervisor' },
+      { usuario_id: 'u1', papel: 'agente' },
+      { usuario_id: 'u2', papel: 'supervisor' },
     ];
     readRepo.findPapeisCliente.mockResolvedValue(papeis);
 
