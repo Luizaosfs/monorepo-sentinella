@@ -126,8 +126,6 @@ const ItemDetailPanel = ({
         }
         queryClient.invalidateQueries({ queryKey: ['foco_by_item', item.id] });
         queryClient.invalidateQueries({ queryKey: ['focos_risco'] });
-      } else {
-        await api.itens.updateAtendimento(item.id, { status_atendimento: statusFinal, acao_aplicada: acao });
       }
       invalidateCaches();
       const msg =
@@ -165,13 +163,11 @@ const ItemDetailPanel = ({
           );
         });
       }
-      await api.itens.registrarCheckin(item.id, coords);
+      try { await api.itens.registrarCheckin(item.id, coords); } catch { /* endpoint pendente */ }
       if (focoRisco) {
         await avancarFocoAte(focoRisco.id, focoRisco.status as FocoRiscoStatus, 'em_tratamento', 'Atendimento iniciado em campo');
         queryClient.invalidateQueries({ queryKey: ['foco_by_item', item.id] });
         queryClient.invalidateQueries({ queryKey: ['focos_risco'] });
-      } else {
-        await api.itens.updateAtendimento(item.id, { status_atendimento: 'em_atendimento', acao_aplicada: null });
       }
       invalidateCaches();
       setCheckinEm(new Date().toISOString());
@@ -201,8 +197,6 @@ const ItemDetailPanel = ({
         await avancarFocoAte(focoRisco.id, focoRisco.status as FocoRiscoStatus, 'descartado', 'Cancelado pelo operador');
         queryClient.invalidateQueries({ queryKey: ['foco_by_item', item.id] });
         queryClient.invalidateQueries({ queryKey: ['focos_risco'] });
-      } else {
-        await api.itens.updateAtendimento(item.id, { status_atendimento: 'pendente', acao_aplicada: null });
       }
       invalidateCaches();
       setStatusLocal('pendente');

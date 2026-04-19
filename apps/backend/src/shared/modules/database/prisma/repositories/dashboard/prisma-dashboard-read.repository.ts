@@ -13,6 +13,7 @@ import {
   ConsumoLarvicidaRow,
   DashboardReadRepository,
   ImovelParaHoje,
+  LiraaQuarteiraoRow,
   LiraaResult,
   ResumoAgenteResult,
   ResumoRegionalRow,
@@ -596,5 +597,102 @@ export class PrismaDashboardReadRepository implements DashboardReadRepository {
       dataInicio: r.data_inicio ?? null,
       dataFimPrevista: r.data_fim_prevista ?? null,
     }));
+  }
+
+  async listLiraaByQuarteirao(
+    clienteId: string,
+    ciclo?: number,
+  ): Promise<LiraaQuarteiraoRow[]> {
+    const cicloFilter =
+      ciclo !== undefined ? Prisma.sql`AND v.ciclo = ${ciclo}` : Prisma.sql``;
+
+    type Row = {
+      ciclo: number;
+      bairro: string | null;
+      quarteirao: string | null;
+      imoveis_inspecionados: bigint;
+      imoveis_positivos: bigint;
+      depositos_positivos: bigint;
+      total_focos: bigint;
+      focos_a1: bigint;
+      focos_a2: bigint;
+      focos_b: bigint;
+      focos_c: bigint;
+      focos_d1: bigint;
+      focos_d2: bigint;
+      focos_e: bigint;
+      larvicida_total_g: number | null;
+    };
+
+    const rows = await this.prisma.client.$queryRaw<Row[]>`
+      SELECT
+        v.ciclo,
+        i.bairro,
+        i.quarteirao,
+        COUNT(DISTINCT v.id) FILTER (WHERE v.acesso_realizado = true)
+          AS imoveis_inspecionados,
+        COUNT(DISTINCT v.id) FILTER (
+          WHERE v.acesso_realizado = true
+            AND EXISTS (
+              SELECT 1 FROM vistoria_depositos vd2
+              WHERE vd2.vistoria_id = v.id
+                AND vd2.qtd_com_focos > 0
+                AND vd2.deleted_at IS NULL
+            )
+        ) AS imoveis_positivos,
+        COUNT(vd.id) FILTER (WHERE vd.qtd_com_focos > 0 AND vd.deleted_at IS NULL)
+          AS depositos_positivos,
+        COALESCE(SUM(vd.qtd_com_focos) FILTER (WHERE vd.deleted_at IS NULL), 0)
+          AS total_focos,
+        COALESCE(SUM(vd.qtd_com_focos) FILTER (WHERE vd.tipo = 'A1' AND vd.deleted_at IS NULL), 0) AS focos_a1,
+        COALESCE(SUM(vd.qtd_com_focos) FILTER (WHERE vd.tipo = 'A2' AND vd.deleted_at IS NULL), 0) AS focos_a2,
+        COALESCE(SUM(vd.qtd_com_focos) FILTER (WHERE vd.tipo = 'B'  AND vd.deleted_at IS NULL), 0) AS focos_b,
+        COALESCE(SUM(vd.qtd_com_focos) FILTER (WHERE vd.tipo = 'C'  AND vd.deleted_at IS NULL), 0) AS focos_c,
+        COALESCE(SUM(vd.qtd_com_focos) FILTER (WHERE vd.tipo = 'D1' AND vd.deleted_at IS NULL), 0) AS focos_d1,
+        COALESCE(SUM(vd.qtd_com_focos) FILTER (WHERE vd.tipo = 'D2' AND vd.deleted_at IS NULL), 0) AS focos_d2,
+        COALESCE(SUM(vd.qtd_com_focos) FILTER (WHERE vd.tipo = 'E'  AND vd.deleted_at IS NULL), 0) AS focos_e,
+        COALESCE(SUM(vd.qtd_larvicida_g) FILTER (WHERE vd.deleted_at IS NULL), 0)
+          AS larvicida_total_g
+      FROM vistorias v
+      JOIN imoveis i ON i.id = v.imovel_id
+      LEFT JOIN vistoria_depositos vd ON vd.vistoria_id = v.id
+      WHERE v.cliente_id = ${clienteId}::uuid
+        AND v.deleted_at IS NULL
+        AND i.quarteirao IS NOT NULL
+        ${cicloFilter}
+      GROUP BY v.ciclo, i.bairro, i.quarteirao
+      ORDER BY i.bairro ASC NULLS LAST, i.quarteirao ASC
+    `;
+
+    return rows.map((r) => {
+      const inspecionados = Number(r.imoveis_inspecionados);
+      const positivos = Number(r.imoveis_positivos);
+      const depositosPositivos = Number(r.depositos_positivos);
+      return {
+        cliente_id: clienteId,
+        ciclo: r.ciclo,
+        bairro: r.bairro,
+        quarteirao: r.quarteirao,
+        imoveis_inspecionados: inspecionados,
+        imoveis_positivos: positivos,
+        iip:
+          inspecionados > 0
+            ? Math.round((positivos / inspecionados) * 10000) / 100
+            : 0,
+        ibp:
+          inspecionados > 0
+            ? Math.round((depositosPositivos / inspecionados) * 10000) / 100
+            : 0,
+        total_focos: Number(r.total_focos),
+        focos_a1: Number(r.focos_a1),
+        focos_a2: Number(r.focos_a2),
+        focos_b: Number(r.focos_b),
+        focos_c: Number(r.focos_c),
+        focos_d1: Number(r.focos_d1),
+        focos_d2: Number(r.focos_d2),
+        focos_e: Number(r.focos_e),
+        larvicida_total_g: Number(r.larvicida_total_g ?? 0),
+      };
+    });
   }
 }

@@ -245,4 +245,13 @@ export class DashboardController {
     const result = await this.dashboardRead.calcularLiraa(clienteId, parsed.ciclo);
     return result;
   }
+
+  @Get('liraa/quarteirao')
+  @Roles('admin', 'supervisor', 'analista_regional')
+  @ApiOperation({ summary: 'LIRAa (IIP/IBP) agregado por quarteirão (substitui v_liraa_quarteirao)' })
+  async liraaByQuarteirao(@Query() query: LiraaQuery) {
+    const parsed = liraaQuerySchema.parse(query);
+    const clienteId = this.req['tenantId'] as string;
+    return this.dashboardRead.listLiraaByQuarteirao(clienteId, parsed.ciclo);
+  }
 }

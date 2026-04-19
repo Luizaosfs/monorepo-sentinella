@@ -17,6 +17,8 @@ import { REQUEST } from '@nestjs/core';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
+import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
+import { Prisma } from '@prisma/client';
 import { TenantGuard } from 'src/guards/tenant.guard';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 
@@ -79,6 +81,7 @@ export class RiskEngineController {
     private saveYoloSynonymUC: SaveYoloSynonym,
     private readRepository: RiskEngineReadRepository,
     private writeRepository: RiskEngineWriteRepository,
+    private prisma: PrismaService,
     @Inject(REQUEST) private req: Request,
   ) {}
 
@@ -207,6 +210,25 @@ export class RiskEngineController {
   async listTopCriticos(@Query('limit') limit?: string) {
     const clienteId = this.req['tenantId'] as string;
     return this.readRepository.findTopCriticos(clienteId, limit ? parseInt(limit, 10) : 20);
+  }
+
+  @Get('policy/cliente-ids')
+  @Roles('admin')
+  @ApiOperation({ summary: 'IDs de todos os clientes com políticas de risco (admin)' })
+  async listAllClienteIds() {
+    return this.prisma.client.$queryRaw(
+      Prisma.sql`SELECT DISTINCT cliente_id FROM risk_policy_headers WHERE deleted_at IS NULL ORDER BY cliente_id`,
+    );
+  }
+
+  @Get('score/bairros')
+  @Roles('admin', 'supervisor', 'analista_regional')
+  @ApiOperation({ summary: 'Score agregado por bairro (v_score_bairro)' })
+  async listScoreBairros() {
+    const clienteId = this.req['tenantId'] as string;
+    return this.prisma.client.$queryRaw(
+      Prisma.sql`SELECT * FROM v_score_bairro WHERE cliente_id = ${clienteId}::uuid ORDER BY score_medio DESC`,
+    );
   }
 
   @Get('score/imovel/:imovelId')

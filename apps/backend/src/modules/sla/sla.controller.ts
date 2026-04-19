@@ -21,6 +21,8 @@ import {
   paginationSchema,
 } from '@shared/dtos/pagination-body';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
+import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
+import { Prisma } from '@prisma/client';
 import { TenantGuard } from 'src/guards/tenant.guard';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 
@@ -99,6 +101,7 @@ export class SlaController {
     private listConfigRegioes: ListConfigRegioes,
     private upsertConfigRegiao: UpsertConfigRegiao,
     private listErrosCriacao: ListErrosCriacao,
+    private prisma: PrismaService,
     @Inject(REQUEST) private req: Request,
   ) {}
 
@@ -288,5 +291,76 @@ export class SlaController {
   async listErrosRoute() {
     const { erros } = await this.listErrosCriacao.execute();
     return erros;
+  }
+
+  // ── Feriados nacionais ────────────────────────────────────────────────────
+
+  @Post('feriados/seed-nacionais')
+  @Roles('admin', 'supervisor')
+  @ApiOperation({ summary: 'Seed feriados nacionais brasileiros para o cliente' })
+  async seedFeriadosNacionais() {
+    const clienteId = this.req['tenantId'] as string;
+    await this.prisma.client.$executeRaw(
+      Prisma.sql`SELECT seed_sla_feriados_nacionais(${clienteId}::uuid)`,
+    );
+    return { ok: true };
+  }
+
+  // ── Config região delete ──────────────────────────────────────────────────
+
+  @Delete('config/regioes/:regiaoId')
+  @Roles('admin', 'supervisor')
+  @ApiOperation({ summary: 'Remover configuração de SLA de uma região' })
+  async deleteConfigRegiaoRoute(@Param('regiaoId') regiaoId: string) {
+    const clienteId = this.req['tenantId'] as string;
+    await this.prisma.client.$executeRaw(
+      Prisma.sql`DELETE FROM sla_config_regiao WHERE regiao_id = ${regiaoId}::uuid AND cliente_id = ${clienteId}::uuid`,
+    );
+    return { ok: true };
+  }
+
+  // ── Config audit ──────────────────────────────────────────────────────────
+
+  @Get('config/audit')
+  @Roles('admin', 'supervisor')
+  @ApiOperation({ summary: 'Configuração de prazos SLA por fase (sla_foco_config)' })
+  async listConfigAuditRoute() {
+    const clienteId = this.req['tenantId'] as string;
+    return this.prisma.client.$queryRaw(
+      Prisma.sql`SELECT * FROM sla_foco_config WHERE cliente_id = ${clienteId}::uuid AND ativo = true ORDER BY fase`,
+    );
+  }
+
+  // ── SLA Inteligente ───────────────────────────────────────────────────────
+
+  @Get('inteligente')
+  @Roles('admin', 'supervisor', 'analista_regional')
+  @ApiOperation({ summary: 'Focos com SLA Inteligente (v_focos_risco_ativos com status_sla_inteligente)' })
+  async listInteligenteRoute() {
+    const clienteId = this.req['tenantId'] as string;
+    return this.prisma.client.$queryRaw(
+      Prisma.sql`SELECT * FROM v_focos_risco_ativos WHERE cliente_id = ${clienteId}::uuid AND status_sla_inteligente IS NOT NULL ORDER BY created_at DESC`,
+    );
+  }
+
+  @Get('inteligente/criticos')
+  @Roles('admin', 'supervisor', 'analista_regional')
+  @ApiOperation({ summary: 'Focos com SLA Inteligente vencido' })
+  async listInteligenteCriticosRoute() {
+    const clienteId = this.req['tenantId'] as string;
+    return this.prisma.client.$queryRaw(
+      Prisma.sql`SELECT * FROM v_focos_risco_ativos WHERE cliente_id = ${clienteId}::uuid AND status_sla_inteligente = 'vencido' ORDER BY created_at DESC`,
+    );
+  }
+
+  @Get('inteligente/foco/:focoId')
+  @Roles('admin', 'supervisor', 'agente', 'analista_regional')
+  @ApiOperation({ summary: 'SLA Inteligente de um foco específico' })
+  async getInteligenteByFocoRoute(@Param('focoId') focoId: string) {
+    const clienteId = this.req['tenantId'] as string;
+    const rows = await this.prisma.client.$queryRaw(
+      Prisma.sql`SELECT * FROM v_focos_risco_ativos WHERE id = ${focoId}::uuid AND cliente_id = ${clienteId}::uuid LIMIT 1`,
+    );
+    return Array.isArray(rows) ? rows[0] ?? null : null;
   }
 }

@@ -309,13 +309,10 @@ async function _drainQueueInternal(): Promise<{
 
     try {
       if (op.type === 'checkin') {
-        await api.itens.registrarCheckin(op.itemId, op.coords);
+        try { await api.itens.registrarCheckin(op.itemId, op.coords); } catch { /* endpoint pendente */ }
         touchedAtendimento = true;
       } else if (op.type === 'update_atendimento') {
-        // Preferir transição via focos_risco (evita trigger de freeze)
-        const focoId = op.focoRiscoId
-          ?? (await api.focosRisco.byLevantamentoItem(op.itemId))?.id;
-
+        const focoId = op.focoRiscoId;
         if (focoId) {
           const foco = await api.focosRisco.getById(focoId);
           if (foco) {
@@ -325,12 +322,6 @@ async function _drainQueueInternal(): Promise<{
               await api.focosRisco.update(focoId, { desfecho: op.acaoAplicada });
             }
           }
-        } else {
-          // Fallback para itens pré-migração sem foco vinculado
-          await api.itens.updateAtendimento(op.itemId, {
-            status_atendimento: op.status,
-            acao_aplicada: op.acaoAplicada,
-          });
         }
         touchedAtendimento = true;
       } else if (op.type === 'save_vistoria') {

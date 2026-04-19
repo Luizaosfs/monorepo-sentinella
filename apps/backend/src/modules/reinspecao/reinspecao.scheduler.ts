@@ -9,7 +9,7 @@ export class ReinspecaoScheduler {
 
   constructor(private marcarVencidas: MarcarVencidas) {}
 
-  @Cron('0 1 * * *')
+  @Cron('0 6 * * *')
   async marcarReinspecoesVencidas() {
     this.logger.log(
       '[ReinspecaoScheduler] Marcando reinspeções pendentes vencidas',

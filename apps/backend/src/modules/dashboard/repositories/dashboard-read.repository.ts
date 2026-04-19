@@ -124,6 +124,31 @@ export abstract class DashboardReadRepository {
   ): Promise<ImovelParaHoje[]>;
 
   abstract listCiclosDisponiveis(clienteId: string): Promise<CicloDisponivel[]>;
+
+  abstract listLiraaByQuarteirao(
+    clienteId: string,
+    ciclo?: number,
+  ): Promise<LiraaQuarteiraoRow[]>;
+}
+
+export interface LiraaQuarteiraoRow {
+  cliente_id: string;
+  ciclo: number;
+  bairro: string | null;
+  quarteirao: string | null;
+  imoveis_inspecionados: number;
+  imoveis_positivos: number;
+  iip: number;
+  ibp: number;
+  total_focos: number;
+  focos_a1: number;
+  focos_a2: number;
+  focos_b: number;
+  focos_c: number;
+  focos_d1: number;
+  focos_d2: number;
+  focos_e: number;
+  larvicida_total_g: number;
 }
 
 export interface CicloDisponivel {

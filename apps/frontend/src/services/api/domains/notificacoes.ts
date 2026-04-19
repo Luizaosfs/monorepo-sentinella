@@ -5,104 +5,72 @@ import { deepToCamel, deepToSnake, type Ret } from '../shared/case-mappers';
 
 export const casosNotificados = {
   list: async (clienteId: string) => {
-    try {
-      const raw = await http.get(`/notificacoes/casos${qs({ clienteId })}`);
-      return deepToSnake(raw) as Ret<typeof _sb.casosNotificados.list>;
-    } catch { return _sb.casosNotificados.list(clienteId); }
+    const raw = await http.get(`/notificacoes/casos${qs({ clienteId })}`);
+    return deepToSnake(raw) as Ret<typeof _sb.casosNotificados.list>;
   },
   create: async (payload: Parameters<typeof _sb.casosNotificados.create>[0]) => {
-    try {
-      const raw = await http.post('/notificacoes/casos', deepToCamel(payload));
-      return deepToSnake(raw) as Ret<typeof _sb.casosNotificados.create>;
-    } catch { return _sb.casosNotificados.create(payload); }
+    const raw = await http.post('/notificacoes/casos', deepToCamel(payload));
+    return deepToSnake(raw) as Ret<typeof _sb.casosNotificados.create>;
   },
-  updateStatus: async (id: string, status: Parameters<typeof _sb.casosNotificados.updateStatus>[1]) => {
-    try { await http.put(`/notificacoes/casos/${id}`, { status }); }
-    catch { await _sb.casosNotificados.updateStatus(id, status); }
-  },
-  update: async (id: string, payload: Parameters<typeof _sb.casosNotificados.update>[1]) => {
-    try { await http.put(`/notificacoes/casos/${id}`, deepToCamel(payload)); }
-    catch { await _sb.casosNotificados.update(id, payload); }
-  },
+  updateStatus: (id: string, status: Parameters<typeof _sb.casosNotificados.updateStatus>[1]): Promise<void> =>
+    http.put(`/notificacoes/casos/${id}`, { status }),
+  update: (id: string, payload: Parameters<typeof _sb.casosNotificados.update>[1]): Promise<void> =>
+    http.put(`/notificacoes/casos/${id}`, deepToCamel(payload)),
   listProximosAoPonto: async (lat: number, lng: number, clienteId: string, raioMetros?: number) => {
-    try {
-      const raw = await http.get(`/notificacoes/casos/no-raio${qs({ lat, lng, clienteId, raioMetros })}`);
-      return deepToSnake(raw) as Ret<typeof _sb.casosNotificados.listProximosAoPonto>;
-    } catch { return _sb.casosNotificados.listProximosAoPonto(lat, lng, clienteId, raioMetros); }
+    const raw = await http.get(`/notificacoes/casos/no-raio${qs({ lat, lng, clienteId, raioMetros })}`);
+    return deepToSnake(raw) as Ret<typeof _sb.casosNotificados.listProximosAoPonto>;
   },
-  /** @fallback cursor pagination — schema diferente do backend; usa Supabase. */
-  listPaginado: _sb.casosNotificados.listPaginado.bind(_sb.casosNotificados),
-  /** @fallback RPC contar_casos_proximos_ao_item — sem endpoint NestJS. */
-  countProximoAoItem: _sb.casosNotificados.countProximoAoItem.bind(_sb.casosNotificados),
-  /** @fallback tabela caso_foco_cruzamento — sem endpoint NestJS. */
-  cruzamentosDoItem: _sb.casosNotificados.cruzamentosDoItem.bind(_sb.casosNotificados),
-  cruzamentosDoCaso: _sb.casosNotificados.cruzamentosDoCaso.bind(_sb.casosNotificados),
-  countCruzadosHoje: _sb.casosNotificados.countCruzadosHoje.bind(_sb.casosNotificados),
-  listCasoIdsComCruzamento: _sb.casosNotificados.listCasoIdsComCruzamento.bind(_sb.casosNotificados),
-  listCruzamentos: _sb.casosNotificados.listCruzamentos.bind(_sb.casosNotificados),
+  listPaginado: async () => { throw new Error('[sem endpoint NestJS] casosNotificados.listPaginado'); },
+  countProximoAoItem: async () => { throw new Error('[sem endpoint NestJS] casosNotificados.countProximoAoItem'); },
+  cruzamentosDoItem: async () => { throw new Error('[sem endpoint NestJS] casosNotificados.cruzamentosDoItem'); },
+  cruzamentosDoCaso: async () => { throw new Error('[sem endpoint NestJS] casosNotificados.cruzamentosDoCaso'); },
+  countCruzadosHoje: async () => { throw new Error('[sem endpoint NestJS] casosNotificados.countCruzadosHoje'); },
+  listCasoIdsComCruzamento: async () => { throw new Error('[sem endpoint NestJS] casosNotificados.listCasoIdsComCruzamento'); },
+  listCruzamentos: async () => { throw new Error('[sem endpoint NestJS] casosNotificados.listCruzamentos'); },
 };
 
 export const unidadesSaude = {
   list: async (clienteId: string) => {
-    try {
-      const raw = await http.get(`/notificacoes/unidades-saude${qs({ clienteId })}`);
-      return deepToSnake(raw) as Ret<typeof _sb.unidadesSaude.list>;
-    } catch { return _sb.unidadesSaude.list(clienteId); }
+    const raw = await http.get(`/notificacoes/unidades-saude${qs({ clienteId })}`);
+    return deepToSnake(raw) as Ret<typeof _sb.unidadesSaude.list>;
   },
   create: async (payload: Parameters<typeof _sb.unidadesSaude.create>[0]) => {
-    try {
-      const raw = await http.post('/notificacoes/unidades-saude', deepToCamel(payload));
-      return deepToSnake(raw) as Ret<typeof _sb.unidadesSaude.create>;
-    } catch { return _sb.unidadesSaude.create(payload); }
+    const raw = await http.post('/notificacoes/unidades-saude', deepToCamel(payload));
+    return deepToSnake(raw) as Ret<typeof _sb.unidadesSaude.create>;
   },
-  update: async (id: string, payload: Parameters<typeof _sb.unidadesSaude.update>[1]) => {
-    try { await http.put(`/notificacoes/unidades-saude/${id}`, deepToCamel(payload)); }
-    catch { await _sb.unidadesSaude.update(id, payload); }
-  },
+  update: (id: string, payload: Parameters<typeof _sb.unidadesSaude.update>[1]): Promise<void> =>
+    http.put(`/notificacoes/unidades-saude/${id}`, deepToCamel(payload)),
 };
 
 export const notificacoesESUS = {
   listByCliente: async (clienteId: string) => {
-    try {
-      const raw = await http.get(`/notificacoes/esus${qs({ clienteId })}`);
-      return deepToSnake(raw) as Ret<typeof _sb.notificacoesESUS.listByCliente>;
-    } catch { return _sb.notificacoesESUS.listByCliente(clienteId); }
+    const raw = await http.get(`/notificacoes/esus${qs({ clienteId })}`);
+    return deepToSnake(raw) as Ret<typeof _sb.notificacoesESUS.listByCliente>;
   },
   listByItem: async (itemId: string, clienteId: string) => {
-    try {
-      const raw = await http.get(`/notificacoes/esus${qs({ clienteId, itemId })}`);
-      return deepToSnake(raw) as Ret<typeof _sb.notificacoesESUS.listByItem>;
-    } catch { return _sb.notificacoesESUS.listByItem(itemId, clienteId); }
+    const raw = await http.get(`/notificacoes/esus${qs({ clienteId, itemId })}`);
+    return deepToSnake(raw) as Ret<typeof _sb.notificacoesESUS.listByItem>;
   },
-  /** @fallback payload e-SUS complexo (sinan.ts) — usa Supabase. */
-  enviar: _sb.notificacoesESUS.enviar.bind(_sb.notificacoesESUS),
-  /** @fallback sem endpoint NestJS. */
-  reenviar: _sb.notificacoesESUS.reenviar.bind(_sb.notificacoesESUS),
+  enviar: async () => { throw new Error('[sem endpoint NestJS] notificacoesESUS.enviar'); },
+  reenviar: async () => { throw new Error('[sem endpoint NestJS] notificacoesESUS.reenviar'); },
 };
 
 export const pushSubscriptions = {
-  upsert: async (payload: Parameters<typeof _sb.pushSubscriptions.upsert>[0]) => {
-    try { await http.post('/notificacoes/push', deepToCamel(payload)); }
-    catch { await _sb.pushSubscriptions.upsert(payload); }
-  },
-  /** @fallback uso interno da Edge Function — sem endpoint NestJS necessário. */
-  listByCliente: _sb.pushSubscriptions.listByCliente.bind(_sb.pushSubscriptions),
-  /** @fallback DELETE usa endpoint/:id no backend mas frontend passa endpoint string; usa Supabase. */
-  removeByEndpoint: _sb.pushSubscriptions.removeByEndpoint.bind(_sb.pushSubscriptions),
+  upsert: (payload: Parameters<typeof _sb.pushSubscriptions.upsert>[0]): Promise<void> =>
+    http.post('/notificacoes/push', deepToCamel(payload)),
+  listByCliente: async () => { throw new Error('[sem endpoint NestJS] pushSubscriptions.listByCliente'); },
+  removeByEndpoint: async () => { throw new Error('[sem endpoint NestJS] pushSubscriptions.removeByEndpoint'); },
 };
 
 export const notificacaoFormal = {
   gerarProtocolo: async (clienteId: string) => {
-    try {
-      const raw = await http.post('/notificacoes/protocolo/proximo', { clienteId });
-      if (typeof raw === 'string') return raw;
-      return ((raw as Record<string, unknown>).protocolo ?? (raw as Record<string, unknown>).numero ?? String(raw)) as string;
-    } catch { return _sb.notificacaoFormal.gerarProtocolo(clienteId); }
+    const raw = await http.post('/notificacoes/protocolo/proximo', { clienteId });
+    if (typeof raw === 'string') return raw;
+    return ((raw as Record<string, unknown>).protocolo ?? (raw as Record<string, unknown>).numero ?? String(raw)) as string;
   },
 };
 
-// @fallback views v_canal_cidadao_stats + _eventos_audit — sem endpoint NestJS
 export const canalCidadao = {
-  stats: _sb.canalCidadao.stats.bind(_sb.canalCidadao),
-  eventosAudit: _sb.canalCidadao.eventosAudit.bind(_sb.canalCidadao),
+  stats: async () => { throw new Error('[sem endpoint NestJS] canalCidadao.stats'); },
+  eventosAudit: async () => { throw new Error('[sem endpoint NestJS] canalCidadao.eventosAudit'); },
 };

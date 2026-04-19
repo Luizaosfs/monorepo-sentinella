@@ -9,6 +9,7 @@ import { HealthCheckService } from '@modules/dashboard/health-check.service';
 import { IaService } from '@modules/ia/ia.service';
 import { PluvioSchedulerService } from '@modules/pluvio/pluvio-scheduler.service';
 import { SlaSchedulerService } from '@modules/sla/sla-scheduler.service';
+import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 
 import { AuditCleanupService } from './audit-cleanup.service';
 import { Job } from './entities/job';
@@ -35,6 +36,7 @@ export class JobScheduler {
     private auditCleanup: AuditCleanupService,
     private healthCheck: HealthCheckService,
     private canalCidadao: CanalCidadaoService,
+    private prisma: PrismaService,
   ) {}
 
   @Cron(CronExpression.EVERY_MINUTE)
@@ -147,5 +149,19 @@ export class JobScheduler {
   async limpezaLogs() {
     this.logger.log('[JobScheduler.limpezaLogs] Limpando logs antigos');
     await this.auditCleanup.cleanupLogs();
+  }
+
+  @Cron('0 * * * *')
+  async escalarFocosSuspeitos() {
+    this.logger.log('[JobScheduler.escalarFocosSuspeitos] Escalando focos suspeita>48h para P1');
+    const count = await this.prisma.client.$executeRaw`
+      UPDATE focos_risco
+      SET prioridade = 'P1', updated_at = now()
+      WHERE status = 'suspeita'
+        AND prioridade <> 'P1'
+        AND created_at < now() - INTERVAL '48 hours'
+        AND deleted_at IS NULL
+    `;
+    this.logger.log(`[JobScheduler.escalarFocosSuspeitos] Escalados: ${count}`);
   }
 }
