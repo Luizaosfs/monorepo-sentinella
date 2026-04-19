@@ -31,7 +31,8 @@ export const voos = {
     http.put(`/drones/voos/${id}`, deepToCamel(payload)),
   remove: (id: string): Promise<void> =>
     http.delete(`/drones/voos/${id}`),
-  bulkCreate: async () => { throw new Error('[sem endpoint NestJS] voos.bulkCreate'); },
+  bulkCreate: (rows: Record<string, unknown>[]): Promise<{ importados: number }> =>
+    http.post('/drones/voos/bulk-create', { rows: rows.map(r => deepToCamel(r)) }),
 };
 
 export const pipeline = {
@@ -56,23 +57,33 @@ export const condicoesVoo = {
 export const yoloFeedback = {
   upsert: (payload: Parameters<typeof _sb.yoloFeedback.upsert>[0]): Promise<void> =>
     http.post('/drones/yolo-feedback', deepToCamel(payload)),
-  getByItem: async () => { throw new Error('[sem endpoint NestJS] yoloFeedback.getByItem'); },
+  getByItem: (levantamentoItemId: string, _clienteId: string) =>
+    http.get(`/drones/yolo-feedback/by-item${qs({ levantamentoItemId })}`),
 };
 
 export const yoloClassConfig = {
-  listByCliente: async () => { throw new Error('[sem endpoint NestJS] yoloClassConfig.listByCliente'); },
+  listByCliente: (_clienteId: string) =>
+    http.get('/drones/yolo-class-config'),
 };
 
 export const yoloQualidade = {
-  resumo: async () => { throw new Error('[sem endpoint NestJS] yoloQualidade.resumo'); },
+  resumo: (_clienteId: string) =>
+    http.get('/drones/yolo-qualidade/resumo'),
 };
 
 export const droneRiskConfig = {
-  getByCliente: async () => { throw new Error('[sem endpoint NestJS] droneRiskConfig.getByCliente'); },
-  update: async () => { throw new Error('[sem endpoint NestJS] droneRiskConfig.update'); },
-  listYoloClasses: async () => { throw new Error('[sem endpoint NestJS] droneRiskConfig.listYoloClasses'); },
-  updateYoloClass: async () => { throw new Error('[sem endpoint NestJS] droneRiskConfig.updateYoloClass'); },
-  listSynonyms: async () => { throw new Error('[sem endpoint NestJS] droneRiskConfig.listSynonyms'); },
-  addSynonym: async () => { throw new Error('[sem endpoint NestJS] droneRiskConfig.addSynonym'); },
-  deleteSynonym: async () => { throw new Error('[sem endpoint NestJS] droneRiskConfig.deleteSynonym'); },
+  getByCliente: (_clienteId: string) =>
+    http.get('/drones/risk-config'),
+  update: (_clienteId: string, payload: Record<string, unknown>): Promise<{ ok: boolean }> =>
+    http.put('/drones/risk-config', deepToCamel(payload)),
+  listYoloClasses: (_clienteId: string) =>
+    http.get('/drones/risk-config/yolo-classes'),
+  updateYoloClass: (id: string, payload: Record<string, unknown>): Promise<{ ok: boolean }> =>
+    http.put(`/drones/risk-config/yolo-classes/${id}`, deepToCamel(payload)),
+  listSynonyms: (_clienteId: string) =>
+    http.get('/drones/risk-config/synonyms'),
+  addSynonym: (_clienteId: string, synonym: string, mapsTo: string) =>
+    http.post('/drones/risk-config/synonyms', { synonym, mapsTo }),
+  deleteSynonym: (id: string): Promise<{ ok: boolean }> =>
+    http.delete(`/drones/risk-config/synonyms/${id}`),
 };

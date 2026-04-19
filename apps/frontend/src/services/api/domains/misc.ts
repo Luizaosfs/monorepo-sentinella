@@ -33,8 +33,10 @@ export const agrupamentos = {
 };
 
 export const map = {
-  fullDataByCliente: async () => { throw new Error('[sem endpoint NestJS] map.fullDataByCliente'); },
-  itemStatusesByCliente: async () => { throw new Error('[sem endpoint NestJS] map.itemStatusesByCliente'); },
+  fullDataByCliente: (clienteId: string) =>
+    http.get(`/levantamentos/map/full-data${qs({ clienteId })}`),
+  itemStatusesByCliente: (clienteId: string) =>
+    http.get(`/levantamentos/map/item-statuses${qs({ clienteId })}`),
 };
 
 export const evidenciasItem = {

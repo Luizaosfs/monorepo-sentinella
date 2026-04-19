@@ -20,13 +20,33 @@ export const casosNotificados = {
     const raw = await http.get(`/notificacoes/casos/no-raio${qs({ lat, lng, clienteId, raioMetros })}`);
     return deepToSnake(raw) as Ret<typeof _sb.casosNotificados.listProximosAoPonto>;
   },
-  listPaginado: async () => { throw new Error('[sem endpoint NestJS] casosNotificados.listPaginado'); },
-  countProximoAoItem: async () => { throw new Error('[sem endpoint NestJS] casosNotificados.countProximoAoItem'); },
-  cruzamentosDoItem: async () => { throw new Error('[sem endpoint NestJS] casosNotificados.cruzamentosDoItem'); },
-  cruzamentosDoCaso: async () => { throw new Error('[sem endpoint NestJS] casosNotificados.cruzamentosDoCaso'); },
-  countCruzadosHoje: async () => { throw new Error('[sem endpoint NestJS] casosNotificados.countCruzadosHoje'); },
-  listCasoIdsComCruzamento: async () => { throw new Error('[sem endpoint NestJS] casosNotificados.listCasoIdsComCruzamento'); },
-  listCruzamentos: async () => { throw new Error('[sem endpoint NestJS] casosNotificados.listCruzamentos'); },
+  listPaginado: (
+    _clienteId: string,
+    opts?: { limit?: number; cursorCreated?: string; cursorId?: string },
+  ): Promise<{ data: Record<string, unknown>[]; nextCursor: { created_at: string; id: string } | null }> =>
+    http.get(`/notificacoes/casos/paginado${qs(opts ?? {})}`),
+
+  countProximoAoItem: async (itemId: string): Promise<number> => {
+    const raw = await http.get(`/notificacoes/casos/count-proximos${qs({ itemId })}`);
+    return (raw as { total: number }).total;
+  },
+
+  cruzamentosDoItem: (itemId: string): Promise<Record<string, unknown>[]> =>
+    http.get(`/notificacoes/casos/cruzamentos-do-item${qs({ itemId })}`),
+
+  cruzamentosDoCaso: (casoId: string): Promise<Record<string, unknown>[]> =>
+    http.get(`/notificacoes/casos/${casoId}/cruzamentos`),
+
+  countCruzadosHoje: async (): Promise<number> => {
+    const raw = await http.get('/notificacoes/casos/cruzados-hoje/count');
+    return (raw as { total: number }).total;
+  },
+
+  listCasoIdsComCruzamento: (casoIds: string[]): Promise<string[]> =>
+    http.post('/notificacoes/cruzamentos/caso-ids', { casoIds }),
+
+  listCruzamentos: (): Promise<Record<string, unknown>[]> =>
+    http.get('/notificacoes/cruzamentos'),
 };
 
 export const unidadesSaude = {

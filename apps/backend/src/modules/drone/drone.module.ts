@@ -16,6 +16,17 @@ import { FilterVoos } from './use-cases/filter-voos';
 import { GetPipeline } from './use-cases/get-pipeline';
 import { SaveDrone } from './use-cases/save-drone';
 import { SaveVoo } from './use-cases/save-voo';
+import { AddSynonym } from './use-cases/add-synonym';
+import { BulkCreateVoos } from './use-cases/bulk-create-voos';
+import { DeleteSynonym } from './use-cases/delete-synonym';
+import { GetDroneRiskConfig } from './use-cases/get-drone-risk-config';
+import { GetYoloFeedbackByItem } from './use-cases/get-yolo-feedback-by-item';
+import { ListSynonyms } from './use-cases/list-synonyms';
+import { ListYoloClassConfig } from './use-cases/list-yolo-class-config';
+import { ListYoloClasses } from './use-cases/list-yolo-classes';
+import { UpdateDroneRiskConfig } from './use-cases/update-drone-risk-config';
+import { UpdateYoloClass } from './use-cases/update-yolo-class';
+import { YoloQualidadeResumo } from './use-cases/yolo-qualidade-resumo';
 
 @Module({
   providers: [
@@ -27,10 +38,21 @@ import { SaveVoo } from './use-cases/save-voo';
     CreateVoo,
     SaveVoo,
     DeleteVoo,
+    BulkCreateVoos,
     FilterPipelines,
     GetPipeline,
     CreateYoloFeedback,
+    GetYoloFeedbackByItem,
     AvaliarCondicoesVoo,
+    ListYoloClassConfig,
+    YoloQualidadeResumo,
+    GetDroneRiskConfig,
+    UpdateDroneRiskConfig,
+    ListYoloClasses,
+    UpdateYoloClass,
+    ListSynonyms,
+    AddSynonym,
+    DeleteSynonym,
     JwtService,
     PrismaService,
   ],

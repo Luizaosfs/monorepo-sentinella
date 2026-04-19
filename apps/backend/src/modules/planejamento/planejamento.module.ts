@@ -11,6 +11,8 @@ import { GetAtivos } from './use-cases/get-ativos';
 import { GetAtivosManuais } from './use-cases/get-ativos-manuais';
 import { GetPlanejamento } from './use-cases/get-planejamento';
 import { SavePlanejamento } from './use-cases/save-planejamento';
+import { ListWithCliente } from './use-cases/list-with-cliente';
+import { VoosByPlanejamento } from './use-cases/voos-by-planejamento';
 
 @Module({
   providers: [
@@ -21,6 +23,8 @@ import { SavePlanejamento } from './use-cases/save-planejamento';
     CreatePlanejamento,
     SavePlanejamento,
     DeletePlanejamento,
+    ListWithCliente,
+    VoosByPlanejamento,
     JwtService,
     PrismaService,
   ],

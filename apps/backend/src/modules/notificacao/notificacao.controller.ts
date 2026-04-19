@@ -57,6 +57,19 @@ import { ProximoProtocolo } from './use-cases/proximo-protocolo';
 import { SaveCaso } from './use-cases/save-caso';
 import { SaveUnidade } from './use-cases/save-unidade';
 import { NotificacaoViewModel } from './view-model/notificacao';
+import {
+  ListCasosPaginadoQuery,
+  listCasosPaginadoSchema,
+  ListCasoIdsComCruzamentoBody,
+  listCasoIdsComCruzamentoSchema,
+} from './dtos/casos-cruzamentos.body';
+import { CountCruzadosHoje } from './use-cases/count-cruzados-hoje';
+import { CountProximosAoItem } from './use-cases/count-proximos-ao-item';
+import { CruzamentosDocaso } from './use-cases/cruzamentos-do-caso';
+import { CruzamentosDoItem } from './use-cases/cruzamentos-do-item';
+import { ListarCasosPaginado } from './use-cases/listar-casos-paginado';
+import { ListCasoIdsComCruzamento } from './use-cases/list-caso-ids-com-cruzamento';
+import { ListCruzamentos } from './use-cases/list-cruzamentos';
 
 @UseGuards(TenantGuard)
 @UseInterceptors(PrismaInterceptor)
@@ -83,6 +96,13 @@ export class NotificacaoController {
     private casosPagination: PaginationCasos,
     private casosRaio: ListarNoRaio,
     private proximoProtocoloUc: ProximoProtocolo,
+    private casosPaginadoUc: ListarCasosPaginado,
+    private countProximosUc: CountProximosAoItem,
+    private cruzamentosDoItemUc: CruzamentosDoItem,
+    private cruzamentosDocasoUc: CruzamentosDocaso,
+    private countCruzadosHojeUc: CountCruzadosHoje,
+    private listCasoIdsUc: ListCasoIdsComCruzamento,
+    private listCruzamentosUc: ListCruzamentos,
     @Inject(REQUEST) private req: Request,
   ) {}
 
@@ -125,6 +145,58 @@ export class NotificacaoController {
   }
 
   // ── Casos Notificados ────────────────────────────────────────────────────
+
+  @Get('casos/paginado')
+  @Roles('admin', 'supervisor', 'notificador', 'analista_regional')
+  @ApiOperation({ summary: 'Listar casos paginado por cursor — retorna { data, nextCursor }' })
+  async listCasosPaginado(@Query() query: ListCasosPaginadoQuery) {
+    const clienteId = this.req['tenantId'] as string;
+    const parsed = listCasosPaginadoSchema.parse(query);
+    return this.casosPaginadoUc.execute(clienteId, parsed);
+  }
+
+  @Get('casos/count-proximos')
+  @Roles('admin', 'supervisor', 'notificador', 'analista_regional')
+  @ApiOperation({ summary: 'Contar casos notificados num raio de 300m de um item de levantamento' })
+  async countProximosAoItem(@Query('itemId') itemId: string) {
+    const clienteId = this.req['tenantId'] as string;
+    const total = await this.countProximosUc.execute(itemId, clienteId);
+    return { total };
+  }
+
+  @Get('casos/cruzamentos-do-item')
+  @Roles('admin', 'supervisor', 'notificador', 'analista_regional')
+  @ApiOperation({ summary: 'Cruzamentos de casos notificados para um item de levantamento' })
+  async cruzamentosDoItem(@Query('itemId') itemId: string) {
+    const clienteId = this.req['tenantId'] as string;
+    return this.cruzamentosDoItemUc.execute(itemId, clienteId);
+  }
+
+  @Get('casos/cruzados-hoje/count')
+  @Roles('admin', 'supervisor', 'notificador', 'analista_regional')
+  @ApiOperation({ summary: 'Contar casos distintos cruzados com focos hoje' })
+  async countCruzadosHoje() {
+    const clienteId = this.req['tenantId'] as string;
+    const total = await this.countCruzadosHojeUc.execute(clienteId);
+    return { total };
+  }
+
+  @Post('cruzamentos/caso-ids')
+  @Roles('admin', 'supervisor', 'notificador', 'analista_regional')
+  @ApiOperation({ summary: 'Filtrar quais casoIds possuem ao menos um cruzamento registrado' })
+  async listCasoIdsComCruzamento(@Body() body: ListCasoIdsComCruzamentoBody) {
+    const clienteId = this.req['tenantId'] as string;
+    const parsed = listCasoIdsComCruzamentoSchema.parse(body);
+    return this.listCasoIdsUc.execute(parsed.casoIds, clienteId);
+  }
+
+  @Get('cruzamentos')
+  @Roles('admin', 'supervisor', 'notificador', 'analista_regional')
+  @ApiOperation({ summary: 'Listar cruzamentos recentes (máx. 200) do cliente' })
+  async listCruzamentos() {
+    const clienteId = this.req['tenantId'] as string;
+    return this.listCruzamentosUc.execute(clienteId);
+  }
 
   @Get('casos/paginated')
   @Roles('admin', 'supervisor', 'notificador', 'analista_regional')
@@ -170,6 +242,14 @@ export class NotificacaoController {
     const clienteId = this.req['tenantId'] as string;
     const { items } = await this.casoFilter.execute(clienteId, { status, regiaoId });
     return items.map(NotificacaoViewModel.toHttp);
+  }
+
+  @Get('casos/:id/cruzamentos')
+  @Roles('admin', 'supervisor', 'notificador', 'analista_regional')
+  @ApiOperation({ summary: 'Cruzamentos de focos de risco para um caso notificado' })
+  async cruzamentosDocaso(@Param('id') id: string) {
+    const clienteId = this.req['tenantId'] as string;
+    return this.cruzamentosDocasoUc.execute(id, clienteId);
   }
 
   @Get('casos/:id')

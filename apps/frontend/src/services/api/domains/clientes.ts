@@ -50,7 +50,8 @@ export const clientes = {
   ): Promise<void> =>
     http.put(`/clientes/${id}`, deepToCamel(payload)),
 
-  resolverPorCoordenada: async () => { throw new Error('[sem endpoint NestJS] clientes.resolverPorCoordenada'); },
+  resolverPorCoordenada: (lat: number, lng: number) =>
+    http.get(`/clientes/resolver-coordenada${qs({ lat, lng })}`),
 };
 
 export const regioes = {
@@ -72,5 +73,6 @@ export const regioes = {
     http.put(`/regioes/${id}`, deepToCamel(payload)),
   remove: (id: string): Promise<void> =>
     http.delete(`/regioes/${id}`),
-  bulkInsert: async () => { throw new Error('[sem endpoint NestJS] regioes.bulkInsert'); },
+  bulkInsert: (rows: Record<string, unknown>[]): Promise<{ count: number }> =>
+    http.post('/regioes/bulk-insert', { rows }),
 };

@@ -58,7 +58,8 @@
       "Read(//tmp/**)",
       "Bash(C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe *)",
       "Bash(npx jest *)",
-      "Bash(npx nest *)"
+      "Bash(npx nest *)",
+      "Bash(PGPASSWORD=147852369 C:/Program Files/PostgreSQL/17/bin/psql.exe *)"
     ]
   }
 }

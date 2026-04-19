@@ -37,8 +37,12 @@ export const planejamentos = {
   remove: (id: string): Promise<void> =>
     http.delete(`/planejamentos/${id}`),
 
-  listWithClienteByCliente: async () => { throw new Error('[sem endpoint NestJS] planejamentos.listWithClienteByCliente'); },
-  voosByPlanejamento: async () => { throw new Error('[sem endpoint NestJS] planejamentos.voosByPlanejamento'); },
+  listWithClienteByCliente: async (clienteId?: string) => {
+    const raw = await http.get(`/planejamentos/with-cliente${qs({ clienteId })}`);
+    return deepToSnake(raw) as Ret<typeof _sb.planejamentos.listWithClienteByCliente>;
+  },
+  voosByPlanejamento: (planejamentoId: string) =>
+    http.get(`/planejamentos/${planejamentoId}/voos`),
 };
 
 export const ciclos = {
@@ -83,5 +87,6 @@ export const ciclos = {
     return deepToSnake(raw) as Ret<typeof _sb.ciclos.getProgresso>;
   },
 
-  copiarDistribuicao: async () => { throw new Error('[sem endpoint NestJS] ciclos.copiarDistribuicao'); },
+  copiarDistribuicao: (clienteId: string, cicloOrigem: number, cicloDestino: number) =>
+    http.post('/quarteiroes/distribuicoes/copiar', deepToCamel({ clienteId, cicloOrigem, cicloDestino })),
 };

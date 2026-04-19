@@ -21,6 +21,8 @@ import { PaginationLevantamento } from './use-cases/pagination-levantamento';
 import { RegistrarCheckin } from './use-cases/registrar-checkin';
 import { SaveLevantamento } from './use-cases/save-levantamento';
 import { UpdateItem } from './use-cases/update-item';
+import { FullMapData } from './use-cases/full-map-data';
+import { ItemStatusesByCliente } from './use-cases/item-statuses-by-cliente';
 
 @Module({
   providers: [
@@ -41,6 +43,8 @@ import { UpdateItem } from './use-cases/update-item';
     UpdateItem,
     ListHistoricoPorLocalizacao,
     ListHistoricoPorCliente,
+    FullMapData,
+    ItemStatusesByCliente,
     JwtService,
     PrismaService,
   ],

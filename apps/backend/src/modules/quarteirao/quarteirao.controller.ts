@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Inject,
   Param,
   Post,
   Query,
@@ -10,6 +11,8 @@ import {
   UseInterceptors,
   UsePipes,
 } from '@nestjs/common';
+import { REQUEST } from '@nestjs/core';
+import { Request } from 'express';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
 import { TenantGuard } from 'src/guards/tenant.guard';
@@ -47,6 +50,17 @@ import { DeleteDistribuicao } from './use-cases/delete-distribuicao';
 import { DeleteQuarteirao } from './use-cases/delete-quarteirao';
 import { FilterDistribuicoes } from './use-cases/filter-distribuicoes';
 import { FilterQuarteiroes } from './use-cases/filter-quarteiroes';
+import { ListDistribuicoesByAgente } from './use-cases/list-distribuicoes-by-agente';
+import { UpsertDistribuicoes } from './use-cases/upsert-distribuicoes';
+import { DeletarDistribuicoes } from './use-cases/deletar-distribuicoes';
+import {
+  UpsertDistribuicoesBody,
+  upsertDistribuicoesSchema,
+} from './dtos/upsert-distribuicoes.body';
+import {
+  DeletarDistribuicoesBody,
+  deletarDistribuicoesSchema,
+} from './dtos/deletar-distribuicoes.body';
 import {
   DistribuicaoQuarteiraoViewModel,
   QuarteiraoViewModel,
@@ -67,7 +81,41 @@ export class QuarteiraoController {
     private copiarDistribuicao: CopiarDistribuicao,
     private coberturaCiclo: CoberturaCiclo,
     private deleteDistribuicao: DeleteDistribuicao,
+    private listByAgenteUc: ListDistribuicoesByAgente,
+    private upsertDistribuicoesUc: UpsertDistribuicoes,
+    private deletarDistribuicoesUc: DeletarDistribuicoes,
+    @Inject(REQUEST) private req: Request,
   ) {}
+
+  @Get('distribuicoes/por-agente')
+  @Roles('admin', 'supervisor', 'agente')
+  @ApiOperation({ summary: 'Listar códigos de quarteirões atribuídos a um agente no ciclo' })
+  async listDistribuicoesByAgente(
+    @Query('agenteId') agenteId: string,
+    @Query('ciclo') ciclo: string,
+  ) {
+    const clienteId = this.req['tenantId'] as string;
+    return this.listByAgenteUc.execute(clienteId, agenteId, parseInt(ciclo, 10));
+  }
+
+  @Post('distribuicoes/upsert')
+  @Roles('admin', 'supervisor')
+  @ApiOperation({ summary: 'Batch upsert de distribuições de quarteirões (ON CONFLICT DO UPDATE)' })
+  async upsertDistribuicoes(@Body() body: UpsertDistribuicoesBody) {
+    const clienteId = this.req['tenantId'] as string;
+    const parsed = upsertDistribuicoesSchema.parse(body);
+    await this.upsertDistribuicoesUc.execute(clienteId, parsed);
+    return { ok: true };
+  }
+
+  @Post('distribuicoes/deletar')
+  @Roles('admin', 'supervisor')
+  @ApiOperation({ summary: 'Remover distribuições por ciclo e lista de quarteirões' })
+  async deletarDistribuicoes(@Body() body: DeletarDistribuicoesBody) {
+    const clienteId = this.req['tenantId'] as string;
+    const parsed = deletarDistribuicoesSchema.parse(body);
+    return this.deletarDistribuicoesUc.execute(clienteId, parsed);
+  }
 
   @Get('cobertura')
   @Roles('admin', 'supervisor', 'agente')

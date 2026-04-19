@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   HttpCode,
+  Inject,
   Param,
   Post,
   Put,
@@ -12,6 +13,8 @@ import {
   UseInterceptors,
   UsePipes,
 } from '@nestjs/common';
+import { REQUEST } from '@nestjs/core';
+import { Request } from 'express';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import {
   PaginationProps,
@@ -34,6 +37,7 @@ import {
 } from './dtos/filter-regiao.input';
 import { SaveRegiaoBody, saveRegiaoSchema } from './dtos/save-regiao.body';
 import { RegiaoGeocodeService } from './regiao-geocode.service';
+import { BulkInsertRegioes } from './use-cases/bulk-insert-regioes';
 import { CreateRegiao } from './use-cases/create-regiao';
 import { DeleteRegiao } from './use-cases/delete-regiao';
 import { FilterRegiao } from './use-cases/filter-regiao';
@@ -41,6 +45,10 @@ import { GetRegiao } from './use-cases/get-regiao';
 import { PaginationRegiao } from './use-cases/pagination-regiao';
 import { SaveRegiao } from './use-cases/save-regiao';
 import { RegiaoViewModel } from './view-model/regiao';
+import {
+  BulkInsertRegioesBody,
+  bulkInsertRegioesSchema,
+} from './dtos/bulk-insert-regioes.body';
 
 const geocodeLoteSchema = z.object({
   nomes: z.array(z.string().min(1)).min(1).max(100),
@@ -61,6 +69,8 @@ export class RegiaoController {
     private paginationRegiao: PaginationRegiao,
     private saveRegiao: SaveRegiao,
     private regiaoGeocodeService: RegiaoGeocodeService,
+    private bulkInsertRegioesUc: BulkInsertRegioes,
+    @Inject(REQUEST) private req: Request,
   ) {}
 
   @Get()
@@ -105,6 +115,15 @@ export class RegiaoController {
   async geocodeLote(@Body() body: unknown) {
     const { nomes, cidade } = geocodeLoteSchema.parse(body);
     return this.regiaoGeocodeService.geocodeLote(nomes, cidade);
+  }
+
+  @Post('bulk-insert')
+  @Roles('admin', 'supervisor')
+  @ApiOperation({ summary: 'Inserir múltiplas regiões em lote (skipDuplicates)' })
+  async bulkInsert(@Body() body: BulkInsertRegioesBody) {
+    const clienteId = this.req['tenantId'] as string;
+    const parsed = bulkInsertRegioesSchema.parse(body);
+    return this.bulkInsertRegioesUc.execute(clienteId, parsed);
   }
 
   @Post()

@@ -24,6 +24,13 @@ import { PaginationCasos } from './use-cases/pagination-casos';
 import { ProximoProtocolo } from './use-cases/proximo-protocolo';
 import { SaveCaso } from './use-cases/save-caso';
 import { SaveUnidade } from './use-cases/save-unidade';
+import { CountCruzadosHoje } from './use-cases/count-cruzados-hoje';
+import { CountProximosAoItem } from './use-cases/count-proximos-ao-item';
+import { CruzamentosDocaso } from './use-cases/cruzamentos-do-caso';
+import { CruzamentosDoItem } from './use-cases/cruzamentos-do-item';
+import { ListarCasosPaginado } from './use-cases/listar-casos-paginado';
+import { ListCasoIdsComCruzamento } from './use-cases/list-caso-ids-com-cruzamento';
+import { ListCruzamentos } from './use-cases/list-cruzamentos';
 
 @Module({
   providers: [
@@ -47,6 +54,13 @@ import { SaveUnidade } from './use-cases/save-unidade';
     ProximoProtocolo,
     PushService,
     CanalCidadaoService,
+    ListarCasosPaginado,
+    CountProximosAoItem,
+    CruzamentosDoItem,
+    CruzamentosDocaso,
+    CountCruzadosHoje,
+    ListCasoIdsComCruzamento,
+    ListCruzamentos,
     JwtService,
     PrismaService,
   ],

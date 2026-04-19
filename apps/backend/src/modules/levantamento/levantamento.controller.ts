@@ -61,7 +61,9 @@ import { CriarItemManual } from './use-cases/criar-item-manual';
 import { DeleteItem } from './use-cases/delete-item';
 import { DeleteLevantamento } from './use-cases/delete-levantamento';
 import { FilterLevantamento } from './use-cases/filter-levantamento';
+import { FullMapData } from './use-cases/full-map-data';
 import { GetItem } from './use-cases/get-item';
+import { ItemStatusesByCliente } from './use-cases/item-statuses-by-cliente';
 import { ListHistoricoPorCliente } from './use-cases/list-historico-por-cliente';
 import { ListHistoricoPorLocalizacao } from './use-cases/list-historico-por-localizacao';
 import { ListItensMapa } from './use-cases/list-itens-mapa';
@@ -97,6 +99,8 @@ export class LevantamentoController {
     private updateItem: UpdateItem,
     private listHistoricoPorLocalizacao: ListHistoricoPorLocalizacao,
     private listHistoricoPorCliente: ListHistoricoPorCliente,
+    private fullMapDataUc: FullMapData,
+    private itemStatusesByClienteUc: ItemStatusesByCliente,
     @Inject(REQUEST) private req: Request,
   ) {}
 
@@ -166,6 +170,24 @@ export class LevantamentoController {
   async listHistoricoPorClienteRoute() {
     const clienteId = this.req['tenantId'] as string;
     return this.listHistoricoPorCliente.execute(clienteId);
+  }
+
+  @Get('map/full-data')
+  @Roles('admin', 'supervisor', 'agente')
+  @ApiOperation({ summary: 'Dados completos do mapa (itens, planejamentos, regiões, pluvio)' })
+  async fullMapData(@Query('clienteId') clienteId?: string) {
+    const tenantId = this.req['tenantId'] as string | null;
+    const effectiveClienteId = tenantId ?? clienteId ?? null;
+    return this.fullMapDataUc.execute(effectiveClienteId as string);
+  }
+
+  @Get('map/item-statuses')
+  @Roles('admin', 'supervisor', 'agente')
+  @ApiOperation({ summary: 'Mapa de status dos itens de levantamento por cliente' })
+  async itemStatuses(@Query('clienteId') clienteId?: string) {
+    const tenantId = this.req['tenantId'] as string | null;
+    const effectiveClienteId = tenantId ?? clienteId ?? null;
+    return this.itemStatusesByClienteUc.execute(effectiveClienteId as string);
   }
 
   @Get('itens/:itemId')

@@ -15,9 +15,12 @@ export const distribuicaoQuarteirao = {
     const raw = await http.get(`/quarteiroes/distribuicoes${qs({ clienteId, ciclo })}`);
     return deepToSnake(raw) as Ret<typeof _sb.distribuicaoQuarteirao.listByCiclo>;
   },
-  listByAgente: async () => { throw new Error('[sem endpoint NestJS] distribuicaoQuarteirao.listByAgente'); },
-  upsert: async () => { throw new Error('[sem endpoint NestJS] distribuicaoQuarteirao.upsert'); },
-  deletar: async () => { throw new Error('[sem endpoint NestJS] distribuicaoQuarteirao.deletar'); },
+  listByAgente: (clienteId: string, agenteId: string, ciclo: number): Promise<string[]> =>
+    http.get(`/quarteiroes/distribuicoes/por-agente${qs({ agenteId, ciclo })}`),
+  upsert: (rows: { ciclo: number; quarteirao: string; agenteId: string; regiaoId?: string | null }[]): Promise<{ ok: boolean }> =>
+    http.post('/quarteiroes/distribuicoes/upsert', { rows }),
+  deletar: (ciclo: number, quarteiroes: string[]): Promise<{ deleted: number }> =>
+    http.post('/quarteiroes/distribuicoes/deletar', { ciclo, quarteiroes }),
   copiarDoCiclo: async (clienteId: string, cicloOrigem: number, cicloDestino: number) => {
     const raw = await http.post('/quarteiroes/distribuicoes/copiar', deepToCamel({ clienteId, cicloOrigem, cicloDestino }));
     return ((raw as Record<string, unknown>).count as number) ?? 0;

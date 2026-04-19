@@ -12,6 +12,9 @@ import { DeleteDistribuicao } from './use-cases/delete-distribuicao';
 import { DeleteQuarteirao } from './use-cases/delete-quarteirao';
 import { FilterDistribuicoes } from './use-cases/filter-distribuicoes';
 import { FilterQuarteiroes } from './use-cases/filter-quarteiroes';
+import { ListDistribuicoesByAgente } from './use-cases/list-distribuicoes-by-agente';
+import { UpsertDistribuicoes } from './use-cases/upsert-distribuicoes';
+import { DeletarDistribuicoes } from './use-cases/deletar-distribuicoes';
 
 @Module({
   providers: [
@@ -23,6 +26,9 @@ import { FilterQuarteiroes } from './use-cases/filter-quarteiroes';
     CopiarDistribuicao,
     CoberturaCiclo,
     DeleteDistribuicao,
+    ListDistribuicoesByAgente,
+    UpsertDistribuicoes,
+    DeletarDistribuicoes,
     JwtService,
     PrismaService,
   ],
