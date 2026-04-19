@@ -1,7 +1,6 @@
 model levantamento_item_evidencias {
   id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   item_id     String   @map("levantamento_item_id") @db.Uuid
-  // PENDENTE: coluna existe no Prisma mas não no banco — avaliar se é adição futura ou drift a reverter
   tipo        String?
   url         String   @map("image_url")
   legenda     String?

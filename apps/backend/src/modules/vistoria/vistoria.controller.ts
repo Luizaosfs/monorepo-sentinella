@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Inject,
   Param,
   Post,
   Put,
@@ -10,7 +11,9 @@ import {
   UseInterceptors,
   UsePipes,
 } from '@nestjs/common';
+import { REQUEST } from '@nestjs/core';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Request } from 'express';
 import {
   PaginationProps,
   paginationSchema,
@@ -21,6 +24,14 @@ import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 
 import { Roles } from '@/decorators/roles.decorator';
 
+import {
+  AddDepositoBody,
+  addDepositoSchema,
+  AddSintomasBody,
+  addSintomasSchema,
+  AddRiscosBody,
+  addRiscosSchema,
+} from './dtos/add-vistoria-child.body';
 import {
   CreateVistoriaBody,
   createVistoriaSchema,
@@ -41,6 +52,9 @@ import {
   SaveVistoriaBody,
   saveVistoriaSchema,
 } from './dtos/save-vistoria.body';
+import { AddDeposito } from './use-cases/add-deposito';
+import { AddSintomas } from './use-cases/add-sintomas';
+import { AddRiscos } from './use-cases/add-riscos';
 import { CountVistoria } from './use-cases/count-vistoria';
 import { CreateVistoria } from './use-cases/create-vistoria';
 import { CreateVistoriaCompleta } from './use-cases/create-vistoria-completa';
@@ -66,6 +80,10 @@ export class VistoriaController {
     private paginationVistoria: PaginationVistoria,
     private saveVistoria: SaveVistoria,
     private countVistoria: CountVistoria,
+    private addDepositoUc: AddDeposito,
+    private addSintomasUc: AddSintomas,
+    private addRiscosUc: AddRiscos,
+    @Inject(REQUEST) private req: Request,
   ) {}
 
   @Get('consolidadas')
@@ -142,6 +160,33 @@ export class VistoriaController {
   async createCompleta(@Body() body: CreateVistoriaCompletaBody) {
     const parsed = createVistoriaCompletaSchema.parse(body);
     return this.createVistoriaCompleta.execute(parsed);
+  }
+
+  @Post(':id/depositos')
+  @Roles('admin', 'supervisor', 'agente')
+  @ApiOperation({ summary: 'Adicionar depósito a uma vistoria' })
+  async addDeposito(@Param('id') id: string, @Body() body: AddDepositoBody) {
+    const parsed = addDepositoSchema.parse(body);
+    const clienteId = this.req['tenantId'] as string;
+    return this.addDepositoUc.execute(id, clienteId, parsed);
+  }
+
+  @Post('sintomas')
+  @Roles('admin', 'supervisor', 'agente')
+  @ApiOperation({ summary: 'Registrar sintomas de uma vistoria' })
+  async addSintomas(@Body() body: AddSintomasBody) {
+    const parsed = addSintomasSchema.parse(body);
+    const clienteId = this.req['tenantId'] as string;
+    return this.addSintomasUc.execute(clienteId, parsed);
+  }
+
+  @Post('riscos')
+  @Roles('admin', 'supervisor', 'agente')
+  @ApiOperation({ summary: 'Registrar riscos de uma vistoria' })
+  async addRiscos(@Body() body: AddRiscosBody) {
+    const parsed = addRiscosSchema.parse(body);
+    const clienteId = this.req['tenantId'] as string;
+    return this.addRiscosUc.execute(clienteId, parsed);
   }
 
   @Put(':id')

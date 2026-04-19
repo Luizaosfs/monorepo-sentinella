@@ -12,8 +12,10 @@ import { DeleteCaso } from './use-cases/delete-caso';
 import { DeletePush } from './use-cases/delete-push';
 import { DeleteUnidade } from './use-cases/delete-unidade';
 import { FilterCasos } from './use-cases/filter-casos';
+import { EnviarEsus } from './use-cases/enviar-esus';
 import { FilterEsus } from './use-cases/filter-esus';
 import { FilterUnidades } from './use-cases/filter-unidades';
+import { ReenviarEsus } from './use-cases/reenviar-esus';
 import { GetCaso } from './use-cases/get-caso';
 import { CanalCidadaoService } from './canal-cidadao.service';
 import { ListarNoRaio } from './use-cases/listar-no-raio';
@@ -38,6 +40,8 @@ import { SaveUnidade } from './use-cases/save-unidade';
     DeletePush,
     FilterEsus,
     CreateEsus,
+    EnviarEsus,
+    ReenviarEsus,
     PaginationCasos,
     ListarNoRaio,
     ProximoProtocolo,

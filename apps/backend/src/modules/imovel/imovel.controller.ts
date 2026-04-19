@@ -26,6 +26,10 @@ import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 import { Roles } from '@/decorators/roles.decorator';
 
 import {
+  BatchCreateImoveisBody,
+  batchCreateImoveisSchema,
+} from './dtos/batch-create-imoveis.body';
+import {
   CreateImovelBody,
   createImovelSchema,
 } from './dtos/create-imovel.body';
@@ -33,10 +37,18 @@ import {
   FilterImovelInput,
   filterImovelSchema,
 } from './dtos/filter-imovel.input';
+import {
+  FindByEnderecoQuery,
+  findByEnderecoSchema,
+} from './dtos/find-by-endereco.input';
 import { SaveImovelBody, saveImovelSchema } from './dtos/save-imovel.body';
+import { BatchCreateImoveis } from './use-cases/batch-create-imoveis';
+import { BuscarChavesExistentes } from './use-cases/buscar-chaves-existentes';
 import { CalcularScore } from './use-cases/calcular-score';
+import { CountPrioridadeDrone } from './use-cases/count-prioridade-drone';
 import { CreateImovel } from './use-cases/create-imovel';
 import { DeleteImovel } from './use-cases/delete-imovel';
+import { FindByEndereco } from './use-cases/find-by-endereco';
 import { FilterImovel } from './use-cases/filter-imovel';
 import { GetImovel } from './use-cases/get-imovel';
 import { GetImovelResumo } from './use-cases/get-imovel-resumo';
@@ -63,6 +75,10 @@ export class ImovelController {
     private listImovelResumoUc: ListImovelResumo,
     private getImovelResumoUc: GetImovelResumo,
     private listImovelProblematicosUc: ListImovelProblematicos,
+    private findByEnderecoUc: FindByEndereco,
+    private buscarChavesExistentesUc: BuscarChavesExistentes,
+    private countPrioridadeDroneUc: CountPrioridadeDrone,
+    private batchCreateImoveisUc: BatchCreateImoveis,
     @Inject(REQUEST) private req: Request,
   ) {}
 
@@ -116,6 +132,29 @@ export class ImovelController {
     return items;
   }
 
+  @Get('by-endereco')
+  @Roles('admin', 'supervisor', 'agente')
+  @ApiOperation({ summary: 'Buscar imóvel por logradouro e número (ILIKE)' })
+  async findByEnderecoRoute(@Query() query: FindByEnderecoQuery) {
+    const parsed = findByEnderecoSchema.parse(query);
+    const { imovel } = await this.findByEnderecoUc.execute(parsed.logradouro, parsed.numero);
+    return imovel ? ImovelViewModel.toHttp(imovel) : null;
+  }
+
+  @Get('chaves-existentes')
+  @Roles('admin', 'supervisor')
+  @ApiOperation({ summary: 'Retorna chaves logradouro|numero|bairro de imóveis ativos (deduplicação CSV)' })
+  async chavesExistentes() {
+    return this.buscarChavesExistentesUc.execute();
+  }
+
+  @Get('count-prioridade-drone')
+  @Roles('admin', 'supervisor')
+  @ApiOperation({ summary: 'Contagem de imóveis com prioridade_drone=true' })
+  async countPrioridadeDrone() {
+    return this.countPrioridadeDroneUc.execute();
+  }
+
   @Get(':id/score')
   @Roles('admin', 'supervisor', 'agente')
   @ApiOperation({ summary: 'Calcula e grava score de risco do imóvel' })
@@ -139,6 +178,14 @@ export class ImovelController {
   async findById(@Param('id') id: string) {
     const { imovel } = await this.getImovel.execute(id, this.req['tenantId'] as string | null);
     return ImovelViewModel.toHttp(imovel);
+  }
+
+  @Post('batch')
+  @Roles('admin', 'supervisor')
+  @ApiOperation({ summary: 'Importação em lote de imóveis (CSV)' })
+  async batchCreate(@Body() body: BatchCreateImoveisBody) {
+    const parsed = batchCreateImoveisSchema.parse(body);
+    return this.batchCreateImoveisUc.execute(parsed);
   }
 
   @Post()

@@ -14,7 +14,8 @@ export const operacoes = {
     return deepToSnake(raw) as Ret<typeof _sb.operacoes.listByFoco>;
   },
 
-  listarComVinculos: async () => { throw new Error('[sem endpoint NestJS] operacoes.listarComVinculos'); },
+  listarComVinculos: (filters?: { status?: string; tipoVinculo?: string; focoRiscoId?: string; limit?: number }): Promise<Record<string, unknown>[]> =>
+    http.get(`/operacoes/com-vinculos${qs(filters ?? {})}`),
 
   cancelar: (id: string): Promise<void> =>
     http.delete(`/operacoes/${id}`),
@@ -46,12 +47,26 @@ export const operacoes = {
   remover: (id: string): Promise<void> =>
     http.delete(`/operacoes/${id}`),
 
-  resolverStatusItem: async () => { throw new Error('[sem endpoint NestJS] operacoes.resolverStatusItem'); },
-  ensureEmAndamento: async () => { throw new Error('[sem endpoint NestJS] operacoes.ensureEmAndamento'); },
-  upsert: async () => { throw new Error('[sem endpoint NestJS] operacoes.upsert'); },
-  bulkInsert: async () => { throw new Error('[sem endpoint NestJS] operacoes.bulkInsert'); },
-  listExistingItemIds: async () => { throw new Error('[sem endpoint NestJS] operacoes.listExistingItemIds'); },
-  concluirParaItem: async () => { throw new Error('[sem endpoint NestJS] operacoes.concluirParaItem'); },
+  resolverStatusItem: (itemId: string): Promise<void> =>
+    http.post('/operacoes/resolver-status-item', { itemId }),
+  ensureEmAndamento: (
+    _clienteId: string,
+    itemLevantamentoId?: string,
+    focoRiscoId?: string,
+    opts?: { responsavelId?: string; prioridade?: string; observacao?: string; tipoVinculo?: string },
+  ): Promise<Record<string, unknown>> =>
+    http.post('/operacoes/ensure-em-andamento', { itemLevantamentoId, focoRiscoId, ...opts }),
+
+  upsert: (body: { id?: string; status: string; prioridade?: string | null; responsavelId?: string | null; observacao?: string | null; prevStatus?: string }): Promise<Record<string, unknown>> =>
+    http.post('/operacoes/upsert', body),
+
+  bulkInsert: (operacoes: Array<{ itemLevantamentoId: string; status?: string; prioridade?: string | null; responsavelId?: string | null; observacao?: string | null; tipoVinculo?: string }>): Promise<{ operacoes: Record<string, unknown>[]; skipped: number }> =>
+    http.post('/operacoes/bulk-insert', { operacoes }),
+
+  listExistingItemIds: (_clienteId: string, itemIds: string[]): Promise<string[]> =>
+    http.post('/operacoes/existing-item-ids', { itemIds }),
+  concluirParaItem: (itemLevantamentoId: string, observacao?: string): Promise<Record<string, unknown>> =>
+    http.post('/operacoes/concluir-para-item', { itemLevantamentoId, observacao }),
 };
 
 export const operacoesSla = {
@@ -61,5 +76,6 @@ export const operacoesSla = {
     legenda: string | null,
   ): Promise<void> =>
     http.post(`/operacoes/${operacaoId}/evidencias`, { imageUrl, legenda }),
-  ensureAndConcluir: async () => { throw new Error('[sem endpoint NestJS] operacoesSla.ensureAndConcluir'); },
+  ensureAndConcluir: (opts: { itemLevantamentoId?: string; focoRiscoId?: string; responsavelId?: string | null; prioridade?: string | null; observacao?: string | null; tipoVinculo?: string }): Promise<Record<string, unknown>> =>
+    http.post('/operacoes/ensure-and-concluir', opts),
 };

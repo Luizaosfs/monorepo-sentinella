@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   HttpCode,
+  Inject,
   Param,
   Post,
   Put,
@@ -12,7 +13,9 @@ import {
   UseInterceptors,
   UsePipes,
 } from '@nestjs/common';
+import { REQUEST } from '@nestjs/core';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Request } from 'express';
 import {
   PaginationProps,
   paginationSchema,
@@ -59,6 +62,11 @@ import { DeleteItem } from './use-cases/delete-item';
 import { DeleteLevantamento } from './use-cases/delete-levantamento';
 import { FilterLevantamento } from './use-cases/filter-levantamento';
 import { GetItem } from './use-cases/get-item';
+import { ListHistoricoPorCliente } from './use-cases/list-historico-por-cliente';
+import { ListHistoricoPorLocalizacao } from './use-cases/list-historico-por-localizacao';
+import { ListItensMapa } from './use-cases/list-itens-mapa';
+import { ListItensPorOperador } from './use-cases/list-itens-por-operador';
+import { RegistrarCheckin } from './use-cases/registrar-checkin';
 import { UpdateItem } from './use-cases/update-item';
 import { GetLevantamento } from './use-cases/get-levantamento';
 import { PaginationLevantamento } from './use-cases/pagination-levantamento';
@@ -80,10 +88,16 @@ export class LevantamentoController {
     private deleteLevantamento: DeleteLevantamento,
     private filterLevantamento: FilterLevantamento,
     private getItem: GetItem,
+    private listItensMapa: ListItensMapa,
+    private listItensPorOperador: ListItensPorOperador,
+    private registrarCheckin: RegistrarCheckin,
     private getLevantamento: GetLevantamento,
     private paginationLevantamento: PaginationLevantamento,
     private saveLevantamento: SaveLevantamento,
     private updateItem: UpdateItem,
+    private listHistoricoPorLocalizacao: ListHistoricoPorLocalizacao,
+    private listHistoricoPorCliente: ListHistoricoPorCliente,
+    @Inject(REQUEST) private req: Request,
   ) {}
 
   @Get()
@@ -112,6 +126,46 @@ export class LevantamentoController {
       items: result.items.map(LevantamentoViewModel.toHttp),
       pagination: result.pagination,
     };
+  }
+
+  @Get('itens/por-operador')
+  @Roles('admin', 'supervisor', 'agente')
+  @ApiOperation({ summary: 'Listar itens de levantamento atribuídos a um operador' })
+  async listItensPorOperadorRoute(@Query('usuarioId') usuarioId: string) {
+    return this.listItensPorOperador.execute(usuarioId);
+  }
+
+  @Get('itens/mapa')
+  @Roles('admin', 'supervisor', 'agente')
+  @ApiOperation({ summary: 'Listar itens com coordenadas para exibição no mapa (máx. 500)' })
+  async listItensMapaRoute() {
+    const clienteId = this.req['tenantId'] as string;
+    return this.listItensMapa.execute(clienteId);
+  }
+
+  @Get('historico-atendimento/por-localizacao')
+  @Roles('admin', 'supervisor', 'agente')
+  @ApiOperation({ summary: 'Listar histórico de atendimento próximo a uma localização' })
+  async listHistoricoPorLocalizacaoRoute(
+    @Query('lat') lat: string,
+    @Query('lng') lng: string,
+    @Query('tolerance') tolerance?: string,
+  ) {
+    const clienteId = this.req['tenantId'] as string;
+    return this.listHistoricoPorLocalizacao.execute(
+      clienteId,
+      parseFloat(lat),
+      parseFloat(lng),
+      tolerance ? parseFloat(tolerance) : 0.0001,
+    );
+  }
+
+  @Get('historico-atendimento')
+  @Roles('admin', 'supervisor')
+  @ApiOperation({ summary: 'Listar histórico de atendimento do cliente (máx. 1000)' })
+  async listHistoricoPorClienteRoute() {
+    const clienteId = this.req['tenantId'] as string;
+    return this.listHistoricoPorCliente.execute(clienteId);
   }
 
   @Get('itens/:itemId')
@@ -156,6 +210,14 @@ export class LevantamentoController {
     const parsed = addItemEvidenciaSchema.parse(body);
     const { evidencia } = await this.addItemEvidencia.execute(itemId, parsed);
     return evidencia;
+  }
+
+  @Post('itens/:id/checkin')
+  @Roles('admin', 'supervisor', 'agente')
+  @ApiOperation({ summary: 'Registrar checkin no item — transiciona foco vinculado de suspeita → em_triagem' })
+  async checkin(@Param('id') id: string) {
+    const usuarioId = this.req['userId'] as string | undefined;
+    return this.registrarCheckin.execute(id, usuarioId);
   }
 
   @Get(':id')

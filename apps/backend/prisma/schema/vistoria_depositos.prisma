@@ -15,14 +15,6 @@ model vistoria_depositos {
   cliente_id        String   @db.Uuid
   created_at        DateTime @default(now()) @db.Timestamptz
 
-  // PENDENTE: verificar migration — colunas legacy abaixo não estão no SQL atual
-  // tipo_deposito String @default("")   // substituída por "tipo"
-  // quantidade    Int?                  // substituída por qtd_inspecionados
-  // com_larva     Boolean?              // substituída por qtd_com_focos
-  // tratado       Boolean?              // substituída por usou_larvicida
-  // observacao    String?
-  // foto_url      String?
-
   vistoria vistorias @relation(fields: [vistoria_id], references: [id])
 
   @@index([vistoria_id])

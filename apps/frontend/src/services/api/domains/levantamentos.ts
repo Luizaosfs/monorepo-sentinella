@@ -52,8 +52,8 @@ export const itens = {
     return deepToSnake(raw) as Ret<typeof _sb.itens.listByLevantamento>;
   },
 
-  /** @deprecated no-op legado — nunca usa dados reais */
-  updateAtendimento: async () => { throw new Error('[sem endpoint NestJS] itens.updateAtendimento'); },
+  /** @deprecated no-op — colunas removidas na migration 20260711 */
+  updateAtendimento: async () => {},
 
   getById: async (id: string) => {
     const raw = await http.get(`/levantamentos/itens/${id}`);
@@ -77,9 +77,14 @@ export const itens = {
   listRecentResolvidosPorCliente: async () => { throw new Error('[sem endpoint NestJS] itens.listRecentResolvidosPorCliente'); },
   listDetecoes: async () => { throw new Error('[sem endpoint NestJS] itens.listDetecoes'); },
   getDetectionBbox: async () => { throw new Error('[sem endpoint NestJS] itens.getDetectionBbox'); },
-  registrarCheckin: async () => { throw new Error('[sem endpoint NestJS] itens.registrarCheckin'); },
-  listByOperador: async () => { throw new Error('[sem endpoint NestJS] itens.listByOperador'); },
-  listMapByCliente: async () => { throw new Error('[sem endpoint NestJS] itens.listMapByCliente'); },
+  registrarCheckin: (itemId: string): Promise<{ ok: boolean; focoId: string | null }> =>
+    http.post(`/levantamentos/itens/${itemId}/checkin`, {}),
+
+  listByOperador: (usuarioId: string): Promise<Record<string, unknown>[]> =>
+    http.get(`/levantamentos/itens/por-operador${qs({ usuarioId })}`),
+
+  listMapByCliente: (_clienteId: string): Promise<Record<string, unknown>[]> =>
+    http.get('/levantamentos/itens/mapa'),
   updateObservacaoAtendimento: async () => { throw new Error('[sem endpoint NestJS] itens.updateObservacaoAtendimento'); },
   listStatusHistorico: async () => { throw new Error('[sem endpoint NestJS] itens.listStatusHistorico'); },
   listByClienteAndPeriod: async () => { throw new Error('[sem endpoint NestJS] itens.listByClienteAndPeriod'); },

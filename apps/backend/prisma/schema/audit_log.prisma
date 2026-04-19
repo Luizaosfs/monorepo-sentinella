@@ -9,9 +9,9 @@ model audit_log {
   ip_hash     String?
   descricao   String?
   payload     Json?
-  dados_antes  Json?   // PENDENTE: coluna existe no Prisma mas não no banco — avaliar se é adição futura ou drift a reverter
-  dados_depois Json?   // PENDENTE: coluna existe no Prisma mas não no banco — avaliar se é adição futura ou drift a reverter
-  operacao    String?  // PENDENTE: coluna existe no Prisma mas não no banco — avaliar se é adição futura ou drift a reverter
+  dados_antes  Json?
+  dados_depois Json?
+  operacao    String?
   created_at  DateTime @default(now()) @db.Timestamptz
 
   @@index([cliente_id])

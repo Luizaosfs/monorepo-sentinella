@@ -54,8 +54,27 @@ export const imoveis = {
     return deepToSnake(raw) as Ret<typeof _sb.imoveis.listProblematicos>;
   },
 
-  findByEndereco: async () => { throw new Error('[sem endpoint NestJS] imoveis.findByEndereco'); },
-  countPrioridadeDroneByCliente: async () => { throw new Error('[sem endpoint NestJS] imoveis.countPrioridadeDroneByCliente'); },
-  buscarChavesExistentes: async () => { throw new Error('[sem endpoint NestJS] imoveis.buscarChavesExistentes'); },
-  batchCreate: async () => { throw new Error('[sem endpoint NestJS] imoveis.batchCreate'); },
+  findByEndereco: async (
+    _clienteId: string,
+    logradouro: string,
+    numero: string,
+  ): Promise<Ret<typeof _sb.imoveis.findByEndereco>> => {
+    const raw = await http.get(`/imoveis/by-endereco${qs({ logradouro, numero })}`);
+    return raw ? (deepToSnake(raw) as Ret<typeof _sb.imoveis.findByEndereco>) : null;
+  },
+
+  countPrioridadeDroneByCliente: async (_clienteId: string): Promise<number> =>
+    http.get('/imoveis/count-prioridade-drone'),
+
+  buscarChavesExistentes: async (_clienteId: string): Promise<Set<string>> => {
+    const data: string[] = await http.get('/imoveis/chaves-existentes');
+    return new Set(data);
+  },
+
+  batchCreate: async (
+    _clienteId: string,
+    registros: Parameters<typeof _sb.imoveis.batchCreate>[1],
+    _onProgress?: Parameters<typeof _sb.imoveis.batchCreate>[2],
+  ): Promise<{ importados: number; falhas: number }> =>
+    http.post('/imoveis/batch', { registros: registros.map((r) => deepToCamel(r)) }),
 };

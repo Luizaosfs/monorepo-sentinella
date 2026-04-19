@@ -41,7 +41,13 @@ export const cnesSync = {
 };
 
 export const offlineSyncLog = {
-  registrar: async () => { throw new Error('[sem endpoint NestJS] offlineSyncLog.registrar'); },
+  /**
+   * @deprecated No-op — nenhuma tela chama offlineSyncLog.registrar.
+   * Telemetria de sync offline sem consumidor ativo no frontend.
+   */
+  registrar: async (..._args: unknown[]): Promise<void> => {
+    return;
+  },
 };
 
 export const jobQueue = {
@@ -64,7 +70,12 @@ export const jobQueue = {
 };
 
 export const auditLog = {
-  list: async () => { throw new Error('[sem endpoint NestJS] auditLog.list'); },
+  /**
+   * @deprecated No-op — nenhuma tela consome auditLog.list no frontend atual.
+   */
+  list: async (..._args: unknown[]): Promise<Record<string, unknown>[]> => {
+    return [];
+  },
 };
 
 export const alertasRetorno = {
@@ -73,6 +84,9 @@ export const alertasRetorno = {
 };
 
 export const historicoAtendimento = {
-  listByClienteELocalizacao: async () => { throw new Error('[sem endpoint NestJS] historicoAtendimento.listByClienteELocalizacao'); },
-  listByCliente: async () => { throw new Error('[sem endpoint NestJS] historicoAtendimento.listByCliente'); },
+  listByClienteELocalizacao: (_clienteId: string, lat: number, lng: number, tolerance: number): Promise<Record<string, unknown>[]> =>
+    http.get(`/levantamentos/historico-atendimento/por-localizacao${qs({ lat, lng, tolerance })}`),
+
+  listByCliente: (_clienteId: string): Promise<Record<string, unknown>[]> =>
+    http.get('/levantamentos/historico-atendimento'),
 };

@@ -114,6 +114,19 @@ export const createPushSchema = z.object({
 });
 export class CreatePushBody extends createZodDto(createPushSchema) {}
 
+export const enviarEsusSchema = z.object({
+  levantamentoItemId: z.string().uuid().optional(),
+  tipoAgravo: z.enum(['dengue', 'chikungunya', 'zika'], { required_error: 'Tipo de agravo obrigatório' }),
+  enderecoCompleto: z.string().optional().nullable(),
+  enderecoCurto: z.string().optional().nullable(),
+  latitude: z.number().optional().nullable(),
+  longitude: z.number().optional().nullable(),
+  dataHora: z.string().optional().nullable(),
+  dataInicioSintomas: z.string().optional().nullable(),
+});
+export type EnviarEsusInput = z.infer<typeof enviarEsusSchema>;
+export class EnviarEsusBody extends createZodDto(enviarEsusSchema) {}
+
 export const createEsusSchema = z.object({
   levantamentoItemId: z
     .string()

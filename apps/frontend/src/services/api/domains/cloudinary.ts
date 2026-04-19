@@ -11,5 +11,11 @@ export const cloudinary = {
 };
 
 export const cloudinaryOrfaos = {
-  listar: async () => { throw new Error('[sem endpoint NestJS] cloudinaryOrfaos.listar'); },
+  /**
+   * @deprecated No-op — nenhuma tela consome cloudinaryOrfaos.listar no frontend atual.
+   * Feature de limpeza de infra sem consumidor ativo.
+   */
+  listar: async (..._args: unknown[]): Promise<Record<string, unknown>[]> => {
+    return [];
+  },
 };

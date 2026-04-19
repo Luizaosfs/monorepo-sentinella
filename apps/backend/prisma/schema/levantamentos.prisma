@@ -2,7 +2,6 @@ model levantamentos {
   id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   cliente_id           String    @db.Uuid
   planejamento_id      String?   @db.Uuid
-  // PENDENTE: coluna existe no Prisma mas não no banco — avaliar se é adição futura ou drift a reverter
   ciclo_id             String?   @db.Uuid
   id_drone             String?   @db.Uuid
   usuario_id           String    @db.Uuid
@@ -12,11 +11,9 @@ model levantamentos {
   data_voo             DateTime? @db.Date
   status_processamento String?   @default("aguardando")
   total_itens          Int       @default(0)
-  // PENDENTE: coluna existe no Prisma mas não no banco — avaliar se é adição futura ou drift a reverter
   observacao           String?
   created_at           DateTime  @default(now()) @db.Timestamptz
   updated_at           DateTime  @default(now()) @db.Timestamptz
-  // PENDENTE: coluna existe no Prisma mas não no banco — avaliar se é adição futura ou drift a reverter
   concluido_em         DateTime? @db.Timestamptz
   deleted_at           DateTime? @db.Timestamptz
   deleted_by           String?   @db.Uuid

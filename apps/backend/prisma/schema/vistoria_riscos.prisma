@@ -19,10 +19,6 @@ model vistoria_riscos {
   cliente_id               String    @db.Uuid
   created_at               DateTime  @default(now()) @db.Timestamptz
 
-  // PENDENTE: verificar migration — colunas legacy abaixo não estão no SQL atual
-  // tipo_risco String @default("")
-  // descricao  String?
-
   vistoria vistorias @relation(fields: [vistoria_id], references: [id])
 
   @@index([vistoria_id])

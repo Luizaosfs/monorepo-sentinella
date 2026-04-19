@@ -27,10 +27,12 @@ import {
   CreateEsusBody,
   CreatePushBody,
   CreateUnidadeBody,
+  EnviarEsusBody,
   createCasoSchema,
   createEsusSchema,
   createPushSchema,
   createUnidadeSchema,
+  enviarEsusSchema,
   SaveCasoBody,
   SaveUnidadeBody,
   saveCasoSchema,
@@ -39,6 +41,8 @@ import {
 import { CreateCaso } from './use-cases/create-caso';
 import { CreateEsus } from './use-cases/create-esus';
 import { CreatePush } from './use-cases/create-push';
+import { EnviarEsus } from './use-cases/enviar-esus';
+import { ReenviarEsus } from './use-cases/reenviar-esus';
 import { CreateUnidade } from './use-cases/create-unidade';
 import { DeleteCaso } from './use-cases/delete-caso';
 import { DeletePush } from './use-cases/delete-push';
@@ -74,6 +78,8 @@ export class NotificacaoController {
     private pushDelete: DeletePush,
     private esusFilter: FilterEsus,
     private esusCreate: CreateEsus,
+    private esusEnviar: EnviarEsus,
+    private esusReenviar: ReenviarEsus,
     private casosPagination: PaginationCasos,
     private casosRaio: ListarNoRaio,
     private proximoProtocoloUc: ProximoProtocolo,
@@ -243,6 +249,24 @@ export class NotificacaoController {
     const userId = (this.req['user'] as AuthenticatedUser).id;
     const { esus } = await this.esusCreate.execute(clienteId, userId, parsed);
     return NotificacaoViewModel.esusToHttp(esus);
+  }
+
+  @Post('esus/enviar')
+  @Roles('admin', 'supervisor', 'notificador')
+  @ApiOperation({ summary: 'Enviar notificação ao e-SUS Notifica (POST direto à API do Ministério da Saúde)' })
+  async enviarEsus(@Body() body: EnviarEsusBody) {
+    const parsed = enviarEsusSchema.parse(body);
+    const clienteId = this.req['tenantId'] as string;
+    const userId = (this.req['user'] as { id?: string } | undefined)?.id;
+    return this.esusEnviar.execute(clienteId, parsed, userId);
+  }
+
+  @Post('esus/:id/reenviar')
+  @Roles('admin', 'supervisor', 'notificador')
+  @ApiOperation({ summary: 'Reenviar notificação e-SUS com status=erro' })
+  async reenviarEsus(@Param('id') id: string) {
+    const clienteId = this.req['tenantId'] as string;
+    return this.esusReenviar.execute(id, clienteId);
   }
 
   // ── Protocolo ─────────────────────────────────────────────────────────────

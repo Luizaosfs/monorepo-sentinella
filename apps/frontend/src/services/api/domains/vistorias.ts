@@ -54,9 +54,14 @@ export const vistorias = {
   ): Promise<void> =>
     http.put(`/vistorias/${vistoriaId}`, deepToCamel(payload) as Record<string, unknown>),
 
-  addDeposito: async () => { throw new Error('[sem endpoint NestJS] vistorias.addDeposito'); },
-  addSintomas: async () => { throw new Error('[sem endpoint NestJS] vistorias.addSintomas'); },
-  addRiscos: async () => { throw new Error('[sem endpoint NestJS] vistorias.addRiscos'); },
+  addDeposito: (vistoriaId: string, payload: Record<string, unknown>): Promise<Record<string, unknown>> =>
+    http.post(`/vistorias/${vistoriaId}/depositos`, deepToCamel(payload) as Record<string, unknown>),
+
+  addSintomas: (payload: Record<string, unknown>): Promise<Record<string, unknown>> =>
+    http.post('/vistorias/sintomas', deepToCamel(payload) as Record<string, unknown>),
+
+  addRiscos: (payload: Record<string, unknown>): Promise<void> =>
+    http.post('/vistorias/riscos', deepToCamel(payload) as Record<string, unknown>),
 
   getResumoAgente: (
     clienteId: string,

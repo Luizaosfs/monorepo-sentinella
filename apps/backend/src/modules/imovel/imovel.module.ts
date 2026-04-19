@@ -4,9 +4,13 @@ import { DatabaseModule } from '@shared/modules/database/database.module';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 
 import { ImovelController } from './imovel.controller';
+import { BatchCreateImoveis } from './use-cases/batch-create-imoveis';
+import { BuscarChavesExistentes } from './use-cases/buscar-chaves-existentes';
 import { CalcularScore } from './use-cases/calcular-score';
+import { CountPrioridadeDrone } from './use-cases/count-prioridade-drone';
 import { CreateImovel } from './use-cases/create-imovel';
 import { DeleteImovel } from './use-cases/delete-imovel';
+import { FindByEndereco } from './use-cases/find-by-endereco';
 import { FilterImovel } from './use-cases/filter-imovel';
 import { GetImovel } from './use-cases/get-imovel';
 import { GetImovelResumo } from './use-cases/get-imovel-resumo';
@@ -27,6 +31,10 @@ import { SaveImovel } from './use-cases/save-imovel';
     ListImovelResumo,
     GetImovelResumo,
     ListImovelProblematicos,
+    FindByEndereco,
+    BuscarChavesExistentes,
+    CountPrioridadeDrone,
+    BatchCreateImoveis,
     JwtService,
     PrismaService,
   ],

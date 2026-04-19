@@ -56,7 +56,9 @@
       "Bash(dir \"D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend\\\\dist\" /s /b)",
       "Bash(node_modules/.bin/tsc -p tsconfig.build.json --noEmit)",
       "Read(//tmp/**)",
-      "Bash(C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe *)"
+      "Bash(C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe *)",
+      "Bash(npx jest *)",
+      "Bash(npx nest *)"
     ]
   }
 }

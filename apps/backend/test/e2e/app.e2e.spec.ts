@@ -41,4 +41,40 @@ const skipE2e = process.env.SKIP_E2E === '1';
       .send({ email: 'user@test.com', password: '12345' })
       .expect(400);
   });
+
+  describe('Operações — rotas protegidas (sem token → 401)', () => {
+    it('GET /operacoes', async () => {
+      await request(app.getHttpServer()).get('/operacoes').expect(401);
+    });
+
+    it('GET /operacoes/pagination', async () => {
+      await request(app.getHttpServer())
+        .get('/operacoes/pagination')
+        .expect(401);
+    });
+
+    it('GET /operacoes/stats', async () => {
+      await request(app.getHttpServer()).get('/operacoes/stats').expect(401);
+    });
+
+    it('GET /operacoes/com-vinculos', async () => {
+      await request(app.getHttpServer())
+        .get('/operacoes/com-vinculos')
+        .expect(401);
+    });
+
+    it('POST /operacoes', async () => {
+      await request(app.getHttpServer())
+        .post('/operacoes')
+        .send({})
+        .expect(401);
+    });
+
+    it('POST /operacoes/bulk-insert', async () => {
+      await request(app.getHttpServer())
+        .post('/operacoes/bulk-insert')
+        .send({ operacoes: [] })
+        .expect(401);
+    });
+  });
 });
