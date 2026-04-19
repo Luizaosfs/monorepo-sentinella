@@ -10,7 +10,7 @@ export function invalidateAtendimentoItemCaches(
 ) {
   const { clienteId, levantamentoId } = args;
   queryClient.invalidateQueries({ queryKey: ['itens_cliente', clienteId] });
-  queryClient.invalidateQueries({ queryKey: ['itens_operador', clienteId] });
+  queryClient.invalidateQueries({ queryKey: ['itens_agente', clienteId] });
   queryClient.invalidateQueries({ queryKey: ['map_items', clienteId] });
   queryClient.invalidateQueries({ queryKey: ['map_full_data', clienteId] });
   queryClient.invalidateQueries({ queryKey: ['item_statuses', clienteId] });

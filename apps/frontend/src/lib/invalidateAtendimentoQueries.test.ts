@@ -10,7 +10,7 @@ describe('invalidateAtendimentoItemCaches', () => {
     invalidateAtendimentoItemCaches(queryClient, { clienteId: 'cli-1' });
 
     expect(spy).toHaveBeenCalledWith({ queryKey: ['itens_cliente', 'cli-1'] });
-    expect(spy).toHaveBeenCalledWith({ queryKey: ['itens_operador', 'cli-1'] });
+    expect(spy).toHaveBeenCalledWith({ queryKey: ['itens_agente', 'cli-1'] });
     expect(spy).toHaveBeenCalledWith({ queryKey: ['map_items', 'cli-1'] });
     expect(spy).toHaveBeenCalledWith({ queryKey: ['map_full_data', 'cli-1'] });
     expect(spy).toHaveBeenCalledWith({ queryKey: ['item_statuses', 'cli-1'] });

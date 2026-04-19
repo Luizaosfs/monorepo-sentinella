@@ -14,7 +14,7 @@ import { ImageModal } from "@/components/map-v3/ImageModal";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { useItensOperador } from "@/hooks/queries/useItensOperador";
+import { useItensAgente } from "@/hooks/queries/useItensAgente";
 import { useFocosAtribuidos } from "@/hooks/queries/useFocosAtribuidos";
 
 const PRIORIDADE_RISCO: Record<string, string> = {
@@ -84,7 +84,7 @@ export default function OperadorMapa() {
   const navigate = useNavigate();
   const { clienteId, clienteAtivo } = useClienteAtivo();
   const { usuario } = useAuth();
-  const { data: itens = [], isLoading, refetch } = useItensOperador(clienteId, usuario?.id ?? null);
+  const { data: itens = [], isLoading, refetch } = useItensAgente(clienteId, usuario?.id ?? null);
   const { data: focosAtribuidos = [] } = useFocosAtribuidos(clienteId, usuario?.id ?? null);
   const focosComoItens = useMemo(
     () => focosAtribuidos.filter((f) => f.latitude != null || f.longitude != null).map(focoToItem),

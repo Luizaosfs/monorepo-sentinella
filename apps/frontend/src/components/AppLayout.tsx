@@ -329,8 +329,8 @@ const AppLayout = () => {
   useEffect(() => {
     if (!isAgente || !clienteId || !usuario?.id) return;
     queryClient.prefetchQuery({
-      queryKey: ['itens_operador', clienteId, usuario.id],
-      queryFn: () => api.itens.listByOperador(clienteId, usuario.id),
+      queryKey: ['itens_agente', clienteId, usuario.id],
+      queryFn: () => api.itens.listByAgente(clienteId, usuario.id),
     });
   }, [isAgente, clienteId, usuario?.id, queryClient]);
 
