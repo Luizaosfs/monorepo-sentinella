@@ -20,7 +20,7 @@ import { http } from "@sentinella/api-client";
 import { api } from "@/services/api";
 import { useClienteAtivo } from "@/hooks/useClienteAtivo";
 
-interface Operador { id: string; nome: string; }
+interface Agente { id: string; nome: string; }
 
 interface OperacaoStatus {
   id: string;
@@ -34,7 +34,7 @@ interface Props {
   item: LevantamentoItem | null;
   onClose: () => void;
   onOpenImage: (url: string) => void;
-  /** Cria tarefa de correção avulsa (pendente, sem operador). Pode ser atribuída depois em Operações. */
+  /** Cria tarefa de correção avulsa (pendente, sem agente). Pode ser atribuída depois em Operações. */
   onCreateTask?: (item: LevantamentoItem) => Promise<void>;
   onSendFieldTeam?: (item: LevantamentoItem, responsavelId?: string) => Promise<void>;
   onMarkResolved?: (item: LevantamentoItem) => Promise<void>;
@@ -45,15 +45,15 @@ export function RiskDetailsPanel({ item, onClose, onOpenImage, onCreateTask, onS
   const [sendingTeam, setSendingTeam] = useState(false);
   const [resolving, setResolving] = useState(false);
   const [cancelling, setCancelling] = useState(false);
-  const [operadores, setOperadores] = useState<Operador[]>([]);
-  const [selectedOperador, setSelectedOperador] = useState<string>('');
+  const [agentes, setOperadores] = useState<Agente[]>([]);
+  const [selectedAgente, setSelectedOperador] = useState<string>('');
   const [opStatus, setOpStatus] = useState<OperacaoStatus | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     if (!clienteId) return;
     http.get(`/usuarios?clienteId=${encodeURIComponent(clienteId)}&ativo=true`)
-      .then((data) => setOperadores((data as Operador[]) || []))
+      .then((data) => setOperadores((data as Agente[]) || []))
       .catch(() => setOperadores([]));
   }, [clienteId]);
 
@@ -110,7 +110,7 @@ export function RiskDetailsPanel({ item, onClose, onOpenImage, onCreateTask, onS
   const handleSendTeam = async () => {
     if (!onSendFieldTeam) return;
     setSendingTeam(true);
-    try { await onSendFieldTeam(item, selectedOperador || undefined); } finally { setSendingTeam(false); setSelectedOperador(''); }
+    try { await onSendFieldTeam(item, selectedAgente || undefined); } finally { setSendingTeam(false); setSelectedOperador(''); }
   };
 
   const handleResolve = async () => {
@@ -354,14 +354,14 @@ export function RiskDetailsPanel({ item, onClose, onOpenImage, onCreateTask, onS
               <div className="py-2">
                 <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1.5 block">
                   <UserCheck className="w-3.5 h-3.5 inline mr-1.5" />
-                  Operador responsável
+                  Agente responsável
                 </Label>
-                <Select value={selectedOperador} onValueChange={setSelectedOperador}>
+                <Select value={selectedAgente} onValueChange={setSelectedOperador}>
                   <SelectTrigger className="rounded-xl">
-                    <SelectValue placeholder="Selecionar operador (opcional)" />
+                    <SelectValue placeholder="Selecionar agente (opcional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    {operadores.map(op => (
+                    {agentes.map(op => (
                       <SelectItem key={op.id} value={op.id}>{op.nome}</SelectItem>
                     ))}
                   </SelectContent>
