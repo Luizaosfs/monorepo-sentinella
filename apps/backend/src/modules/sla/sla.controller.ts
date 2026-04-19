@@ -199,7 +199,7 @@ export class SlaController {
 
   @Patch(':id/atribuir')
   @Roles('admin', 'supervisor')
-  @ApiOperation({ summary: 'Atribuir operador ao SLA' })
+  @ApiOperation({ summary: 'Atribuir agente ao SLA' })
   async atribuir(@Param('id') id: string, @Body() body: AtribuirAgenteBody) {
     const parsed = atribuirAgenteSchema.parse(body);
     const { sla } = await this.atribuirAgente.execute(id, parsed, this.req['tenantId'] as string | null);
