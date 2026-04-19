@@ -1,5 +1,5 @@
 /**
- * OperadorUsuarios — gerenciamento de usuários do CLIENTE.
+ * AgenteUsuarios — gerenciamento de usuários do CLIENTE.
  *
  * Mostra:  supervisor | agente | notificador do cliente ativo
  * Cria:    supervisor (só admin) | agente | notificador
@@ -84,7 +84,7 @@ const AgenteUsuarios = () => {
   } | null>(null);
 
   const { data, isLoading: loading } = useQuery({
-    queryKey: ['operador_usuarios', clienteId],
+    queryKey: ['agente_usuarios', clienteId],
     queryFn: async () => {
       const [usrs, papeis, cliente] = await Promise.all([
         api.usuarios.listByCliente(clienteId!),
@@ -169,7 +169,7 @@ const AgenteUsuarios = () => {
       };
     },
     onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: ['operador_usuarios', clienteId] });
+      queryClient.invalidateQueries({ queryKey: ['agente_usuarios', clienteId] });
       setShowForm(false);
       if (result.isNew && result.credenciais) setSenhaTemporaria(result.credenciais);
       toast.success(result.isNew ? 'Usuário criado com sucesso' : 'Usuário atualizado');

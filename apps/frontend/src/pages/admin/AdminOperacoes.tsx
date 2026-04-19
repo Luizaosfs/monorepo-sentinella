@@ -111,7 +111,7 @@ const AdminOperacoes = () => {
   const data = operacoesData as Operacao[];
 
   const { data: operadores = [] } = useQuery({
-    queryKey: ['admin_operacoes_operadores', clienteId],
+    queryKey: ['admin_operacoes_agentes', clienteId],
     queryFn: () => api.operacoes.listOperadores(clienteId!) as Promise<Operador[]>,
     enabled: !!clienteId,
     staleTime: 0,
