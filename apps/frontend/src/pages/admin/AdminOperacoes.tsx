@@ -112,7 +112,7 @@ const AdminOperacoes = () => {
 
   const { data: agentes = [] } = useQuery({
     queryKey: ['admin_operacoes_agentes', clienteId],
-    queryFn: () => api.operacoes.listOperadores(clienteId!) as Promise<Agente[]>,
+    queryFn: () => api.usuarios.listAgentes(clienteId!) as Promise<Agente[]>,
     enabled: !!clienteId,
     staleTime: 0,
   });

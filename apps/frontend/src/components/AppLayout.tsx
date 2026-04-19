@@ -83,7 +83,7 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 
-// Hierarquia: 1-Administrador (suporte SaaS) | 2-Supervisor (admin do cliente) | 3-Cliente | 4-Operador (portal próprio)
+// Hierarquia: 1-Administrador (suporte SaaS) | 2-Supervisor (admin do cliente) | 3-Cliente | 4-Agente (portal próprio)
 
 // ─── SUPERVISOR / ADMIN: navegação principal ──────────────────────────────────
 const baseNavItems = [

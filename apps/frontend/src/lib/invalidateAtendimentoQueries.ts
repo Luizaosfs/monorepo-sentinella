@@ -2,7 +2,7 @@ import { QueryClient } from '@tanstack/react-query';
 
 /**
  * Invalida caches ligados a status de atendimento para alinhar dashboard,
- * lista do operador e mapas após updateAtendimento / check-in.
+ * lista do agente e mapas após updateAtendimento / check-in.
  */
 export function invalidateAtendimentoItemCaches(
   queryClient: QueryClient,

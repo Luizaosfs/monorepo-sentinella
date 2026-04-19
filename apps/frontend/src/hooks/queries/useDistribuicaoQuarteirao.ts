@@ -18,7 +18,7 @@ export function useDistribuicaoQuarteiraoByCiclo(
 }
 
 /**
- * Quarteirões atribuídos a um agente específico num ciclo (visão operador).
+ * Quarteirões atribuídos a um agente específico num ciclo (visão agente).
  * Retorna array de strings com os códigos dos quarteirões.
  */
 export function useQuarteiroesByAgente(

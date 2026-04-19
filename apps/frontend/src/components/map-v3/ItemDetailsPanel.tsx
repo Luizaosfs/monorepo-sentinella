@@ -69,8 +69,8 @@ export function ItemDetailsPanel({ item, onClose, onOpenImage, onCreateTask, onS
   const [sendingTeam, setSendingTeam] = useState(false);
   const [resolving, setResolving] = useState(false);
   const [cancelling, setCancelling] = useState(false);
-  const [agentes, setOperadores] = useState<Agente[]>([]);
-  const [selectedAgente, setSelectedOperador] = useState<string>('');
+  const [agentes, setAgentes] = useState<Agente[]>([]);
+  const [selectedAgente, setSelectedAgente] = useState<string>('');
   const [opStatus, setOpStatus] = useState<OperacaoStatus | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -83,8 +83,8 @@ export function ItemDetailsPanel({ item, onClose, onOpenImage, onCreateTask, onS
   useEffect(() => {
     if (!clienteId) return;
     http.get(`/usuarios?clienteId=${encodeURIComponent(clienteId)}&ativo=true`)
-      .then((data) => setOperadores((data as Agente[]) || []))
-      .catch(() => setOperadores([]));
+      .then((data) => setAgentes((data as Agente[]) || []))
+      .catch(() => setAgentes([]));
   }, [clienteId]);
 
   // Fetch operation status for this item
@@ -129,7 +129,7 @@ export function ItemDetailsPanel({ item, onClose, onOpenImage, onCreateTask, onS
   const handleSendTeam = async () => {
     if (!onSendFieldTeam) return;
     setSendingTeam(true);
-    try { await onSendFieldTeam(selectedAgente || undefined); } finally { setSendingTeam(false); setSelectedOperador(''); }
+    try { await onSendFieldTeam(selectedAgente || undefined); } finally { setSendingTeam(false); setSelectedAgente(''); }
   };
 
   const handleResolve = async () => {
@@ -423,7 +423,7 @@ export function ItemDetailsPanel({ item, onClose, onOpenImage, onCreateTask, onS
                   <UserCheck className="w-3.5 h-3.5 inline mr-1.5" />
                   Agente responsável
                 </Label>
-                <Select value={selectedAgente} onValueChange={setSelectedOperador}>
+                <Select value={selectedAgente} onValueChange={setSelectedAgente}>
                   <SelectTrigger className="rounded-xl">
                     <SelectValue placeholder="Selecionar agente (opcional)" />
                   </SelectTrigger>
@@ -435,7 +435,7 @@ export function ItemDetailsPanel({ item, onClose, onOpenImage, onCreateTask, onS
                 </Select>
               </div>
               <AlertDialogFooter>
-                <AlertDialogCancel onClick={() => setSelectedOperador('')}>Cancelar</AlertDialogCancel>
+                <AlertDialogCancel onClick={() => setSelectedAgente('')}>Cancelar</AlertDialogCancel>
                 <AlertDialogAction onClick={handleSendTeam}>Confirmar envio</AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>

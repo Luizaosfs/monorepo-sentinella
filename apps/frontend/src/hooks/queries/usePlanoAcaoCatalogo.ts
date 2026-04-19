@@ -3,7 +3,7 @@ import { api } from '@/services/api';
 import { PlanoAcaoCatalogo } from '@/types/database';
 
 /**
- * Lista ações ativas do catálogo para o operador selecionar ao concluir atendimento.
+ * Lista ações ativas do catálogo para o agente selecionar ao concluir atendimento.
  * Filtro opcional por tipo_item — inclui sempre as ações genéricas (tipo_item NULL).
  */
 export function usePlanoAcaoCatalogo(clienteId: string | null | undefined, tipoItem?: string | null) {
