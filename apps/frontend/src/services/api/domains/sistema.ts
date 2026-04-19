@@ -94,8 +94,10 @@ export const auditLog = {
 };
 
 export const alertasRetorno = {
-  listByAgente: async () => { throw new Error('[sem endpoint NestJS] alertasRetorno.listByAgente'); },
-  resolver: async () => { throw new Error('[sem endpoint NestJS] alertasRetorno.resolver'); },
+  listByAgente: async (clienteId: string, agenteId: string) =>
+    http.get(`/alerta-retorno${qs({ clienteId, agenteId })}`),
+  resolver: async (alertaId: string): Promise<void> =>
+    http.patch(`/alerta-retorno/${alertaId}/resolver`, {}),
 };
 
 export const historicoAtendimento = {

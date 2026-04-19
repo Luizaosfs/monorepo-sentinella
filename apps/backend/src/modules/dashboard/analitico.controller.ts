@@ -7,6 +7,7 @@ import { TenantGuard } from 'src/guards/tenant.guard';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 
 import { Roles } from '@/decorators/roles.decorator';
+import { GetAnaliticoBairros } from './use-cases/get-analitico-bairros';
 import { GetAnaliticoResumo } from './use-cases/get-analitico-resumo';
 import { GetAnaliticoRiscoTerritorial } from './use-cases/get-analitico-risco-territorial';
 import { GetAnaliticoVulnerabilidade } from './use-cases/get-analitico-vulnerabilidade';
@@ -21,6 +22,7 @@ import { GetAnaliticoImoveisCriticos } from './use-cases/get-analitico-imoveis-c
 @Controller('dashboard/analitico')
 export class AnaliticoController {
   constructor(
+    private getAnaliticoBairros: GetAnaliticoBairros,
     private getAnaliticoResumo: GetAnaliticoResumo,
     private getAnaliticoRiscoTerritorial: GetAnaliticoRiscoTerritorial,
     private getAnaliticoVulnerabilidade: GetAnaliticoVulnerabilidade,
@@ -29,6 +31,13 @@ export class AnaliticoController {
     private getAnaliticoImoveisCriticos: GetAnaliticoImoveisCriticos,
     @Inject(REQUEST) private req: Request,
   ) {}
+
+  @Get('bairros')
+  @Roles('admin', 'supervisor', 'analista_regional')
+  @ApiOperation({ summary: 'Lista de bairros com vistorias registradas' })
+  bairros() {
+    return this.getAnaliticoBairros.execute(this.req['tenantId'] as string);
+  }
 
   @Get('resumo')
   @Roles('admin', 'supervisor', 'analista_regional')

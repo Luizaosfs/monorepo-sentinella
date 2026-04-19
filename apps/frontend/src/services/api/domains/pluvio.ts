@@ -4,7 +4,8 @@ import { qs } from '../shared/qs';
 import { deepToCamel, deepToSnake, type Ret } from '../shared/case-mappers';
 
 export const pluvio = {
-  riscoByCliente: async () => { throw new Error('[sem endpoint NestJS] pluvio.riscoByCliente'); },
+  riscoByCliente: async (clienteId?: string) =>
+    http.get(`/pluvio/risco/by-cliente${qs({ clienteId })}`),
   latestRunByCliente: async (clienteId: string) => {
     const raw = await http.get(`/pluvio/runs/latest${qs({ clienteId })}`);
     return raw ? (deepToSnake(raw) as Ret<typeof _sb.pluvio.latestRunByCliente>) : null;

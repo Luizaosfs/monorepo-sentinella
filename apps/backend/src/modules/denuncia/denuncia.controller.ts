@@ -1,20 +1,25 @@
 import { createHash } from 'node:crypto';
-import { Body, Controller, Get, Post, Query, Req, UsePipes } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Post, Query, Req, UseGuards, UseInterceptors, UsePipes } from '@nestjs/common';
+import { REQUEST } from '@nestjs/core';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
+import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
 import { Request } from 'express';
 import { z } from 'zod';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
+import { TenantGuard } from 'src/guards/tenant.guard';
 
-import { Public } from '@/decorators/roles.decorator';
+import { Public, Roles } from '@/decorators/roles.decorator';
 import { env } from '@/lib/env/server';
 
 import { DenunciaCidadaoBody, denunciaCidadaoSchema } from './dtos/denuncia-cidadao.body';
 import { ConsultarDenuncia } from './use-cases/consultar-denuncia';
 import { DenunciarCidadao } from './use-cases/denunciar-cidadao';
 import { DenunciarCidadaoV2 } from './use-cases/denunciar-cidadao-v2';
+import { CanalCidadaoStats } from './use-cases/canal-cidadao-stats';
 
 @UsePipes(MyZodValidationPipe)
+@UseInterceptors(PrismaInterceptor)
 @ApiTags('Denuncias')
 @Controller('denuncias')
 export class DenunciaController {
@@ -22,6 +27,8 @@ export class DenunciaController {
     private denunciarCidadao: DenunciarCidadao,
     private denunciarCidadaoV2: DenunciarCidadaoV2,
     private consultarDenuncia: ConsultarDenuncia,
+    private canalCidadaoStats: CanalCidadaoStats,
+    @Inject(REQUEST) private req: Request,
   ) {}
 
   @Public()
@@ -40,6 +47,15 @@ export class DenunciaController {
     }
 
     return this.denunciarCidadao.execute(parsed);
+  }
+
+  @UseGuards(TenantGuard)
+  @Get('stats')
+  @Roles('admin', 'supervisor', 'analista_regional')
+  @ApiOperation({ summary: 'Estatísticas do canal cidadão (substitui v_canal_cidadao_stats)' })
+  async stats() {
+    const clienteId = this.req['tenantId'] as string;
+    return this.canalCidadaoStats.execute(clienteId);
   }
 
   @Public()

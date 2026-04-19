@@ -1,9 +1,11 @@
 import { Test } from '@nestjs/testing';
+import { REQUEST, Reflector } from '@nestjs/core';
 import { DenunciaController } from '../../denuncia.controller';
 import { ConsultarDenuncia } from '../consultar-denuncia';
 import { DenunciarCidadao } from '../denunciar-cidadao';
 import { DenunciarCidadaoV2 } from '../denunciar-cidadao-v2';
-import { Reflector } from '@nestjs/core';
+import { CanalCidadaoStats } from '../canal-cidadao-stats';
+import { mockRequest } from '@test/utils/user-helpers';
 
 describe('DenunciaController', () => {
   let controller: DenunciaController;
@@ -18,6 +20,8 @@ describe('DenunciaController', () => {
         { provide: DenunciarCidadao, useValue: { execute: mockDenunciar } },
         { provide: DenunciarCidadaoV2, useValue: { execute: jest.fn() } },
         { provide: ConsultarDenuncia, useValue: { execute: mockConsultar } },
+        { provide: CanalCidadaoStats, useValue: { execute: jest.fn() } },
+        { provide: REQUEST, useValue: mockRequest() },
         Reflector,
       ],
     }).compile();

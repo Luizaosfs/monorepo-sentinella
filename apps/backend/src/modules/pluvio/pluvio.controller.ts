@@ -54,6 +54,7 @@ import { LatestRun } from './use-cases/latest-run';
 import { UpdateRunTotal } from './use-cases/update-run-total';
 import { UpsertItem } from './use-cases/upsert-item';
 import { UpsertRisco } from './use-cases/upsert-risco';
+import { RiscoByCliente } from './use-cases/risco-by-cliente';
 import {
   PluvioItemViewModel,
   PluvioRiscoViewModel,
@@ -82,6 +83,7 @@ export class PluvioController {
     private deleteRiscoUC: DeleteRisco,
     private bulkInsertRiscoUC: BulkInsertRisco,
     private gerarSlasRunUC: GerarSlasRun,
+    private riscoByClienteUC: RiscoByCliente,
     @Inject(REQUEST) private req: Request,
   ) {}
 
@@ -176,6 +178,14 @@ export class PluvioController {
   }
 
   // ── Risco ─────────────────────────────────────────────────────────────────
+
+  @Get('risco/by-cliente')
+  @Roles('admin', 'supervisor', 'analista_regional', 'agente')
+  @ApiOperation({ summary: 'Risco pluviométrico de todas as regiões do cliente' })
+  async riscoByCliente() {
+    const clienteId = this.req['tenantId'] as string;
+    return this.riscoByClienteUC.execute(clienteId);
+  }
 
   @Get('risco')
   @Roles('admin', 'supervisor', 'analista_regional', 'agente')

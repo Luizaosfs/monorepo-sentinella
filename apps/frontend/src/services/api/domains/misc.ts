@@ -11,9 +11,12 @@ export const tags = {
 };
 
 export const recorrencias = {
-  listAtivasByCliente: async () => { throw new Error('[sem endpoint NestJS] recorrencias.listAtivasByCliente'); },
-  countAtivasByCliente: async () => { throw new Error('[sem endpoint NestJS] recorrencias.countAtivasByCliente'); },
-  listItensByRecorrencia: async () => { throw new Error('[sem endpoint NestJS] recorrencias.listItensByRecorrencia'); },
+  listAtivasByCliente: async (clienteId?: string) =>
+    http.get(`/recorrencias${qs({ clienteId })}`),
+  countAtivasByCliente: async (clienteId?: string) =>
+    http.get(`/recorrencias/count${qs({ clienteId })}`),
+  listItensByRecorrencia: async (recorrenciaId: string, clienteId?: string) =>
+    http.get(`/recorrencias/${recorrenciaId}/itens${qs({ clienteId })}`),
 };
 
 export const integracoes = {

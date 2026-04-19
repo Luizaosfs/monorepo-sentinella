@@ -44,6 +44,7 @@ import { GetRegionalSla } from './use-cases/get-regional-sla';
 import { GetRegionalUso } from './use-cases/get-regional-uso';
 
 // Analítico
+import { GetAnaliticoBairros } from './use-cases/get-analitico-bairros';
 import { GetAnaliticoResumo } from './use-cases/get-analitico-resumo';
 import { GetAnaliticoRiscoTerritorial } from './use-cases/get-analitico-risco-territorial';
 import { GetAnaliticoVulnerabilidade } from './use-cases/get-analitico-vulnerabilidade';
@@ -64,6 +65,7 @@ import { GetReincidenciaSazonalidade } from './use-cases/get-reincidencia-sazona
 // Eficácia
 import { GetEficaciaTratamento } from './use-cases/get-eficacia-tratamento';
 import { TriggerHealthCheck } from './use-cases/trigger-health-check';
+import { GerarResumoDiario } from './use-cases/gerar-resumo-diario';
 
 @Module({
   providers: [
@@ -99,6 +101,7 @@ import { TriggerHealthCheck } from './use-cases/trigger-health-check';
     GetRegionalSla,
     GetRegionalUso,
     // Analítico
+    GetAnaliticoBairros,
     GetAnaliticoResumo,
     GetAnaliticoRiscoTerritorial,
     GetAnaliticoVulnerabilidade,
@@ -116,6 +119,7 @@ import { TriggerHealthCheck } from './use-cases/trigger-health-check';
     // Eficácia
     GetEficaciaTratamento,
     TriggerHealthCheck,
+    GerarResumoDiario,
   ],
   controllers: [
     DashboardController,

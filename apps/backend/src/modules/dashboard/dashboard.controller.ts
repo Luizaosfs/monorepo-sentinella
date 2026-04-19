@@ -36,6 +36,7 @@ import { FilterHealth } from './use-cases/filter-health';
 import { FilterRelatorios } from './use-cases/filter-relatorios';
 import { FilterResumos } from './use-cases/filter-resumos';
 import { GerarRelatorioAnalitico } from './use-cases/gerar-relatorio-analitico';
+import { GerarResumoDiario } from './use-cases/gerar-resumo-diario';
 import { ResolverAlert } from './use-cases/resolver-alert';
 import { ResumoAgente } from './use-cases/resumo-agente';
 import { ResumoRegional } from './use-cases/resumo-regional';
@@ -81,6 +82,7 @@ export class DashboardController {
     private scoreSurtoRegioesUc: ScoreSurtoRegioes,
     private resumoAgenteUc: ResumoAgente,
     private gerarRelatorioAnaliticoUc: GerarRelatorioAnalitico,
+    private gerarResumoDiarioUc: GerarResumoDiario,
     private dashboardRead: DashboardReadRepository,
     @Inject(REQUEST) private req: Request,
   ) {}
@@ -168,6 +170,14 @@ export class DashboardController {
   }
 
   // ── Resumos / Relatórios ───────────────────────────────────────────────────
+
+  @Post('resumos/gerar')
+  @Roles('admin', 'supervisor')
+  @ApiOperation({ summary: 'Gerar resumo diário do cliente' })
+  async gerarResumoDiario() {
+    const clienteId = this.req['tenantId'] as string;
+    return this.gerarResumoDiarioUc.execute(clienteId);
+  }
 
   @Get('resumos')
   @Roles('admin', 'supervisor', 'analista_regional')

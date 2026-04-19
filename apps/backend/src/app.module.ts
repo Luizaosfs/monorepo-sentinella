@@ -28,6 +28,8 @@ import { PlanoAcaoModule } from '@modules/plano-acao/plano-acao.module';
 import { IaModule } from '@modules/ia/ia.module';
 import { AgrupamentosModule } from '@modules/agrupamentos/agrupamentos.module';
 import { ImportLogModule } from '@modules/import-log/import-log.module';
+import { AlertaRetornoModule } from '@modules/alerta-retorno/alerta-retorno.module';
+import { RecorrenciasModule } from '@modules/recorrencias/recorrencias.module';
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
@@ -80,6 +82,8 @@ import { DatabaseModule } from '@shared/modules/database/database.module';
     DenunciaModule,
     PilotoModule,
     SeedModule,
+    AlertaRetornoModule,
+    RecorrenciasModule,
   ],
   controllers: [],
   providers: [

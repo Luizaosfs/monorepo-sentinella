@@ -1,14 +1,15 @@
 import { http } from '@sentinella/api-client';
 import { api as _sb } from '../../api-stub';
 import { qs } from '../shared/qs';
-import { deepToSnake, type Ret } from '../shared/case-mappers';
+import { deepToCamel, deepToSnake, type Ret } from '../shared/case-mappers';
 
 export const resumosDiarios = {
   list: async (clienteId: string): Promise<Ret<typeof _sb.resumosDiarios.list>> => {
     const raw = await http.get(`/dashboard/resumos${qs({ clienteId, limit: 30 })}`);
     return deepToSnake(raw) as Ret<typeof _sb.resumosDiarios.list>;
   },
-  gerar: async () => { throw new Error('[sem endpoint NestJS] resumosDiarios.gerar'); },
+  gerar: async (clienteId?: string): Promise<unknown> =>
+    http.post(`/dashboard/resumos/gerar${qs({ clienteId })}`, {}),
 };
 
 export const scoreSurto = {
@@ -23,10 +24,16 @@ export const dashboardAnalitico = {
   getAlertaSaude: (): Promise<unknown> => http.get('/dashboard/analitico/alerta-saude'),
   getResultadoOperacional: (): Promise<unknown> => http.get('/dashboard/analitico/resultado-operacional'),
   getImoveisCriticos: (): Promise<unknown> => http.get('/dashboard/analitico/imoveis-criticos'),
-  getBairros: async () => { throw new Error('[sem endpoint NestJS] dashboardAnalitico.getBairros'); },
-  relatorio: async () => { throw new Error('[sem endpoint NestJS] dashboardAnalitico.relatorio'); },
-  salvarRelatorio: async () => { throw new Error('[sem endpoint NestJS] dashboardAnalitico.salvarRelatorio'); },
-  listarRelatorios: async () => { throw new Error('[sem endpoint NestJS] dashboardAnalitico.listarRelatorios'); },
+  getBairros: async (clienteId?: string): Promise<string[]> =>
+    http.get(`/dashboard/analitico/bairros${qs({ clienteId })}`),
+  relatorio: async (clienteId: string, periodoInicio: string, periodoFim: string): Promise<unknown> =>
+    http.post(`/dashboard/relatorio-analitico${qs({ clienteId })}`, deepToCamel({ periodoInicio, periodoFim })),
+  salvarRelatorio: async (payload: { clienteId: string; periodoInicio: string; periodoFim: string; payload: unknown }): Promise<unknown> =>
+    http.post(`/dashboard/relatorios${qs({ clienteId: payload.clienteId })}`, deepToCamel(payload as Record<string, unknown>)),
+  listarRelatorios: async (clienteId?: string): Promise<unknown[]> => {
+    const raw = await http.get(`/dashboard/relatorios${qs({ clienteId })}`);
+    return deepToSnake(raw) as unknown[];
+  },
 };
 
 export const central = {

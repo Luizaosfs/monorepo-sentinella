@@ -20,6 +20,7 @@ import { LatestRun } from './use-cases/latest-run';
 import { UpdateRunTotal } from './use-cases/update-run-total';
 import { UpsertItem } from './use-cases/upsert-item';
 import { UpsertRisco } from './use-cases/upsert-risco';
+import { RiscoByCliente } from './use-cases/risco-by-cliente';
 
 @Module({
   providers: [
@@ -37,6 +38,7 @@ import { UpsertRisco } from './use-cases/upsert-risco';
     DeleteRisco,
     BulkInsertRisco,
     GerarSlasRun,
+    RiscoByCliente,
     PluvioSchedulerService,
     PluvioScheduler,
     JwtService,

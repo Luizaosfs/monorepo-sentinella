@@ -128,7 +128,8 @@ export const notificacaoFormal = {
 };
 
 export const canalCidadao = {
-  stats: async () => { throw new Error('[sem endpoint NestJS] canalCidadao.stats'); },
+  stats: async (clienteId?: string) =>
+    http.get(`/denuncias/stats${qs({ clienteId })}`),
   /**
    * @deprecated No-op — nenhuma tela consome canalCidadao.eventosAudit no frontend atual.
    */
