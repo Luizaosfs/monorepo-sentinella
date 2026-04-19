@@ -60,7 +60,7 @@ const STATUS_CHIPS: { key: StatusChip; label: string }[] = [
 
 // ── Componente principal ──────────────────────────────────────────────────────
 
-const OperadorLevantamentos = () => {
+const AgenteLevantamentos = () => {
   const { clienteId } = useClienteAtivo();
   const { usuario }   = useAuth();
   const navigate      = useNavigate();
@@ -580,4 +580,4 @@ function FocoCard({ foco, onNavigate, onAcaoRapida, onAssumir, isPending, modoFi
   );
 }
 
-export default OperadorLevantamentos;
+export default AgenteLevantamentos;

@@ -1,15 +1,15 @@
 /**
- * AgenteVistoria — wrapper sobre OperadorFormularioVistoria.
+ * AgenteVistoria — wrapper sobre AgenteFormularioVistoria.
  *
  * ?modo=sem-acesso → abre SemAcessoWrapper diretamente (sem percorrer o stepper).
- * Padrão           → exibe ReincidenteBanner + OperadorFormularioVistoria.
+ * Padrão           → exibe ReincidenteBanner + AgenteFormularioVistoria.
  */
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { AlertTriangle, ArrowLeft, UserCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import OperadorFormularioVistoria from '@/pages/operador/OperadorFormularioVistoria';
+import AgenteFormularioVistoria from '@/pages/agente/AgenteFormularioVistoria';
 import { VistoriaSemAcesso } from '@/components/vistoria/VistoriaSemAcesso';
 import { useClienteAtivo } from '@/hooks/useClienteAtivo';
 import { useAuth } from '@/hooks/useAuth';
@@ -179,7 +179,7 @@ export default function AgenteVistoria() {
         </div>
       )}
       {clienteId && <ReincidenteBanner imovelId={imovelId} clienteId={clienteId} />}
-      <OperadorFormularioVistoria />
+      <AgenteFormularioVistoria />
     </div>
   );
 }

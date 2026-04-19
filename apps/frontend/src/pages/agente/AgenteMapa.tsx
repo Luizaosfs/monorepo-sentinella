@@ -80,7 +80,7 @@ function isFocoRiscoItem(item: LevantamentoItem) {
   return item.levantamento_id === '';
 }
 
-export default function OperadorMapa() {
+export default function AgenteMapa() {
   const navigate = useNavigate();
   const { clienteId, clienteAtivo } = useClienteAtivo();
   const { usuario } = useAuth();

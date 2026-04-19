@@ -65,7 +65,7 @@ const emptyForm = {
   image_url: '',
 };
 
-const OperadorNovoItemManual = () => {
+const AgenteNovoItemManual = () => {
   const navigate = useNavigate();
   const { clienteId } = useClienteAtivo();
   const { data: planejamentos = [], isLoading: loadingPlan } = usePlanejamentosAtivosManuais(clienteId);
@@ -751,4 +751,4 @@ const OperadorNovoItemManual = () => {
   );
 };
 
-export default OperadorNovoItemManual;
+export default AgenteNovoItemManual;

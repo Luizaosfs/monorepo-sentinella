@@ -107,7 +107,7 @@ const EMPTY_FORM: NovoImovelForm = {
   longitude: null,
 };
 
-export default function OperadorListaImoveis() {
+export default function AgenteListaImoveis() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const atividade = (searchParams.get('atividade') as TipoAtividade) || 'pesquisa';
@@ -278,7 +278,7 @@ export default function OperadorListaImoveis() {
           variant="ghost"
           size="icon"
           className="shrink-0"
-          onClick={() => navigate('/operador/inicio')}
+          onClick={() => navigate('/agente/hoje')}
           aria-label="Voltar"
         >
           <ArrowLeft className="h-5 w-5" />

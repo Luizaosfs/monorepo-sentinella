@@ -67,7 +67,9 @@ class EmailExistsError extends Error {
   constructor(email: string) { super('EMAIL_EXISTS'); this.email = email; }
 }
 
-const OperadorUsuarios = () => {
+// Aceita 'operador' em PAPEIS_CLIENTE intencionalmente — compat JWT legado.
+// Ver EXCEÇÃO_COMPAT no relatório de triagem do cleanup (Frente 1).
+const AgenteUsuarios = () => {
   const { isAdmin } = useAuth();
   const { clienteId } = useClienteAtivo();
   const queryClient = useQueryClient();
@@ -512,4 +514,4 @@ const OperadorUsuarios = () => {
   );
 };
 
-export default OperadorUsuarios;
+export default AgenteUsuarios;

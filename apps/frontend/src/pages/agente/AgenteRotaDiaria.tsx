@@ -18,7 +18,7 @@ import { getCurrentCiclo } from '@/lib/ciclo';
 
 type FiltroStatus = 'todos' | StatusVistoria | 'retorno';
 
-export default function OperadorRotaDiaria() {
+export default function AgenteRotaDiaria() {
   const currentCiclo = getCurrentCiclo();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();

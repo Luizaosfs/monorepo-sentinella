@@ -127,7 +127,7 @@ const FOCO_ORIGEM_MAP: Partial<Record<FocoRiscoOrigem, 'denuncia' | 'liraa' | 'd
   cidadao: 'denuncia',
 };
 
-export default function OperadorFormularioVistoria() {
+export default function AgenteFormularioVistoria() {
   const { imovelId: imovelIdParam } = useParams<{ imovelId: string }>();
   const [searchParams] = useSearchParams();
   const atividade = (searchParams.get('atividade') as TipoAtividade) || 'pesquisa';
