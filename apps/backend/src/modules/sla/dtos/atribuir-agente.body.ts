@@ -1,7 +1,7 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 
-export const atribuirOperadorSchema = z.object({
+export const atribuirAgenteSchema = z.object({
   agenteId: z.string().uuid().describe('ID do agente a atribuir'),
   avancarStatus: z
     .boolean()
@@ -10,6 +10,4 @@ export const atribuirOperadorSchema = z.object({
     .describe('Se true, avança status para em_atendimento'),
 });
 
-export class AtribuirOperadorBody extends createZodDto(
-  atribuirOperadorSchema,
-) {}
+export class AtribuirAgenteBody extends createZodDto(atribuirAgenteSchema) {}

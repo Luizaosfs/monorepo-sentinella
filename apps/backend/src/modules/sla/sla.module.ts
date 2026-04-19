@@ -4,7 +4,7 @@ import { DatabaseModule } from '@shared/modules/database/database.module';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 
 import { SlaController } from './sla.controller';
-import { AtribuirOperador } from './use-cases/atribuir-operador';
+import { AtribuirAgente } from './use-cases/atribuir-agente';
 import { ConcluirSla } from './use-cases/concluir-sla';
 import { CountPendentes } from './use-cases/count-pendentes';
 import { CreateFeriado } from './use-cases/create-feriado';
@@ -38,7 +38,7 @@ import { GetFocosRiscoAtivos } from './use-cases/get-focos-risco-ativos';
     EscalarSla,
     ReabrirSla,
     ConcluirSla,
-    AtribuirOperador,
+    AtribuirAgente,
     GetConfig,
     SaveConfig,
     ListFeriados,

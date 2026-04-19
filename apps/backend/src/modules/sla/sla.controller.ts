@@ -29,9 +29,9 @@ import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 import { Roles } from '@/decorators/roles.decorator';
 
 import {
-  AtribuirOperadorBody,
-  atribuirOperadorSchema,
-} from './dtos/atribuir-operador.body';
+  AtribuirAgenteBody,
+  atribuirAgenteSchema,
+} from './dtos/atribuir-agente.body';
 import {
   CreateFeriadoBody,
   createFeriadoSchema,
@@ -47,7 +47,7 @@ import {
   UpdateSlaStatusBody,
   updateSlaStatusSchema,
 } from './dtos/update-sla-status.body';
-import { AtribuirOperador } from './use-cases/atribuir-operador';
+import { AtribuirAgente } from './use-cases/atribuir-agente';
 import { ConcluirSla } from './use-cases/concluir-sla';
 import { CountPendentes } from './use-cases/count-pendentes';
 import { CreateFeriado } from './use-cases/create-feriado';
@@ -91,7 +91,7 @@ export class SlaController {
     private escalarSla: EscalarSla,
     private reabrirSla: ReabrirSla,
     private concluirSla: ConcluirSla,
-    private atribuirOperador: AtribuirOperador,
+    private atribuirAgente: AtribuirAgente,
     private getConfig: GetConfig,
     private saveConfig: SaveConfig,
     private listFeriados: ListFeriados,
@@ -200,9 +200,9 @@ export class SlaController {
   @Patch(':id/atribuir')
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Atribuir operador ao SLA' })
-  async atribuir(@Param('id') id: string, @Body() body: AtribuirOperadorBody) {
-    const parsed = atribuirOperadorSchema.parse(body);
-    const { sla } = await this.atribuirOperador.execute(id, parsed, this.req['tenantId'] as string | null);
+  async atribuir(@Param('id') id: string, @Body() body: AtribuirAgenteBody) {
+    const parsed = atribuirAgenteSchema.parse(body);
+    const { sla } = await this.atribuirAgente.execute(id, parsed, this.req['tenantId'] as string | null);
     return SlaOperacionalViewModel.toHttp(sla);
   }
 

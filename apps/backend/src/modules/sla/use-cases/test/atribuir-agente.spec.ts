@@ -6,11 +6,11 @@ import { SlaReadRepository } from '../../repositories/sla-read.repository';
 import { SlaWriteRepository } from '../../repositories/sla-write.repository';
 import { expectHttpException } from '@test/utils/expect-http-exception';
 
-import { AtribuirOperador } from '../atribuir-operador';
+import { AtribuirAgente } from '../atribuir-agente';
 import { SlaOperacionalBuilder } from './builders/sla-operacional.builder';
 
-describe('AtribuirOperador', () => {
-  let useCase: AtribuirOperador;
+describe('AtribuirAgente', () => {
+  let useCase: AtribuirAgente;
   const readRepo = mock<SlaReadRepository>();
   const writeRepo = mock<SlaWriteRepository>();
 
@@ -18,15 +18,15 @@ describe('AtribuirOperador', () => {
     jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        AtribuirOperador,
+        AtribuirAgente,
         { provide: SlaReadRepository, useValue: readRepo },
         { provide: SlaWriteRepository, useValue: writeRepo },
       ],
     }).compile();
-    useCase = module.get<AtribuirOperador>(AtribuirOperador);
+    useCase = module.get<AtribuirAgente>(AtribuirAgente);
   });
 
-  it('deve atribuir operadorId ao SLA', async () => {
+  it('deve atribuir agenteId ao SLA', async () => {
     const sla = new SlaOperacionalBuilder().withStatus('pendente').build();
     readRepo.findById.mockResolvedValue(sla);
     writeRepo.save.mockResolvedValue();

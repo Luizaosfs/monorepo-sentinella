@@ -1,18 +1,18 @@
 import { Injectable } from '@nestjs/common';
 
-import { AtribuirOperadorBody } from '../dtos/atribuir-operador.body';
+import { AtribuirAgenteBody } from '../dtos/atribuir-agente.body';
 import { SlaException } from '../errors/sla.exception';
 import { SlaReadRepository } from '../repositories/sla-read.repository';
 import { SlaWriteRepository } from '../repositories/sla-write.repository';
 
 @Injectable()
-export class AtribuirOperador {
+export class AtribuirAgente {
   constructor(
     private readRepository: SlaReadRepository,
     private writeRepository: SlaWriteRepository,
   ) {}
 
-  async execute(id: string, data: AtribuirOperadorBody, clienteId?: string | null) {
+  async execute(id: string, data: AtribuirAgenteBody, clienteId?: string | null) {
     const sla = await this.readRepository.findById(id, clienteId);
     if (!sla) throw SlaException.notFound();
 
