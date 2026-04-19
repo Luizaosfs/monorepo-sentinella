@@ -25,7 +25,7 @@ export class PrismaCicloWriteRepository implements CicloWriteRepository {
 
   async save(ciclo: Ciclo): Promise<void> {
     const data = PrismaCicloMapper.toPrisma(ciclo);
-    await this.prisma.client.ciclos.update({ where: { id: ciclo.id }, data });
+    await this.prisma.client.ciclos.updateMany({ where: { id: ciclo.id, cliente_id: ciclo.clienteId }, data });
   }
 
   async desativarTodos(clienteId: string): Promise<void> {
@@ -67,19 +67,21 @@ export class PrismaCicloWriteRepository implements CicloWriteRepository {
 
   async fecharCiclo(
     id: string,
+    clienteId: string,
     data: FecharCicloData,
   ): Promise<{ snapshot: Record<string, unknown> }> {
-    const ciclo = await this.prisma.client.ciclos.findUnique({ where: { id } });
+    const ciclo = await this.prisma.client.ciclos.findFirst({ where: { id, cliente_id: clienteId } });
+    if (!ciclo) throw new Error('Ciclo não encontrado para o tenant');
 
     const [totalFocos, totalVistorias, totalImoveis] = await Promise.all([
       this.prisma.client.focos_risco.count({
-        where: { cliente_id: ciclo!.cliente_id },
+        where: { cliente_id: clienteId },
       }),
       this.prisma.client.vistorias.count({
-        where: { cliente_id: ciclo!.cliente_id, ciclo: ciclo!.numero },
+        where: { cliente_id: clienteId, ciclo: ciclo.numero },
       }),
       this.prisma.client.imoveis.count({
-        where: { cliente_id: ciclo!.cliente_id },
+        where: { cliente_id: clienteId },
       }),
     ]);
 
@@ -89,8 +91,8 @@ export class PrismaCicloWriteRepository implements CicloWriteRepository {
       total_imoveis: totalImoveis,
     };
 
-    await this.prisma.client.ciclos.update({
-      where: { id },
+    await this.prisma.client.ciclos.updateMany({
+      where: { id, cliente_id: clienteId },
       data: {
         status: 'fechado',
         data_fechamento: data.dataFechamento,

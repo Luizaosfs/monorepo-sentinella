@@ -1,8 +1,6 @@
-import { Controller, Get, Res, UseGuards } from '@nestjs/common';
+import { Controller, Get, Res } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
-import { AuthGuard } from 'src/guards/auth.guard';
-import { RolesGuard } from 'src/guards/roles.guard';
 
 import { Public, Roles } from '@/decorators/roles.decorator';
 import { HealthCheckService } from './health-check.service';
@@ -20,7 +18,6 @@ export class HealthController {
     res.status(result.status === 'ok' ? 200 : 503).json(result);
   }
 
-  @UseGuards(AuthGuard, RolesGuard)
   @Roles('admin')
   @Get('admin/migration-health')
   @ApiOperation({ summary: 'Estado operacional da migração Supabase → NestJS (admin)' })

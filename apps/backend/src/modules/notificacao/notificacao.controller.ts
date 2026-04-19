@@ -17,6 +17,7 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
 import { Request } from 'express';
 import { TenantGuard } from 'src/guards/tenant.guard';
+import { AuthenticatedUser } from 'src/guards/auth.guard';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 
 import { Roles } from '@/decorators/roles.decorator';
@@ -179,7 +180,7 @@ export class NotificacaoController {
   async createCaso(@Body() body: CreateCasoBody) {
     const parsed = createCasoSchema.parse(body);
     const clienteId = this.req['tenantId'] as string;
-    const userId = this.req['userId'] as string | undefined;
+    const userId = (this.req['user'] as AuthenticatedUser).id;
     const { caso } = await this.casoCreate.execute(clienteId, userId, parsed);
     return NotificacaoViewModel.toHttp(caso);
   }
@@ -209,7 +210,7 @@ export class NotificacaoController {
   async createPush(@Body() body: CreatePushBody) {
     const parsed = createPushSchema.parse(body);
     const clienteId = this.req['tenantId'] as string;
-    const userId = this.req['userId'] as string;
+    const userId = (this.req['user'] as AuthenticatedUser).id;
     const { push } = await this.pushCreate.execute(clienteId, userId, parsed);
     return NotificacaoViewModel.pushToHttp(push);
   }
@@ -239,7 +240,7 @@ export class NotificacaoController {
   async createEsus(@Body() body: CreateEsusBody) {
     const parsed = createEsusSchema.parse(body);
     const clienteId = this.req['tenantId'] as string;
-    const userId = this.req['userId'] as string | undefined;
+    const userId = (this.req['user'] as AuthenticatedUser).id;
     const { esus } = await this.esusCreate.execute(clienteId, userId, parsed);
     return NotificacaoViewModel.esusToHttp(esus);
   }

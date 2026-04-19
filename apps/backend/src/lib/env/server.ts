@@ -41,7 +41,6 @@ const envSchema = z.object({
   /** AuthGuard aceita tokens Supabase enquanto migração não está 100% concluída. */
   SUPABASE_JWT_SECRET: z.string().optional(),
   SUPABASE_URL: z.string().optional(),
-  SUPABASE_ANON_KEY: z.string().optional(),
 });
 
 const getEnv = () => {

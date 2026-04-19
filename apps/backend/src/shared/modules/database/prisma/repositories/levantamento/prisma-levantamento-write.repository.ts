@@ -29,8 +29,8 @@ export class PrismaLevantamentoWriteRepository implements LevantamentoWriteRepos
 
   async save(levantamento: Levantamento): Promise<void> {
     const data = PrismaLevantamentoMapper.toPrisma(levantamento);
-    await this.prisma.client.levantamentos.update({
-      where: { id: levantamento.id },
+    await this.prisma.client.levantamentos.updateMany({
+      where: { id: levantamento.id, cliente_id: levantamento.clienteId },
       data,
     });
   }

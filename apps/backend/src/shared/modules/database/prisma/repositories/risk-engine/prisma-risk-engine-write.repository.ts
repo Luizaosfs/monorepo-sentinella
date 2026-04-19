@@ -37,7 +37,7 @@ export class PrismaRiskEngineWriteRepository implements RiskEngineWriteRepositor
 
   async savePolicy(policy: RiskPolicy): Promise<void> {
     const data = PrismaRiskPolicyMapper.toPrisma(policy);
-    await this.prisma.client.sentinela_risk_policy.update({ where: { id: policy.id }, data });
+    await this.prisma.client.sentinela_risk_policy.updateMany({ where: { id: policy.id, cliente_id: policy.clienteId }, data });
   }
 
   async deletePolicy(id: string): Promise<void> {
@@ -212,8 +212,12 @@ export class PrismaRiskEngineWriteRepository implements RiskEngineWriteRepositor
     return PrismaYoloSynonymMapper.toDomain(created as any);
   }
 
-  async deleteYoloSynonym(id: string): Promise<void> {
-    await this.prisma.client.sentinela_yolo_synonym.delete({ where: { id } });
+  async deleteYoloSynonym(id: string, clienteId?: string): Promise<void> {
+    if (clienteId) {
+      await this.prisma.client.sentinela_yolo_synonym.deleteMany({ where: { id, cliente_id: clienteId } });
+    } else {
+      await this.prisma.client.sentinela_yolo_synonym.delete({ where: { id } });
+    }
   }
 
   async upsertScoreConfig(clienteId: string, data: ScoreConfigInput): Promise<ScoreConfig> {

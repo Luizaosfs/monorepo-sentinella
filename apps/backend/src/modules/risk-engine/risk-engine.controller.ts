@@ -131,6 +131,11 @@ export class RiskEngineController {
   async deletePolicy(@Param('id') id: string) {
     const existing = await this.readRepository.findPolicyById(id);
     if (!existing) throw RiskEngineException.notFound();
+    const tenantId = this.req['tenantId'] as string | undefined;
+    const user = this.req['user'] as any;
+    if (tenantId && !user?.isPlatformAdmin && existing.clienteId !== tenantId) {
+      throw RiskEngineException.notFound();
+    }
     await this.writeRepository.deletePolicy(id);
     return { success: true };
   }
@@ -198,7 +203,8 @@ export class RiskEngineController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Deletar sinônimo YOLO' })
   async deleteYoloSynonym(@Param('id') id: string) {
-    await this.writeRepository.deleteYoloSynonym(id);
+    const tenantId = this.req['tenantId'] as string | undefined;
+    await this.writeRepository.deleteYoloSynonym(id, tenantId);
     return { success: true };
   }
 

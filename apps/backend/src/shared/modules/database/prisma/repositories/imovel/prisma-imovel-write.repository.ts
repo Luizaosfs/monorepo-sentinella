@@ -24,12 +24,12 @@ export class PrismaImovelWriteRepository implements ImovelWriteRepository {
 
   async save(imovel: Imovel): Promise<void> {
     const data = PrismaImovelMapper.toPrisma(imovel);
-    await this.prisma.client.imoveis.update({ where: { id: imovel.id }, data });
+    await this.prisma.client.imoveis.updateMany({ where: { id: imovel.id, cliente_id: imovel.clienteId }, data });
   }
 
-  async softDelete(id: string, deletedBy: string): Promise<void> {
-    await this.prisma.client.imoveis.update({
-      where: { id },
+  async softDelete(id: string, deletedBy: string, clienteId: string): Promise<void> {
+    await this.prisma.client.imoveis.updateMany({
+      where: { id, cliente_id: clienteId },
       data: { deleted_at: new Date(), deleted_by: deletedBy },
     });
   }

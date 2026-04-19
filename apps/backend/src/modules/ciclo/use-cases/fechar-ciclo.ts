@@ -27,7 +27,7 @@ export class FecharCiclo {
     if (!ciclo) throw CicloException.notFound();
     if (ciclo.status === 'fechado') throw CicloException.jaFechado();
 
-    const { snapshot } = await this.writeRepository.fecharCiclo(ciclo.id!, {
+    const { snapshot } = await this.writeRepository.fecharCiclo(ciclo.id!, clienteId, {
       dataFechamento: new Date(),
       fechadoPor: userId,
       observacaoFechamento: input.observacao,

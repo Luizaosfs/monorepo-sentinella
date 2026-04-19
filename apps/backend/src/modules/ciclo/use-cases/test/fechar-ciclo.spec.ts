@@ -52,7 +52,7 @@ describe('FecharCiclo', () => {
     await useCase.execute(inputBase);
 
     expect(readRepo.findByNumeroAno).toHaveBeenCalledWith('test-cliente-id', 2, 2024);
-    expect(writeRepo.fecharCiclo).toHaveBeenCalledWith('fechar-id', {
+    expect(writeRepo.fecharCiclo).toHaveBeenCalledWith('fechar-id', 'test-cliente-id', {
       dataFechamento: agora,
       fechadoPor: 'test-user-id',
       observacaoFechamento: 'Fechamento teste',

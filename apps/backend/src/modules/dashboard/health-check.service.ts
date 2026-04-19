@@ -21,17 +21,17 @@ export class HealthCheckService {
 
     // Cloudinary (variáveis configuradas)
     checks.cloudinary =
-      Boolean(process.env.CLOUDINARY_CLOUD_NAME) &&
-      Boolean(process.env.CLOUDINARY_API_KEY) &&
-      Boolean(process.env.CLOUDINARY_API_SECRET);
+      Boolean(env.CLOUDINARY_CLOUD_NAME) &&
+      Boolean(env.CLOUDINARY_API_KEY) &&
+      Boolean(env.CLOUDINARY_API_SECRET);
 
     // Anthropic API (variável configurada)
-    checks.anthropic = Boolean(process.env.ANTHROPIC_API_KEY);
+    checks.anthropic = Boolean(env.ANTHROPIC_API_KEY);
 
     // VAPID (push notifications)
     checks.vapid =
-      Boolean(process.env.VAPID_PUBLIC_KEY) &&
-      Boolean(process.env.VAPID_PRIVATE_KEY);
+      Boolean(env.VAPID_PUBLIC_KEY) &&
+      Boolean(env.VAPID_PRIVATE_KEY);
 
     const allOk = Object.values(checks).every(Boolean);
     const status = allOk ? 'ok' : 'degraded';

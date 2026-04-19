@@ -29,7 +29,7 @@ export class DeleteOperacao {
     if (!operacao) throw OperacaoException.notFound();
     this.assertTenant(operacao.clienteId);
 
-    const userId = this.req['userId'] as string;
+    const userId = (this.req['user'] as AuthenticatedUser).id;
     await this.writeRepository.softDelete(id, userId);
     return { deleted: true };
   }

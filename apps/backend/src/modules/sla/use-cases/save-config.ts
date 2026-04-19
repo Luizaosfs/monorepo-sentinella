@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
+import { AuthenticatedUser } from 'src/guards/auth.guard';
 
 import type { JsonObject } from '@shared/types/json';
 
@@ -18,7 +19,7 @@ export class SaveConfig {
 
   async execute(data: SaveConfigBody) {
     const clienteId = this.req['tenantId'] as string;
-    const changedBy = this.req['userId'] as string | undefined;
+    const changedBy = (this.req['user'] as AuthenticatedUser).id;
 
     const current = await this.readRepository.findConfig(clienteId);
 

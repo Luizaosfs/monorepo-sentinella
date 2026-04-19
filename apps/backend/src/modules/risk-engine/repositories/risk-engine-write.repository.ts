@@ -28,7 +28,7 @@ export abstract class RiskEngineWriteRepository {
   ): Promise<DroneRiskConfig>;
   abstract saveYoloClass(config: YoloClassConfig): Promise<void>;
   abstract createYoloSynonym(synonym: YoloSynonym): Promise<YoloSynonym>;
-  abstract deleteYoloSynonym(id: string): Promise<void>;
+  abstract deleteYoloSynonym(id: string, clienteId?: string): Promise<void>;
 
   // Score
   abstract upsertScoreConfig(clienteId: string, data: ScoreConfigInput): Promise<ScoreConfig>;

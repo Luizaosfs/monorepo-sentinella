@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 import { v2 as cloudinary } from 'cloudinary';
+import { env } from 'src/lib/env/server';
 
 @Injectable()
 export class CloudinaryService {
@@ -8,9 +9,9 @@ export class CloudinaryService {
 
   constructor(private prisma: PrismaService) {
     cloudinary.config({
-      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-      api_key: process.env.CLOUDINARY_API_KEY,
-      api_secret: process.env.CLOUDINARY_API_SECRET,
+      cloud_name: env.CLOUDINARY_CLOUD_NAME,
+      api_key: env.CLOUDINARY_API_KEY,
+      api_secret: env.CLOUDINARY_API_SECRET,
     });
   }
 

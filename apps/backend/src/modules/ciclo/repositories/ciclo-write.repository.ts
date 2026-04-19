@@ -16,6 +16,7 @@ export abstract class CicloWriteRepository {
   abstract abrirCiclo(entity: Ciclo): Promise<Ciclo>;
   abstract fecharCiclo(
     id: string,
+    clienteId: string,
     data: FecharCicloData,
   ): Promise<{ snapshot: Record<string, unknown> }>;
 }

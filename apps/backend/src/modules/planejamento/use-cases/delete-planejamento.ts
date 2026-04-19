@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
+import { AuthenticatedUser } from 'src/guards/auth.guard';
 
 import { PlanejamentoException } from '../errors/planejamento.exception';
 import { PlanejamentoReadRepository } from '../repositories/planejamento-read.repository';
@@ -18,7 +19,7 @@ export class DeletePlanejamento {
     const planejamento = await this.readRepository.findById(id);
     if (!planejamento) throw PlanejamentoException.notFound();
 
-    const userId = this.req['userId'] as string;
+    const userId = (this.req['user'] as AuthenticatedUser).id;
     await this.writeRepository.softDelete(id, userId);
     return { deleted: true };
   }

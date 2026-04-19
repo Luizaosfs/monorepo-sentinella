@@ -16,6 +16,7 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
 import { Request } from 'express';
 import { TenantGuard } from 'src/guards/tenant.guard';
+import { AuthenticatedUser } from 'src/guards/auth.guard';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 
 import { Roles } from '@/decorators/roles.decorator';
@@ -195,7 +196,7 @@ export class DashboardController {
   async createRelatorio(@Body() body: CreateRelatorioBody) {
     const parsed = createRelatorioSchema.parse(body);
     const clienteId = this.req['tenantId'] as string;
-    const userId = this.req['userId'] as string | undefined;
+    const userId = (this.req['user'] as AuthenticatedUser).id;
     const { relatorio } = await this.relatorioCreate.execute(clienteId, userId, parsed);
     return DashboardViewModel.relatorioToHttp(relatorio);
   }

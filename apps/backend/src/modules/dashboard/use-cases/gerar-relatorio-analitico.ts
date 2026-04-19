@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
+import { AuthenticatedUser } from 'src/guards/auth.guard';
 
 import { RelatorioGerado } from '../entities/dashboard';
 import { RelatorioAnaliticoBody } from '../dtos/dashboard-analytics.input';
@@ -20,7 +21,7 @@ export class GerarRelatorioAnalitico {
   ): Promise<{ relatorio: RelatorioGerado }> {
     // MT-02: tenantId do guard sempre vence — nunca aceita clienteId do frontend
     const clienteId = this.req['tenantId'] as string;
-    const userId = this.req['userId'] as string | undefined;
+    const userId = (this.req['user'] as AuthenticatedUser).id;
 
     const [liraa, comparativo, scoreRegioes] = await Promise.all([
       this.readRepository.calcularLiraa(clienteId, input.ciclo),

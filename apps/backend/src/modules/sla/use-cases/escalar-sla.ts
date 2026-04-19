@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
+import { AuthenticatedUser } from 'src/guards/auth.guard';
 
 import { SlaException } from '../errors/sla.exception';
 import { SlaReadRepository } from '../repositories/sla-read.repository';
@@ -47,7 +48,7 @@ export class EscalarSla {
     sla.escalonado = true;
     sla.escalonadoEm = new Date();
     sla.prazoFinal = new Date(Date.now() + novasHoras * 3600 * 1000);
-    sla.escaladoPor = this.req['userId'] as string | undefined;
+    sla.escaladoPor = (this.req['user'] as AuthenticatedUser).id;
 
     await this.writeRepository.save(sla);
     return { escalado: true, sla };

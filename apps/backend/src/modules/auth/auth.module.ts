@@ -9,6 +9,7 @@ import { EmailService } from './email.service';
 import { ChangePasswordUseCase } from './use-cases/change-password.use-case';
 import { ForgotPasswordUseCase } from './use-cases/forgot-password.use-case';
 import { LoginUseCase } from './use-cases/login.use-case';
+import { LogoutUseCase } from './use-cases/logout.use-case';
 import { MeUseCase } from './use-cases/me.use-case';
 import { RefreshTokenUseCase } from './use-cases/refresh-token.use-case';
 import { ResetPasswordUseCase } from './use-cases/reset-password.use-case';
@@ -26,6 +27,7 @@ import { ResetPasswordUseCase } from './use-cases/reset-password.use-case';
   providers: [
     LoginUseCase,
     RefreshTokenUseCase,
+    LogoutUseCase,
     MeUseCase,
     ForgotPasswordUseCase,
     ChangePasswordUseCase,

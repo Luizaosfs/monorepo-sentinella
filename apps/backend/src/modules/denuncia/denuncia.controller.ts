@@ -3,6 +3,7 @@ import { Body, Controller, Get, Post, Query, Req, UsePipes } from '@nestjs/commo
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { Request } from 'express';
+import { z } from 'zod';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 
 import { Public } from '@/decorators/roles.decorator';
@@ -46,6 +47,8 @@ export class DenunciaController {
   @Get('consultar')
   @ApiOperation({ summary: 'Consultar denúncia por protocolo (público)' })
   async consultar(@Query('protocolo') protocolo: string) {
-    return this.consultarDenuncia.execute(protocolo?.toLowerCase());
+    const parsed = z.string().min(1).max(64).regex(/^[a-zA-Z0-9_-]+$/).safeParse(protocolo);
+    if (!parsed.success) return null;
+    return this.consultarDenuncia.execute(parsed.data.toLowerCase());
   }
 }

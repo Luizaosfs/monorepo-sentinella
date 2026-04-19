@@ -38,9 +38,14 @@ export class ForgotPasswordUseCase {
         data: { auth_id: authId, token_hash: tokenHash, expires_at: expiresAt },
       });
 
-      const baseUrl = env.CLIENT_URL ?? 'http://localhost:5173';
-      const redirectTo = input.redirectTo ?? `${baseUrl}/reset-password`;
-      const resetUrl = `${redirectTo}?token=${token}`;
+      const baseUrl = (env.CLIENT_URL ?? 'http://localhost:5173').replace(/\/$/, '');
+      const allowedRedirect = input.redirectTo?.replace(/\/$/, '');
+      // Reject redirectTo that doesn't start with the configured CLIENT_URL (prevents token theft via open redirect)
+      const safeRedirect =
+        allowedRedirect && allowedRedirect.startsWith(baseUrl)
+          ? allowedRedirect
+          : `${baseUrl}/reset-password`;
+      const resetUrl = `${safeRedirect}?token=${token}`;
 
       await this.emailService.sendPasswordReset(emailNormalizado, resetUrl);
     }

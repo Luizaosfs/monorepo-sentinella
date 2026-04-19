@@ -14,6 +14,6 @@ export interface UpsertScoreData {
 export abstract class ImovelWriteRepository {
   abstract create(imovel: Imovel): Promise<Imovel>;
   abstract save(imovel: Imovel): Promise<void>;
-  abstract softDelete(id: string, deletedBy: string): Promise<void>;
+  abstract softDelete(id: string, deletedBy: string, clienteId: string): Promise<void>;
   abstract upsertScore(data: UpsertScoreData): Promise<void>;
 }

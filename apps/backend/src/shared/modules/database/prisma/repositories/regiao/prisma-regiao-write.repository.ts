@@ -20,6 +20,6 @@ export class PrismaRegiaoWriteRepository implements RegiaoWriteRepository {
 
   async save(regiao: Regiao): Promise<void> {
     const data = PrismaRegiaoMapper.toPrisma(regiao);
-    await this.prisma.client.regioes.update({ where: { id: regiao.id }, data });
+    await this.prisma.client.regioes.updateMany({ where: { id: regiao.id, cliente_id: regiao.clienteId }, data });
   }
 }

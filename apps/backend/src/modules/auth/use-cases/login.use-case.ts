@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 import * as bcrypt from 'bcryptjs';
+import * as crypto from 'crypto';
 import { AuthException } from 'src/guards/errors/auth.exception';
 import { env } from 'src/lib/env/server';
 
@@ -62,6 +63,15 @@ export class LoginUseCase {
       { sub: usuario.auth_id, type: 'refresh' },
       { secret: env.SECRET_JWT, expiresIn: '30d' },
     );
+
+    const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+    await this.prisma.client.refresh_tokens.create({
+      data: {
+        auth_id: usuario.auth_id,
+        token_hash: tokenHash,
+        expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      },
+    });
 
     return {
       accessToken,

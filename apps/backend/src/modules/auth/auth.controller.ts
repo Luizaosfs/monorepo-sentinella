@@ -15,6 +15,7 @@ import { ResetPasswordBody, resetPasswordSchema } from './dtos/reset-password.bo
 import { ChangePasswordUseCase } from './use-cases/change-password.use-case';
 import { ForgotPasswordUseCase } from './use-cases/forgot-password.use-case';
 import { LoginUseCase } from './use-cases/login.use-case';
+import { LogoutUseCase } from './use-cases/logout.use-case';
 import { MeUseCase } from './use-cases/me.use-case';
 import { RefreshTokenUseCase } from './use-cases/refresh-token.use-case';
 import { ResetPasswordUseCase } from './use-cases/reset-password.use-case';
@@ -26,6 +27,7 @@ export class AuthController {
   constructor(
     private loginUseCase: LoginUseCase,
     private refreshTokenUseCase: RefreshTokenUseCase,
+    private logoutUseCase: LogoutUseCase,
     private meUseCase: MeUseCase,
     private forgotPasswordUseCase: ForgotPasswordUseCase,
     private changePasswordUseCase: ChangePasswordUseCase,
@@ -48,6 +50,13 @@ export class AuthController {
   async refresh(@Body() body: RefreshBody) {
     const parsed = refreshSchema.parse(body);
     return this.refreshTokenUseCase.execute(parsed);
+  }
+
+  @Post('logout')
+  @ApiOperation({ summary: 'Revogar refresh token (logout)' })
+  async logout(@Body() body: RefreshBody) {
+    const parsed = refreshSchema.parse(body);
+    return this.logoutUseCase.execute(parsed.refreshToken);
   }
 
   @Get('me')
