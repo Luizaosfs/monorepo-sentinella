@@ -1,121 +1,136 @@
-# Sentinella
+# sentinella-frontend
 
-SaaS multi-tenant para prefeituras — monitoramento e combate à dengue.
+SPA do Sentinella Web — interface para gestores municipais, agentes de campo, notificadores e analistas regionais.
 
-Combina operação de campo por agentes, análise de imagens por drone/YOLO, notificação de casos via unidades de saúde, canal cidadão de denúncia e dashboards de gestão epidemiológica.
-
----
-
-## Perfis do sistema
-
-| Papel | Descrição | Rota inicial |
-|---|---|---|
-| `admin` | Administrador da plataforma (cross-tenant) | `/admin/clientes` |
-| `supervisor` | Gestor municipal (admin da prefeitura) | `/gestor/central` |
-| `operador` | Agente de campo | `/agente/hoje` |
-| `notificador` | Funcionário de unidade de saúde | `/notificador/registrar` |
-| cidadão | Denúncia pública sem login | `/denuncia/:slug/:bairroId` |
+**Stack:** React 18.3 · Vite · TypeScript 5.7 · TanStack Query v5 · React Router v6 · Leaflet 1.9 · Shadcn/Radix UI
 
 ---
 
-## Stack
+## Início rápido
 
-| Camada | Tecnologia |
+```bash
+cp .env.example .env   # preencher VITE_API_URL
+pnpm install
+pnpm dev               # http://localhost:5173
+```
+
+## Scripts
+
+| Script | O que faz |
 |---|---|
-| Frontend | React 18 + Vite + TypeScript + shadcn/ui + Tailwind |
-| Backend | Supabase (PostgreSQL + Auth + Storage + Edge Functions) |
-| Banco | PostgreSQL com PostGIS, RLS, 83+ tabelas, 152+ funções |
-| IA | YOLO (drone), Claude Haiku (triagem/resumo), identify-larva |
-| Imagens | Cloudinary |
-| Mapas | Leaflet + PostGIS |
-| Offline | IndexedDB + fila de sincronização idempotente |
-| Push | Web Push VAPID |
-| E-mail | Resend |
-| Clima | Open-Meteo (gratuito, sem API key) |
+| `pnpm dev` | Dev server Vite |
+| `pnpm build` | Build de produção |
+| `pnpm preview` | Preview do build |
+| `pnpm test` | Vitest |
+| `pnpm test:e2e` | Playwright |
+| `pnpm lint` | ESLint |
 
 ---
 
-## Estrutura do projeto
+## Estrutura src/
 
 ```
 src/
-├── pages/          # 72 páginas por perfil (admin/, gestor/, operador/, notificador/, public/)
-├── components/     # 175 componentes reutilizáveis
-├── hooks/          # 76 hooks (queries em hooks/queries/)
-├── services/       # api.ts — camada única de acesso ao Supabase
-├── types/          # database.ts — todos os tipos do domínio
-├── lib/            # utilitários, seeds, helpers de domínio
-└── guards/         # guards de rota por papel
-
-supabase/
-├── migrations/     # 203 migrations SQL com histórico auditável
-├── functions/      # 20 Edge Functions (billing, CNES, IA, push, relatórios...)
-└── schema.sql      # Schema completo gerado
+├── components/
+│   ├── admin/           # Gestão da plataforma
+│   ├── agente/          # Operação de campo
+│   ├── dashboard/       # Painéis analíticos
+│   ├── foco/            # Focos de risco
+│   ├── gestor/          # Portal do supervisor
+│   ├── levantamentos/   # Levantamentos
+│   ├── map/             # Mapas Leaflet (v2, v3, dashboard)
+│   ├── offline/         # Suporte offline
+│   ├── risk-policy/     # Configuração de risco
+│   ├── sla/             # SLA operacional
+│   ├── vistoria/        # Vistorias de campo
+│   └── ui/              # Primitivos Shadcn/Radix
+├── guards/              # Route guards (RequireAuth, RequireRole)
+├── hooks/
+│   ├── queries/         # TanStack Query hooks (useXxx)
+│   └── mapa/            # Hooks específicos de mapa
+├── lib/                 # queryConfig, offlineQueue, utils
+├── pages/
+│   ├── admin/           # /admin/* — plataforma
+│   ├── agente/          # /agente/*
+│   ├── gestor/          # /gestor/*
+│   ├── notificador/     # /notificador/*
+│   ├── operador/        # /operador/* (alias agente)
+│   ├── regional/        # /regional/*
+│   └── public/          # /login, /denunciar
+├── services/api/        # HTTP service modules por domínio
+├── types/               # database.ts, sla.ts, etc.
+└── App.tsx              # Roteamento principal
 ```
 
 ---
 
-## Módulos principais
+## API — como fazer chamadas
 
-- **Vistoria de campo** — stepper 5 etapas, offline-first, depósitos PNCD (A1–E)
-- **Focos de risco** — state machine 7 estados, SLA, score territorial, recorrência
-- **Canal cidadão** — denúncia pública via QR, protocolo, rate limit
-- **Casos notificados** — cruzamento automático caso ↔ foco (PostGIS 300m)
-- **LIRAa** — IIP/IBP por quarteirão, boletim exportável
-- **Pipeline drone** — YOLO, triagem IA, Cloudinary, evidências
-- **Integração CNES** — sincronização automática de unidades de saúde
-- **Integração e-SUS Notifica** — envio de casos para vigilância epidemiológica
-- **Score territorial** — 13 fatores, calibrável por cliente, cron diário
-- **SLA operacional** — regras por prioridade, push crítico, auditoria
+Usar sempre `@sentinella/api-client`. **Nunca usar `supabase.from()` em código novo.**
 
----
+```typescript
+import { http } from '@sentinella/api-client';
 
-## Desenvolvimento local
+const focos = await http.get('/focos-risco', { params: { clienteId } });
+const novo  = await http.post('/focos-risco', body);
+await http.put(`/focos-risco/${id}`, patch);
+```
 
-```bash
-# Instalar dependências
-npm install
+## Padrão de hook de query
 
-# Variáveis de ambiente
-cp .env.example .env
-# Preencher VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY
+```typescript
+// src/hooks/queries/useFocosRisco.ts
+import { useQuery } from '@tanstack/react-query';
+import { http } from '@sentinella/api-client';
+import { STALE } from '@/lib/queryConfig';
 
-# Rodar localmente
-npm run dev
+export function useFocosRisco(clienteId: string | null | undefined) {
+  return useQuery({
+    queryKey: ['focos-risco', clienteId],
+    queryFn: () => http.get('/focos-risco', { params: { clienteId } }),
+    enabled: !!clienteId,
+    staleTime: STALE.MEDIUM, // LIVE=0 SHORT=1min MEDIUM=3min LONG=10min STATIC=30min
+  });
+}
+```
+
+## Autenticação
+
+- `AuthProvider` envolve a aplicação
+- `useAuth()` expõe: `usuario`, `papel`, `isAdmin`, `isSupervisor`, `isAgente`, `isNotificador`, `isAnalistaRegional`
+- Login → `POST /auth/login` → access token + refresh token
+- Tokens gerenciados por `@sentinella/api-client` (tokenStore)
+
+## Multitenancy
+
+Para obter o `clienteId` ativo, usar sempre:
+
+```typescript
+import { useClienteAtivo } from '@/hooks/useClienteAtivo';
+const { clienteId } = useClienteAtivo();
 ```
 
 ---
 
-## Testes
+## Mapas
 
-```bash
-# Testes unitários
-npm run test
+Leaflet 1.9.4 com:
+- `leaflet-draw` — desenho de polígonos de regiões
+- `leaflet-markercluster` — agrupamento de marcadores
+- `leaflet.heat` — mapa de calor de focos
+- `leaflet-kmz` — importação KMZ
 
-# Testes E2E (Playwright)
-npm run test:e2e
-```
-
----
-
-## Implantação de nova prefeitura
-
-Siga o checklist em [`IMPLANTACAO.md`](./IMPLANTACAO.md).
+Geometrias de região são recebidas via campo `geojson` (JSON).
+O campo `regioes.area` (PostGIS) é populado automaticamente pelo backend a partir do `geojson`.
 
 ---
 
-## Documentos internos
+## Portais por papel
 
-| Arquivo | Conteúdo |
-|---|---|
-| `IMPLANTACAO.md` | Checklist de onboarding de nova prefeitura |
-| `AUDITORIA_EXECUTIVA_FINAL.md` | Auditoria técnica completa do produto |
-| `docs/REGRAS_DE_NEGOCIO_OFICIAIS.md` | Invariantes e regras de negócio consolidadas |
-| `AUDITORIA_RLS.md` | Auditoria de políticas RLS |
-| `AUDITORIA_TECNICA.md` | Análise técnica detalhada |
-
----
-
-## Licença
-
-Proprietário — Sentinella. Todos os direitos reservados.
+| Papel | Rota | Descrição |
+|---|---|---|
+| `admin` | `/admin/*` | Gestão completa da plataforma |
+| `supervisor` | `/gestor/*` | Portal do gestor municipal |
+| `agente` / `operador` | `/agente/*` `/operador/*` | Operações de campo |
+| `notificador` | `/notificador/*` | Registro de casos UBS |
+| `analista_regional` | `/regional/*` | Dashboard multi-municípios |

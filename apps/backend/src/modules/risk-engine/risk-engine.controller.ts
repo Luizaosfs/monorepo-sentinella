@@ -51,6 +51,7 @@ import { SavePolicy } from './use-cases/save-policy';
 import { SavePolicyFull } from './use-cases/save-policy-full';
 import { SaveYoloClass } from './use-cases/save-yolo-class';
 import { SaveYoloSynonym } from './use-cases/save-yolo-synonym';
+import { GetScoreBairro } from './use-cases/get-score-bairro';
 import {
   DroneRiskConfigViewModel,
   RiskPolicyFullViewModel,
@@ -79,6 +80,7 @@ export class RiskEngineController {
     private saveYoloClassUC: SaveYoloClass,
     private filterYoloSynonymsUC: FilterYoloSynonyms,
     private saveYoloSynonymUC: SaveYoloSynonym,
+    private getScoreBairro: GetScoreBairro,
     private readRepository: RiskEngineReadRepository,
     private writeRepository: RiskEngineWriteRepository,
     private prisma: PrismaService,
@@ -229,12 +231,9 @@ export class RiskEngineController {
 
   @Get('score/bairros')
   @Roles('admin', 'supervisor', 'analista_regional')
-  @ApiOperation({ summary: 'Score agregado por bairro (v_score_bairro)' })
-  async listScoreBairros() {
-    const clienteId = this.req['tenantId'] as string;
-    return this.prisma.client.$queryRaw(
-      Prisma.sql`SELECT * FROM v_score_bairro WHERE cliente_id = ${clienteId}::uuid ORDER BY score_medio DESC`,
-    );
+  @ApiOperation({ summary: 'Score agregado por bairro' })
+  listScoreBairros() {
+    return this.getScoreBairro.execute(this.req['tenantId'] as string);
   }
 
   @Get('score/imovel/:imovelId')

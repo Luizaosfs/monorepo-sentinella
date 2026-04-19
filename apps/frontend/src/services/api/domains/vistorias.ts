@@ -71,5 +71,15 @@ export const vistorias = {
   ): Promise<Ret<typeof _sb.vistorias.comparativoAgentes>> =>
     http.get(`/dashboard/comparativo-agentes${qs({ clienteId, ciclo })}`),
 
-  listConsolidadas: async () => { throw new Error('[sem endpoint NestJS] vistorias.listConsolidadas'); },
+  listConsolidadas: (
+    clienteId: string,
+    filters?: {
+      prioridade_final?: string[];
+      alerta_saude?: string;
+      risco_vetorial?: string;
+      consolidacao_incompleta?: boolean;
+      limit?: number;
+    },
+  ): Promise<Record<string, unknown>[]> =>
+    http.get(`/vistorias/consolidadas${qs({ clienteId, ...filters })}`),
 };

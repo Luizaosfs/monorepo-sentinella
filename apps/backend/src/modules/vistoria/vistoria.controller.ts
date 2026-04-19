@@ -30,6 +30,10 @@ import {
   createVistoriaCompletaSchema,
 } from './dtos/create-vistoria-completa.body';
 import {
+  FilterVistoriaConsolidadasQuery,
+  filterVistoriaConsolidadasSchema,
+} from './dtos/filter-vistoria-consolidadas.input';
+import {
   FilterVistoriaQuery,
   filterVistoriaSchema,
 } from './dtos/filter-vistoria.input';
@@ -42,6 +46,7 @@ import { CreateVistoria } from './use-cases/create-vistoria';
 import { CreateVistoriaCompleta } from './use-cases/create-vistoria-completa';
 import { FilterVistoria } from './use-cases/filter-vistoria';
 import { GetVistoria } from './use-cases/get-vistoria';
+import { ListVistoriasConsolidadas } from './use-cases/list-vistorias-consolidadas';
 import { PaginationVistoria } from './use-cases/pagination-vistoria';
 import { SaveVistoria } from './use-cases/save-vistoria';
 import { VistoriaViewModel } from './view-model/vistoria';
@@ -57,10 +62,20 @@ export class VistoriaController {
     private createVistoriaCompleta: CreateVistoriaCompleta,
     private getVistoria: GetVistoria,
     private filterVistoria: FilterVistoria,
+    private listVistoriasConsolidadas: ListVistoriasConsolidadas,
     private paginationVistoria: PaginationVistoria,
     private saveVistoria: SaveVistoria,
     private countVistoria: CountVistoria,
   ) {}
+
+  @Get('consolidadas')
+  @Roles('admin', 'supervisor')
+  @ApiOperation({ summary: 'Listar vistorias consolidadas com score de prioridade' })
+  async listConsolidadas(@Query() filters: FilterVistoriaConsolidadasQuery) {
+    const parsed = filterVistoriaConsolidadasSchema.parse(filters);
+    const { vistorias } = await this.listVistoriasConsolidadas.execute(parsed);
+    return vistorias;
+  }
 
   @Get('count')
   @Roles('admin', 'supervisor', 'agente')

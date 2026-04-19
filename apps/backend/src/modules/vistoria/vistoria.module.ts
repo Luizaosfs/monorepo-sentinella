@@ -8,6 +8,7 @@ import { CreateVistoria } from './use-cases/create-vistoria';
 import { CreateVistoriaCompleta } from './use-cases/create-vistoria-completa';
 import { FilterVistoria } from './use-cases/filter-vistoria';
 import { GetVistoria } from './use-cases/get-vistoria';
+import { ListVistoriasConsolidadas } from './use-cases/list-vistorias-consolidadas';
 import { PaginationVistoria } from './use-cases/pagination-vistoria';
 import { SaveVistoria } from './use-cases/save-vistoria';
 import { VistoriaController } from './vistoria.controller';
@@ -19,6 +20,7 @@ import { VistoriaController } from './vistoria.controller';
     CreateVistoriaCompleta,
     GetVistoria,
     FilterVistoria,
+    ListVistoriasConsolidadas,
     PaginationVistoria,
     SaveVistoria,
     JwtService,

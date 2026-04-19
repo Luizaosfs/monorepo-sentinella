@@ -4,76 +4,60 @@
 
 Backend REST API do **Sentinella Web** — plataforma B2G SaaS de vigilância entomológica para municípios brasileiros no combate ao Aedes aegypti (dengue/chikungunya/zika).
 
-**Stack**: NestJS 11 + Prisma 6 + Zod + JWT + PostgreSQL 17 + PostGIS
-**Arquitetura**: SOLID com Use Cases, seguindo o padrão do ManFrota Finance como referência.
+**Stack:** NestJS 11 · Prisma 7.7.0 · Zod 3.24 · JWT · PostgreSQL 17 · PostGIS 3.6.2
+**Arquitetura:** SOLID com Use Cases — Controller → UseCase → Repository → Mapper → ViewModel
 
 ---
 
 ## CONTEXTO DA MIGRAÇÃO
 
-Este projeto é uma **migração do Supabase** para backend próprio NestJS.
+Este projeto é uma **migração do Supabase** para backend NestJS próprio.
 
 ### O que existia antes (Supabase)
-- 190 tabelas PostgreSQL com 491 RLS policies, 185 triggers, 538 functions
-- Frontend React 18 com 366 chamadas `supabase.from()`, 48 `.rpc()`, 7 edge function invocations
-- Autenticação via Supabase Auth (email/password)
-- 23 Edge Functions em Deno (jobs, integrações, uploads)
+- PostgreSQL com RLS (490+ policies), 185 triggers, 538 functions
+- Frontend React com `supabase.from()`, `.rpc()`, edge functions Deno
+- Auth via Supabase Auth
 
-### O que muda
-- Auth: Supabase Auth → JWT próprio (Bearer token)
-- Queries: `supabase.from().select()` → REST endpoints NestJS
-- RPCs: `supabase.rpc()` → Use Cases no NestJS
-- Edge Functions: Deno → NestJS services + @nestjs/schedule ou BullMQ
-- RLS: Removido. Segurança passa para AuthGuard + TenantGuard no backend
-- DB: **Mesmo banco PostgreSQL**. Tabelas, triggers de auditoria e PostGIS permanecem
+### O que mudou
+- Auth: Supabase Auth → JWT próprio (HS256) + refresh tokens na tabela `refresh_tokens`
+- Queries: `supabase.from()` → REST endpoints NestJS via `@sentinella/api-client`
+- RPCs: `supabase.rpc()` → Use Cases NestJS
+- Edge Functions: Deno → NestJS services + `@nestjs/schedule`
+- RLS: Removido. Segurança via AuthGuard + TenantGuard
+- Views analíticas: **Sem views no banco.** Toda analytics é Use Case com `$queryRaw` inline
 
-### O que NÃO muda
-- Frontend React permanece 100% igual visualmente
-- Banco de dados (schema, tabelas, dados)
-- Triggers de auditoria
+### O que NÃO mudou
+- Banco PostgreSQL (schema, tabelas, triggers de auditoria, PostGIS)
+- Frontend React (visual idêntico)
 
 ---
 
 ## ARQUITETURA SOLID — PADRÃO OBRIGATÓRIO
 
-Cada módulo segue esta estrutura (idêntica ao ManFrota Finance):
-
 ```
 src/modules/{nome}/
-├── {nome}.module.ts          # NestJS module
-├── {nome}.controller.ts      # REST endpoints (thin layer)
-├── entities/
-│   └── {nome}.ts             # Domain entity (extends BaseEntity)
-├── repositories/
-│   └── {nome}.ts             # Abstract repository (interface)
-├── use-cases/
-│   ├── create-{nome}.ts      # Um arquivo por caso de uso
-│   ├── filter-{nome}.ts
-│   ├── pagination-{nome}.ts
-│   ├── save-{nome}.ts
-│   ├── delete-{nome}.ts
-│   └── test/                 # Testes unitários por use case
-├── dtos/
-│   ├── create-{nome}.body.ts # Zod schema + createZodDto
-│   ├── save-{nome}.body.ts
-│   └── filter-{nome}.input.ts
-├── view-model/
-│   └── {nome}.ts             # ViewModel.toHttp() — sanitiza saída
-└── errors/
-    └── {nome}.exception.ts   # createExceptionFactory()
+├── {nome}.module.ts
+├── {nome}.controller.ts        # REST endpoints (thin layer)
+├── entities/{nome}.ts          # Domain entity (extends BaseEntity)
+├── repositories/{nome}.ts      # Abstract repository (interface)
+├── use-cases/                  # Um arquivo por caso de uso
+│   └── test/                   # Testes unitários por use case
+├── dtos/                       # Zod schema + createZodDto
+├── view-model/{nome}.ts        # ViewModel.toHttp() — sanitiza saída
+└── errors/{nome}.exception.ts  # createExceptionFactory()
 ```
 
-A implementação do repositório fica em:
+Implementação Prisma em:
 ```
 src/shared/modules/database/prisma/
-├── repositories/prisma-{nome}.repository.ts  # @PrismaRepository decorator
-└── mappers/prisma-{nome}.mapper.ts           # toDomain() + toPrisma()
+├── repositories/prisma-{nome}.repository.ts   # @PrismaRepository decorator
+└── mappers/prisma-{nome}.mapper.ts            # toDomain() + toPrisma()
 ```
 
-### Fluxo de uma request
+### Fluxo de request
 ```
 Request → AuthGuard → RolesGuard → TenantGuard
-  → Controller (parse Zod) → UseCase (regra de negócio)
+  → Controller (Zod parse) → UseCase (regra de negócio)
   → Repository (abstract) → PrismaRepository (implementação)
   → Mapper.toDomain() / toPrisma()
   → ViewModel.toHttp() → Response
@@ -81,40 +65,65 @@ Request → AuthGuard → RolesGuard → TenantGuard
 
 ---
 
+## MÓDULOS (29)
+
+```
+auth          billing       ciclo         cliente       cloudinary
+cnes          dashboard     denuncia      drone         foco-risco
+ia            imovel        import-log    job           levantamento
+notificacao   operacao      piloto        planejamento  plano-acao
+pluvio        quarteirao    regiao        reinspecao    risk-engine
+seed          sla           usuario       vistoria
+```
+
+---
+
 ## REGRAS IMUTÁVEIS
 
 ### Papéis (NUNCA alterar)
-Três papéis principais + 2 auxiliares. **agente e operador são o MESMO papel**:
 - `admin` — operador da plataforma SaaS, sem cliente_id, acesso total
-- `supervisor` — gestor municipal, portal /gestor/*
-- `agente` — operador de campo (exibido como "Agente de Endemias" na UI). Rotas `/agente/*` e `/operador/*` pertencem a este papel
-- `notificador` — funcionário UBS, portal /notificador/*
-- `analista_regional` — analista que vê dados de múltiplos municípios
+- `supervisor` — gestor municipal
+- `agente` — agente de campo (= `operador`; rotas `/agente/*` e `/operador/*` são do mesmo papel)
+- `notificador` — funcionário UBS
+- `analista_regional` — analista multi-municípios
 
 **`platform_admin` NÃO existe. Nunca criar.**
 
 ### Multitenancy
-- Isolamento via `cliente_id` (UUID) em WHERE, NÃO via schema separado
-- O TenantGuard injeta `request['tenantId']` a partir do JWT
-- Todo repository que acessa dados de tenant DEVE filtrar por cliente_id
-- Admin pode acessar qualquer tenant via `?clienteId=xxx`
+- Isolamento via `cliente_id` (UUID) em WHERE — não via schema separado
+- `TenantGuard` injeta `request['tenantId']` do JWT
+- Admin sem `cliente_id` seleciona tenant via `?clienteId=xxx`
+- Todo repository de tenant DEVE filtrar por `cliente_id`
 
-### Máquina de estados do foco_risco
-Estados: `suspeita → em_triagem → aguarda_inspecao → em_inspecao → confirmado → em_tratamento → resolvido|descartado`
+### Máquina de estados — focos_risco
+```
+suspeita → em_triagem → aguarda_inspecao → em_inspecao → confirmado → em_tratamento → resolvido
+         ↘           ↘                  ↘             ↘            ↘              ↘ descartado
+```
 
-**Transições válidas** (implementar como UseCase, não como RPC):
-- suspeita → em_triagem
-- em_triagem → aguarda_inspecao | descartado
-- aguarda_inspecao → em_inspecao | descartado
-- em_inspecao → confirmado | descartado
-- confirmado → em_tratamento
-- em_tratamento → resolvido | descartado
+Transições válidas:
+- `suspeita` → `em_triagem`
+- `em_triagem` → `aguarda_inspecao` | `descartado`
+- `aguarda_inspecao` → `em_inspecao` | `descartado`
+- `em_inspecao` → `confirmado` | `descartado`
+- `confirmado` → `em_tratamento`
+- `em_tratamento` → `resolvido` | `descartado`
 
-Toda transição DEVE gerar registro em `foco_risco_historico`.
+Toda transição DEVE gerar registro em `foco_risco_historico` (append-only).
+`resolvido` e `descartado` são terminais — não reabre; cria novo foco com `foco_anterior_id`.
 
 ### SLA
-- Prazo canônico está em `sla_operacional.prazo_final` (banco)
-- Frontend `SLA_RULES` é `@deprecated` — não usar como fonte de verdade
+- Prazo canônico: `sla_operacional.prazo_final` (banco)
+- SLA inicia quando foco transiciona para `confirmado`
+- Configurável por cliente e por região (`sla_config`, `sla_config_regiao`)
+
+### PostGIS
+- `regioes.area` — `geometry(Polygon,4326)` — populado automaticamente pelo `PrismaRegiaoWriteRepository` a partir do campo `geojson` via `ST_GeomFromGeoJSON()`
+- `planejamento.area` — `geometry(Polygon,4326)`
+- Índices GIST em ambas as colunas para `ST_Contains` no despacho de agentes
+
+### Analytics — sem views no banco
+Toda query analítica (dashboard executivo, piloto, regional, eficácia, reincidência) é implementada como Use Case com `$queryRaw` inline. **Nunca criar views PostgreSQL** para analytics.
 
 ---
 
@@ -122,179 +131,145 @@ Toda transição DEVE gerar registro em `foco_risco_historico`.
 
 ### Controller
 ```typescript
-@UseGuards(AuthGuard, RolesGuard, TenantGuard)
+@UseGuards(TenantGuard)
 @UseInterceptors(PrismaInterceptor)
 @UsePipes(MyZodValidationPipe)
 @ApiTags('Nome')
 @Controller('rota')
 export class NomeController {
-  constructor(
-    private createNome: CreateNome,
-    private filterNome: FilterNome,
-    private paginationNome: PaginationNome,
-  ) {}
+  constructor(private createNome: CreateNome) {}
 
-  @Get()
+  @Post()
   @Roles('admin', 'supervisor')
-  @ApiOperation({ summary: 'Listar' })
-  async filter(@Query() filters: FilterNomeInput) {
-    const parsed = filterNomeSchema.parse(filters)
-    const { items } = await this.filterNome.execute(parsed)
-    return items.map(NomeViewModel.toHttp)
+  @ApiOperation({ summary: 'Criar' })
+  async create(@Body() body: CreateNomeBody) {
+    const parsed = createNomeSchema.parse(body);
+    const { item } = await this.createNome.execute(parsed);
+    return NomeViewModel.toHttp(item);
+  }
+}
+```
+
+### Use Case com $queryRaw (analytics)
+```typescript
+@Injectable()
+export class GetNomeAnalytics {
+  constructor(private prisma: PrismaService) {}
+
+  execute(clienteId: string) {
+    return this.prisma.client.$queryRaw(Prisma.sql`
+      SELECT COUNT(*)::int AS total
+      FROM nome_tabela
+      WHERE cliente_id = ${clienteId}::uuid
+        AND deleted_at IS NULL
+    `);
   }
 }
 ```
 
 ### DTO com Zod
 ```typescript
-import { createZodDto } from 'nestjs-zod'
-import { z } from 'zod'
+import { createZodDto } from 'nestjs-zod';
+import { z } from 'zod';
 
 export const createNomeSchema = z.object({
   campo: z.string({ required_error: 'Campo obrigatório' }),
   clienteId: z.string().uuid().optional(),
-})
+});
 
 export class CreateNomeBody extends createZodDto(createNomeSchema) {}
 ```
 
 ### Exception
 ```typescript
-import { createExceptionFactory } from '@/common/errors/exception-factory'
+import { createExceptionFactory } from '@/common/errors/exception-factory';
 
 export const NomeException = createExceptionFactory({
-  notFound: { type: 'notFound', message: 'Registro não encontrado' },
-  alreadyExists: { type: 'conflict', message: 'Registro já existe' },
-})
+  notFound:      { type: 'notFound',  message: 'Registro não encontrado' },
+  alreadyExists: { type: 'conflict',  message: 'Registro já existe' },
+});
 ```
 
-### Repository (abstract)
-```typescript
-@Injectable()
-export abstract class NomeRepository {
-  abstract findById(id: string): Promise<Nome | null>
-  abstract findAll(filters: FilterNomeInput): Promise<Nome[]>
-  abstract findPaginated(filters: FilterNomeInput, pagination: PaginationProps): Promise<NomePaginated>
-  abstract create(entity: Nome): Promise<Nome>
-  abstract save(entity: Nome): Promise<void>
-}
-```
+---
 
-### PrismaRepository (implementação)
-```typescript
-@PrismaRepository(NomeRepository)
-@Injectable()
-export class PrismaNomeRepository implements NomeRepository {
-  constructor(private prisma: PrismaService) {}
-  // implementação com PrismaNomeMapper.toDomain() e toPrisma()
-}
-```
+## AUTENTICAÇÃO
+
+- Bearer token JWT (HS256, `SECRET_JWT`)
+- Refresh tokens na tabela `refresh_tokens` (token_hash, expires_at, revoked_at, used_at)
+- Bridge: aceita tokens Supabase ES256 via JWKS durante migração
+- `@Public()` decorator libera rotas sem autenticação
 
 ---
 
 ## IDs E TIPOS
 
-- Sentinella usa **UUID** para todos os IDs (diferente do ManFrota que usa Int autoincrement)
-- BaseEntity usa `id?: string` (UUID)
-- Prisma: `@id @default(dbgenerated("gen_random_uuid()")) @db.Uuid`
+- UUIDs em todos os IDs: `@id @default(dbgenerated("gen_random_uuid()")) @db.Uuid`
+- BigInt de `COUNT(*)` é serializado via `BigInt.prototype.toJSON = () => Number(this)` em `main.ts`
 
 ---
 
-## MÓDULOS A IMPLEMENTAR (por ordem de prioridade)
+## SCHEMA PRISMA
 
-### Fase 1 — Auth + Cadastros base ✅ (scaffold pronto)
-1. ✅ `auth` — login JWT, refresh token
-2. ✅ `usuario` — CRUD, papéis, vínculo cliente
-3. 🔲 `cliente` — CRUD de municípios (tenant)
-
-### Fase 2 — Domínio operacional
-4. `regiao` — CRUD com GeoJSON/PostGIS
-5. `imovel` — CRUD, importação em lote
-6. `ciclo` — gerenciamento de ciclos de levantamento
-7. `levantamento` — levantamentos + itens + detecções + evidências
-8. `foco-risco` — CRUD + máquina de estados (UseCase: TransicionarFocoRisco)
-9. `vistoria` — CRUD + depósitos + sintomas + riscos + calhas
-
-### Fase 3 — SLA + Operação
-10. `sla` — configuração, cálculo, alertas
-11. `operacao` — operações com vínculos
-12. `planejamento` — planejamentos ativos
-
-### Fase 4 — Integrações
-13. `drone` — drones + voos + pipeline YOLO
-14. `cloudinary` — upload/delete de evidências
-15. `notificacao` — push web, e-SUS/SINAN
-16. `cnes` — sync de unidades de saúde
-
-### Fase 5 — Analytics + Jobs
-17. `dashboard` — endpoints analytics/BI
-18. `billing` — planos, ciclos, quotas
-19. `job` — fila de jobs (substituir edge functions)
+Split em arquivos por domínio em `prisma/schema/`.
+Tipos PostGIS: `Unsupported("geometry(Polygon,4326)")`.
+Após qualquer alteração: `pnpm generate`.
 
 ---
 
-## EDGE FUNCTIONS → NESTJS SERVICES
+## CRON JOBS (`@nestjs/schedule`)
 
-Mapeamento das 23 edge functions para services/jobs NestJS:
-
-| Edge Function | Destino NestJS | Tipo |
+| Service | Frequência | Responsabilidade |
 |---|---|---|
-| `billing-snapshot` | BillingService.snapshot() | @Cron |
-| `cloudinary-upload-image` | CloudinaryService.upload() | Service |
-| `cloudinary-delete-image` | CloudinaryService.delete() | Service |
-| `cloudinary-cleanup-orfaos` | CloudinaryService.cleanup() | @Cron |
-| `cnes-sync` | CnesService.sync() | @Cron |
-| `criar-usuario` | UsuarioUseCase.create() | UseCase |
-| `geocode-regioes` | RegiaoService.geocode() | Service |
-| `graficos-regionais` | DashboardService.graficosRegionais() | Service |
-| `health-check` | HealthService.check() | @Cron |
-| `identify-larva` | IaService.identifyLarva() | Service |
-| `insights-regional` | DashboardService.insightsRegional() | Service |
-| `job-worker` | JobService.processQueue() | @Cron |
-| `limpeza-retencao-logs` | AuditService.cleanupLogs() | @Cron |
-| `liraa-export` | LiraaService.export() | Service |
-| `notif-canal-cidadao` | NotificacaoService.canalCidadao() | Service |
-| `pluvio-risco-daily` | PluvioService.dailyRisk() | @Cron |
-| `relatorio-semanal` | RelatorioService.semanal() | @Cron |
-| `resumo-diario` | DashboardService.resumoDiario() | Service |
-| `score-worker` | ScoreService.process() | @Cron |
-| `sla-marcar-vencidos` | SlaService.marcarVencidos() | @Cron |
-| `sla-push-critico` | SlaService.pushCritico() | @Cron |
-| `triagem-ia-pos-voo` | IaService.triagemPosVoo() | Service |
-| `upload-evidencia` | CloudinaryService.uploadEvidencia() | Service |
+| `SlaSchedulerService` | Múltiplas | Escalar focos, marcar SLAs vencidos, push crítico |
+| `CnesSchedulerService` | Semanal | Sync unidades de saúde (CNES) |
+| `PluvioSchedulerService` | Diário 6h | Cálculo de risco pluvial |
+| `ReinspecaoSchedulerService` | Diário 6h | Marcar reinspeções vencidas |
 
 ---
 
-## REFERÊNCIAS
+## REGRAS ESPECÍFICAS POR MÓDULO
 
-### Arquivos de referência do frontend (sentinelaweb_sources)
-- `src/services/api.ts` — 5448 linhas, todas as chamadas Supabase. **Cada método aqui vira um endpoint REST.**
-- `src/types/database.ts` — 2011 linhas, todos os tipos TypeScript do banco
-- `src/hooks/queries/` — 65 hooks React Query (nomenclatura = endpoints necessários)
-- `docs/REGRAS_DE_NEGOCIO_OFICIAIS.md` — regras de negócio canônicas
-- `docs/07-regras-de-negocio.md` — regras detalhadas
-- `supabase/functions/` — 23 edge functions para migrar
+### foco-risco
+- Toda transição de status gera registro em `foco_risco_historico`
+- `score_prioridade` calculado pelo trigger `trg_recalcular_score_prioridade` — não atualizar manualmente
+- Colunas REMOVIDAS de `levantamento_itens` (migration 20260711): `status_atendimento`, `acao_aplicada`, `data_resolucao` — não referenciar
 
-### Arquivos de referência do backend (ms-api-finance)
-- `src/modules/bank/` — exemplo completo do padrão SOLID a seguir
-- `src/shared/` — infraestrutura reutilizada (base entity, prisma, pagination)
-- `src/guards/auth.guard.ts` — padrão JWT
-- `src/decorators/prisma-repository.decorator.ts` — auto-registro de repos
+### reinspecao
+- Foco entra em `em_tratamento` → trigger cria reinspeção pendente (7 dias)
+- Foco resolvido/descartado → trigger cancela reinspeções pendentes
+- Máx. 1 reinspeção pendente por `(foco_risco_id, tipo)`
+
+### regiao
+- `area geometry(Polygon,4326)` populada via `ST_GeomFromGeoJSON(geojson::text)` no `PrismaRegiaoWriteRepository.syncArea()`
+- `ST_Contains(regioes.area, ponto)` usado no despacho para inferir `regiao_id` automaticamente
+
+### sla
+- `sla_foco_config` define prazos por fase
+- `sla_config_regiao` sobrepõe config geral por região
+- Feriados via `sla_feriados` (por cliente)
+
+### ia
+- Cache `ia_insights` verificado antes de chamar Claude Haiku
+- `force_refresh=true` no body ignora cache
+
+### cnes
+- `uf` + `ibge_municipio` no cliente são obrigatórios para sync
+- Unidades com `origem='manual'` e `cnes IS NULL` nunca são inativadas
+- Inativação: `ativo=false`, nunca DELETE
+
+### denuncia
+- `POST /denuncia/cidadao` é público (`@Public()`)
+- Rate limit: `canal_cidadao_rate_limit` (10/hora por IP por cliente)
+- Retorna `{ ok, foco_id, deduplicado }`; protocolo = primeiros 8 chars do `foco_id`
 
 ---
 
-## REGRAS PARA O CLAUDE
+## SEGURANÇA — NÃO REVERTER
 
-1. **Sempre** seguir o padrão SOLID: Controller → UseCase → Entity → Repository → Mapper → ViewModel
-2. **Nunca** acessar Prisma diretamente no Controller ou UseCase — usar Repository abstrato
-3. **Nunca** retornar entity direto — sempre usar ViewModel.toHttp()
-4. **Nunca** misturar regra de negócio no Controller — lógica fica no UseCase
-5. **Sempre** validar input com Zod schema no Controller antes de chamar UseCase
-6. **Sempre** filtrar por `cliente_id` em queries de tenant (usar request['tenantId'])
-7. **Sempre** gerar registro em `foco_risco_historico` ao transicionar foco
-8. **Sempre** usar `createExceptionFactory` para erros de domínio
-9. **Nunca** criar papel `platform_admin` — usar `admin`
-10. **Nunca** tratar agente e operador como papéis distintos — são o mesmo
+- `platform_admin` é valor morto — nenhum usuário deve tê-lo
+- IDOR cross-tenant: `findById` sempre filtra por `cliente_id` quando `clienteId != null`
+- `denunciar_cidadao` cria `foco_risco` diretamente com rate limit
+- Sem RLS no banco — toda segurança é NestJS guards
 
 ---
 
@@ -308,7 +283,7 @@ PORT=3333
 CLOUDINARY_CLOUD_NAME=...
 CLOUDINARY_API_KEY=...
 CLOUDINARY_API_SECRET=...
-ANTHROPIC_API_KEY=...      # Claude Haiku Vision (identify-larva)
+ANTHROPIC_API_KEY=...
 ```
 
 ---
@@ -317,9 +292,9 @@ ANTHROPIC_API_KEY=...      # Claude Haiku Vision (identify-larva)
 
 ```bash
 pnpm install
-cp .env.example .env       # preencher variáveis
-pnpm generate              # gera Prisma client
-pnpm start:dev             # roda em modo watch
+cp .env.example .env
+pnpm generate        # gera Prisma client
+pnpm start:dev       # porta 3333
 # Swagger: http://localhost:3333/api-docs
 # Scalar:  http://localhost:3333/reference
 ```

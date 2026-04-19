@@ -2,13 +2,14 @@ import { Controller, Get, Inject, UseGuards, UseInterceptors, UsePipes } from '@
 import { REQUEST } from '@nestjs/core';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
-import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
-import { Prisma } from '@prisma/client';
 import { Request } from 'express';
 import { TenantGuard } from 'src/guards/tenant.guard';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 
 import { Roles } from '@/decorators/roles.decorator';
+import { GetRegionalKpi } from './use-cases/get-regional-kpi';
+import { GetRegionalSla } from './use-cases/get-regional-sla';
+import { GetRegionalUso } from './use-cases/get-regional-uso';
 
 @UseGuards(TenantGuard)
 @UseInterceptors(PrismaInterceptor)
@@ -17,46 +18,37 @@ import { Roles } from '@/decorators/roles.decorator';
 @Controller('analytics/regional')
 export class AnalyticsController {
   constructor(
-    private prisma: PrismaService,
+    private getRegionalKpi: GetRegionalKpi,
+    private getRegionalSla: GetRegionalSla,
+    private getRegionalUso: GetRegionalUso,
     @Inject(REQUEST) private req: Request,
   ) {}
 
   @Get('kpi')
   @Roles('admin', 'supervisor', 'analista_regional')
-  @ApiOperation({ summary: 'KPI agregado por município (v_regional_kpi_municipio)' })
-  async kpi() {
-    const clienteId = this.req['tenantId'] as string;
-    return this.prisma.client.$queryRaw(
-      Prisma.sql`SELECT * FROM v_regional_kpi_municipio WHERE cliente_id = ${clienteId}::uuid`,
-    );
+  @ApiOperation({ summary: 'KPI agregado por município' })
+  kpi() {
+    return this.getRegionalKpi.execute(this.req['tenantId'] as string);
   }
 
   @Get('sla')
   @Roles('admin', 'supervisor', 'analista_regional')
-  @ApiOperation({ summary: 'SLA por município (v_regional_sla_municipio)' })
-  async sla() {
-    const clienteId = this.req['tenantId'] as string;
-    return this.prisma.client.$queryRaw(
-      Prisma.sql`SELECT * FROM v_regional_sla_municipio WHERE cliente_id = ${clienteId}::uuid`,
-    );
+  @ApiOperation({ summary: 'SLA por município' })
+  sla() {
+    return this.getRegionalSla.execute(this.req['tenantId'] as string);
   }
 
   @Get('uso')
   @Roles('admin', 'supervisor', 'analista_regional')
-  @ApiOperation({ summary: 'Uso do sistema por município (v_regional_uso_sistema)' })
-  async uso() {
-    const clienteId = this.req['tenantId'] as string;
-    return this.prisma.client.$queryRaw(
-      Prisma.sql`SELECT * FROM v_regional_uso_sistema WHERE cliente_id = ${clienteId}::uuid`,
-    );
+  @ApiOperation({ summary: 'Uso do sistema por município' })
+  uso() {
+    return this.getRegionalUso.execute(this.req['tenantId'] as string);
   }
 
   @Get('comparativo-municipios')
   @Roles('admin')
-  @ApiOperation({ summary: 'Comparativo KPIs entre todos os municípios (v_executivo_kpis — admin)' })
-  async comparativoMunicipios() {
-    return this.prisma.client.$queryRaw(
-      Prisma.sql`SELECT * FROM v_executivo_kpis ORDER BY total_focos_ativos DESC NULLS LAST`,
-    );
+  @ApiOperation({ summary: 'Comparativo KPIs entre todos os municípios' })
+  comparativoMunicipios() {
+    return this.getRegionalKpi.executeAll();
   }
 }

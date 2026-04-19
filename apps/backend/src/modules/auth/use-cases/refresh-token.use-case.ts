@@ -78,7 +78,7 @@ export class RefreshTokenUseCase {
       }),
       this.prisma.client.refresh_tokens.create({
         data: {
-          auth_id: usuario.auth_id,
+          auth_id: usuario.auth_id!,
           token_hash: newTokenHash,
           expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         },

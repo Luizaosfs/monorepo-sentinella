@@ -2,13 +2,17 @@ import { Controller, Get, Inject, UseGuards, UseInterceptors, UsePipes } from '@
 import { REQUEST } from '@nestjs/core';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
-import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
-import { Prisma } from '@prisma/client';
 import { Request } from 'express';
 import { TenantGuard } from 'src/guards/tenant.guard';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 
 import { Roles } from '@/decorators/roles.decorator';
+import { GetAnaliticoResumo } from './use-cases/get-analitico-resumo';
+import { GetAnaliticoRiscoTerritorial } from './use-cases/get-analitico-risco-territorial';
+import { GetAnaliticoVulnerabilidade } from './use-cases/get-analitico-vulnerabilidade';
+import { GetAnaliticoAlertaSaude } from './use-cases/get-analitico-alerta-saude';
+import { GetAnaliticoResultadoOperacional } from './use-cases/get-analitico-resultado-operacional';
+import { GetAnaliticoImoveisCriticos } from './use-cases/get-analitico-imoveis-criticos';
 
 @UseGuards(TenantGuard)
 @UseInterceptors(PrismaInterceptor)
@@ -17,67 +21,54 @@ import { Roles } from '@/decorators/roles.decorator';
 @Controller('dashboard/analitico')
 export class AnaliticoController {
   constructor(
-    private prisma: PrismaService,
+    private getAnaliticoResumo: GetAnaliticoResumo,
+    private getAnaliticoRiscoTerritorial: GetAnaliticoRiscoTerritorial,
+    private getAnaliticoVulnerabilidade: GetAnaliticoVulnerabilidade,
+    private getAnaliticoAlertaSaude: GetAnaliticoAlertaSaude,
+    private getAnaliticoResultadoOperacional: GetAnaliticoResultadoOperacional,
+    private getAnaliticoImoveisCriticos: GetAnaliticoImoveisCriticos,
     @Inject(REQUEST) private req: Request,
   ) {}
 
   @Get('resumo')
   @Roles('admin', 'supervisor', 'analista_regional')
-  @ApiOperation({ summary: 'KPIs macro de vistoria (v_dashboard_analitico_resumo)' })
-  async resumo() {
-    const clienteId = this.req['tenantId'] as string;
-    return this.prisma.client.$queryRaw(
-      Prisma.sql`SELECT * FROM v_dashboard_analitico_resumo WHERE cliente_id = ${clienteId}::uuid`,
-    );
+  @ApiOperation({ summary: 'KPIs macro de vistoria' })
+  resumo() {
+    return this.getAnaliticoResumo.execute(this.req['tenantId'] as string);
   }
 
   @Get('risco-territorial')
   @Roles('admin', 'supervisor', 'analista_regional')
-  @ApiOperation({ summary: 'Risco por bairro (v_dashboard_analitico_risco_territorial)' })
-  async riscoTerritorial() {
-    const clienteId = this.req['tenantId'] as string;
-    return this.prisma.client.$queryRaw(
-      Prisma.sql`SELECT * FROM v_dashboard_analitico_risco_territorial WHERE cliente_id = ${clienteId}::uuid`,
-    );
+  @ApiOperation({ summary: 'Risco por bairro' })
+  riscoTerritorial() {
+    return this.getAnaliticoRiscoTerritorial.execute(this.req['tenantId'] as string);
   }
 
   @Get('vulnerabilidade')
   @Roles('admin', 'supervisor', 'analista_regional')
-  @ApiOperation({ summary: 'Vulnerabilidade domiciliar por bairro (v_dashboard_analitico_vulnerabilidade)' })
-  async vulnerabilidade() {
-    const clienteId = this.req['tenantId'] as string;
-    return this.prisma.client.$queryRaw(
-      Prisma.sql`SELECT * FROM v_dashboard_analitico_vulnerabilidade WHERE cliente_id = ${clienteId}::uuid`,
-    );
+  @ApiOperation({ summary: 'Vulnerabilidade domiciliar por bairro' })
+  vulnerabilidade() {
+    return this.getAnaliticoVulnerabilidade.execute(this.req['tenantId'] as string);
   }
 
   @Get('alerta-saude')
   @Roles('admin', 'supervisor', 'analista_regional')
-  @ApiOperation({ summary: 'Distribuição de alerta de saúde (v_dashboard_analitico_alerta_saude)' })
-  async alertaSaude() {
-    const clienteId = this.req['tenantId'] as string;
-    return this.prisma.client.$queryRaw(
-      Prisma.sql`SELECT * FROM v_dashboard_analitico_alerta_saude WHERE cliente_id = ${clienteId}::uuid`,
-    );
+  @ApiOperation({ summary: 'Distribuição de alerta de saúde' })
+  alertaSaude() {
+    return this.getAnaliticoAlertaSaude.execute(this.req['tenantId'] as string);
   }
 
   @Get('resultado-operacional')
   @Roles('admin', 'supervisor', 'analista_regional')
-  @ApiOperation({ summary: 'Resultado operacional por bairro (v_dashboard_analitico_resultado_operacional)' })
-  async resultadoOperacional() {
-    const clienteId = this.req['tenantId'] as string;
-    return this.prisma.client.$queryRaw(
-      Prisma.sql`SELECT * FROM v_dashboard_analitico_resultado_operacional WHERE cliente_id = ${clienteId}::uuid`,
-    );
+  @ApiOperation({ summary: 'Resultado operacional por bairro' })
+  resultadoOperacional() {
+    return this.getAnaliticoResultadoOperacional.execute(this.req['tenantId'] as string);
   }
 
   @Get('imoveis-criticos')
   @Roles('admin', 'supervisor', 'analista_regional')
-  @ApiOperation({ summary: 'Imóveis P1/P2 críticos (v_dashboard_analitico_imoveis_criticos)' })
-  async imoveisCriticos() {
-    const clienteId = this.req['tenantId'] as string;
-    return this.prisma.client.$queryRaw(
-      Prisma.sql`SELECT * FROM v_dashboard_analitico_imoveis_criticos WHERE cliente_id = ${clienteId}::uuid`,
-    );
+  @ApiOperation({ summary: 'Imóveis P1/P2 críticos' })
+  imoveisCriticos() {
+    return this.getAnaliticoImoveisCriticos.execute(this.req['tenantId'] as string);
   }
 }

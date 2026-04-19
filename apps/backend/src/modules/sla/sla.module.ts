@@ -25,6 +25,7 @@ import { SaveFocoConfig } from './use-cases/save-foco-config';
 import { UpdateSlaStatus } from './use-cases/update-sla-status';
 import { SlaSchedulerService } from './sla-scheduler.service';
 import { UpsertConfigRegiao } from './use-cases/upsert-config-regiao';
+import { GetFocosRiscoAtivos } from './use-cases/get-focos-risco-ativos';
 
 @Module({
   providers: [
@@ -48,6 +49,7 @@ import { UpsertConfigRegiao } from './use-cases/upsert-config-regiao';
     ListConfigRegioes,
     UpsertConfigRegiao,
     ListErrosCriacao,
+    GetFocosRiscoAtivos,
     SlaSchedulerService,
     JwtService,
     PrismaService,

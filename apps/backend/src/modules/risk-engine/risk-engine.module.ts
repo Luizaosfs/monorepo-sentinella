@@ -14,6 +14,7 @@ import { SavePolicy } from './use-cases/save-policy';
 import { SavePolicyFull } from './use-cases/save-policy-full';
 import { SaveYoloClass } from './use-cases/save-yolo-class';
 import { SaveYoloSynonym } from './use-cases/save-yolo-synonym';
+import { GetScoreBairro } from './use-cases/get-score-bairro';
 
 @Module({
   providers: [
@@ -27,6 +28,7 @@ import { SaveYoloSynonym } from './use-cases/save-yolo-synonym';
     SaveYoloClass,
     FilterYoloSynonyms,
     SaveYoloSynonym,
+    GetScoreBairro,
     JwtService,
     PrismaService,
   ],

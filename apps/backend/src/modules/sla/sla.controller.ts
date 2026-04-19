@@ -67,6 +67,7 @@ import { SaveConfig } from './use-cases/save-config';
 import { SaveFocoConfig } from './use-cases/save-foco-config';
 import { UpdateSlaStatus } from './use-cases/update-sla-status';
 import { UpsertConfigRegiao } from './use-cases/upsert-config-regiao';
+import { GetFocosRiscoAtivos } from './use-cases/get-focos-risco-ativos';
 import {
   SlaConfigViewModel,
   SlaFeriadoViewModel,
@@ -101,6 +102,7 @@ export class SlaController {
     private listConfigRegioes: ListConfigRegioes,
     private upsertConfigRegiao: UpsertConfigRegiao,
     private listErrosCriacao: ListErrosCriacao,
+    private getFocosRiscoAtivos: GetFocosRiscoAtivos,
     private prisma: PrismaService,
     @Inject(REQUEST) private req: Request,
   ) {}
@@ -335,32 +337,23 @@ export class SlaController {
 
   @Get('inteligente')
   @Roles('admin', 'supervisor', 'analista_regional')
-  @ApiOperation({ summary: 'Focos com SLA Inteligente (v_focos_risco_ativos com status_sla_inteligente)' })
-  async listInteligenteRoute() {
-    const clienteId = this.req['tenantId'] as string;
-    return this.prisma.client.$queryRaw(
-      Prisma.sql`SELECT * FROM v_focos_risco_ativos WHERE cliente_id = ${clienteId}::uuid AND status_sla_inteligente IS NOT NULL ORDER BY created_at DESC`,
-    );
+  @ApiOperation({ summary: 'Focos com SLA Inteligente' })
+  listInteligenteRoute() {
+    return this.getFocosRiscoAtivos.executeAll(this.req['tenantId'] as string);
   }
 
   @Get('inteligente/criticos')
   @Roles('admin', 'supervisor', 'analista_regional')
   @ApiOperation({ summary: 'Focos com SLA Inteligente vencido' })
-  async listInteligenteCriticosRoute() {
-    const clienteId = this.req['tenantId'] as string;
-    return this.prisma.client.$queryRaw(
-      Prisma.sql`SELECT * FROM v_focos_risco_ativos WHERE cliente_id = ${clienteId}::uuid AND status_sla_inteligente = 'vencido' ORDER BY created_at DESC`,
-    );
+  listInteligenteCriticosRoute() {
+    return this.getFocosRiscoAtivos.executeVencidos(this.req['tenantId'] as string);
   }
 
   @Get('inteligente/foco/:focoId')
   @Roles('admin', 'supervisor', 'agente', 'analista_regional')
   @ApiOperation({ summary: 'SLA Inteligente de um foco específico' })
   async getInteligenteByFocoRoute(@Param('focoId') focoId: string) {
-    const clienteId = this.req['tenantId'] as string;
-    const rows = await this.prisma.client.$queryRaw(
-      Prisma.sql`SELECT * FROM v_focos_risco_ativos WHERE id = ${focoId}::uuid AND cliente_id = ${clienteId}::uuid LIMIT 1`,
-    );
-    return Array.isArray(rows) ? rows[0] ?? null : null;
+    const rows = await this.getFocosRiscoAtivos.executeById(focoId, this.req['tenantId'] as string);
+    return rows[0] ?? null;
   }
 }

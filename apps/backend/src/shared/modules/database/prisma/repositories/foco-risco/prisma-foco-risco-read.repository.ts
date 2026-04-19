@@ -169,9 +169,64 @@ export class PrismaFocoRiscoReadRepository implements FocoRiscoReadRepository {
 
   async findTimeline(focoId: string): Promise<TimelineItem[]> {
     return this.prisma.client.$queryRaw<TimelineItem[]>`
-      SELECT foco_risco_id, tipo, ts, titulo, descricao, ator_id, ref_id
-      FROM v_foco_risco_timeline
-      WHERE foco_risco_id = ${focoId}::uuid
+      SELECT foco_risco_id, tipo, ts, titulo, descricao, ator_id, ref_id FROM (
+        SELECT frh.foco_risco_id, 'estado'::text AS tipo, frh.alterado_em AS ts,
+          ('Status: ' || COALESCE(frh.status_anterior,'novo') || ' → ' || COALESCE(frh.status_novo,'?')) AS titulo,
+          frh.motivo AS descricao, frh.alterado_por AS ator_id, NULL::uuid AS ref_id
+        FROM foco_risco_historico frh
+        WHERE frh.foco_risco_id = ${focoId}::uuid
+          AND COALESCE(frh.tipo_evento,'transicao_status') = 'transicao_status'
+        UNION ALL
+        SELECT frh.foco_risco_id, 'classificacao_alterada'::text, frh.alterado_em,
+          ('Classificação: ' || COALESCE(frh.classificacao_anterior,'—') || ' → ' || COALESCE(frh.classificacao_nova,'?')),
+          NULL, frh.alterado_por, NULL::uuid
+        FROM foco_risco_historico frh
+        WHERE frh.foco_risco_id = ${focoId}::uuid AND frh.tipo_evento = 'classificacao_alterada'
+        UNION ALL
+        SELECT fr.id, 'vistoria'::text, v.checkin_em,
+          ('Vistoria: ' || v.tipo_atividade),
+          CASE WHEN v.acesso_realizado = false THEN ('Sem acesso — ' || COALESCE(v.motivo_sem_acesso,'')) ELSE v.observacao END,
+          v.agente_id, v.id
+        FROM focos_risco fr
+        JOIN vistorias v ON v.id = fr.origem_vistoria_id
+        WHERE fr.id = ${focoId}::uuid
+        UNION ALL
+        SELECT fr.id, 'vistoria_campo'::text, v.checkin_em,
+          ('Vistoria de campo: ' || v.tipo_atividade), v.observacao, v.agente_id, v.id
+        FROM focos_risco fr
+        JOIN vistorias v ON v.imovel_id = fr.imovel_id AND v.ciclo = fr.ciclo
+          AND v.id <> COALESCE(fr.origem_vistoria_id,'00000000-0000-0000-0000-000000000000'::uuid)
+        WHERE fr.id = ${focoId}::uuid AND fr.imovel_id IS NOT NULL AND fr.ciclo IS NOT NULL
+        UNION ALL
+        SELECT fr.id, 'sla'::text, COALESCE(sla.concluido_em, sla.prazo_final, sla.inicio),
+          CASE sla.status
+            WHEN 'aberto' THEN 'SLA aberto — prazo: ' || to_char(sla.prazo_final,'DD/MM/YYYY HH24:MI')
+            WHEN 'concluido' THEN 'SLA concluído'
+            WHEN 'vencido' THEN 'SLA vencido'
+            ELSE sla.status
+          END,
+          ('Prioridade ' || sla.prioridade || ' — ' || sla.sla_horas || 'h'),
+          NULL::uuid, sla.id
+        FROM focos_risco fr
+        JOIN sla_operacional sla ON sla.foco_risco_id = fr.id
+        WHERE fr.id = ${focoId}::uuid
+        UNION ALL
+        SELECT fr.id, 'caso_notificado'::text, cn.data_notificacao::timestamptz,
+          ('Caso notificado: ' || cn.doenca),
+          ('Status: ' || cn.status || ' — ' || COALESCE(cn.bairro,'')),
+          cn.notificador_id, cn.id
+        FROM focos_risco fr
+        JOIN casos_notificados cn ON cn.id = ANY(fr.casos_ids)
+        WHERE fr.id = ${focoId}::uuid
+        UNION ALL
+        SELECT r.foco_risco_id, 'reinspecao'::text,
+          COALESCE(r.realizada_em, r.prazo_reinspecao, r.created_at),
+          CASE r.status WHEN 'pendente' THEN 'Reinspeção pendente' WHEN 'realizada' THEN 'Reinspeção realizada' WHEN 'cancelada' THEN 'Reinspeção cancelada' ELSE 'Reinspeção' END,
+          CASE WHEN r.resultado IS NOT NULL THEN ('Resultado: ' || r.resultado::text) WHEN r.status = 'cancelada' THEN COALESCE(r.motivo_cancelamento,'Cancelada') ELSE NULL END,
+          r.responsavel_id, r.id
+        FROM reinspecoes_programadas r
+        WHERE r.foco_risco_id = ${focoId}::uuid
+      ) timeline
       ORDER BY ts DESC NULLS LAST
     `;
   }
