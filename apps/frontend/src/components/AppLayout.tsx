@@ -96,7 +96,7 @@ const baseNavItems = [
 
 // ─── AGENTE DE ENDEMIAS ───────────────────────────────────────────────────────
 // MENU_OFICIAL: Meu Dia → Registrar Vistoria → Minhas Vistorias → Mapa.
-const operadorNavItems = [
+const agenteNavItems = [
   { to: '/agente/hoje',            label: 'Meu Dia',            icon: Home },
   { to: '/agente/imoveis',         label: 'Registrar Vistoria', icon: ClipboardCheck },
   { to: '/agente/levantamentos',   label: 'Minhas Vistorias',   icon: ClipboardList },
@@ -188,8 +188,8 @@ const grupoPlataforma = [
 ];
 
 /**
- * Rotas permitidas para operador (portal próprio).
- * Sem dashboard geral e sem SLA operacional. Demais redirecionam para o mapa do operador.
+ * Rotas permitidas para agente (portal próprio).
+ * Sem dashboard geral e sem SLA operacional. Demais redirecionam para o mapa do agente.
  */
 type NavSearchEntry = { to: string; label: string };
 
@@ -229,7 +229,7 @@ function buildSidebarSearchIndex(params: {
     return dedupeNavByPath(out);
   }
   if (isAgente) {
-    push(operadorNavItems.map(({ to, label }) => ({ to, label })));
+    push(agenteNavItems.map(({ to, label }) => ({ to, label })));
     return dedupeNavByPath(out);
   }
 
@@ -243,7 +243,7 @@ function buildSidebarSearchIndex(params: {
   return dedupeNavByPath(out);
 }
 
-const OPERADOR_ALLOWED_PATHS = [
+const AGENTE_ALLOWED_PATHS = [
   '/',
   '/agente/hoje',
   '/agente/vistoria',
@@ -324,8 +324,8 @@ const AppLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Prefetch operator data on login so items are cached before first navigation.
-  // Runs once when clienteId + usuarioId are first available for an operador.
+  // Prefetch agente data on login so items are cached before first navigation.
+  // Runs once when clienteId + usuarioId are first available for an agente.
   useEffect(() => {
     if (!isAgente || !clienteId || !usuario?.id) return;
     queryClient.prefetchQuery({
@@ -334,11 +334,11 @@ const AppLayout = () => {
     });
   }, [isAgente, clienteId, usuario?.id, queryClient]);
 
-  // Operador: só acessa rotas do portal operador
-  const operadorPathAllowed = useMemo(() => {
+  // Agente: só acessa rotas do portal agente
+  const agentePathAllowed = useMemo(() => {
     if (!isAgente) return true;
     const path = location.pathname;
-    return OPERADOR_ALLOWED_PATHS.some(allowed => path === allowed || (allowed !== '/' && path.startsWith(allowed)));
+    return AGENTE_ALLOWED_PATHS.some(allowed => path === allowed || (allowed !== '/' && path.startsWith(allowed)));
   }, [isAgente, location.pathname]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [navSearch, setNavSearch] = useState('');
@@ -372,7 +372,7 @@ const AppLayout = () => {
 
   const isAdminSection = location.pathname.startsWith('/admin');
 
-  // Mobile: notificador / operador têm menus próprios; demais usam baseNavItems + Cadastros
+  // Mobile: notificador / agente têm menus próprios; demais usam baseNavItems + Cadastros
   const mobileNavItems = useMemo(() => {
     if (papel === 'admin') return [
       { to: '/admin/dashboard',       label: 'Dashboard', icon: LayoutDashboard },
@@ -442,7 +442,7 @@ const AppLayout = () => {
     }
   };
 
-  if (isAgente && !operadorPathAllowed) {
+  if (isAgente && !agentePathAllowed) {
     return <Navigate to="/agente/mapa" replace />;
   }
 
@@ -542,7 +542,7 @@ const AppLayout = () => {
           </div>
         )}
 
-        {/* Nav — operador: portal próprio; demais: Início & Monitoramento + Contextos (Cadastros, Risco, Operação, etc.) */}
+        {/* Nav — agente: portal próprio; demais: Início & Monitoramento + Contextos (Cadastros, Risco, Operação, etc.) */}
         <nav className="flex-1 space-y-1 p-4 overflow-y-auto min-h-0 [&_a]:rounded-sm [&_button]:rounded-sm">
           {papel === 'admin' ? (
             /* Admin de plataforma: monitoramento + gestão da plataforma SaaS */
@@ -614,8 +614,8 @@ const AppLayout = () => {
               );
             })
           ) : isAgente ? (
-            /* 4. Operador: menu próprio de operações (sem acesso às opções acima) */
-            operadorNavItems.map((item) => {
+            /* 4. Agente: menu próprio de operações (sem acesso às opções acima) */
+            agenteNavItems.map((item) => {
               const active = isActive(item.to);
               const badge = item.to === '/agente/hoje' && alertasVencidosCount > 0 ? alertasVencidosCount : 0;
               return (
