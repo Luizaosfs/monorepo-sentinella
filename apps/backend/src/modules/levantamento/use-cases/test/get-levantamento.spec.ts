@@ -1,10 +1,12 @@
+import { REQUEST } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import { mock } from 'jest-mock-extended';
 
+import { expectHttpException } from '@test/utils/expect-http-exception';
+import { mockRequest } from '@test/utils/user-helpers';
+
 import { LevantamentoException } from '../../errors/levantamento.exception';
 import { LevantamentoReadRepository } from '../../repositories/levantamento-read.repository';
-import { expectHttpException } from '@test/utils/expect-http-exception';
-
 import { GetLevantamento } from '../get-levantamento';
 import { LevantamentoBuilder } from './builders/levantamento.builder';
 
@@ -18,6 +20,7 @@ describe('GetLevantamento', () => {
       providers: [
         GetLevantamento,
         { provide: LevantamentoReadRepository, useValue: readRepo },
+        { provide: REQUEST, useValue: mockRequest() },
       ],
     }).compile();
 
