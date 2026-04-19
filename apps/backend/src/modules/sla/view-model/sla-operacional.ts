@@ -7,7 +7,7 @@ export class SlaOperacionalViewModel {
     return {
       id: sla.id,
       clienteId: sla.clienteId,
-      operadorId: sla.operadorId,
+      agenteId: sla.agenteId,
       prioridade: sla.prioridade,
       slaHoras: sla.slaHoras,
       inicio: sla.inicio,

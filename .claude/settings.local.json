@@ -59,7 +59,9 @@
       "Bash(C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe *)",
       "Bash(npx jest *)",
       "Bash(npx nest *)",
-      "Bash(PGPASSWORD=147852369 C:/Program Files/PostgreSQL/17/bin/psql.exe *)"
+      "Bash(PGPASSWORD=147852369 C:/Program Files/PostgreSQL/17/bin/psql.exe *)",
+      "Bash(\"C:/Program Files/PostgreSQL/17/bin/psql.exe\" -U postgres -d sentinella -c \"\\\\d sla_operacional\")",
+      "Bash(C:/Program Files/PostgreSQL/17/bin/psql *)"
     ]
   }
 }

@@ -179,7 +179,7 @@ export function exportSlaPdf(
         }),
         STATUS_LABELS[sla.status] || sla.status,
         sla.violado ? 'Sim' : 'Não',
-        sla.operador?.nome || '—',
+        sla.agente?.nome || '—',
       ];
     }),
     styles: { fontSize: 7.5, cellPadding: 2 },

@@ -10,7 +10,7 @@ import { SlaOperacional } from 'src/modules/sla/entities/sla-operacional';
 type RawSlaOperacional = {
   id: string;
   item_id: string | null;
-  operador_id: string | null;
+  agente_id: string | null;
   prioridade: string;
   sla_horas: number;
   inicio: Date;
@@ -38,7 +38,7 @@ export class PrismaSlaMapper {
     return new SlaOperacional(
       {
         itemId: raw.item_id ?? undefined,
-        operadorId: raw.operador_id ?? undefined,
+        agenteId: raw.agente_id ?? undefined,
         prioridade: raw.prioridade,
         slaHoras: raw.sla_horas,
         inicio: raw.inicio,
@@ -66,7 +66,7 @@ export class PrismaSlaMapper {
 
   static slaOperacionalToPrisma(entity: SlaOperacional) {
     return {
-      operador_id: entity.operadorId ?? null,
+      agente_id: entity.agenteId ?? null,
       prioridade: entity.prioridade,
       sla_horas: entity.slaHoras,
       prazo_final: entity.prazoFinal,

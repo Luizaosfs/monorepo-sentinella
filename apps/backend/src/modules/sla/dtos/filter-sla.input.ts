@@ -7,7 +7,7 @@ export const filterSlaSchema = z.object({
     .uuid()
     .optional()
     .describe('Filtrar por cliente (admin only)'),
-  operadorId: z.string().uuid().optional().describe('Filtrar por operador'),
+  agenteId: z.string().uuid().optional().describe('Filtrar por agente'),
   status: z.string().optional().describe('Filtrar por status'),
   prioridade: z.string().optional().describe('Filtrar por prioridade'),
   focoRiscoId: z

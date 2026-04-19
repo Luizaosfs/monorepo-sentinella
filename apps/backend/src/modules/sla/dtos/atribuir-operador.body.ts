@@ -2,7 +2,7 @@ import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 
 export const atribuirOperadorSchema = z.object({
-  operadorId: z.string().uuid().describe('ID do operador a atribuir'),
+  agenteId: z.string().uuid().describe('ID do agente a atribuir'),
   avancarStatus: z
     .boolean()
     .optional()

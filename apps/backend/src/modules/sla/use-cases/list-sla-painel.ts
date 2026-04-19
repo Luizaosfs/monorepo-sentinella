@@ -11,9 +11,9 @@ export class ListSlaPainel {
     @Inject(REQUEST) private req: Request,
   ) {}
 
-  async execute(operadorId?: string) {
+  async execute(agenteId?: string) {
     const clienteId = this.req['tenantId'] as string;
-    const slas = await this.repository.findPainel(clienteId, operadorId);
+    const slas = await this.repository.findPainel(clienteId, agenteId);
     return { slas };
   }
 }

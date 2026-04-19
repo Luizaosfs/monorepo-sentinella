@@ -16,7 +16,7 @@ export interface SlaOperacional {
   item_id: string | null;
   levantamento_item_id: string | null;
   cliente_id: string | null;
-  operador_id: string | null;
+  agente_id: string | null;
   prioridade: string;
   sla_horas: number;
   inicio: string;
@@ -58,7 +58,7 @@ export interface SlaOperacional {
       cliente_id: string;
     };
   } | null;
-  operador?: {
+  agente?: {
     id: string;
     nome: string;
     email: string;

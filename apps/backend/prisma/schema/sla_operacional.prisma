@@ -1,7 +1,7 @@
 model sla_operacional {
   id                     String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   item_id                String?   @db.Uuid
-  operador_id            String?   @db.Uuid
+  agente_id              String?   @db.Uuid
   prioridade             String
   sla_horas              Int
   inicio                 DateTime  @default(now()) @db.Timestamptz
@@ -23,7 +23,7 @@ model sla_operacional {
   created_at             DateTime  @default(now()) @db.Timestamptz
   updated_at             DateTime  @default(now()) @db.Timestamptz
 
-  operador   usuarios?    @relation("sla_operador", fields: [operador_id], references: [id])
+  agente     usuarios?    @relation("sla_agente", fields: [agente_id], references: [id])
   foco_risco focos_risco? @relation(fields: [foco_risco_id], references: [id])
   cliente    clientes?    @relation(fields: [cliente_id], references: [id])
 

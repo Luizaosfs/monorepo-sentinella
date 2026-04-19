@@ -19,7 +19,7 @@ export abstract class SlaReadRepository {
   ): Promise<SlaOperacionalPaginated>;
   abstract findPainel(
     clienteId: string,
-    operadorId?: string,
+    agenteId?: string,
   ): Promise<SlaOperacional[]>;
   abstract countPendentes(clienteId: string): Promise<{ total: number }>;
   abstract findConfig(clienteId: string): Promise<SlaConfig | null>;

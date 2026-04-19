@@ -7,8 +7,8 @@ export const sla = {
   listByCliente: (clienteId: string): Promise<Ret<typeof _sb.sla.listByCliente>> =>
     http.get(`/sla${qs({ clienteId })}`),
 
-  listForPanel: (clienteId: string, operadorId?: string): Promise<Ret<typeof _sb.sla.listForPanel>> =>
-    http.get(`/sla/painel${qs({ clienteId, operadorId })}`),
+  listForPanel: (clienteId: string, agenteId?: string): Promise<Ret<typeof _sb.sla.listForPanel>> =>
+    http.get(`/sla/painel${qs({ clienteId, agenteId })}`),
 
   updateStatus: (
     slaId: string,
@@ -31,8 +31,8 @@ export const sla = {
   concluir: (slaId: string): Promise<void> =>
     http.post(`/sla/${slaId}/concluir`, {}),
 
-  atribuir: (slaId: string, operadorId: string): Promise<void> =>
-    http.patch(`/sla/${slaId}/atribuir`, { operadorId }),
+  atribuir: (slaId: string, agenteId: string): Promise<void> =>
+    http.patch(`/sla/${slaId}/atribuir`, { agenteId }),
 
   errosCriacao: async (clienteId: string): Promise<Ret<typeof _sb.sla.errosCriacao>> => {
     const raw = await http.get(`/sla/erros${qs({ clienteId })}`);

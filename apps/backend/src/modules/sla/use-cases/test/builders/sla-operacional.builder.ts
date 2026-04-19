@@ -4,7 +4,7 @@ export class SlaOperacionalBuilder {
   private id = 'sla-uuid-1';
   private clienteId = 'test-cliente-id';
   private itemId = 'item-uuid-1';
-  private operadorId: string | undefined = undefined;
+  private agenteId: string | undefined = undefined;
   private prioridade = 'P3';
   private slaHoras = 48;
   private inicio = new Date('2024-01-01T08:00:00Z');
@@ -32,8 +32,8 @@ export class SlaOperacionalBuilder {
     this.itemId = id;
     return this;
   }
-  withOperadorId(id: string) {
-    this.operadorId = id;
+  withAgenteId(id: string) {
+    this.agenteId = id;
     return this;
   }
   withPrioridade(p: string) {
@@ -98,7 +98,7 @@ export class SlaOperacionalBuilder {
       {
         clienteId: this.clienteId,
         itemId: this.itemId,
-        operadorId: this.operadorId,
+        agenteId: this.agenteId,
         prioridade: this.prioridade,
         slaHoras: this.slaHoras,
         inicio: this.inicio,

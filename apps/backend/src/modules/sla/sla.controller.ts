@@ -149,8 +149,8 @@ export class SlaController {
   @Get('painel')
   @Roles('admin', 'supervisor', 'agente')
   @ApiOperation({ summary: 'SLAs para painel operacional' })
-  async painel(@Query('operadorId') operadorId?: string) {
-    const { slas } = await this.listSlaPainel.execute(operadorId);
+  async painel(@Query('agenteId') agenteId?: string) {
+    const { slas } = await this.listSlaPainel.execute(agenteId);
     return slas.map(SlaOperacionalViewModel.toHttp);
   }
 

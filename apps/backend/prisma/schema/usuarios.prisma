@@ -20,7 +20,7 @@ model usuarios {
   focos_responsavel       focos_risco[]       @relation("foco_responsavel")
   vistorias               vistorias[]
   levantamentos           levantamentos[]
-  sla_como_operador       sla_operacional[]   @relation("sla_operador")
+  sla_como_agente         sla_operacional[]   @relation("sla_agente")
   operacoes_responsavel   operacoes[]         @relation("operacao_responsavel")
   push_subscriptions      push_subscriptions[]
   casos_notificados_notif casos_notificados[] @relation("caso_notificador")

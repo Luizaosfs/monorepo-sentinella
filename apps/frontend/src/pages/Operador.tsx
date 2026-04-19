@@ -3,7 +3,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useClienteAtivo } from '@/hooks/useClienteAtivo';
 import { api } from '@/services/api';
-import { useOperadorSlas } from '@/hooks/queries/useSla';
+import { useAgenteSlas } from '@/hooks/queries/useSla';
 import { usePagination } from '@/hooks/usePagination';
 import TablePagination from '@/components/TablePagination';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -56,9 +56,9 @@ const OperadorPage = () => {
   const [slaParaConcluir, setSlaParaConcluir] = useState<SlaOperacional | null>(null);
 
   const isAgente = papel === 'agente';
-  const operadorId = isAgente ? (usuario?.id ?? null) : null;
+  const agenteId = isAgente ? (usuario?.id ?? null) : null;
 
-  const { data: slas = [], isLoading: loading, refetch: fetchSlas } = useOperadorSlas(clienteId, operadorId);
+  const { data: slas = [], isLoading: loading, refetch: fetchSlas } = useAgenteSlas(clienteId, agenteId);
 
   const invalidateSlas = () => queryClient.invalidateQueries({ queryKey: ['sla_panel', clienteId] });
 
@@ -69,7 +69,7 @@ const OperadorPage = () => {
 
       const updates: Record<string, unknown> = { status: newStatus };
       if (newStatus === 'em_atendimento') {
-        if (!sla.operador_id && usuario?.id) updates.operador_id = usuario.id;
+        if (!sla.agente_id && usuario?.id) updates.agente_id = usuario.id;
         // Cria operação apenas para SLAs de itens pluviométricos
         const cid = sla.cliente_id ?? sla.item?.run?.cliente_id;
         if (cid && sla.item_id && usuario?.id) {
@@ -457,7 +457,7 @@ const OperadorPage = () => {
                             <TableCell>
                               <Badge className={cn('text-[10px] font-bold border-0', cfg.color)}>{cfg.label}</Badge>
                             </TableCell>
-                            <TableCell className="text-xs">{sla.operador?.nome || '—'}</TableCell>
+                            <TableCell className="text-xs">{sla.agente?.nome || '—'}</TableCell>
                             <TableCell className="text-right">
                               <SlaActions sla={sla} onUpdate={handleUpdateStatus} onReabrir={handleReabrir} loading={updatingId === sla.id} isAgente={isAgente} isAdmin={isAdminOrSupervisor} />
                             </TableCell>
@@ -501,7 +501,7 @@ const OperadorPage = () => {
                           <span className={cn('font-semibold', indicator.color)}>
                             {sla.status === 'concluido' ? 'Concluído' : getTempoRestante(sla.prazo_final)}
                           </span>
-                          <span className="text-muted-foreground">{sla.operador?.nome || 'Sem agente'}</span>
+                          <span className="text-muted-foreground">{sla.agente?.nome || 'Sem agente'}</span>
                         </div>
                         <div className="flex justify-end">
                           <SlaActions sla={sla} onUpdate={handleUpdateStatus} onReabrir={handleReabrir} loading={updatingId === sla.id} isAgente={isAgente} isAdmin={isAdminOrSupervisor} />

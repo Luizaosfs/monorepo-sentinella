@@ -32,11 +32,11 @@ describe('AtribuirOperador', () => {
     writeRepo.save.mockResolvedValue();
 
     const result = await useCase.execute(sla.id!, {
-      operadorId: 'op-1',
+      agenteId: 'op-1',
       avancarStatus: false,
     });
 
-    expect(result.sla.operadorId).toBe('op-1');
+    expect(result.sla.agenteId).toBe('op-1');
     expect(writeRepo.save).toHaveBeenCalledWith(sla);
   });
 
@@ -46,7 +46,7 @@ describe('AtribuirOperador', () => {
     writeRepo.save.mockResolvedValue();
 
     const result = await useCase.execute(sla.id!, {
-      operadorId: 'op-1',
+      agenteId: 'op-1',
       avancarStatus: true,
     });
 
@@ -59,7 +59,7 @@ describe('AtribuirOperador', () => {
     writeRepo.save.mockResolvedValue();
 
     const result = await useCase.execute(sla.id!, {
-      operadorId: 'op-1',
+      agenteId: 'op-1',
       avancarStatus: false,
     });
 
@@ -72,7 +72,7 @@ describe('AtribuirOperador', () => {
     writeRepo.save.mockResolvedValue();
 
     const result = await useCase.execute(sla.id!, {
-      operadorId: 'op-1',
+      agenteId: 'op-1',
       avancarStatus: true,
     });
 
@@ -83,7 +83,7 @@ describe('AtribuirOperador', () => {
     readRepo.findById.mockResolvedValue(null);
 
     await expectHttpException(
-      () => useCase.execute('nao-existe', { operadorId: 'op-1', avancarStatus: false }),
+      () => useCase.execute('nao-existe', { agenteId: 'op-1', avancarStatus: false }),
       SlaException.notFound(),
     );
   });

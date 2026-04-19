@@ -203,7 +203,7 @@ const AdminSla = () => {
   /* ── Metrics ── */
   const metrics = useMemo(() => {
     const total = slas.length;
-    const semOperador = slas.filter(s => !s.operador_id && s.status !== 'concluido').length;
+    const semOperador = slas.filter(s => !s.agente_id && s.status !== 'concluido').length;
     const violados = slas.filter(s => s.violado).length;
     const pendentes = slas.filter(s => s.status === 'pendente').length;
     const escalonados = slas.filter(s => s.escalonado).length;
@@ -222,10 +222,10 @@ const AdminSla = () => {
     }>();
 
     slas.forEach(s => {
-      if (!s.operador_id || !s.operador) return;
-      const key = s.operador_id;
+      if (!s.agente_id || !s.agente) return;
+      const key = s.agente_id;
       if (!map.has(key)) {
-        map.set(key, { nome: s.operador.nome, total: 0, concluidos: 0, violados: 0, noPrazo: 0, tempoTotal: 0 });
+        map.set(key, { nome: s.agente.nome, total: 0, concluidos: 0, violados: 0, noPrazo: 0, tempoTotal: 0 });
       }
       const entry = map.get(key)!;
       entry.total++;
@@ -260,12 +260,12 @@ const AdminSla = () => {
       const matchSearch = !q ||
         label.includes(q) ||
         s.prioridade.toLowerCase().includes(q) ||
-        s.operador?.nome?.toLowerCase().includes(q) ||
+        s.agente?.nome?.toLowerCase().includes(q) ||
         s.levantamento_item?.item?.toLowerCase().includes(q);
       const matchStatus = filterStatus === 'all'
         ? true
         : filterStatus === 'sem_operador'
-          ? !s.operador_id && s.status !== 'concluido'
+          ? !s.agente_id && s.status !== 'concluido'
           : filterStatus === 'escalonado'
             ? s.escalonado
             : s.status === filterStatus;
@@ -549,7 +549,7 @@ const AdminSla = () => {
                           </TableCell>
                           <TableCell>
                             <Select
-                              value={sla.operador_id || 'none'}
+                              value={sla.agente_id || 'none'}
                               onValueChange={(v) => handleAssign(sla.id, v === 'none' ? '' : v)}
                               disabled={isUpdating || sla.status === 'concluido'}
                             >
@@ -587,7 +587,7 @@ const AdminSla = () => {
                               )}
                               {(sla.status === 'pendente' || sla.status === 'em_atendimento') && (
                                 <>
-                                  {sla.status === 'pendente' && sla.operador_id && (
+                                  {sla.status === 'pendente' && sla.agente_id && (
                                     <Button size="sm" variant="outline" className="h-7 text-[10px]" disabled={isUpdating}
                                       onClick={() => handleForceStatus(sla.id, 'em_atendimento')}>
                                       Iniciar
@@ -653,7 +653,7 @@ const AdminSla = () => {
                       </div>
                       <div className="space-y-2">
                         <Select
-                          value={sla.operador_id || 'none'}
+                          value={sla.agente_id || 'none'}
                           onValueChange={(v) => handleAssign(sla.id, v === 'none' ? '' : v)}
                           disabled={isUpdating || sla.status === 'concluido'}
                         >
@@ -683,7 +683,7 @@ const AdminSla = () => {
                         )}
                         {(sla.status === 'pendente' || sla.status === 'em_atendimento') && (
                           <div className="flex gap-2">
-                            {sla.status === 'pendente' && sla.operador_id && (
+                            {sla.status === 'pendente' && sla.agente_id && (
                               <Button size="sm" variant="outline" className="h-7 text-[10px] flex-1" disabled={isUpdating}
                                 onClick={() => handleForceStatus(sla.id, 'em_atendimento')}>Iniciar</Button>
                             )}

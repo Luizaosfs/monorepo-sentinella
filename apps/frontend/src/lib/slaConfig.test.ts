@@ -22,7 +22,7 @@ function makeSla(overrides: Partial<SlaOperacional> = {}): SlaOperacional {
     item_id: null,
     levantamento_item_id: null,
     cliente_id: 'cliente-1',
-    operador_id: null,
+    agente_id: null,
     prioridade: 'Alta',
     sla_horas: 12,
     inicio,

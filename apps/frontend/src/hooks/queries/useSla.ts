@@ -20,11 +20,11 @@ export const useSlaPendingCount = (clienteId: string | null) => {
   });
 };
 
-/** Role-aware SLA list for the Operador panel (includes operador join + server-side client filter). */
-export const useOperadorSlas = (clienteId: string | null, operadorId?: string | null) => {
+/** Role-aware SLA list for the Agente panel (includes agente join + server-side client filter). */
+export const useAgenteSlas = (clienteId: string | null, agenteId?: string | null) => {
   return useQuery({
-    queryKey: ['sla_panel', clienteId, operadorId ?? null],
-    queryFn: () => api.sla.listForPanel(clienteId!, operadorId ?? undefined),
+    queryKey: ['sla_panel', clienteId, agenteId ?? null],
+    queryFn: () => api.sla.listForPanel(clienteId!, agenteId ?? undefined),
     enabled: !!clienteId,
     staleTime: STALE.VERY_SHORT,
     refetchInterval: STALE.VERY_SHORT,

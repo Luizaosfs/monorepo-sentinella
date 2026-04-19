@@ -3,7 +3,7 @@ import { Paginated } from 'src/utils/pagination';
 
 interface SlaOperacionalProps {
   itemId?: string;
-  operadorId?: string;
+  agenteId?: string;
   prioridade: string;
   slaHoras: number;
   inicio: Date;
@@ -35,11 +35,11 @@ export class SlaOperacional extends BaseEntity<SlaOperacionalProps> {
   get itemId() {
     return this.props.itemId;
   }
-  get operadorId() {
-    return this.props.operadorId;
+  get agenteId() {
+    return this.props.agenteId;
   }
-  set operadorId(v: string | undefined) {
-    this.props.operadorId = v;
+  set agenteId(v: string | undefined) {
+    this.props.agenteId = v;
   }
   get prioridade() {
     return this.props.prioridade;

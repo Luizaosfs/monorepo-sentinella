@@ -66,14 +66,14 @@ export class PrismaSlaReadRepository implements SlaReadRepository {
 
   async findPainel(
     clienteId: string,
-    operadorId?: string,
+    agenteId?: string,
   ): Promise<SlaOperacional[]> {
     const rows = await this.prisma.client.sla_operacional.findMany({
       where: {
         cliente_id: clienteId,
         status: { in: ['pendente', 'em_atendimento'] },
         deleted_at: null,
-        ...(operadorId && { operador_id: operadorId }),
+        ...(agenteId && { agente_id: agenteId }),
       },
       orderBy: { prazo_final: 'asc' },
     });
@@ -223,7 +223,7 @@ export class PrismaSlaReadRepository implements SlaReadRepository {
       deleted_at: null,
       // MT-09: != null distingue null intencional (admin global) de UUID (tenant filter)
       ...(filters.clienteId != null && { cliente_id: filters.clienteId }),
-      ...(filters.operadorId && { operador_id: filters.operadorId }),
+      ...(filters.agenteId && { agente_id: filters.agenteId }),
       ...(filters.status && { status: filters.status }),
       ...(filters.prioridade && { prioridade: filters.prioridade }),
       ...(filters.focoRiscoId && { foco_risco_id: filters.focoRiscoId }),

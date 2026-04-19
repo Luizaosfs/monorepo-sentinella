@@ -16,7 +16,7 @@ export class AtribuirOperador {
     const sla = await this.readRepository.findById(id, clienteId);
     if (!sla) throw SlaException.notFound();
 
-    sla.operadorId = data.operadorId;
+    sla.agenteId = data.agenteId;
     if (data.avancarStatus && sla.status === 'pendente') {
       sla.status = 'em_atendimento';
     }
