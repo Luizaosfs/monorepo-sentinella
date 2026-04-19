@@ -52,7 +52,7 @@ interface Operacao {
   vinculo_nome?: string;
 }
 
-interface Operador { id: string; nome: string; }
+interface Agente { id: string; nome: string; }
 interface RunOption { id: string; dt_ref: string; }
 
 /* ── Visual config ── */
@@ -110,9 +110,9 @@ const AdminOperacoes = () => {
 
   const data = operacoesData as Operacao[];
 
-  const { data: operadores = [] } = useQuery({
+  const { data: agentes = [] } = useQuery({
     queryKey: ['admin_operacoes_agentes', clienteId],
-    queryFn: () => api.operacoes.listOperadores(clienteId!) as Promise<Operador[]>,
+    queryFn: () => api.operacoes.listOperadores(clienteId!) as Promise<Agente[]>,
     enabled: !!clienteId,
     staleTime: 0,
   });
@@ -218,7 +218,7 @@ const AdminOperacoes = () => {
     if (filterPrioridade !== 'all' && op.prioridade !== filterPrioridade) return false;
     if (debouncedSearch) {
       const s = debouncedSearch.toLowerCase();
-      const resp = operadores.find(o => o.id === op.responsavel_id)?.nome || '';
+      const resp = agentes.find(o => o.id === op.responsavel_id)?.nome || '';
       if (
         !resp.toLowerCase().includes(s) &&
         !(op.observacao || '').toLowerCase().includes(s) &&
@@ -421,7 +421,7 @@ const AdminOperacoes = () => {
                   {paginated.map(op => {
                     const sc = statusConfig[op.status] || statusConfig.pendente;
                     const pc = prioridadeColor[op.prioridade || ''] || 'bg-muted/50 text-muted-foreground';
-                    const resp = operadores.find(o => o.id === op.responsavel_id)?.nome || '—';
+                    const resp = agentes.find(o => o.id === op.responsavel_id)?.nome || '—';
                     return (
                       <TableRow key={op.id} className="hover:bg-muted/30 transition-colors">
                         <TableCell><VinculoBadge op={op} /></TableCell>
@@ -473,7 +473,7 @@ const AdminOperacoes = () => {
             <div className="md:hidden divide-y divide-border/40">
               {paginated.map(op => {
                 const sc = statusConfig[op.status] || statusConfig.pendente;
-                const resp = operadores.find(o => o.id === op.responsavel_id)?.nome || '—';
+                const resp = agentes.find(o => o.id === op.responsavel_id)?.nome || '—';
                 return (
                   <MobileListCard
                     key={op.id}
@@ -550,7 +550,7 @@ const AdminOperacoes = () => {
               <Select value={form.responsavel_id} onValueChange={v => setForm(f => ({ ...f, responsavel_id: v }))}>
                 <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                 <SelectContent>
-                  {operadores.map(o => (
+                  {agentes.map(o => (
                     <SelectItem key={o.id} value={o.id}>{o.nome}</SelectItem>
                   ))}
                 </SelectContent>

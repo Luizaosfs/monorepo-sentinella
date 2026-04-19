@@ -292,7 +292,7 @@ const MapaInspecao = () => {
                   prioridade: it.prioridade || 'Média',
                   observacao: `Tarefa de correção — ${it.item || 'ponto'}`,
                 });
-                toast.success('Tarefa de correção criada. Atribua um operador em Operações.');
+                toast.success('Tarefa de correção criada. Atribua um agente em Operações.');
               } catch (err: unknown) {
                 if (err instanceof Error && err.message === 'ALREADY_EXISTS') {
                   toast.info('Já existe uma tarefa aberta para este ponto.');

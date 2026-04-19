@@ -306,7 +306,7 @@ const AdminPlanejamentos = () => {
                           <div className="flex items-center justify-between rounded-lg border border-border/60 p-3">
                             <div>
                               <Label className="text-sm font-medium">Ativo</Label>
-                              <p className="text-xs text-muted-foreground">Disponível para criar item manual (operador)</p>
+                              <p className="text-xs text-muted-foreground">Disponível para criar item manual (agente)</p>
                             </div>
                             <Switch
                               checked={form.ativo}

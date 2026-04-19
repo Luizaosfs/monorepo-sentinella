@@ -605,7 +605,7 @@ export default function AdminDistribuicaoQuarteirao() {
               <CardContent className="p-0">
                 {agentes.length === 0 ? (
                   <p className="text-xs text-muted-foreground px-4 pb-4">
-                    Nenhum operador cadastrado.
+                    Nenhum agente cadastrado.
                   </p>
                 ) : (
                   <div className="divide-y divide-border/40">

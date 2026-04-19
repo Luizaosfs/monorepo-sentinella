@@ -246,7 +246,7 @@ export default function AdminImoveisProblematicos() {
               </Card>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="max-w-[240px] text-xs leading-relaxed">
-              Imóveis marcados para sobrevoo de drone — definido automaticamente após <strong>3 tentativas sem acesso</strong>, ou manualmente pelo operador. Clique para filtrar.
+              Imóveis marcados para sobrevoo de drone — definido automaticamente após <strong>3 tentativas sem acesso</strong>, ou manualmente pelo agente. Clique para filtrar.
             </TooltipContent>
           </Tooltip>
         </div>

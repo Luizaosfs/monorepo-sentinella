@@ -74,7 +74,7 @@ function nearestNeighbor(items: LevantamentoItem[]): LevantamentoItem[] {
   return result;
 }
 
-/** Mapa exclusivo do operador: apenas itens ligados a operações onde ele é o responsável. */
+/** Mapa exclusivo do agente: apenas itens ligados a operações onde ele é o responsável. */
 /** Item convertido de foco_risco tem levantamento_id vazio — usado para distinguir tipo. */
 function isFocoRiscoItem(item: LevantamentoItem) {
   return item.levantamento_id === '';
@@ -136,7 +136,7 @@ export default function AgenteMapa() {
       ? [clienteAtivo.latitude_centro, clienteAtivo.longitude_centro]
       : [-15.78, -47.93];
 
-  /** Cria tarefa de correção avulsa (pendente, sem operador). Pode ser atribuída depois em Operações. */
+  /** Cria tarefa de correção avulsa (pendente, sem agente). Pode ser atribuída depois em Operações. */
   const handleCreateTask = useCallback(async () => {
     if (!selectedItem || !clienteId) return;
     try {
@@ -146,7 +146,7 @@ export default function AgenteMapa() {
         prioridade: selectedItem.prioridade || "Média",
         observacao: `Tarefa de correção — ${selectedItem.item || "Item"}`,
       });
-      toast.success("Tarefa de correção criada. Atribua um operador em Operações.");
+      toast.success("Tarefa de correção criada. Atribua um agente em Operações.");
     } catch (err: unknown) {
       if (err instanceof Error && err.message === "ALREADY_EXISTS") {
         toast.info("Já existe uma tarefa aberta para este ponto.");

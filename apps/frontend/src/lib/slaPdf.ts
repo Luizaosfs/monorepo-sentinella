@@ -14,7 +14,7 @@ interface RankingEntry {
 
 interface SlaMetrics {
   total: number;
-  semOperador: number;
+  semAgente: number;
   violados: number;
   pendentes: number;
 }
@@ -67,7 +67,7 @@ export function exportSlaPdf(
 
   const metricBoxes = [
     { label: 'Total SLAs', value: metrics.total.toString() },
-    { label: 'Sem Agente', value: metrics.semOperador.toString() },
+    { label: 'Sem Agente', value: metrics.semAgente.toString() },
     { label: 'Pendentes', value: metrics.pendentes.toString() },
     { label: 'Violados', value: metrics.violados.toString() },
     { label: 'Taxa Cumprimento', value: `${metrics.total > 0 ? Math.round(((metrics.total - metrics.violados) / metrics.total) * 100) : 0}%` },

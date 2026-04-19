@@ -635,7 +635,7 @@ export default function AgenteFormularioVistoria() {
       setDone(true);
     } catch (err) {
       const message = extractErrorMessage(err);
-      console.error('[OperadorFormularioVistoria] erro ao finalizar', err);
+      console.error('[AgenteFormularioVistoria] erro ao finalizar', err);
       toast.error(`Erro ao salvar vistoria: ${message}`);
     } finally {
       setIsSaving(false);

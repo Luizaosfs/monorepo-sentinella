@@ -1,7 +1,7 @@
 import { useAuth } from '@/hooks/useAuth';
 import { Navigate } from 'react-router-dom';
 
-/** Protege uma rota para apenas admin ou supervisor (ex.: /operador/usuarios). */
+/** Protege uma rota para apenas admin ou supervisor (ex.: /agente/usuarios). */
 export const AdminOrSupervisorGuard = ({ children }: { children: React.ReactNode }) => {
   const { isAdminOrSupervisor, loading: authLoading } = useAuth();
 

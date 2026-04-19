@@ -75,7 +75,7 @@ const STEPS = [
     number: '02',
     title: 'Levantamento',
     description:
-      'O drone captura imagens em voo. A IA identifica focos automaticamente. O operador valida e complementa em campo.',
+      'O drone captura imagens em voo. A IA identifica focos automaticamente. O agente valida e complementa em campo.',
   },
   {
     number: '03',
