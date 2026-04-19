@@ -5,7 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
  * Guard para rotas da área do agente de campo (/agente/*).
  * Permite apenas usuários com papel agente; demais redireciona para /dashboard.
  */
-const OperadorGuard = ({ children }: { children: React.ReactNode }) => {
+const AgenteGuard = ({ children }: { children: React.ReactNode }) => {
   const { isAgente, loading: authLoading } = useAuth();
 
   if (authLoading) {
@@ -21,4 +21,4 @@ const OperadorGuard = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-export default OperadorGuard;
+export default AgenteGuard;
