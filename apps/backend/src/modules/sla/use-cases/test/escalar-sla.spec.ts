@@ -16,9 +16,9 @@ describe('EscalarSla', () => {
   const readRepo = mock<SlaReadRepository>();
   const writeRepo = mock<SlaWriteRepository>();
 
-  const requestWithUser = () => ({
-    ...mockRequest({ tenantId: 'test-cliente-id' }),
-    userId: 'escalador-user-id',
+  const requestWithUser = () => mockRequest({
+    tenantId: 'test-cliente-id',
+    user: { id: 'escalador-user-id' } as never,
   });
 
   beforeEach(async () => {

@@ -14,9 +14,9 @@ describe('SaveConfig', () => {
   const readRepo = mock<SlaReadRepository>();
   const writeRepo = mock<SlaWriteRepository>();
 
-  const requestProvider = () => ({
-    ...mockRequest({ tenantId: 'test-cliente-id' }),
-    userId: 'auditor-user-id',
+  const requestProvider = () => mockRequest({
+    tenantId: 'test-cliente-id',
+    user: { id: 'auditor-user-id' } as never,
   });
 
   beforeEach(async () => {
