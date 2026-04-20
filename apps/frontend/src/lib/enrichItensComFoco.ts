@@ -9,7 +9,7 @@ import { mapFocoToStatusOperacional, type FocoStatus } from '@/lib/mapStatusOper
 export function mapFocoStatusToAtendimento(status?: string | null): StatusAtendimento {
   const s = String(status ?? '').toLowerCase();
   if (s === 'cancelado') return 'resolvido'; // valor legado não mapeado no tipo FocoStatus
-  return mapFocoToStatusOperacional(s as FocoStatus);
+  return mapFocoToStatusOperacional(s as FocoStatus) ?? 'pendente';
 }
 
 /**

@@ -14,8 +14,8 @@ describe('mapFocoStatusToAtendimento', () => {
     expect(mapFocoStatusToAtendimento('cancelado')).toBe('resolvido');
   });
 
-  it('retorna "em_atendimento" para em_triagem', () => {
-    expect(mapFocoStatusToAtendimento('em_triagem')).toBe('em_atendimento');
+  it('retorna "pendente" para em_triagem (supervisor ainda não confirmou)', () => {
+    expect(mapFocoStatusToAtendimento('em_triagem')).toBe('pendente');
   });
 
   it('retorna "em_atendimento" para em_tratamento', () => {
@@ -47,9 +47,8 @@ describe('mapFocoStatusToAtendimento', () => {
     expect(mapFocoStatusToAtendimento('aguarda_inspecao')).toBe('pendente');
   });
 
-  it('retorna "pendente" para em_inspecao (8º estado — inspeção em andamento ainda é pendente no UI legado)', () => {
-    // em_inspecao não está no mapeamento explícito → cai no default "pendente"
-    expect(mapFocoStatusToAtendimento('em_inspecao')).toBe('pendente');
+  it('retorna "em_atendimento" para em_inspecao (agente ativamente inspecionando)', () => {
+    expect(mapFocoStatusToAtendimento('em_inspecao')).toBe('em_atendimento');
   });
 
   it('retorna "pendente" para string vazia', () => {
@@ -61,7 +60,7 @@ describe('mapFocoStatusToAtendimento', () => {
   });
 
   it('é case-insensitive (EM_TRIAGEM)', () => {
-    expect(mapFocoStatusToAtendimento('EM_TRIAGEM')).toBe('em_atendimento');
+    expect(mapFocoStatusToAtendimento('EM_TRIAGEM')).toBe('pendente');
   });
 
   it('é case-insensitive (DESCARTADO)', () => {

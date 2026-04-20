@@ -62,7 +62,7 @@ describe('ProtectedRoute', () => {
 
   it('redireciona para /trocar-senha quando mustChangePassword=true', () => {
     mockUseAuth.mockReturnValue({
-      session: { user: { id: '1' } },
+      usuario: { id: '1' },
       loading: false,
       mustChangePassword: true,
     });
@@ -79,7 +79,7 @@ describe('ProtectedRoute', () => {
 
   it('renderiza filhos quando sessão é válida e senha não precisa ser trocada', () => {
     mockUseAuth.mockReturnValue({
-      session: { user: { id: '1' } },
+      usuario: { id: '1' },
       loading: false,
       mustChangePassword: false,
     });

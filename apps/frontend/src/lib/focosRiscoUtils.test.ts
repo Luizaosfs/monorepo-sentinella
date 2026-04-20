@@ -46,8 +46,8 @@ describe('focoStatusToAtendimento', () => {
     expect(focoStatusToAtendimento('aguarda_inspecao')).toBe('pendente');
   });
 
-  it('mapeia descartado → pendente (não é resolvido nem atendimento)', () => {
-    expect(focoStatusToAtendimento('descartado')).toBe('pendente');
+  it('mapeia descartado → resolvido (atendimento encerrado)', () => {
+    expect(focoStatusToAtendimento('descartado')).toBe('resolvido');
   });
 });
 
@@ -262,10 +262,9 @@ describe('avancarFocoAte', () => {
     expect(mocks.transicionar).toHaveBeenNthCalledWith(4, 'fid', 'resolvido', 'meu motivo');
   });
 
-  it('em_triagem → descartado: chama transicionar uma vez', async () => {
+  it('em_triagem → descartado (sem caminho — supervisor não descarta nesse estado): não chama transicionar', async () => {
     await avancarFocoAte('fid', 'em_triagem', 'descartado');
-    expect(mocks.transicionar).toHaveBeenCalledTimes(1);
-    expect(mocks.transicionar).toHaveBeenCalledWith('fid', 'descartado', undefined);
+    expect(mocks.transicionar).not.toHaveBeenCalled();
   });
 
   it('suspeita → resolvido (sem caminho): não chama transicionar', async () => {

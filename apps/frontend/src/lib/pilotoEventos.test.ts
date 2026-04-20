@@ -1,18 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// vi.hoisted garante que as fns existem quando vi.mock() (hoisted) executa
-const { mockInsertThen, mockInsert, mockFrom, mockGetUser } = vi.hoisted(() => ({
-  mockInsertThen: vi.fn(),
-  mockInsert: vi.fn(() => ({ then: vi.fn() })),
-  mockFrom: vi.fn(() => ({ insert: vi.fn(() => ({ then: vi.fn() })) })),
-  mockGetUser: vi.fn(() => Promise.resolve({ data: { user: { id: 'user-123' } } })),
+const { mockPost } = vi.hoisted(() => ({
+  mockPost: vi.fn(() => Promise.resolve({})),
 }));
 
-vi.mock('@/lib/supabase', () => ({
-  supabase: {
-    auth: { getUser: mockGetUser },
-    from: mockFrom,
-  },
+vi.mock('@sentinella/api-client', () => ({
+  http: { post: mockPost },
 }));
 
 import { logEvento } from './pilotoEventos';
@@ -20,9 +13,7 @@ import { logEvento } from './pilotoEventos';
 describe('logEvento — fire-and-forget', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockFrom.mockReturnValue({ insert: mockInsert });
-    mockInsert.mockReturnValue({ then: mockInsertThen });
-    mockGetUser.mockResolvedValue({ data: { user: { id: 'user-123' } } });
+    mockPost.mockResolvedValue({});
   });
 
   // ── Não lança ─────────────────────────────────────────────────────────────
@@ -51,32 +42,31 @@ describe('logEvento — fire-and-forget', () => {
   });
 
   // ── Guarda de clienteId nulo ──────────────────────────────────────────────
-  it('não chama supabase quando clienteId é null', () => {
+  it('não chama http quando clienteId é null', () => {
     logEvento('foco_visualizado', null);
-    expect(mockGetUser).not.toHaveBeenCalled();
-    expect(mockFrom).not.toHaveBeenCalled();
+    expect(mockPost).not.toHaveBeenCalled();
   });
 
-  it('não chama supabase quando clienteId é undefined', () => {
+  it('não chama http quando clienteId é undefined', () => {
     logEvento('foco_visualizado', undefined);
-    expect(mockGetUser).not.toHaveBeenCalled();
+    expect(mockPost).not.toHaveBeenCalled();
   });
 
-  it('não chama supabase quando clienteId é string vazia', () => {
+  it('não chama http quando clienteId é string vazia', () => {
     logEvento('foco_visualizado', '');
-    expect(mockGetUser).not.toHaveBeenCalled();
+    expect(mockPost).not.toHaveBeenCalled();
   });
 
-  // ── Com clienteId válido chama supabase ───────────────────────────────────
+  // ── Com clienteId válido chama http.post ──────────────────────────────────
   it('chama supabase.auth.getUser quando clienteId é válido', async () => {
     logEvento('triagem_aberta', 'cliente-abc');
     await Promise.resolve();
-    expect(mockGetUser).toHaveBeenCalledTimes(1);
+    expect(mockPost).toHaveBeenCalledTimes(1);
   });
 
   // ── Silencia erros internos ───────────────────────────────────────────────
   it('não propaga erros internos do supabase.auth.getUser', async () => {
-    mockGetUser.mockRejectedValueOnce(new Error('network error'));
+    mockPost.mockRejectedValueOnce(new Error('network error'));
     expect(() => logEvento('dashboard_aberto', 'cliente-abc')).not.toThrow();
     await Promise.resolve();
   });

@@ -48,7 +48,8 @@ describe('getTransicoesPermitidas', () => {
   });
 
   it('todos os estados não-terminais possuem ao menos uma transição', () => {
-    const naoTerminais = ALL_STATUS.filter((s) => !TERMINAL.includes(s));
+    // suspeita: transição automática via trigger; sem transições manuais
+    const naoTerminais = ALL_STATUS.filter((s) => !TERMINAL.includes(s) && s !== 'suspeita');
     for (const s of naoTerminais) {
       expect(getTransicoesPermitidas(s).length).toBeGreaterThan(0);
     }
@@ -67,11 +68,11 @@ describe('getTransicoesPermitidas', () => {
   });
 
   it('estados terminais não aparecem como destino de estados não-terminais antes de em_tratamento', () => {
-    // Somente em_tratamento e confirmado podem ir para resolvido
+    // Somente em_tratamento pode ir para resolvido
     const podeChegar = ALL_STATUS.filter((s) =>
       getTransicoesPermitidas(s).includes('resolvido'),
     );
-    expect(podeChegar).toEqual(expect.arrayContaining(['confirmado', 'em_tratamento']));
+    expect(podeChegar).toEqual(['em_tratamento']);
     expect(podeChegar).not.toContain('suspeita');
     expect(podeChegar).not.toContain('em_triagem');
     expect(podeChegar).not.toContain('aguarda_inspecao');
@@ -81,23 +82,23 @@ describe('getTransicoesPermitidas', () => {
 // ── podeTransicionar — transições válidas ───────────────────────────────────
 
 describe('podeTransicionar — transições válidas', () => {
-  // suspeita
-  it('suspeita → em_triagem', () => expect(podeTransicionar('suspeita', 'em_triagem')).toBe(true));
-  it('suspeita → aguarda_inspecao', () => expect(podeTransicionar('suspeita', 'aguarda_inspecao')).toBe(true));
-  it('suspeita → descartado', () => expect(podeTransicionar('suspeita', 'descartado')).toBe(true));
+  // suspeita — transição automática via trigger; sem transições manuais
+  it('suspeita → em_triagem (trigger, não manual)', () => expect(podeTransicionar('suspeita', 'em_triagem')).toBe(false));
+  it('suspeita → aguarda_inspecao', () => expect(podeTransicionar('suspeita', 'aguarda_inspecao')).toBe(false));
+  it('suspeita → descartado', () => expect(podeTransicionar('suspeita', 'descartado')).toBe(false));
 
   // em_triagem
   it('em_triagem → aguarda_inspecao', () => expect(podeTransicionar('em_triagem', 'aguarda_inspecao')).toBe(true));
-  it('em_triagem → confirmado', () => expect(podeTransicionar('em_triagem', 'confirmado')).toBe(true));
-  it('em_triagem → descartado', () => expect(podeTransicionar('em_triagem', 'descartado')).toBe(true));
+  it('em_triagem → confirmado (inválido — deve passar por aguarda_inspecao)', () => expect(podeTransicionar('em_triagem', 'confirmado')).toBe(false));
+  it('em_triagem → descartado (inválido — supervisor não descarta)', () => expect(podeTransicionar('em_triagem', 'descartado')).toBe(false));
 
   // aguarda_inspecao
-  it('aguarda_inspecao → confirmado', () => expect(podeTransicionar('aguarda_inspecao', 'confirmado')).toBe(true));
+  it('aguarda_inspecao → confirmado (inválido — deve passar por em_inspecao)', () => expect(podeTransicionar('aguarda_inspecao', 'confirmado')).toBe(false));
   it('aguarda_inspecao → descartado', () => expect(podeTransicionar('aguarda_inspecao', 'descartado')).toBe(true));
 
   // confirmado
   it('confirmado → em_tratamento', () => expect(podeTransicionar('confirmado', 'em_tratamento')).toBe(true));
-  it('confirmado → resolvido', () => expect(podeTransicionar('confirmado', 'resolvido')).toBe(true));
+  it('confirmado → resolvido (inválido — deve passar por em_tratamento)', () => expect(podeTransicionar('confirmado', 'resolvido')).toBe(false));
 
   // em_tratamento
   it('em_tratamento → resolvido', () => expect(podeTransicionar('em_tratamento', 'resolvido')).toBe(true));
