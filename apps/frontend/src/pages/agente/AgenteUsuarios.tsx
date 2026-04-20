@@ -89,7 +89,7 @@ const AgenteUsuarios = () => {
       const [usrs, papeis, cliente] = await Promise.all([
         api.usuarios.listByCliente(clienteId!),
         api.usuarios.listPapeis(clienteId!),
-        api.clientes.getById(clienteId!),
+        api.clientes.me(),
       ]);
 
       const papelMap = new Map<string, PapelCliente>();

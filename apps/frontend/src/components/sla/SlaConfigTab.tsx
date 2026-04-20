@@ -49,7 +49,7 @@ export default function SlaConfigTab({ clienteId }: Props) {
       if (data) {
         const row = data as SlaConfigRow;
         setExistingId(row.id);
-        setConfig(row.config);
+        setConfig({ ...structuredClone(DEFAULT_SLA_CONFIG), ...row.config, prioridades: row.config?.prioridades ?? DEFAULT_SLA_CONFIG.prioridades });
       } else {
         setExistingId(null);
         setConfig(structuredClone(DEFAULT_SLA_CONFIG));
@@ -190,7 +190,7 @@ export default function SlaConfigTab({ clienteId }: Props) {
           </CardDescription>
         </CardHeader>
         <CardContent className="p-4 space-y-3">
-          {Object.entries(config.prioridades).map(([key, val]) => (
+          {Object.entries(config.prioridades ?? {}).map(([key, val]) => (
             <div key={key} className="flex items-center gap-3 flex-wrap">
               <Badge variant="outline" className="min-w-[110px] justify-center text-xs font-bold">
                 {key}

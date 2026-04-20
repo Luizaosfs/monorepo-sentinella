@@ -151,6 +151,14 @@ export const AuthProvider = forwardRef<HTMLDivElement, { children: ReactNode }>(
   };
 
   const signOut = async () => {
+    const refreshToken = tokenStore.getRefreshToken();
+    if (refreshToken) {
+      try {
+        await http.post('/auth/logout', { refreshToken });
+      } catch {
+        // best-effort: se falhar (rede/token expirado), limpa local de qualquer forma
+      }
+    }
     tokenStore.clear();
     setUsuario(null);
     setPapel(null);

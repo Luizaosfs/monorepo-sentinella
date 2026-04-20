@@ -223,7 +223,7 @@ export class BillingController {
   }
 
   @Put('quotas')
-  @Roles('admin')
+  @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Atualizar quotas do cliente' })
   async upsertQuotas(@Body() body: UpsertQuotasBody) {
     const parsed = upsertQuotasSchema.parse(body);

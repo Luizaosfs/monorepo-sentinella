@@ -1455,13 +1455,13 @@ export interface LiraaResultado {
 export interface AgenteProdutividade {
   agente_id: string;
   agente_nome: string;
-  total_visitas: number;
+  visitas: number;
   com_acesso: number;
   sem_acesso: number;
-  imoveis_com_foco: number;
-  larvicida_aplicado: number;
-  taxa_acesso: number;
-  media_depositos_dia: number;
+  taxa_acesso_pct: number;
+  focos: number;
+  usou_larvicida: number;
+  media_dia: number | null;
 }
 
 // ── MÓDULO 4 — Score Preditivo de Surto ──────────────────────────────────────

@@ -89,7 +89,7 @@ export class ClienteController {
   }
 
   @Get('integracoes/:id/api-key')
-  @Roles('admin')
+  @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Busca api_key de uma integração do cliente' })
   async getApiKey(@Param('id') id: string) {
     const { integracao } = await this.getIntegracaoApiKey.execute(id);
@@ -123,7 +123,7 @@ export class ClienteController {
   }
 
   @Post('integracoes/testar')
-  @Roles('admin')
+  @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Testar conectividade da integração ativa do cliente' })
   async testarIntegracao() {
     const clienteId = this.req['tenantId'] as string;

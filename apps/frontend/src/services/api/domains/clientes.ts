@@ -26,8 +26,8 @@ export const clientes = {
     return { id: raw.id as string, nome: raw.nome as string };
   },
 
-  getConfig: async (id: string): Promise<Ret<typeof _sb.clientes.getConfig>> => {
-    const raw = await http.get(`/clientes/${id}`) as Record<string, unknown>;
+  getConfig: async (_id?: string): Promise<Ret<typeof _sb.clientes.getConfig>> => {
+    const raw = await http.get('/clientes/me') as Record<string, unknown>;
     if (!raw) return null;
     const snake = deepToSnake(raw) as Record<string, unknown>;
     return {

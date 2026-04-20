@@ -24,14 +24,15 @@ export interface LiraaResult {
 }
 
 export interface AgenteStat {
-  agenteId: string;
-  nome: string;
-  totalVisitas: number;
-  comAcesso: number;
-  semAcesso: number;
-  taxaAcesso: number;
-  totalDepositos: number;
-  depositosComLarva: number;
+  agente_id: string;
+  agente_nome: string;
+  visitas: number;
+  com_acesso: number;
+  sem_acesso: number;
+  taxa_acesso_pct: number;
+  focos: number;
+  usou_larvicida: number;
+  media_dia: number | null;
 }
 
 export interface ConsumoLarvicidaRow {

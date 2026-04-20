@@ -125,23 +125,29 @@ export class PrismaDashboardReadRepository implements DashboardReadRepository {
 
     type Row = {
       agente_id: string;
-      nome: string;
-      total_visitas: bigint;
+      agente_nome: string;
+      visitas: bigint;
       com_acesso: bigint;
       sem_acesso: bigint;
-      total_depositos: bigint;
-      depositos_com_larva: bigint;
+      focos: bigint;
+      usou_larvicida: bigint;
+      media_dia: number | null;
     };
 
     const rows = await this.prisma.client.$queryRaw<Row[]>`
       SELECT
         v.agente_id,
-        u.nome,
-        COUNT(DISTINCT v.id)                                              AS total_visitas,
-        COUNT(DISTINCT v.id) FILTER (WHERE v.acesso_realizado = true)    AS com_acesso,
-        COUNT(DISTINCT v.id) FILTER (WHERE v.acesso_realizado = false)   AS sem_acesso,
-        COUNT(vd.id)                                                      AS total_depositos,
-        COUNT(vd.id) FILTER (WHERE vd.qtd_com_focos > 0)                 AS depositos_com_larva
+        u.nome                                                                   AS agente_nome,
+        COUNT(DISTINCT v.id)                                                     AS visitas,
+        COUNT(DISTINCT v.id) FILTER (WHERE v.acesso_realizado = true)            AS com_acesso,
+        COUNT(DISTINCT v.id) FILTER (WHERE v.acesso_realizado = false)           AS sem_acesso,
+        COUNT(vd.id) FILTER (WHERE vd.qtd_com_focos > 0)                        AS focos,
+        COUNT(vd.id) FILTER (WHERE vd.usou_larvicida = true)                     AS usou_larvicida,
+        ROUND(
+          COUNT(DISTINCT v.id)::numeric
+          / NULLIF(COUNT(DISTINCT DATE(v.data_visita)), 0),
+          1
+        )                                                                        AS media_dia
       FROM vistorias v
       JOIN usuarios u ON u.id = v.agente_id
       LEFT JOIN vistoria_depositos vd ON vd.vistoria_id = v.id
@@ -149,21 +155,22 @@ export class PrismaDashboardReadRepository implements DashboardReadRepository {
         AND v.deleted_at IS NULL
         ${cicloFilter}
       GROUP BY v.agente_id, u.nome
-      ORDER BY total_visitas DESC
+      ORDER BY visitas DESC
     `;
 
     return rows.map((r) => {
-      const total = Number(r.total_visitas);
+      const total = Number(r.visitas);
       const com = Number(r.com_acesso);
       return {
-        agenteId: r.agente_id,
-        nome: r.nome,
-        totalVisitas: total,
-        comAcesso: com,
-        semAcesso: Number(r.sem_acesso),
-        taxaAcesso: total > 0 ? Math.round((com / total) * 10000) / 100 : 0,
-        totalDepositos: Number(r.total_depositos),
-        depositosComLarva: Number(r.depositos_com_larva),
+        agente_id: r.agente_id,
+        agente_nome: r.agente_nome,
+        visitas: total,
+        com_acesso: com,
+        sem_acesso: Number(r.sem_acesso),
+        taxa_acesso_pct: total > 0 ? Math.round((com / total) * 10000) / 100 : 0,
+        focos: Number(r.focos),
+        usou_larvicida: Number(r.usou_larvicida),
+        media_dia: r.media_dia != null ? Number(r.media_dia) : null,
       };
     });
   }

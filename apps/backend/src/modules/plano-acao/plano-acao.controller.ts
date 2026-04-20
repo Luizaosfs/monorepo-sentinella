@@ -51,9 +51,9 @@ export class PlanoAcaoController {
   ) {}
 
   @Get('all')
-  @Roles('admin')
+  @Roles('admin', 'supervisor')
   @ApiOperation({
-    summary: 'Listar catálogo incluindo inativos (admin)',
+    summary: 'Listar catálogo incluindo inativos (admin/supervisor)',
   })
   async filterAll(@Query() filters: FilterPlanoAcaoAllQuery) {
     const parsed = filterPlanoAcaoAllSchema.parse(filters);
