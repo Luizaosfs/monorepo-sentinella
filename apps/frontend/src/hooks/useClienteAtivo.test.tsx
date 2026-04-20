@@ -9,19 +9,16 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 import React from 'react';
 
 // ── Hoisted mocks ─────────────────────────────────────────────────────────
-const { mockRpc, mockMaybeSingle, mockOrder, mockEq, mockSelect, mockFrom } = vi.hoisted(() => {
-  const mockMaybeSingle = vi.fn();
-  const mockOrder = vi.fn();
-  const mockEq = vi.fn();
-  const mockSelect = vi.fn();
-  const mockFrom = vi.fn();
-  const mockRpc = vi.fn();
-  return { mockRpc, mockMaybeSingle, mockOrder, mockEq, mockSelect, mockFrom };
-});
+const { mockClientesMe, mockClientesList } = vi.hoisted(() => ({
+  mockClientesMe: vi.fn(),
+  mockClientesList: vi.fn(),
+}));
 
 vi.mock('@/hooks/useAuth', () => ({ useAuth: vi.fn() }));
-vi.mock('@/lib/supabase', () => ({
-  supabase: { rpc: mockRpc, from: mockFrom },
+vi.mock('@/services/api', () => ({
+  api: {
+    clientes: { me: mockClientesMe, list: mockClientesList },
+  },
 }));
 
 import { useAuth } from '@/hooks/useAuth';
@@ -47,27 +44,16 @@ describe('useClienteAtivo', () => {
     vi.clearAllMocks();
     localStorage.clear();
 
-    mockRpc.mockResolvedValue({ data: tenantOk, error: null });
-
-    mockMaybeSingle.mockResolvedValue({
-      data: { id: 'cliente-1', nome: 'Prefeitura Test' },
-      error: null,
-    });
-    mockEq.mockReturnValue({ maybeSingle: mockMaybeSingle });
-    mockSelect.mockReturnValue({ eq: mockEq, order: mockOrder });
-    mockOrder.mockResolvedValue({
-      data: [{ id: 'cliente-1', nome: 'Prefeitura Test' }],
-      error: null,
-    });
-    mockFrom.mockReturnValue({ select: mockSelect });
+    mockClientesMe.mockResolvedValue({ id: 'cliente-1', nome: 'Prefeitura Test' });
+    mockClientesList.mockResolvedValue([{ id: 'cliente-1', nome: 'Prefeitura Test' }]);
   });
 
   // ── Usuário não-admin ─────────────────────────────────────────────────────
-  it('retorna o cliente_id do próprio usuário para não-admin', async () => {
+  it('retorna o clienteId do próprio usuário para não-admin', async () => {
     mockUseAuth.mockReturnValue({
       isAdmin: false,
       loading: false,
-      usuario: { cliente_id: 'cliente-1', agrupamento_id: null },
+      usuario: { clienteId: 'cliente-1', agrupamentoId: null },
     });
 
     const { result } = renderHook(() => useClienteAtivo(), { wrapper });
@@ -75,11 +61,11 @@ describe('useClienteAtivo', () => {
     await waitFor(() => expect(result.current.clienteId).toBe('cliente-1'));
   });
 
-  it('retorna null quando usuário não tem cliente_id', async () => {
+  it('retorna null quando usuário não tem clienteId', async () => {
     mockUseAuth.mockReturnValue({
       isAdmin: false,
       loading: false,
-      usuario: { cliente_id: null, agrupamento_id: null },
+      usuario: { clienteId: null, agrupamentoId: null },
     });
 
     const { result } = renderHook(() => useClienteAtivo(), { wrapper });
@@ -92,7 +78,7 @@ describe('useClienteAtivo', () => {
     mockUseAuth.mockReturnValue({
       isAdmin: true,
       loading: false,
-      usuario: { cliente_id: null, agrupamento_id: null },
+      usuario: { clienteId: null, agrupamentoId: null },
     });
 
     const { result } = renderHook(() => useClienteAtivo(), { wrapper });
@@ -105,7 +91,7 @@ describe('useClienteAtivo', () => {
     mockUseAuth.mockReturnValue({
       isAdmin: true,
       loading: false,
-      usuario: { cliente_id: null, agrupamento_id: null },
+      usuario: { clienteId: null, agrupamentoId: null },
     });
 
     const { result } = renderHook(() => useClienteAtivo(), { wrapper });
@@ -120,7 +106,7 @@ describe('useClienteAtivo', () => {
     mockUseAuth.mockReturnValue({
       isAdmin: false,
       loading: false,
-      usuario: { cliente_id: 'cliente-1', agrupamento_id: null },
+      usuario: { clienteId: 'cliente-1', agrupamentoId: null },
     });
 
     const { result } = renderHook(() => useClienteAtivo(), { wrapper });
@@ -132,13 +118,12 @@ describe('useClienteAtivo', () => {
     mockUseAuth.mockReturnValue({
       isAdmin: false,
       loading: false,
-      usuario: { cliente_id: null, agrupamento_id: null },
+      usuario: { clienteId: null, agrupamentoId: null },
     });
 
     const { result } = renderHook(() => useClienteAtivo(), { wrapper });
 
     await act(async () => { await Promise.resolve(); });
-    expect(mockRpc).not.toHaveBeenCalled();
     expect(result.current.tenantStatus).toBeNull();
   });
 
@@ -147,7 +132,7 @@ describe('useClienteAtivo', () => {
     mockUseAuth.mockReturnValue({
       isAdmin: true,
       loading: false,
-      usuario: { cliente_id: null, agrupamento_id: null },
+      usuario: { clienteId: null, agrupamentoId: null },
     });
 
     const { result } = renderHook(() => useClienteAtivo(), { wrapper });
