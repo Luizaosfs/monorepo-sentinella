@@ -62,7 +62,7 @@ export function ScoreSurtoWidget() {
           variant="ghost"
           size="sm"
           className="w-full h-8 text-xs gap-1 mt-1"
-          onClick={() => navigate('/admin/score-surto')}
+          onClick={() => navigate('/gestor/score-surto')}
         >
           Ver todos os bairros <ArrowRight className="h-3 w-3" />
         </Button>

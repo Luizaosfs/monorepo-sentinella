@@ -68,7 +68,7 @@ export const OperacionalWidget = ({ clienteId }: Props) => {
           <p className="text-xs text-muted-foreground mt-1">Status e plano de ação por bairro</p>
         </div>
         <button
-          onClick={() => navigate('/admin/pluvio-operacional')}
+          onClick={() => navigate('/gestor/pluvio-operacional')}
           className="h-8 px-3 rounded-lg border border-border/60 text-[11px] font-bold text-foreground hover:bg-muted/40 transition-colors shadow-sm"
         >
           Ver completa

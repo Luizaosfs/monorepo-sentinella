@@ -1,11 +1,8 @@
-import { REQUEST } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import { mock } from 'jest-mock-extended';
 
 import { ClienteQuotas } from '../../entities/billing';
 import { BillingReadRepository } from '../../repositories/billing-read.repository';
-
-import { mockRequest } from '@test/utils/user-helpers';
 
 import { MeuUsoMensal } from '../meu-uso-mensal';
 
@@ -19,7 +16,6 @@ describe('MeuUsoMensal', () => {
       providers: [
         MeuUsoMensal,
         { provide: BillingReadRepository, useValue: readRepo },
-        { provide: REQUEST, useValue: mockRequest({ tenantId: 'cli-1' }) },
       ],
     }).compile();
 
@@ -47,7 +43,7 @@ describe('MeuUsoMensal', () => {
       ),
     );
 
-    const result = await useCase.execute();
+    const result = await useCase.execute('cli-1');
 
     expect(result.clienteId).toBe('cli-1');
     expect(result.voosMes).toBe(5);
@@ -69,7 +65,7 @@ describe('MeuUsoMensal', () => {
     });
     readRepo.findQuotas.mockResolvedValue(null);
 
-    const result = await useCase.execute();
+    const result = await useCase.execute('cli-1');
 
     expect(result.limites).toEqual({
       voosMes: null,

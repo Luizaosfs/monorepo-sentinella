@@ -91,7 +91,7 @@ export function CasosNotificadosWidget() {
           </div>
         </div>
         <button
-          onClick={() => navigate('/admin/casos')}
+          onClick={() => navigate('/gestor/casos')}
           className="h-8 px-3 rounded-lg border border-border/60 text-[11px] font-bold text-foreground hover:bg-muted/40 transition-colors shadow-sm"
         >
           Ver todos
@@ -161,7 +161,7 @@ export function CasosNotificadosWidget() {
             <div
               key={caso.id}
               className="flex items-center justify-between px-4 py-3 border-b border-border/40 hover:bg-muted/40 transition-colors cursor-pointer"
-              onClick={() => navigate('/admin/casos')}
+              onClick={() => navigate('/gestor/casos')}
             >
               <div>
                 <p className="text-xs font-semibold text-foreground">

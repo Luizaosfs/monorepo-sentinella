@@ -71,7 +71,7 @@ function AtencaoImediata({ navigate }: { navigate: ReturnType<typeof useNavigate
         {slaVencidos > 0 && (
           <button
             type="button"
-            onClick={() => navigate('/admin/sla')}
+            onClick={() => navigate('/gestor/sla')}
             className="flex items-center gap-3 p-3 rounded-xl bg-red-50 border border-red-200 hover:bg-red-100 transition-colors text-left dark:bg-red-950/30 dark:border-red-800/40"
           >
             <div className="w-8 h-8 rounded-lg bg-red-100 dark:bg-red-900/40 flex items-center justify-center shrink-0">
@@ -177,7 +177,7 @@ function RiscoClimaticoPrevisto({ clienteId, navigate }: { clienteId: string; na
     <section aria-label="Risco Climático Previsto">
       <button
         type="button"
-        onClick={() => navigate('/admin/risco-pluvial')}
+        onClick={() => navigate('/gestor/pluvio-risco')}
         className={`w-full flex items-start gap-3 p-3 rounded-xl border ${janelaAtiva ? 'bg-amber-50 border-amber-200' : bgCard} hover:brightness-95 transition-all text-left`}
       >
         <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${janelaAtiva ? 'bg-amber-100' : 'bg-white/60'}`}>

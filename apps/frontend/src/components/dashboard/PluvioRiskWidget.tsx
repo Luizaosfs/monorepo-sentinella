@@ -69,7 +69,7 @@ export const PluvioRiskWidget = ({ clienteId }: PluvioRiskWidgetProps) => {
           <p className="text-xs text-muted-foreground mt-1">Status pluviométrico por região</p>
         </div>
         <button
-          onClick={() => navigate('/admin/pluvio-risco')}
+          onClick={() => navigate('/gestor/pluvio-risco')}
           className="h-8 px-3 rounded-lg border border-border/60 text-[11px] font-bold text-foreground hover:bg-muted/40 transition-colors shadow-sm"
         >
           Ver todos
@@ -94,7 +94,7 @@ export const PluvioRiskWidget = ({ clienteId }: PluvioRiskWidgetProps) => {
             <Button
               size="sm"
               className="shrink-0 h-7 px-2.5 text-[11px] gap-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white border-0"
-              onClick={() => navigate('/admin/planejamentos')}
+              onClick={() => navigate('/gestor/planejamentos')}
             >
               <PlusCircle className="w-3 h-3" />
               Criar planejamento

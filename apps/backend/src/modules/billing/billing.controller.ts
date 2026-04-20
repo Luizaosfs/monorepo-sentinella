@@ -121,7 +121,8 @@ export class BillingController {
     summary: 'Uso do mês corrente do cliente logado vs limites de quotas',
   })
   async getMeuUsoMensal() {
-    return this.meuUsoMensal.execute();
+    const clienteId = this.req['tenantId'] as string;
+    return this.meuUsoMensal.execute(clienteId);
   }
 
   @Get('uso-mensal/todos')
@@ -138,8 +139,9 @@ export class BillingController {
       'Verifica se uma métrica específica está dentro do limite — { ok, usado, limite }',
   })
   async getVerificarQuota(@Query() query: VerificarQuotaQuery) {
+    const clienteId = this.req['tenantId'] as string;
     const parsed = verificarQuotaSchema.parse(query);
-    return this.verificarQuota.execute(parsed);
+    return this.verificarQuota.execute(clienteId, parsed);
   }
 
   // ── Planos ────────────────────────────────────────────────────────────────

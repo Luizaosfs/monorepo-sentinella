@@ -1,11 +1,8 @@
-import { REQUEST } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import { mock } from 'jest-mock-extended';
 
 import { ClienteQuotas } from '../../entities/billing';
 import { BillingReadRepository } from '../../repositories/billing-read.repository';
-
-import { mockRequest } from '@test/utils/user-helpers';
 
 import { VerificarQuota } from '../verificar-quota';
 
@@ -19,7 +16,6 @@ describe('VerificarQuota', () => {
       providers: [
         VerificarQuota,
         { provide: BillingReadRepository, useValue: readRepo },
-        { provide: REQUEST, useValue: mockRequest({ tenantId: 'cli-1' }) },
       ],
     }).compile();
 
@@ -38,7 +34,7 @@ describe('VerificarQuota', () => {
       new ClienteQuotas({ clienteId: 'cli-1', voosMes: 10 }, {}),
     );
 
-    const result = await useCase.execute({ metrica: 'voos_mes' } as any);
+    const result = await useCase.execute('cli-1', { metrica: 'voos_mes' } as any);
 
     expect(result).toEqual({ ok: true, usado: 3, limite: 10 });
   });
@@ -55,7 +51,7 @@ describe('VerificarQuota', () => {
       new ClienteQuotas({ clienteId: 'cli-1', voosMes: 10 }, {}),
     );
 
-    const result = await useCase.execute({ metrica: 'voos_mes' } as any);
+    const result = await useCase.execute('cli-1', { metrica: 'voos_mes' } as any);
 
     expect(result).toEqual({ ok: false, usado: 15, limite: 10 });
   });
@@ -70,7 +66,7 @@ describe('VerificarQuota', () => {
     });
     readRepo.findQuotas.mockResolvedValue(null);
 
-    const result = await useCase.execute({ metrica: 'voos_mes' } as any);
+    const result = await useCase.execute('cli-1', { metrica: 'voos_mes' } as any);
 
     expect(result).toEqual({ ok: true, usado: 100, limite: null });
   });

@@ -122,7 +122,7 @@ export function SlaAlertBell({ clienteId }: Props) {
           <div className="px-4 py-2.5 border-t border-border/40 bg-muted/20">
             <button
               className="text-[11px] font-bold text-primary hover:underline w-full text-center"
-              onClick={() => navigate('/admin/sla')}
+              onClick={() => navigate('/gestor/sla')}
             >
               Ver gestão completa →
             </button>

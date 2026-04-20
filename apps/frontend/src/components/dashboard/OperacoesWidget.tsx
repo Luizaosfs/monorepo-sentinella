@@ -81,7 +81,7 @@ export const OperacoesWidget = ({ clienteId }: Props) => {
           </div>
         </div>
         <button
-          onClick={() => navigate('/admin/operacoes')}
+          onClick={() => navigate('/gestor/operacoes')}
           className="h-8 px-3 rounded-lg border border-border/60 text-[11px] font-bold text-foreground hover:bg-muted/40 transition-colors shadow-sm flex items-center gap-1"
         >
           Ver todas <ArrowUpRight className="h-3 w-3" />

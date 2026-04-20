@@ -95,7 +95,7 @@ export function SlaEvolutionChart({ clienteId }: Props) {
           <CardTitle className="text-base lg:text-xl font-bold">Cumprimento de SLA</CardTitle>
         </div>
         <button
-          onClick={() => navigate('/admin/sla')}
+          onClick={() => navigate('/gestor/sla')}
           className="h-9 px-4 rounded-xl bg-primary/10 text-[11px] font-bold tracking-wide text-primary hover:bg-primary hover:text-white transition-all duration-300 flex items-center gap-1.5"
         >
           Gestão <ArrowUpRight className="w-3 h-3" />

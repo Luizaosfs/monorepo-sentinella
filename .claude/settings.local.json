@@ -88,7 +88,9 @@
       "Bash(\"C:/Program Files/PostgreSQL/17/bin/psql.exe\" \"postgresql://postgres:147852369@localhost:5432/sentinella\" -c \"\\\\dt\")",
       "Bash(\"C:/Program Files/PostgreSQL/17/bin/psql.exe\" \"postgresql://postgres:147852369@localhost:5432/sentinella\" -c \"SELECT COUNT\\(*\\) FROM refresh_tokens WHERE auth_id IS NOT NULL;\")",
       "Bash(cp -r D:/sentinella/monorepo-sentinella/apps/frontend/supabase/migrations/. D:/sentinella/monorepo-sentinella/docs/legacy/supabase-migrations/)",
-      "Bash(cp -r D:/sentinella/monorepo-sentinella/apps/frontend/supabase/scripts/. D:/sentinella/monorepo-sentinella/docs/legacy/supabase-scripts/)"
+      "Bash(cp -r D:/sentinella/monorepo-sentinella/apps/frontend/supabase/scripts/. D:/sentinella/monorepo-sentinella/docs/legacy/supabase-scripts/)",
+      "Bash(\"/c/Program Files/PostgreSQL/17/bin/psql\" postgresql://postgres:147852369@localhost:5432/sentinella -c \"\\\\d levantamento_itens\")",
+      "Bash(taskkill *)"
     ]
   }
 }

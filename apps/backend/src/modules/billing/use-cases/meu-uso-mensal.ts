@@ -1,6 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { REQUEST } from '@nestjs/core';
-import { Request } from 'express';
+import { Injectable } from '@nestjs/common';
 
 import { ClienteQuotas } from '../entities/billing';
 import {
@@ -43,13 +41,9 @@ export function limitesDe(quotas: ClienteQuotas | null | undefined) {
 
 @Injectable()
 export class MeuUsoMensal {
-  constructor(
-    private readRepository: BillingReadRepository,
-    @Inject(REQUEST) private req: Request,
-  ) {}
+  constructor(private readRepository: BillingReadRepository) {}
 
-  async execute(): Promise<UsoMensalComLimites> {
-    const clienteId = this.req['tenantId'] as string;
+  async execute(clienteId: string): Promise<UsoMensalComLimites> {
     const { mesInicio, mesFim } = mesAtual();
 
     const [uso, quotas] = await Promise.all([

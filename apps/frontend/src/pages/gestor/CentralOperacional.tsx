@@ -278,7 +278,7 @@ export default function CentralOperacional() {
             'border-border/60 cursor-pointer hover:shadow-md hover:border-primary/30 transition-all',
             (kpis?.slas_vencidos ?? 0) > 0 && 'border-red-300 bg-red-50/50 dark:bg-red-950/20',
           )}
-          onClick={() => navigate('/admin/sla')}
+          onClick={() => navigate('/gestor/sla')}
         >
           <CardContent className="p-4">
             <div className="flex items-start justify-between gap-2">
@@ -358,7 +358,7 @@ export default function CentralOperacional() {
             variant="ghost"
             size="sm"
             className="h-7 text-xs text-red-700 hover:bg-red-100 dark:text-red-400 dark:hover:bg-red-900/30 shrink-0"
-            onClick={() => navigate('/admin/casos')}
+            onClick={() => navigate('/gestor/casos')}
           >
             Ver casos <ChevronRight className="h-3.5 w-3.5 ml-0.5" />
           </Button>
@@ -440,7 +440,7 @@ export default function CentralOperacional() {
                 variant="ghost"
                 size="sm"
                 className="h-7 text-xs gap-1"
-                onClick={() => navigate('/admin/score-config')}
+                onClick={() => navigate('/gestor/score-config')}
               >
                 Configurar <ChevronRight className="h-3.5 w-3.5" />
               </Button>
@@ -492,7 +492,7 @@ export default function CentralOperacional() {
             variant="ghost"
             size="sm"
             className="h-7 text-xs text-amber-700 hover:bg-amber-100 dark:text-amber-400 dark:hover:bg-amber-900/30 shrink-0"
-            onClick={() => navigate('/admin/distribuicao-quarteirao')}
+            onClick={() => navigate('/gestor/distribuicao-quarteirao')}
           >
             Distribuição <ChevronRight className="h-3.5 w-3.5 ml-0.5" />
           </Button>

@@ -1,6 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { REQUEST } from '@nestjs/core';
-import { Request } from 'express';
+import { Injectable } from '@nestjs/common';
 
 import { VerificarQuotaQuery } from '../dtos/verificar-quota.input';
 import { BillingReadRepository } from '../repositories/billing-read.repository';
@@ -16,14 +14,9 @@ export interface VerificarQuotaResult {
 
 @Injectable()
 export class VerificarQuota {
-  constructor(
-    private readRepository: BillingReadRepository,
-    @Inject(REQUEST) private req: Request,
-  ) {}
+  constructor(private readRepository: BillingReadRepository) {}
 
-  async execute(input: VerificarQuotaQuery): Promise<VerificarQuotaResult> {
-    // MT-02: tenantId do guard sempre vence — nunca aceita clienteId do frontend
-    const clienteId = this.req['tenantId'] as string;
+  async execute(clienteId: string, input: VerificarQuotaQuery): Promise<VerificarQuotaResult> {
     const metrica = input.metrica as Metrica;
     const { mesInicio, mesFim } = mesAtual();
 
