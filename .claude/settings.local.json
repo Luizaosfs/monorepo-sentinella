@@ -68,7 +68,8 @@
       "Bash(git commit *)",
       "Bash(/c/Program Files/GitHub CLI/gh.exe pr *)",
       "Bash(git push *)",
-      "Bash('/c/Program Files/GitHub CLI/gh.exe' pr create --title 'chore\\(frente2\\): remove api-supabase.ts \\(legado Supabase\\)' --base main --body ' *)"
+      "Bash('/c/Program Files/GitHub CLI/gh.exe' pr create --title 'chore\\(frente2\\): remove api-supabase.ts \\(legado Supabase\\)' --base main --body ' *)",
+      "Bash(pnpm --filter frontend test -- --run src/hooks/useClienteAtivo.test.tsx)"
     ]
   }
 }
