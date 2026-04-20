@@ -1470,15 +1470,10 @@ export interface ScoreSurtoRegiao {
   regiao_id: string;
   regiao_nome: string;
   score_total: number;
-  classificacao: 'baixo' | 'moderado' | 'alto' | 'crítico';
-  score_pluvio: number;
-  score_recorrencia: number;
-  score_casos: number;
-  score_sla_vencido: number;
-  total_casos_14d: number;
-  total_focos_rec: number;
-  prob_pluvio_max: number;
-  sla_vencidos: number;
+  contrib_pluvio: number;
+  contrib_recorrencia: number;
+  contrib_casos_14d: number;
+  contrib_sla_vencido: number;
 }
 
 // ── MÓDULO 6 — Correlação Vistoria × Drone ───────────────────────────────────

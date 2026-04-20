@@ -53,13 +53,13 @@ export interface ResumoRegionalRow {
 }
 
 export interface ScoreSurtoRow {
-  regiaoId: string;
-  regiaoNome: string;
-  chuva7d: number;
-  diasPosChuva: number;
-  focosAtivos: number;
-  /** Score composto 0–100 */
-  scoreSurto: number;
+  regiao_id: string;
+  regiao_nome: string;
+  score_total: number;
+  contrib_pluvio: number;
+  contrib_recorrencia: number;
+  contrib_casos_14d: number;
+  contrib_sla_vencido: number;
 }
 
 export interface ResumoAgenteResult {

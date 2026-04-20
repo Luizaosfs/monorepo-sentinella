@@ -282,43 +282,67 @@ export class PrismaDashboardReadRepository implements DashboardReadRepository {
     type Row = {
       regiao_id: string;
       regiao_nome: string;
-      chuva_7d: number | null;
-      dias_pos_chuva: number | null;
-      focos_ativos: bigint;
+      contrib_pluvio: number;
+      contrib_recorrencia: bigint;
+      contrib_casos_14d: bigint;
+      contrib_sla_vencido: bigint;
     };
 
-    const rows = await this.prisma.client.$queryRaw<Row[]>`
+    const rows = await this.prisma.client.$queryRaw<Row[]>(Prisma.sql`
       SELECT
-        r.id                                                      AS regiao_id,
-        r.nome                                                    AS regiao_nome,
-        COALESCE(pr.chuva_7d, 0)                                 AS chuva_7d,
-        COALESCE(pr.dias_pos_chuva, 0)                           AS dias_pos_chuva,
-        COUNT(DISTINCT fr.id)                                     AS focos_ativos
+        r.id   AS regiao_id,
+        r.nome AS regiao_nome,
+        ROUND(LEAST(COALESCE(pr.chuva_7d, 0) / 50.0, 1) * 30)::int AS contrib_pluvio,
+        ROUND(LEAST(COALESCE(rec.total, 0)   / 10.0, 1) * 30)::int AS contrib_recorrencia,
+        ROUND(LEAST(COALESCE(cas.total, 0)   / 10.0, 1) * 25)::int AS contrib_casos_14d,
+        ROUND(LEAST(COALESCE(sla.total, 0)   / 5.0,  1) * 15)::int AS contrib_sla_vencido
       FROM regioes r
       LEFT JOIN pluvio_risco pr ON pr.regiao_id = r.id
-      LEFT JOIN focos_risco fr  ON fr.regiao_id = r.id
-        AND fr.status IN ('confirmado', 'em_tratamento', 'suspeita')
-        AND fr.deleted_at IS NULL
+      LEFT JOIN (
+        SELECT regiao_id, COUNT(*) AS total
+        FROM focos_risco
+        WHERE foco_anterior_id IS NOT NULL AND deleted_at IS NULL
+        GROUP BY regiao_id
+      ) rec ON rec.regiao_id = r.id
+      LEFT JOIN (
+        SELECT regiao_id, COUNT(*) AS total
+        FROM casos_notificados
+        WHERE created_at >= NOW() - INTERVAL '14 days'
+          AND deleted_at IS NULL
+        GROUP BY regiao_id
+      ) cas ON cas.regiao_id = r.id
+      LEFT JOIN (
+        SELECT fr.regiao_id, COUNT(so.id) AS total
+        FROM sla_operacional so
+        JOIN focos_risco fr ON fr.id = so.foco_risco_id
+        WHERE so.prazo_final < NOW()
+          AND fr.status NOT IN ('resolvido', 'descartado')
+          AND fr.deleted_at IS NULL
+        GROUP BY fr.regiao_id
+      ) sla ON sla.regiao_id = r.id
       WHERE r.cliente_id = ${clienteId}::uuid
-      GROUP BY r.id, r.nome, pr.chuva_7d, pr.dias_pos_chuva
-      ORDER BY focos_ativos DESC, chuva_7d DESC
-    `;
+        AND r.deleted_at IS NULL
+      ORDER BY (
+        COALESCE(ROUND(LEAST(COALESCE(pr.chuva_7d, 0) / 50.0, 1) * 30)::int, 0) +
+        COALESCE(ROUND(LEAST(COALESCE(rec.total, 0)   / 10.0, 1) * 30)::int, 0) +
+        COALESCE(ROUND(LEAST(COALESCE(cas.total, 0)   / 10.0, 1) * 25)::int, 0) +
+        COALESCE(ROUND(LEAST(COALESCE(sla.total, 0)   / 5.0,  1) * 15)::int, 0)
+      ) DESC
+    `);
 
     return rows.map((r) => {
-      const focos = Number(r.focos_ativos);
-      const chuva = Number(r.chuva_7d ?? 0);
-      const dias = Number(r.dias_pos_chuva ?? 0);
-      // Score 0–100: pesos chuva(30) + dias pós-chuva(20) + focos(50)
-      const scoreChuva = Math.min(chuva / 50, 1) * 30;
-      const scoreDias = Math.min(dias / 7, 1) * 20;
-      const scoreFocos = Math.min(focos / 20, 1) * 50;
+      const p = Number(r.contrib_pluvio);
+      const rc = Number(r.contrib_recorrencia);
+      const c = Number(r.contrib_casos_14d);
+      const s = Number(r.contrib_sla_vencido);
       return {
-        regiaoId: r.regiao_id,
-        regiaoNome: r.regiao_nome,
-        chuva7d: chuva,
-        diasPosChuva: dias,
-        focosAtivos: focos,
-        scoreSurto: Math.round(scoreChuva + scoreDias + scoreFocos),
+        regiao_id: r.regiao_id,
+        regiao_nome: r.regiao_nome,
+        contrib_pluvio: p,
+        contrib_recorrencia: rc,
+        contrib_casos_14d: c,
+        contrib_sla_vencido: s,
+        score_total: p + rc + c + s,
       };
     });
   }
