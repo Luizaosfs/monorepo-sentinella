@@ -1,11 +1,10 @@
 /**
  * api-stub.ts — Stub Phase 3: desacopla api.ts do Supabase nos módulos operacionais.
  *
- * A interface pública é compatível com api-supabase.ts via cast.
  * Todos os métodos retornam null/[] — nenhuma chamada ao Supabase via api.ts.
  * Módulos afetados degradam graciosamente até que seus endpoints NestJS sejam implementados.
  *
- * NOTA: @supabase/supabase-js permanece no projeto SOMENTE para api-supabase.ts (legado).
+ * NOTA: @supabase/supabase-js permanece no projeto apenas para o bridge de auth (useAuth.tsx).
  *   Realtime, páginas públicas, reset de senha e pilotoEventos já foram migrados ao NestJS.
  */
 
