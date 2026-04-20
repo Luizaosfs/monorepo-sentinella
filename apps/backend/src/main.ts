@@ -24,8 +24,15 @@ async function bootstrap() {
   app.useGlobalPipes(new MyZodValidationPipe());
   app.useGlobalFilters(new GlobalExceptionFilter());
 
+  const allowedOrigins = process.env.CLIENT_URL?.split(',').map(o => o.trim()).filter(Boolean) ?? [];
+  const isDev = process.env.NODE_ENV === 'development';
+
+  if (!isDev && allowedOrigins.length === 0) {
+    throw new Error('CLIENT_URL must be set with at least one origin in non-development environments');
+  }
+
   app.enableCors({
-    origin: process.env.CLIENT_URL || (process.env.NODE_ENV === 'production' ? false : '*'),
+    origin: isDev ? true : allowedOrigins,
     credentials: true,
   });
 
