@@ -9,26 +9,15 @@ Backend REST API do **Sentinella Web** — plataforma B2G SaaS de vigilância en
 
 ---
 
-## CONTEXTO DA MIGRAÇÃO
+## CONTEXTO
 
-Este projeto é uma **migração do Supabase** para backend NestJS próprio.
+Migração do Supabase concluída (2026-04-20, Fase 6 de 6). Legado arquivado em `docs/legacy/`.
 
-### O que existia antes (Supabase)
-- PostgreSQL com RLS (490+ policies), 185 triggers, 538 functions
-- Frontend React com `supabase.from()`, `.rpc()`, edge functions Deno
-- Auth via Supabase Auth
-
-### O que mudou
-- Auth: Supabase Auth → JWT próprio (HS256) + refresh tokens na tabela `refresh_tokens`
-- Queries: `supabase.from()` → REST endpoints NestJS via `@sentinella/api-client`
-- RPCs: `supabase.rpc()` → Use Cases NestJS
-- Edge Functions: Deno → NestJS services + `@nestjs/schedule`
-- RLS: Removido. Segurança via AuthGuard + TenantGuard
-- Views analíticas: **Sem views no banco.** Toda analytics é Use Case com `$queryRaw` inline
-
-### O que NÃO mudou
-- Banco PostgreSQL (schema, tabelas, triggers de auditoria, PostGIS)
-- Frontend React (visual idêntico)
+- Auth: JWT HS256 próprio (`SECRET_JWT`) + refresh tokens em `public.refresh_tokens`
+- Storage: Cloudinary (`CloudinaryService`)
+- Edge Functions: NestJS services + `@nestjs/schedule`
+- RLS: Removido. Segurança via `AuthGuard` + `TenantGuard`
+- Analytics: Use Cases com `$queryRaw` inline — sem views PostgreSQL
 
 ---
 
@@ -196,7 +185,6 @@ export const NomeException = createExceptionFactory({
 
 - Bearer token JWT (HS256, `SECRET_JWT`)
 - Refresh tokens na tabela `refresh_tokens` (token_hash, expires_at, revoked_at, used_at)
-- Bridge: aceita tokens Supabase ES256 via JWKS durante migração
 - `@Public()` decorator libera rotas sem autenticação
 
 ---

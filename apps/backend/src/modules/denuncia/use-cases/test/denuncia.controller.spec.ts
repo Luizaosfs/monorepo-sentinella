@@ -5,6 +5,7 @@ import { ConsultarDenuncia } from '../consultar-denuncia';
 import { DenunciarCidadao } from '../denunciar-cidadao';
 import { DenunciarCidadaoV2 } from '../denunciar-cidadao-v2';
 import { CanalCidadaoStats } from '../canal-cidadao-stats';
+import { UploadFotoDenuncia } from '../upload-foto-denuncia';
 import { mockRequest } from '@test/utils/user-helpers';
 
 describe('DenunciaController', () => {
@@ -21,6 +22,7 @@ describe('DenunciaController', () => {
         { provide: DenunciarCidadaoV2, useValue: { execute: jest.fn() } },
         { provide: ConsultarDenuncia, useValue: { execute: mockConsultar } },
         { provide: CanalCidadaoStats, useValue: { execute: jest.fn() } },
+        { provide: UploadFotoDenuncia, useValue: { execute: jest.fn() } },
         { provide: REQUEST, useValue: mockRequest() },
         Reflector,
       ],

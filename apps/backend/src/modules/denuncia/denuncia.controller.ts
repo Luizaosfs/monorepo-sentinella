@@ -13,10 +13,12 @@ import { Public, Roles } from '@/decorators/roles.decorator';
 import { env } from '@/lib/env/server';
 
 import { DenunciaCidadaoBody, denunciaCidadaoSchema } from './dtos/denuncia-cidadao.body';
+import { UploadFotoDenunciaBody, uploadFotoDenunciaSchema } from './dtos/upload-foto-denuncia.body';
 import { ConsultarDenuncia } from './use-cases/consultar-denuncia';
 import { DenunciarCidadao } from './use-cases/denunciar-cidadao';
 import { DenunciarCidadaoV2 } from './use-cases/denunciar-cidadao-v2';
 import { CanalCidadaoStats } from './use-cases/canal-cidadao-stats';
+import { UploadFotoDenuncia } from './use-cases/upload-foto-denuncia';
 
 @UsePipes(MyZodValidationPipe)
 @UseInterceptors(PrismaInterceptor)
@@ -28,6 +30,7 @@ export class DenunciaController {
     private denunciarCidadaoV2: DenunciarCidadaoV2,
     private consultarDenuncia: ConsultarDenuncia,
     private canalCidadaoStats: CanalCidadaoStats,
+    private uploadFotoDenuncia: UploadFotoDenuncia,
     @Inject(REQUEST) private req: Request,
   ) {}
 
@@ -47,6 +50,15 @@ export class DenunciaController {
     }
 
     return this.denunciarCidadao.execute(parsed);
+  }
+
+  @Public()
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @Post('upload-foto')
+  @ApiOperation({ summary: 'Upload de foto de denúncia (público, rate-limited)' })
+  async uploadFoto(@Body() body: UploadFotoDenunciaBody) {
+    const parsed = uploadFotoDenunciaSchema.parse(body);
+    return this.uploadFotoDenuncia.execute(parsed);
   }
 
   @UseGuards(TenantGuard)

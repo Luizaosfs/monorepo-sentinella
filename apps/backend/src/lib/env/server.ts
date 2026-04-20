@@ -38,10 +38,6 @@ const envSchema = z.object({
     .optional()
     .transform((v) => v === 'true')
     .default('false'),
-  // === Bridge Supabase (manter enquanto tokens antigos circulam) ===
-  /** AuthGuard aceita tokens Supabase enquanto migração não está 100% concluída. */
-  SUPABASE_JWT_SECRET: z.string().optional(),
-  SUPABASE_URL: z.string().optional(),
 });
 
 const getEnv = () => {

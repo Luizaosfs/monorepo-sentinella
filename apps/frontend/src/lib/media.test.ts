@@ -1,11 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
-
-// vi.hoisted roda antes de qualquer import — garante que a constante de módulo
-// em media.ts leia a URL de teste e não a URL real do .env.
-vi.hoisted(() => {
-  (import.meta.env as Record<string, string>).VITE_SUPABASE_URL = 'https://test-project.supabase.co';
-});
-
+import { describe, expect, it } from 'vitest';
 import { resolveMediaUrl } from './media';
 
 describe('resolveMediaUrl', () => {
@@ -20,21 +13,15 @@ describe('resolveMediaUrl', () => {
     expect(resolveMediaUrl('http://local/x')).toBe('http://local/x');
   });
 
-  it('prefixa caminho storage/v1/object/', () => {
-    expect(resolveMediaUrl('storage/v1/object/public/bucket/f.jpg')).toBe(
-      'https://test-project.supabase.co/storage/v1/object/public/bucket/f.jpg',
-    );
+  it('retorna null para caminho relativo storage/v1/object/', () => {
+    expect(resolveMediaUrl('storage/v1/object/public/bucket/f.jpg')).toBeNull();
   });
 
-  it('prefixa bucket/path como public object', () => {
-    expect(resolveMediaUrl('avatars/user.png')).toBe(
-      'https://test-project.supabase.co/storage/v1/object/public/avatars/user.png',
-    );
+  it('retorna null para caminho relativo bucket/path', () => {
+    expect(resolveMediaUrl('avatars/user.png')).toBeNull();
   });
 
-  it('remove barras iniciais do path relativo', () => {
-    expect(resolveMediaUrl('//avatars/x.png')).toBe(
-      'https://test-project.supabase.co/storage/v1/object/public/avatars/x.png',
-    );
+  it('retorna null para caminho com barras iniciais', () => {
+    expect(resolveMediaUrl('//avatars/x.png')).toBeNull();
   });
 });

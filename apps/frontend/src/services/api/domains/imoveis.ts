@@ -42,6 +42,11 @@ export const imoveis = {
     return deepToSnake(raw) as Ret<typeof _sb.imoveis.listResumo>;
   },
 
+  getById: async (id: string): Promise<{ logradouro: string; numero: string; bairro: string | null }> => {
+    const raw = await http.get(`/imoveis/${id}`);
+    return deepToSnake(raw) as { logradouro: string; numero: string; bairro: string | null };
+  },
+
   getResumoById: async (id: string): Promise<Ret<typeof _sb.imoveis.getResumoById>> => {
     const raw = await http.get(`/imoveis/${id}/resumo`);
     return deepToSnake(raw) as Ret<typeof _sb.imoveis.getResumoById>;

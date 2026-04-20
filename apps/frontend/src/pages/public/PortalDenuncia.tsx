@@ -3,7 +3,7 @@ import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 import { Link } from 'react-router-dom';
-import { http, tokenStore } from '@sentinella/api-client';
+import { http } from '@sentinella/api-client';
 import { api } from '@/services/api';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -244,8 +244,7 @@ const PortalDenuncia: React.FC = () => {
     if (!foto) return null;
     setFotoUploading(true);
     try {
-      const token = tokenStore.getAccessToken() ?? undefined;
-      return await uploadDenunciaFoto(foto, token);
+      return await uploadDenunciaFoto(foto);
     } finally {
       setFotoUploading(false);
     }

@@ -70,6 +70,7 @@ import { CruzamentosDoItem } from './use-cases/cruzamentos-do-item';
 import { ListarCasosPaginado } from './use-cases/listar-casos-paginado';
 import { ListCasoIdsComCruzamento } from './use-cases/list-caso-ids-com-cruzamento';
 import { ListCruzamentos } from './use-cases/list-cruzamentos';
+import { GetCruzamentoCount } from './use-cases/get-cruzamento-count';
 
 @UseGuards(TenantGuard)
 @UseInterceptors(PrismaInterceptor)
@@ -103,6 +104,7 @@ export class NotificacaoController {
     private countCruzadosHojeUc: CountCruzadosHoje,
     private listCasoIdsUc: ListCasoIdsComCruzamento,
     private listCruzamentosUc: ListCruzamentos,
+    private getCruzamentoCountUc: GetCruzamentoCount,
     @Inject(REQUEST) private req: Request,
   ) {}
 
@@ -188,6 +190,15 @@ export class NotificacaoController {
     const clienteId = this.req['tenantId'] as string;
     const parsed = listCasoIdsComCruzamentoSchema.parse(body);
     return this.listCasoIdsUc.execute(parsed.casoIds, clienteId);
+  }
+
+  @Get('cruzamentos/count-com-item')
+  @Roles('admin', 'supervisor', 'agente')
+  @ApiOperation({ summary: 'Count de itens de levantamento com cruzamento ativo (widget dashboard)' })
+  async getCruzamentoCount() {
+    const clienteId = this.req['tenantId'] as string;
+    const count = await this.getCruzamentoCountUc.execute(clienteId);
+    return { count };
   }
 
   @Get('cruzamentos')

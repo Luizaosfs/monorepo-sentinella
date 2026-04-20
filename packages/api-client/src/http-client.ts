@@ -2,7 +2,7 @@
  * http-client — wrapper de fetch para o backend NestJS.
  *
  * - Injeta Authorization: Bearer <access_token> automaticamente
- * - Faz refresh automático do token quando expirado
+ * - Faz refresh proativo (pré-request via isExpired) e reativo (retry em 401)
  * - Lança erros tipados (HttpClientError)
  */
 
@@ -44,21 +44,23 @@ async function refreshTokens(): Promise<boolean> {
   }
 }
 
+function handleSessionExpired(): never {
+  tokenStore.clear();
+  window.dispatchEvent(new Event('sentinella:session-expired'));
+  throw new HttpClientError(401, 'Sessão expirada. Faça login novamente.');
+}
+
 export async function httpRequest<T>(
   path: string,
   options: RequestInit & { skipAuth?: boolean } = {},
+  _alreadyRetried = false,
 ): Promise<T> {
   const { skipAuth, ...fetchOptions } = options;
 
-  // Refresh automático antes de chamadas autenticadas
+  // Refresh proativo: antes de chamadas autenticadas quando token está próximo de expirar
   if (!skipAuth && tokenStore.isExpired()) {
     const ok = await refreshTokens();
-    if (!ok) {
-      tokenStore.clear();
-      // Disparar evento para useAuth redirecionar para login
-      window.dispatchEvent(new Event('sentinella:session-expired'));
-      throw new HttpClientError(401, 'Sessão expirada. Faça login novamente.');
-    }
+    if (!ok) handleSessionExpired();
   }
 
   const headers: Record<string, string> = {
@@ -80,6 +82,20 @@ export async function httpRequest<T>(
       typeof body === 'object' && body !== null && 'message' in body
         ? String((body as { message: string }).message)
         : `HTTP ${res.status}`;
+
+    // Refresh reativo: retry único em 401 (defesa contra race condition token expirado)
+    if (
+      res.status === 401 &&
+      !skipAuth &&
+      !_alreadyRetried &&
+      path !== '/auth/refresh' &&
+      tokenStore.getRefreshToken()
+    ) {
+      const ok = await refreshTokens();
+      if (ok) return httpRequest<T>(path, options, true);
+      handleSessionExpired();
+    }
+
     throw new HttpClientError(res.status, message, body);
   }
 

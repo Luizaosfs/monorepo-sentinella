@@ -80,7 +80,15 @@
       "Bash(grep -rn \"origin.*'\\\\*'\\\\|origin.*\\\\\"\\\\\\\\*\\\\\"\" src/ --include=\"*.ts\")",
       "Bash(PGPASSWORD=147852369 psql *)",
       "Bash(node dist/main.js)",
-      "Bash(echo \"PID:$!\")"
+      "Bash(echo \"PID:$!\")",
+      "Bash(pnpm lint *)",
+      "Bash(pkill -f \"nest start\")",
+      "Bash(pnpm start:dev)",
+      "Bash(echo \"PID=$!\")",
+      "Bash(\"C:/Program Files/PostgreSQL/17/bin/psql.exe\" \"postgresql://postgres:147852369@localhost:5432/sentinella\" -c \"\\\\dt\")",
+      "Bash(\"C:/Program Files/PostgreSQL/17/bin/psql.exe\" \"postgresql://postgres:147852369@localhost:5432/sentinella\" -c \"SELECT COUNT\\(*\\) FROM refresh_tokens WHERE auth_id IS NOT NULL;\")",
+      "Bash(cp -r D:/sentinella/monorepo-sentinella/apps/frontend/supabase/migrations/. D:/sentinella/monorepo-sentinella/docs/legacy/supabase-migrations/)",
+      "Bash(cp -r D:/sentinella/monorepo-sentinella/apps/frontend/supabase/scripts/. D:/sentinella/monorepo-sentinella/docs/legacy/supabase-scripts/)"
     ]
   }
 }

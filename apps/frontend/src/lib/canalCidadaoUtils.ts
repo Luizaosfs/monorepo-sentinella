@@ -1,9 +1,11 @@
 /**
  * Utilitários compartilhados: PortalDenuncia + DenunciaCidadao
  * - extractErrorMessage: normaliza erros para mensagens amigáveis
- * - uploadDenunciaFoto: base64 + anon key (funciona sem sessão autenticada)
+ * - uploadDenunciaFoto: base64 para endpoint público /denuncias/upload-foto
  * - DenunciaResult: tipo de retorno da RPC denunciar_cidadao
  */
+import '@/lib/api-client-config';
+import { http } from '@sentinella/api-client';
 
 export interface DenunciaResult {
   ok: boolean;
@@ -36,12 +38,11 @@ export function extractErrorMessage(err: unknown): string {
 
 /**
  * Upload de foto de denúncia via base64 + JSON.
- * Usa anon key como fallback — funciona sem sessão autenticada (cidadão sem login).
+ * Endpoint público — não requer autenticação.
  * NÃO lança exceção; retorna null em caso de falha.
  */
 export async function uploadDenunciaFoto(
   file: File,
-  accessToken?: string | null,
 ): Promise<{ url: string; public_id: string } | null> {
   try {
     const fileBase64 = await new Promise<string>((resolve, reject) => {
@@ -50,19 +51,12 @@ export async function uploadDenunciaFoto(
       reader.onerror = reject;
       reader.readAsDataURL(file);
     });
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
-    const anonKey   = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
-    const resp = await fetch(`${supabaseUrl}/functions/v1/cloudinary-upload-image`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${accessToken ?? anonKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ file_base64: fileBase64, content_type: file.type, folder: 'denuncias' }),
-    });
-    if (!resp.ok) return null;
-    const json = await resp.json() as { secure_url?: string; public_id?: string };
-    return json.secure_url ? { url: json.secure_url, public_id: json.public_id ?? '' } : null;
+    const result = await http.post('/denuncias/upload-foto', {
+      fileBase64,
+      contentType: file.type,
+      folder: 'denuncias',
+    }) as { secure_url?: string; public_id?: string };
+    return result.secure_url ? { url: result.secure_url, public_id: result.public_id ?? '' } : null;
   } catch {
     return null;
   }

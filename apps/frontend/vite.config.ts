@@ -181,9 +181,6 @@ export default defineConfig(({ mode }) => ({
           // State & query
           'vendor-query': ['@tanstack/react-query'],
 
-          // Supabase (auth + realtime + storage = pesado)
-          'vendor-supabase': ['@supabase/supabase-js'],
-
           // Mapas e plugins
           'vendor-leaflet': [
             'leaflet',

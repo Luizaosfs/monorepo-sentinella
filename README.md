@@ -14,7 +14,7 @@ monorepo-sentinella/
 │   ├── backend/          # API REST — NestJS 11 + Prisma 7 + PostgreSQL 17
 │   └── frontend/         # SPA — React 18 + Vite + TanStack Query
 ├── packages/
-│   ├── api-client/       # HTTP client JWT (substitui supabase.from())
+│   ├── api-client/       # HTTP client JWT para o frontend
 │   └── contracts/        # Schemas Zod compartilhados (DTOs, enums)
 ├── package.json
 └── pnpm-workspace.yaml
@@ -55,27 +55,10 @@ pnpm dev:frontend
 
 ---
 
-## Contexto da migração
-
-Este projeto está em migração ativa do **Supabase** para backend NestJS próprio.
-
-| Aspecto | Antes (Supabase) | Agora (NestJS) |
-|---|---|---|
-| Auth | Supabase Auth | JWT próprio + refresh tokens na tabela `refresh_tokens` |
-| Queries | `supabase.from().select()` | REST via `@sentinella/api-client` |
-| RPCs | `supabase.rpc()` | Use Cases NestJS |
-| Edge Functions | Deno (23 funções) | NestJS Services + `@nestjs/schedule` |
-| Segurança | RLS no banco | AuthGuard + TenantGuard no NestJS |
-| Views analíticas | Views PostgreSQL | Use Cases com `$queryRaw` inline |
-
-O banco PostgreSQL (schema, tabelas, triggers de auditoria, PostGIS) permanece intacto.
-
----
-
 ## Pacotes compartilhados
 
 ### `@sentinella/api-client`
-HTTP client para o frontend — substitui `supabase.from()` e `supabase.auth`.
+HTTP client JWT para o frontend.
 Exporta `http` (cliente HTTP com Bearer token) e `tokenStore` (gerenciamento JWT).
 
 ### `@sentinella/contracts`

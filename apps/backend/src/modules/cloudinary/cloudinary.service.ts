@@ -25,6 +25,21 @@ export class CloudinaryService {
     return { url: result.secure_url, publicId: result.public_id };
   }
 
+  async uploadBase64Public(
+    fileBase64: string,
+    contentType: string,
+    folder: string,
+  ): Promise<{ secure_url: string; public_id: string }> {
+    const decoded = Buffer.from(fileBase64, 'base64');
+    const MAX_BYTES = 8 * 1024 * 1024;
+    if (decoded.byteLength > MAX_BYTES) {
+      throw new Error('file_too_large');
+    }
+    const dataUri = `data:${contentType};base64,${fileBase64}`;
+    const result = await cloudinary.uploader.upload(dataUri, { folder });
+    return { secure_url: result.secure_url, public_id: result.public_id };
+  }
+
   async delete(publicId: string): Promise<void> {
     await cloudinary.uploader.destroy(publicId);
   }

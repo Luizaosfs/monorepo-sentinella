@@ -42,6 +42,11 @@ export const casosNotificados = {
     return (raw as { total: number }).total;
   },
 
+  cruzamentoCount: async (): Promise<number> => {
+    const raw = await http.get('/notificacoes/cruzamentos/count-com-item');
+    return (raw as { count: number }).count;
+  },
+
   listCasoIdsComCruzamento: (casoIds: string[]): Promise<string[]> =>
     http.post('/notificacoes/cruzamentos/caso-ids', { casoIds }),
 

@@ -42,14 +42,11 @@ export function CasosNotificadosWidget() {
     queryKey: ['casos_widget', clienteId],
     queryFn: async () => {
       if (!clienteId) return 0;
-      const { count, error } = await import('@/lib/supabase').then(({ supabase }) =>
-        supabase
-          .from('caso_foco_cruzamento')
-          .select('levantamento_item_id', { count: 'estimated', head: true })
-          .not('levantamento_item_id', 'is', null)
-      );
-      if (error) return 0;
-      return count ?? 0;
+      try {
+        return await api.casosNotificados.cruzamentoCount();
+      } catch {
+        return 0;
+      }
     },
     enabled: !!clienteId,
     staleTime: STALE.SHORT,

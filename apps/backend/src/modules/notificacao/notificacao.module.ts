@@ -31,6 +31,7 @@ import { CruzamentosDoItem } from './use-cases/cruzamentos-do-item';
 import { ListarCasosPaginado } from './use-cases/listar-casos-paginado';
 import { ListCasoIdsComCruzamento } from './use-cases/list-caso-ids-com-cruzamento';
 import { ListCruzamentos } from './use-cases/list-cruzamentos';
+import { GetCruzamentoCount } from './use-cases/get-cruzamento-count';
 
 @Module({
   providers: [
@@ -61,6 +62,7 @@ import { ListCruzamentos } from './use-cases/list-cruzamentos';
     CountCruzadosHoje,
     ListCasoIdsComCruzamento,
     ListCruzamentos,
+    GetCruzamentoCount,
     JwtService,
     PrismaService,
   ],

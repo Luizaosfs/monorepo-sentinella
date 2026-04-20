@@ -159,14 +159,7 @@ export default function AgenteFormularioVistoria() {
   // Busca endereço do imóvel para exibir no header do stepper (confirma qual imóvel está sendo vistoriado)
   const { data: imovelInfo } = useQuery({
     queryKey: ['imovel-header', imovelId],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('imoveis')
-        .select('logradouro, numero, bairro')
-        .eq('id', imovelId!)
-        .single();
-      return data ?? null;
-    },
+    queryFn: () => api.imoveis.getById(imovelId!),
     enabled: !!imovelId,
     staleTime: STALE.LONG,
   });

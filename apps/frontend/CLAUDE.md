@@ -6,9 +6,7 @@ Frontend React do Sentinella Web — plataforma B2G SaaS de vigilância entomol�
 
 **Stack:** React 18.3 · Vite · TypeScript 5.7 · TanStack Query v5 · React Router v6 · Zod · Leaflet 1.9 · Shadcn/Radix UI
 
-**Contexto de migração:** O projeto migrou do Supabase para backend NestJS próprio.
-A autenticação e todas as queries agora passam pelo `@sentinella/api-client` (HTTP + JWT).
-O `supabase-js` ainda está presente como dependência legada em transição — não usar em código novo.
+**Contexto:** Migração do Supabase concluída (2026-04-20). Auth e todas as queries via `@sentinella/api-client` (HTTP + JWT). `supabase-js` removido.
 
 ---
 

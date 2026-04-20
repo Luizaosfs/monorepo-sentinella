@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, createContext, useContext, forwardRef, type ReactNode } from 'react';
 import { http, tokenStore } from '@sentinella/api-client';
 import '@/lib/api-client-config';
-import { supabase } from '@/lib/supabase';
 import { PapelApp } from '@/types/database';
 
 type Papel = PapelApp | null;
@@ -102,21 +101,6 @@ export const AuthProvider = forwardRef<HTMLDivElement, { children: ReactNode }>(
 
     void boot();
 
-    // Quando supabase-js faz refresh do token, re-tenta /auth/me com o token novo.
-    // Isso corrige o 401 no boot causado por token Supabase expirado.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (!mounted) return;
-      if (event === 'SIGNED_OUT') {
-        tokenStore.clear();
-        setUsuario(null);
-        setPapel(null);
-        return;
-      }
-      if (session?.access_token && !usuarioRef.current) {
-        await loadMe();
-      }
-    });
-
     const onExpired = () => {
       import('sonner').then(({ toast }) =>
         toast.error('Sua sessão expirou. Faça login novamente.')
@@ -129,7 +113,6 @@ export const AuthProvider = forwardRef<HTMLDivElement, { children: ReactNode }>(
     window.addEventListener('sentinella:session-expired', onExpired);
     return () => {
       mounted = false;
-      subscription.unsubscribe();
       window.removeEventListener('sentinella:session-expired', onExpired);
     };
   }, []);

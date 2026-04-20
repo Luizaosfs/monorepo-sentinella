@@ -61,7 +61,7 @@ export class HealthCheckService {
 
     return {
       senha_hash: { total, pendentes, percentual_migrado },
-      supabase_bridge_ativa: Boolean(env.SUPABASE_JWT_SECRET),
+      supabase_bridge_ativa: false, // Bridge removida na Fase 5 — campo mantido para compatibilidade de contrato com frontend antigo
       canal_cidadao_v2_ativo: env.CANAL_CIDADAO_V2_ENABLED,
     };
   }
