@@ -19,6 +19,9 @@ import { TenantGuard } from 'src/guards/tenant.guard';
 import { AuthenticatedUser } from 'src/guards/auth.guard';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 
+import { Throttle } from '@nestjs/throttler';
+import { UserThrottlerGuard } from 'src/shared/guards/user-throttler.guard';
+
 import { Roles } from '@/decorators/roles.decorator';
 
 import {
@@ -161,6 +164,8 @@ export class DashboardController {
   }
 
   @Post('relatorio-analitico')
+  @UseGuards(UserThrottlerGuard)
+  @Throttle({ default: { limit: 3, ttl: 60_000 } })
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Gera relatório analítico completo do período e salva' })
   async relatorioAnalitico(@Body() body: RelatorioAnaliticoBody) {
@@ -172,6 +177,8 @@ export class DashboardController {
   // ── Resumos / Relatórios ───────────────────────────────────────────────────
 
   @Post('resumos/gerar')
+  @UseGuards(UserThrottlerGuard)
+  @Throttle({ default: { limit: 3, ttl: 60_000 } })
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Gerar resumo diário do cliente' })
   async gerarResumoDiario() {
@@ -201,6 +208,8 @@ export class DashboardController {
   }
 
   @Post('relatorios')
+  @UseGuards(UserThrottlerGuard)
+  @Throttle({ default: { limit: 3, ttl: 60_000 } })
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Gerar relatório' })
   async createRelatorio(@Body() body: CreateRelatorioBody) {
@@ -248,6 +257,8 @@ export class DashboardController {
   }
 
   @Get('liraa/export')
+  @UseGuards(UserThrottlerGuard)
+  @Throttle({ default: { limit: 3, ttl: 60_000 } })
   @Roles('admin', 'supervisor', 'analista_regional')
   @ApiOperation({ summary: 'Dados LIRAa estruturados para exportação (substitui exportarPdf)' })
   async liraaExportData(@Query() query: LiraaQuery) {
