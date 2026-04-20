@@ -61,7 +61,14 @@
       "Bash(npx nest *)",
       "Bash(PGPASSWORD=147852369 C:/Program Files/PostgreSQL/17/bin/psql.exe *)",
       "Bash(\"C:/Program Files/PostgreSQL/17/bin/psql.exe\" -U postgres -d sentinella -c \"\\\\d sla_operacional\")",
-      "Bash(C:/Program Files/PostgreSQL/17/bin/psql *)"
+      "Bash(C:/Program Files/PostgreSQL/17/bin/psql *)",
+      "Bash(git checkout *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git commit *)",
+      "Bash(/c/Program Files/GitHub CLI/gh.exe pr *)",
+      "Bash(git push *)",
+      "Bash('/c/Program Files/GitHub CLI/gh.exe' pr create --title 'chore\\(frente2\\): remove api-supabase.ts \\(legado Supabase\\)' --base main --body ' *)"
     ]
   }
 }
