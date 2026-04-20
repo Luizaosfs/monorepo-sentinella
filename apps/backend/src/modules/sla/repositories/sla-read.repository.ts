@@ -27,6 +27,7 @@ export abstract class SlaReadRepository {
     clienteId: string,
   ): Promise<Array<{ id: string; regiaoId: string; config: JsonObject }>>;
   abstract findFeriados(clienteId: string): Promise<SlaFeriado[]>;
+  abstract findFeriadoById(id: string): Promise<{ id: string; clienteId: string } | null>;
   abstract findFocoConfig(clienteId: string): Promise<SlaFocoConfig[]>;
   abstract findErrosCriacao(
     clienteId: string,

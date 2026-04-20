@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Request } from 'express';
+import { assertTenantOwnership } from 'src/shared/security/tenant-ownership.util';
 
 import { CoberturaCicloInput } from '../dtos/cobertura-ciclo.input';
 import { QuarteiraoException } from '../errors/quarteirao.exception';
@@ -28,19 +29,13 @@ export class CoberturaCiclo {
       throw QuarteiraoException.badRequest();
     }
 
-    this.assertTenant(clienteId);
+    assertTenantOwnership(clienteId, this.req, () =>
+      QuarteiraoException.forbiddenTenant(),
+    );
 
     return this.repository.coberturaQuarteiraoCiclo({
       clienteId,
       ciclo: input.ciclo,
     });
-  }
-
-  private assertTenant(clienteId: string) {
-    const user = this.req['user'];
-    if (user?.isPlatformAdmin) return;
-    if (clienteId !== this.req['tenantId']) {
-      throw QuarteiraoException.forbiddenTenant();
-    }
   }
 }

@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Request } from 'express';
+import { assertTenantOwnership } from 'src/shared/security/tenant-ownership.util';
 
 import { CopiarDistribuicaoBody } from '../dtos/create-distribuicao.body';
 import { QuarteiraoException } from '../errors/quarteirao.exception';
@@ -19,7 +20,9 @@ export class CopiarDistribuicao {
       throw QuarteiraoException.badRequest();
     }
 
-    this.assertTenant(clienteId);
+    assertTenantOwnership(clienteId, this.req, () =>
+      QuarteiraoException.forbiddenTenant(),
+    );
 
     if (input.cicloOrigem === input.cicloDestino) {
       throw QuarteiraoException.badRequest();
@@ -32,13 +35,5 @@ export class CopiarDistribuicao {
     });
 
     return result;
-  }
-
-  private assertTenant(clienteId: string) {
-    const user = this.req['user'];
-    if (user?.isPlatformAdmin) return;
-    if (clienteId !== this.req['tenantId']) {
-      throw QuarteiraoException.forbiddenTenant();
-    }
   }
 }

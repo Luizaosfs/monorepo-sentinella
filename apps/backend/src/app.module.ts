@@ -37,6 +37,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { ClsModule } from 'nestjs-cls';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { RolesGuard } from 'src/guards/roles.guard';
+import { TenantGuard } from 'src/guards/tenant.guard';
 import { DatabaseModule } from '@shared/modules/database/database.module';
 
 @Module({
@@ -87,10 +88,11 @@ import { DatabaseModule } from '@shared/modules/database/database.module';
   ],
   controllers: [],
   providers: [
-    // Guard order matters: throttle → auth → roles
+    // Guard order matters: throttle → auth → roles → tenant
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: AuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
+    { provide: APP_GUARD, useClass: TenantGuard },
   ],
 })
 export class AppModule {}

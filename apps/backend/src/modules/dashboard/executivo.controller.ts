@@ -1,9 +1,8 @@
-import { Controller, Get, Inject, UseGuards, UseInterceptors, UsePipes } from '@nestjs/common';
+import { Controller, Get, Inject, UseInterceptors, UsePipes } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
 import { Request } from 'express';
-import { TenantGuard } from 'src/guards/tenant.guard';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 
 import { Roles } from '@/decorators/roles.decorator';
@@ -13,7 +12,6 @@ import { GetExecutivoCobertura } from './use-cases/get-executivo-cobertura';
 import { GetExecutivoBairrosVariacao } from './use-cases/get-executivo-bairros-variacao';
 import { GetExecutivoComparativoCiclos } from './use-cases/get-executivo-comparativo-ciclos';
 
-@UseGuards(TenantGuard)
 @UseInterceptors(PrismaInterceptor)
 @UsePipes(MyZodValidationPipe)
 @ApiTags('Dashboard Executivo')

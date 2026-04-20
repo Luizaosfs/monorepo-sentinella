@@ -5,7 +5,6 @@ import {
   Param,
   Patch,
   Query,
-  UseGuards,
   UseInterceptors,
   UsePipes,
 } from '@nestjs/common';
@@ -13,7 +12,6 @@ import { REQUEST } from '@nestjs/core';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
 import { Request } from 'express';
-import { TenantGuard } from 'src/guards/tenant.guard';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 import { z } from 'zod';
 
@@ -22,7 +20,6 @@ import { Roles } from '@/decorators/roles.decorator';
 import { ListAlertasByAgente } from './use-cases/list-alertas-by-agente';
 import { ResolverAlerta } from './use-cases/resolver-alerta';
 
-@UseGuards(TenantGuard)
 @UseInterceptors(PrismaInterceptor)
 @UsePipes(MyZodValidationPipe)
 @ApiTags('Alertas de Retorno')

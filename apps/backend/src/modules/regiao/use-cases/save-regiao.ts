@@ -1,7 +1,7 @@
-import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
-import { AuthenticatedUser } from 'src/guards/auth.guard';
+import { assertTenantOwnership } from 'src/shared/security/tenant-ownership.util';
 
 import { SaveRegiaoBody } from '../dtos/save-regiao.body';
 import { RegiaoException } from '../errors/regiao.exception';
@@ -16,19 +16,10 @@ export class SaveRegiao {
     @Inject(REQUEST) private req: Request,
   ) {}
 
-  private assertTenant(clienteId: string | undefined): void {
-    const user = this.req['user'] as AuthenticatedUser | undefined;
-    if (user?.isPlatformAdmin) return;
-    const tenantId = this.req['tenantId'] as string | undefined;
-    if (!tenantId || clienteId !== tenantId) {
-      throw new ForbiddenException('Acesso negado: recurso pertence a outro tenant');
-    }
-  }
-
   async execute(id: string, input: SaveRegiaoBody) {
     const regiao = await this.readRepository.findById(id);
     if (!regiao) throw RegiaoException.notFound();
-    this.assertTenant(regiao.clienteId);
+    assertTenantOwnership(regiao.clienteId, this.req);
 
     if (input.nome !== undefined) regiao.nome = input.nome;
     if (input.tipo !== undefined) regiao.tipo = input.tipo;

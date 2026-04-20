@@ -7,7 +7,6 @@ import {
   Post,
   Put,
   Query,
-  UseGuards,
   UseInterceptors,
   UsePipes,
 } from '@nestjs/common';
@@ -19,7 +18,6 @@ import {
   paginationSchema,
 } from '@shared/dtos/pagination-body';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
-import { TenantGuard } from 'src/guards/tenant.guard';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 
 import { Roles } from '@/decorators/roles.decorator';
@@ -65,7 +63,6 @@ import { PaginationVistoria } from './use-cases/pagination-vistoria';
 import { SaveVistoria } from './use-cases/save-vistoria';
 import { VistoriaViewModel } from './view-model/vistoria';
 
-@UseGuards(TenantGuard)
 @UseInterceptors(PrismaInterceptor)
 @UsePipes(MyZodValidationPipe)
 @ApiTags('Vistorias')

@@ -6,6 +6,26 @@ import { env } from 'src/lib/env/server';
 import { EmailService } from '../email.service';
 import { ForgotPasswordBody } from '../dtos/forgot-password.body';
 
+function resolveSafeRedirect(baseUrl: string, redirectTo: string | undefined): string {
+  const fallback = `${baseUrl}/reset-password`;
+  if (!redirectTo) return fallback;
+
+  let parsedBase: URL;
+  let parsedTarget: URL;
+  try {
+    parsedBase = new URL(baseUrl);
+    parsedTarget = new URL(redirectTo);
+  } catch {
+    return fallback;
+  }
+
+  if (parsedBase.origin !== parsedTarget.origin) return fallback;
+  if (parsedTarget.username || parsedTarget.password) return fallback;
+  if (!parsedTarget.pathname.startsWith('/reset-password')) return fallback;
+
+  return `${parsedTarget.origin}${parsedTarget.pathname.replace(/\/$/, '')}`;
+}
+
 @Injectable()
 export class ForgotPasswordUseCase {
   constructor(
@@ -39,12 +59,7 @@ export class ForgotPasswordUseCase {
       });
 
       const baseUrl = (env.CLIENT_URL ?? 'http://localhost:5173').replace(/\/$/, '');
-      const allowedRedirect = input.redirectTo?.replace(/\/$/, '');
-      // Reject redirectTo that doesn't start with the configured CLIENT_URL (prevents token theft via open redirect)
-      const safeRedirect =
-        allowedRedirect && allowedRedirect.startsWith(baseUrl)
-          ? allowedRedirect
-          : `${baseUrl}/reset-password`;
+      const safeRedirect = resolveSafeRedirect(baseUrl, input.redirectTo);
       const resetUrl = `${safeRedirect}?token=${token}`;
 
       await this.emailService.sendPasswordReset(emailNormalizado, resetUrl);

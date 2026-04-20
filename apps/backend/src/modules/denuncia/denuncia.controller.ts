@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { Body, Controller, Get, Inject, Post, Query, Req, UseGuards, UseInterceptors, UsePipes } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Post, Query, Req, UseInterceptors, UsePipes } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
@@ -7,7 +7,6 @@ import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interc
 import { Request } from 'express';
 import { z } from 'zod';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
-import { TenantGuard } from 'src/guards/tenant.guard';
 
 import { Public, Roles } from '@/decorators/roles.decorator';
 import { env } from '@/lib/env/server';
@@ -61,7 +60,6 @@ export class DenunciaController {
     return this.uploadFotoDenuncia.execute(parsed);
   }
 
-  @UseGuards(TenantGuard)
   @Get('stats')
   @Roles('admin', 'supervisor', 'analista_regional')
   @ApiOperation({ summary: 'Estatísticas do canal cidadão (substitui v_canal_cidadao_stats)' })

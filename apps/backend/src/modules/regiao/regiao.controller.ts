@@ -9,7 +9,6 @@ import {
   Post,
   Put,
   Query,
-  UseGuards,
   UseInterceptors,
   UsePipes,
 } from '@nestjs/common';
@@ -21,7 +20,6 @@ import {
   paginationSchema,
 } from '@shared/dtos/pagination-body';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
-import { TenantGuard } from 'src/guards/tenant.guard';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 import { z } from 'zod';
 
@@ -55,7 +53,6 @@ const geocodeLoteSchema = z.object({
   cidade: z.string().default(''),
 });
 
-@UseGuards(TenantGuard)
 @UseInterceptors(PrismaInterceptor)
 @UsePipes(MyZodValidationPipe)
 @ApiTags('Regiões')

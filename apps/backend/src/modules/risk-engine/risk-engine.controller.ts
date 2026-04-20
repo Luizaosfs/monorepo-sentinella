@@ -9,7 +9,6 @@ import {
   Post,
   Put,
   Query,
-  UseGuards,
   UseInterceptors,
   UsePipes,
 } from '@nestjs/common';
@@ -19,7 +18,6 @@ import { Request } from 'express';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 import { Prisma } from '@prisma/client';
-import { TenantGuard } from 'src/guards/tenant.guard';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 
 import { Roles } from '@/decorators/roles.decorator';
@@ -63,7 +61,6 @@ import { RiskEngineReadRepository } from './repositories/risk-engine-read.reposi
 import { RiskEngineWriteRepository } from './repositories/risk-engine-write.repository';
 import { RiskEngineException } from './errors/risk-engine.exception';
 
-@UseGuards(TenantGuard)
 @UseInterceptors(PrismaInterceptor)
 @UsePipes(MyZodValidationPipe)
 @ApiTags('Risk Engine')

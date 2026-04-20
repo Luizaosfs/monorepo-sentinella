@@ -90,7 +90,11 @@
       "Bash(cp -r D:/sentinella/monorepo-sentinella/apps/frontend/supabase/migrations/. D:/sentinella/monorepo-sentinella/docs/legacy/supabase-migrations/)",
       "Bash(cp -r D:/sentinella/monorepo-sentinella/apps/frontend/supabase/scripts/. D:/sentinella/monorepo-sentinella/docs/legacy/supabase-scripts/)",
       "Bash(\"/c/Program Files/PostgreSQL/17/bin/psql\" postgresql://postgres:147852369@localhost:5432/sentinella -c \"\\\\d levantamento_itens\")",
-      "Bash(taskkill *)"
+      "Bash(taskkill *)",
+      "Bash(pnpm exec *)",
+      "Bash(python scripts/remove-tenant-guard.py)",
+      "Bash(rm scripts/remove-tenant-guard.py)",
+      "Bash(rmdir scripts *)"
     ]
   }
 }

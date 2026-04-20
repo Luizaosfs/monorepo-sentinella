@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Request } from 'express';
+import { assertTenantOwnership } from 'src/shared/security/tenant-ownership.util';
 
 import { CancelarReinspecaoBody } from '../dtos/create-reinspecao.body';
 import { ReinspecaoException } from '../errors/reinspecao.exception';
@@ -20,7 +21,9 @@ export class CancelarReinspecao {
       throw ReinspecaoException.notFound();
     }
 
-    this.assertTenant(r.clienteId);
+    assertTenantOwnership(r.clienteId, this.req, () =>
+      ReinspecaoException.forbiddenTenant(),
+    );
 
     if (r.status !== 'pendente') {
       throw ReinspecaoException.badRequest();
@@ -42,13 +45,5 @@ export class CancelarReinspecao {
     await this.writeRepository.save(r);
     r.updatedAt = new Date();
     return { reinspecao: r };
-  }
-
-  private assertTenant(clienteId: string) {
-    const user = this.req['user'];
-    if (user?.isPlatformAdmin) return;
-    if (clienteId !== this.req['tenantId']) {
-      throw ReinspecaoException.forbiddenTenant();
-    }
   }
 }

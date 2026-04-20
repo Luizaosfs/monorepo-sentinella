@@ -8,7 +8,6 @@ import {
   Post,
   Put,
   Query,
-  UseGuards,
   UseInterceptors,
   UsePipes,
 } from '@nestjs/common';
@@ -17,7 +16,6 @@ import { REQUEST } from '@nestjs/core';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
 import { Request } from 'express';
-import { TenantGuard } from 'src/guards/tenant.guard';
 import { AuthenticatedUser } from 'src/guards/auth.guard';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 
@@ -70,7 +68,6 @@ import { UpdateYoloClass } from './use-cases/update-yolo-class';
 import { YoloQualidadeResumo } from './use-cases/yolo-qualidade-resumo';
 import { DroneViewModel } from './view-model/drone';
 
-@UseGuards(TenantGuard)
 @UseInterceptors(PrismaInterceptor)
 @UsePipes(MyZodValidationPipe)
 @ApiTags('Drones')

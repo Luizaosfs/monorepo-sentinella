@@ -90,6 +90,53 @@ describe('ForgotPasswordUseCase', () => {
     expect(emailService.sendPasswordReset).not.toHaveBeenCalled();
   });
 
+  it('deve descartar redirectTo cross-origin (open redirect) e usar fallback', async () => {
+    prisma.client.usuarios.findFirst.mockResolvedValue({ auth_id: 'auth-id-1' } as any);
+    prisma.client.password_reset_tokens.updateMany.mockResolvedValue({ count: 0 } as any);
+    prisma.client.password_reset_tokens.create.mockResolvedValue({} as any);
+    emailService.sendPasswordReset.mockResolvedValue(undefined);
+
+    await useCase.execute({
+      email: 'user@test.com',
+      redirectTo: 'https://evil.example.com/reset-password',
+    });
+
+    const resetUrl = (emailService.sendPasswordReset as jest.Mock).mock.calls[0][1];
+    expect(resetUrl).not.toContain('evil.example.com');
+    expect(resetUrl).toContain('/reset-password');
+  });
+
+  it('deve descartar redirectTo com prefix-match hostname malicioso', async () => {
+    prisma.client.usuarios.findFirst.mockResolvedValue({ auth_id: 'auth-id-1' } as any);
+    prisma.client.password_reset_tokens.updateMany.mockResolvedValue({ count: 0 } as any);
+    prisma.client.password_reset_tokens.create.mockResolvedValue({} as any);
+    emailService.sendPasswordReset.mockResolvedValue(undefined);
+
+    await useCase.execute({
+      email: 'user@test.com',
+      redirectTo: 'http://localhost:5173.evil.com/reset-password',
+    });
+
+    const resetUrl = (emailService.sendPasswordReset as jest.Mock).mock.calls[0][1];
+    expect(resetUrl).not.toContain('evil.com');
+  });
+
+  it('deve descartar redirectTo com path diferente de /reset-password', async () => {
+    prisma.client.usuarios.findFirst.mockResolvedValue({ auth_id: 'auth-id-1' } as any);
+    prisma.client.password_reset_tokens.updateMany.mockResolvedValue({ count: 0 } as any);
+    prisma.client.password_reset_tokens.create.mockResolvedValue({} as any);
+    emailService.sendPasswordReset.mockResolvedValue(undefined);
+
+    await useCase.execute({
+      email: 'user@test.com',
+      redirectTo: 'http://localhost:5173/admin',
+    });
+
+    const resetUrl = (emailService.sendPasswordReset as jest.Mock).mock.calls[0][1];
+    expect(resetUrl).toMatch(/\/reset-password\?token=/);
+    expect(resetUrl).not.toMatch(/\/admin\?token=/);
+  });
+
   it('deve invalidar tokens anteriores antes de criar um novo', async () => {
     prisma.client.usuarios.findFirst.mockResolvedValue({
       auth_id: 'auth-id-1',

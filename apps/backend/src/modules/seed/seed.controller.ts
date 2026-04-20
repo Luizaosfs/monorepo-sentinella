@@ -1,9 +1,8 @@
-import { Body, Controller, Inject, Post, UseGuards, UseInterceptors, UsePipes } from '@nestjs/common';
+import { Body, Controller, Inject, Post, UseInterceptors, UsePipes } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
 import { Request } from 'express';
-import { TenantGuard } from 'src/guards/tenant.guard';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 import { z } from 'zod';
 
@@ -61,7 +60,6 @@ const droneRiskConfigSchema = z.object({
   })).default([]),
 });
 
-@UseGuards(TenantGuard)
 @UseInterceptors(PrismaInterceptor)
 @UsePipes(MyZodValidationPipe)
 @ApiTags('Seed')

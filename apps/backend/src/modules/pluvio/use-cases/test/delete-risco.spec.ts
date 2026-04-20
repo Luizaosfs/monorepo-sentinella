@@ -1,3 +1,5 @@
+import { ForbiddenException } from '@nestjs/common';
+import { REQUEST } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import { mock } from 'jest-mock-extended';
 
@@ -13,22 +15,10 @@ describe('DeleteRisco', () => {
   let useCase: DeleteRisco;
   const readRepo = mock<PluvioReadRepository>();
   const writeRepo = mock<PluvioWriteRepository>();
+  const req: any = { user: { isPlatformAdmin: true }, tenantId: null };
 
-  beforeEach(async () => {
-    jest.clearAllMocks();
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        DeleteRisco,
-        { provide: PluvioReadRepository, useValue: readRepo },
-        { provide: PluvioWriteRepository, useValue: writeRepo },
-      ],
-    }).compile();
-
-    useCase = module.get<DeleteRisco>(DeleteRisco);
-  });
-
-  it('deve deletar risco existente', async () => {
-    const risco = new PluvioRisco(
+  const makeRisco = () =>
+    new PluvioRisco(
       {
         regiaoId: 'regiao-uuid-1',
         nivel: 'alto',
@@ -37,7 +27,27 @@ describe('DeleteRisco', () => {
       },
       { id: 'risco-uuid-1' },
     );
+
+  beforeEach(async () => {
+    jest.clearAllMocks();
+    req.user = { isPlatformAdmin: true };
+    req.tenantId = null;
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        DeleteRisco,
+        { provide: PluvioReadRepository, useValue: readRepo },
+        { provide: PluvioWriteRepository, useValue: writeRepo },
+        { provide: REQUEST, useValue: req },
+      ],
+    }).compile();
+
+    useCase = await module.resolve<DeleteRisco>(DeleteRisco);
+  });
+
+  it('deve deletar risco existente (admin)', async () => {
+    const risco = makeRisco();
     readRepo.findRiscoById.mockResolvedValue(risco);
+    readRepo.findClienteIdByRegiaoId.mockResolvedValue('cliente-A');
     writeRepo.deleteRisco.mockResolvedValue();
 
     await useCase.execute(risco.id!);
@@ -49,6 +59,18 @@ describe('DeleteRisco', () => {
     readRepo.findRiscoById.mockResolvedValue(null);
 
     await expectHttpException(() => useCase.execute('missing-id'), PluvioException.notFound());
+    expect(writeRepo.deleteRisco).not.toHaveBeenCalled();
+  });
+
+  it('deve rejeitar supervisor tentando deletar risco de regiao de outro cliente (IDOR)', async () => {
+    const risco = makeRisco();
+    readRepo.findRiscoById.mockResolvedValue(risco);
+    readRepo.findClienteIdByRegiaoId.mockResolvedValue('cliente-A');
+
+    req.user = { isPlatformAdmin: false };
+    req.tenantId = 'cliente-B';
+
+    await expect(useCase.execute(risco.id!)).rejects.toBeInstanceOf(ForbiddenException);
     expect(writeRepo.deleteRisco).not.toHaveBeenCalled();
   });
 });

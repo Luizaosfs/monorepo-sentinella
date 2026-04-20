@@ -1,7 +1,7 @@
-import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
-import { AuthenticatedUser } from 'src/guards/auth.guard';
+import { assertTenantOwnership } from 'src/shared/security/tenant-ownership.util';
 
 import { LevantamentoException } from '../errors/levantamento.exception';
 import { LevantamentoReadRepository } from '../repositories/levantamento-read.repository';
@@ -13,19 +13,10 @@ export class GetItem {
     @Inject(REQUEST) private req: Request,
   ) {}
 
-  private assertTenant(clienteId: string | undefined): void {
-    const user = this.req['user'] as AuthenticatedUser | undefined;
-    if (user?.isPlatformAdmin) return;
-    const tenantId = this.req['tenantId'] as string | undefined;
-    if (!tenantId || clienteId !== tenantId) {
-      throw new ForbiddenException('Acesso negado: recurso pertence a outro tenant');
-    }
-  }
-
   async execute(itemId: string) {
     const item = await this.readRepository.findItemById(itemId);
     if (!item) throw LevantamentoException.itemNotFound();
-    this.assertTenant(item.clienteId);
+    assertTenantOwnership(item.clienteId, this.req);
     return { item };
   }
 }

@@ -5,7 +5,7 @@ import { AuthenticatedUser } from 'src/guards/auth.guard';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 import { Request } from 'express';
 
-import { Public } from '@/decorators/roles.decorator';
+import { Public, SkipTenant } from '@/decorators/roles.decorator';
 
 import { ChangePasswordBody, changePasswordSchema } from './dtos/change-password.body';
 import { ForgotPasswordBody, forgotPasswordSchema } from './dtos/forgot-password.body';
@@ -52,6 +52,7 @@ export class AuthController {
     return this.refreshTokenUseCase.execute(parsed);
   }
 
+  @SkipTenant()
   @Post('logout')
   @ApiOperation({ summary: 'Revogar refresh token (logout)' })
   async logout(@Body() body: RefreshBody) {
@@ -59,6 +60,7 @@ export class AuthController {
     return this.logoutUseCase.execute(parsed.refreshToken);
   }
 
+  @SkipTenant()
   @Get('me')
   @ApiOperation({ summary: 'Retorna usuário autenticado' })
   async me(@Req() req: Request) {
@@ -74,6 +76,7 @@ export class AuthController {
     return this.forgotPasswordUseCase.execute(parsed);
   }
 
+  @SkipTenant()
   @Post('change-password')
   @ApiOperation({ summary: 'Alterar senha (usuário autenticado, sabe a senha atual)' })
   async changePassword(@Body() body: ChangePasswordBody, @Req() req: Request) {

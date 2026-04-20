@@ -6,13 +6,11 @@ import {
   Param,
   Post,
   Put,
-  UseGuards,
   UseInterceptors,
   UsePipes,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
-import { TenantGuard } from 'src/guards/tenant.guard';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 
 import { Roles } from '@/decorators/roles.decorator';
@@ -34,7 +32,6 @@ import { UpdateAgrupamento } from './use-cases/update-agrupamento';
 
 // Agrupamentos são platform-level: sem cliente_id próprio.
 // Segurança via @Roles('admin') — IDOR não se aplica (nenhum tenant "dono").
-@UseGuards(TenantGuard)
 @UseInterceptors(PrismaInterceptor)
 @UsePipes(MyZodValidationPipe)
 @ApiTags('Agrupamentos')

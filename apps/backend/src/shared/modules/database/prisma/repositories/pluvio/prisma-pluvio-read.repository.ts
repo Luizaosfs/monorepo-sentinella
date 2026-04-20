@@ -73,6 +73,14 @@ export class PrismaPluvioReadRepository implements PluvioReadRepository {
     return rows.map((r) => PrismaPluvioRiscoMapper.toDomain(r as any));
   }
 
+  async findClienteIdByRegiaoId(regiaoId: string): Promise<string | null> {
+    const row = await this.prisma.client.regioes.findUnique({
+      where: { id: regiaoId },
+      select: { cliente_id: true },
+    });
+    return row?.cliente_id ?? null;
+  }
+
   async findRiscoByClienteEData(clienteId: string, data: Date): Promise<PluvioCondicaoVoo[]> {
     type Row = {
       regiao_id: string;

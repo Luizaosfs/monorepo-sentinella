@@ -6,7 +6,6 @@ import {
   Inject,
   Param,
   Post,
-  UseGuards,
   UseInterceptors,
   UsePipes,
 } from '@nestjs/common';
@@ -14,7 +13,6 @@ import { REQUEST } from '@nestjs/core';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
 import { Request } from 'express';
-import { TenantGuard } from 'src/guards/tenant.guard';
 import { AuthenticatedUser } from 'src/guards/auth.guard';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 import { z } from 'zod';
@@ -53,7 +51,6 @@ const uploadEvidenciaSchema = z.object({
     .describe('Módulo de origem (vistoria, levantamento, foco, etc.)'),
 });
 
-@UseGuards(TenantGuard)
 @UseInterceptors(PrismaInterceptor)
 @UsePipes(MyZodValidationPipe)
 @ApiTags('Cloudinary')

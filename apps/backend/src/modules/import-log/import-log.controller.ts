@@ -7,7 +7,6 @@ import {
   Patch,
   Post,
   Query,
-  UseGuards,
   UseInterceptors,
   UsePipes,
 } from '@nestjs/common';
@@ -15,7 +14,6 @@ import { REQUEST } from '@nestjs/core';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
 import { Request } from 'express';
-import { TenantGuard } from 'src/guards/tenant.guard';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 
 import { Roles } from '@/decorators/roles.decorator';
@@ -38,7 +36,6 @@ import { FilterImports } from './use-cases/filter-imports';
 import { GetImport } from './use-cases/get-import';
 import { ImportLogViewModel } from './view-model/import-log';
 
-@UseGuards(TenantGuard)
 @UseInterceptors(PrismaInterceptor)
 @UsePipes(MyZodValidationPipe)
 @ApiTags('Importação (logs)')

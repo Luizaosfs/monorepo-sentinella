@@ -7,7 +7,6 @@ import {
   Patch,
   Post,
   Query,
-  UseGuards,
   UseInterceptors,
   UsePipes,
 } from '@nestjs/common';
@@ -21,7 +20,6 @@ import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interc
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import { Request } from 'express';
-import { TenantGuard } from 'src/guards/tenant.guard';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 
 import { Roles } from '@/decorators/roles.decorator';
@@ -76,7 +74,6 @@ import { TransicionarFocoRisco } from './use-cases/transicionar-foco-risco';
 import { UpdateFocoRisco } from './use-cases/update-foco-risco';
 import { FocoRiscoViewModel } from './view-model/foco-risco';
 
-@UseGuards(TenantGuard)
 @UseInterceptors(PrismaInterceptor)
 @UsePipes(MyZodValidationPipe)
 @ApiTags('Focos de Risco')

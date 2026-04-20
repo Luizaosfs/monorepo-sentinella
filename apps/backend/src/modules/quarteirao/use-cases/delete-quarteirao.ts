@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Request } from 'express';
+import { assertTenantOwnership } from 'src/shared/security/tenant-ownership.util';
 
 import { QuarteiraoException } from '../errors/quarteirao.exception';
 import { QuarteiraoReadRepository } from '../repositories/quarteirao-read.repository';
@@ -19,17 +20,11 @@ export class DeleteQuarteirao {
       throw QuarteiraoException.notFound();
     }
 
-    this.assertTenant(quarteirao.clienteId);
+    assertTenantOwnership(quarteirao.clienteId, this.req, () =>
+      QuarteiraoException.forbiddenTenant(),
+    );
 
     await this.writeRepository.softDeleteQuarteirao(id, this.req['user']?.id);
     return { id };
-  }
-
-  private assertTenant(clienteId: string) {
-    const user = this.req['user'];
-    if (user?.isPlatformAdmin) return;
-    if (clienteId !== this.req['tenantId']) {
-      throw QuarteiraoException.forbiddenTenant();
-    }
   }
 }

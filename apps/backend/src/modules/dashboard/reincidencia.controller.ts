@@ -1,11 +1,10 @@
-import { Controller, Get, Inject, Query, UseGuards, UseInterceptors, UsePipes } from '@nestjs/common';
+import { Controller, Get, Inject, Query, UseInterceptors, UsePipes } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import { Request } from 'express';
-import { TenantGuard } from 'src/guards/tenant.guard';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 
 import { Roles } from '@/decorators/roles.decorator';
@@ -13,7 +12,6 @@ import { GetReincidenciaImoveis } from './use-cases/get-reincidencia-imoveis';
 import { GetReincidenciaPorDeposito } from './use-cases/get-reincidencia-por-deposito';
 import { GetReincidenciaSazonalidade } from './use-cases/get-reincidencia-sazonalidade';
 
-@UseGuards(TenantGuard)
 @UseInterceptors(PrismaInterceptor)
 @UsePipes(MyZodValidationPipe)
 @ApiTags('Dashboard Reincidência')

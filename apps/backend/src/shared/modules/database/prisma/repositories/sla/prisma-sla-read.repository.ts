@@ -122,6 +122,14 @@ export class PrismaSlaReadRepository implements SlaReadRepository {
     return rows.map((r) => PrismaSlaMapper.slaFeriadoToDomain(r as any));
   }
 
+  async findFeriadoById(id: string): Promise<{ id: string; clienteId: string } | null> {
+    const row = await this.prisma.client.sla_feriados.findUnique({
+      where: { id },
+      select: { id: true, cliente_id: true },
+    });
+    return row ? { id: row.id, clienteId: row.cliente_id } : null;
+  }
+
   async findFocoConfig(clienteId: string): Promise<SlaFocoConfig[]> {
     const rows = await this.prisma.client.sla_foco_config.findMany({
       where: { cliente_id: clienteId },

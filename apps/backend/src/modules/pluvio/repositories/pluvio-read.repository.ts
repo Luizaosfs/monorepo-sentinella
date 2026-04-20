@@ -22,4 +22,5 @@ export abstract class PluvioReadRepository {
   abstract findRiscoById(id: string): Promise<PluvioRisco | null>;
   abstract findRiscoByRegiaoIds(regiaoIds: string[]): Promise<PluvioRisco[]>;
   abstract findRiscoByClienteEData(clienteId: string, data: Date): Promise<PluvioCondicaoVoo[]>;
+  abstract findClienteIdByRegiaoId(regiaoId: string): Promise<string | null>;
 }

@@ -4,7 +4,6 @@ import {
   Inject,
   Post,
   Query,
-  UseGuards,
   UseInterceptors,
   UsePipes,
 } from '@nestjs/common';
@@ -12,7 +11,6 @@ import { REQUEST } from '@nestjs/core';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
 import { Request } from 'express';
-import { TenantGuard } from 'src/guards/tenant.guard';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 
 import { Roles } from '@/decorators/roles.decorator';
@@ -22,7 +20,6 @@ import { ListarControleCnes } from './use-cases/listar-controle-cnes';
 import { ListarLogCnes } from './use-cases/listar-log-cnes';
 import { SincronizarCnes } from './use-cases/sincronizar-cnes';
 
-@UseGuards(TenantGuard)
 @UseInterceptors(PrismaInterceptor)
 @UsePipes(MyZodValidationPipe)
 @ApiTags('CNES Sync')

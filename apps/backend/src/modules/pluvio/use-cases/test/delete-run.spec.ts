@@ -1,3 +1,5 @@
+import { ForbiddenException } from '@nestjs/common';
+import { REQUEST } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import { mock } from 'jest-mock-extended';
 
@@ -13,21 +15,25 @@ describe('DeleteRun', () => {
   let useCase: DeleteRun;
   const readRepo = mock<PluvioReadRepository>();
   const writeRepo = mock<PluvioWriteRepository>();
+  const req: any = { user: { isPlatformAdmin: true }, tenantId: null };
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    req.user = { isPlatformAdmin: true };
+    req.tenantId = null;
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         DeleteRun,
         { provide: PluvioReadRepository, useValue: readRepo },
         { provide: PluvioWriteRepository, useValue: writeRepo },
+        { provide: REQUEST, useValue: req },
       ],
     }).compile();
 
-    useCase = module.get<DeleteRun>(DeleteRun);
+    useCase = await module.resolve<DeleteRun>(DeleteRun);
   });
 
-  it('deve deletar run existente', async () => {
+  it('deve deletar run existente (admin)', async () => {
     const run = new PluvioRunBuilder().build();
     readRepo.findRunById.mockResolvedValue(run);
     writeRepo.deleteRun.mockResolvedValue();
@@ -42,5 +48,31 @@ describe('DeleteRun', () => {
 
     await expectHttpException(() => useCase.execute('missing-id'), PluvioException.runNotFound());
     expect(writeRepo.deleteRun).not.toHaveBeenCalled();
+  });
+
+  it('deve rejeitar supervisor tentando deletar run de outro cliente (IDOR)', async () => {
+    const run = new PluvioRunBuilder().build();
+    // run pertence ao cliente A; tenantId do request = B
+    (run as any).props = { ...(run as any).props, clienteId: 'cliente-A' };
+    readRepo.findRunById.mockResolvedValue(run);
+
+    req.user = { isPlatformAdmin: false };
+    req.tenantId = 'cliente-B';
+
+    await expect(useCase.execute(run.id!)).rejects.toBeInstanceOf(ForbiddenException);
+    expect(writeRepo.deleteRun).not.toHaveBeenCalled();
+  });
+
+  it('deve permitir supervisor do mesmo cliente', async () => {
+    const run = new PluvioRunBuilder().build();
+    (run as any).props = { ...(run as any).props, clienteId: 'cliente-A' };
+    readRepo.findRunById.mockResolvedValue(run);
+    writeRepo.deleteRun.mockResolvedValue();
+
+    req.user = { isPlatformAdmin: false };
+    req.tenantId = 'cliente-A';
+
+    await useCase.execute(run.id!);
+    expect(writeRepo.deleteRun).toHaveBeenCalledWith(run.id);
   });
 });

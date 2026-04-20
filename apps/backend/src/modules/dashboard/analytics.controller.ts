@@ -1,9 +1,8 @@
-import { Controller, Get, Inject, UseGuards, UseInterceptors, UsePipes } from '@nestjs/common';
+import { Controller, Get, Inject, UseInterceptors, UsePipes } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
 import { Request } from 'express';
-import { TenantGuard } from 'src/guards/tenant.guard';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 
 import { Roles } from '@/decorators/roles.decorator';
@@ -11,7 +10,6 @@ import { GetRegionalKpi } from './use-cases/get-regional-kpi';
 import { GetRegionalSla } from './use-cases/get-regional-sla';
 import { GetRegionalUso } from './use-cases/get-regional-uso';
 
-@UseGuards(TenantGuard)
 @UseInterceptors(PrismaInterceptor)
 @UsePipes(MyZodValidationPipe)
 @ApiTags('Analytics')

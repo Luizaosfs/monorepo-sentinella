@@ -8,7 +8,6 @@ import {
   Post,
   Put,
   Query,
-  UseGuards,
   UseInterceptors,
   UsePipes,
 } from '@nestjs/common';
@@ -21,7 +20,6 @@ import {
   paginationSchema,
 } from '@shared/dtos/pagination-body';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
-import { TenantGuard } from 'src/guards/tenant.guard';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 
 import { Roles } from '@/decorators/roles.decorator';
@@ -93,7 +91,6 @@ import { StatsOperacao } from './use-cases/stats-operacao';
 import { UpsertOperacao } from './use-cases/upsert-operacao';
 import { OperacaoViewModel } from './view-model/operacao';
 
-@UseGuards(TenantGuard)
 @UseInterceptors(PrismaInterceptor)
 @UsePipes(MyZodValidationPipe)
 @ApiTags('Operações')

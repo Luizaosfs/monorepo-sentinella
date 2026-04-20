@@ -9,7 +9,6 @@ import {
   Post,
   Put,
   Query,
-  UseGuards,
   UseInterceptors,
   UsePipes,
 } from '@nestjs/common';
@@ -23,7 +22,6 @@ import {
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 import { Prisma } from '@prisma/client';
-import { TenantGuard } from 'src/guards/tenant.guard';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 
 import { Roles } from '@/decorators/roles.decorator';
@@ -75,7 +73,6 @@ import {
 } from './view-model/sla-config';
 import { SlaOperacionalViewModel } from './view-model/sla-operacional';
 
-@UseGuards(TenantGuard)
 @UseInterceptors(PrismaInterceptor)
 @UsePipes(MyZodValidationPipe)
 @ApiTags('SLA')
