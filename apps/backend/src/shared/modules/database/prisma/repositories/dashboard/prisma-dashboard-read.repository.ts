@@ -297,7 +297,11 @@ export class PrismaDashboardReadRepository implements DashboardReadRepository {
         ROUND(LEAST(COALESCE(cas.total, 0)   / 10.0, 1) * 25)::int AS contrib_casos_14d,
         ROUND(LEAST(COALESCE(sla.total, 0)   / 5.0,  1) * 15)::int AS contrib_sla_vencido
       FROM regioes r
-      LEFT JOIN pluvio_risco pr ON pr.regiao_id = r.id
+      LEFT JOIN (
+        SELECT DISTINCT ON (regiao_id) regiao_id, chuva_7d
+        FROM pluvio_risco
+        ORDER BY regiao_id, dt_ref DESC
+      ) pr ON pr.regiao_id = r.id
       LEFT JOIN (
         SELECT regiao_id, COUNT(*) AS total
         FROM focos_risco
