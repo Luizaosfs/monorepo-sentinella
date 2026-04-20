@@ -61,7 +61,7 @@ export class LoginUseCase {
 
     const refreshToken = await this.jwtService.signAsync(
       { sub: usuario.auth_id, type: 'refresh' },
-      { secret: env.SECRET_JWT, expiresIn: '30d' },
+      { secret: env.SECRET_JWT, expiresIn: env.REFRESH_TOKEN_EXPIRES_IN as any },
     );
 
     const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');

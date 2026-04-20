@@ -4,6 +4,7 @@ const envSchema = z.object({
   DATABASE_URL: z.string({ required_error: 'DATABASE_URL é obrigatória' }),
   SECRET_JWT: z.string({ required_error: 'SECRET_JWT é obrigatória' }),
   JWT_EXPIRES_IN: z.string().default('7d'),
+  REFRESH_TOKEN_EXPIRES_IN: z.string().default('30d'),
   PORT: z.string().optional().default('3333'),
   NODE_ENV: z
     .enum(['development', 'production', 'test'])
