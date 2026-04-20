@@ -6,8 +6,8 @@ import { PrismaService } from '@shared/modules/database/prisma/prisma.service'
 export class GetExecutivoComparativoCiclos {
   constructor(private prisma: PrismaService) {}
 
-  execute(clienteId: string) {
-    return this.prisma.client.$queryRaw(Prisma.sql`
+  async execute(clienteId: string) {
+    const rows = await this.prisma.client.$queryRaw(Prisma.sql`
       WITH ciclos AS (
         SELECT
           (date_trunc('month', CURRENT_DATE) - ((EXTRACT(MONTH FROM CURRENT_DATE)::int % 2) * INTERVAL '1 month'))::date AS ciclo_atual_inicio,
@@ -40,6 +40,7 @@ export class GetExecutivoComparativoCiclos {
       LEFT JOIN vistorias v ON v.cliente_id = ${clienteId}::uuid AND v.deleted_at IS NULL
       LEFT JOIN casos_notificados cn ON cn.cliente_id = ${clienteId}::uuid AND cn.deleted_at IS NULL
       GROUP BY ci.ciclo_atual_inicio, ci.ciclo_anterior_inicio
-    `)
+    `) as any[];
+    return rows[0] ?? null;
   }
 }

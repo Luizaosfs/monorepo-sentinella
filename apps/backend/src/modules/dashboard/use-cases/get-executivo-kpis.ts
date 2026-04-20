@@ -6,8 +6,8 @@ import { PrismaService } from '@shared/modules/database/prisma/prisma.service'
 export class GetExecutivoKpis {
   constructor(private prisma: PrismaService) {}
 
-  execute(clienteId: string) {
-    return this.prisma.client.$queryRaw(Prisma.sql`
+  async execute(clienteId: string) {
+    const rows = await this.prisma.client.$queryRaw(Prisma.sql`
       WITH sla_stats AS (
         SELECT
           so.cliente_id,
@@ -79,6 +79,7 @@ export class GetExecutivoKpis {
       LEFT JOIN imoveis_stats ims ON ims.cliente_id = base.cliente_id
       LEFT JOIN score_stats scs ON scs.cliente_id = base.cliente_id
       LEFT JOIN casos_stats cas ON cas.cliente_id = base.cliente_id
-    `)
+    `) as any[];
+    return rows[0] ?? null;
   }
 }
