@@ -13,6 +13,8 @@ export class RegiaoViewModel {
       cor: regiao.cor,
       geojson: regiao.geojson,
       ativo: regiao.ativo,
+      latitude: regiao.latCentroid ?? null,
+      longitude: regiao.lngCentroid ?? null,
       createdAt: regiao.createdAt,
       updatedAt: regiao.updatedAt,
       ...baseAuditToHttp(regiao),

@@ -9,6 +9,8 @@ interface RegiaoProps {
   cor?: string;
   geojson?: JsonObject;
   ativo: boolean;
+  latCentroid?: number | null;
+  lngCentroid?: number | null;
 }
 
 export class Regiao extends BaseEntity<RegiaoProps> {
@@ -51,6 +53,12 @@ export class Regiao extends BaseEntity<RegiaoProps> {
   }
   set ativo(v: boolean) {
     this.props.ativo = v;
+  }
+  get latCentroid() {
+    return this.props.latCentroid;
+  }
+  get lngCentroid() {
+    return this.props.lngCentroid;
   }
 }
 

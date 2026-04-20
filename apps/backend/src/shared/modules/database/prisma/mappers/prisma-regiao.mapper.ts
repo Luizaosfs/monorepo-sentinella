@@ -12,6 +12,8 @@ type RawRegiao = {
   ativo: boolean;
   created_at: Date;
   updated_at: Date;
+  lat_centroid?: number | null;
+  lng_centroid?: number | null;
 };
 
 export class PrismaRegiaoMapper {
@@ -26,6 +28,8 @@ export class PrismaRegiaoMapper {
           ? (raw.geojson as JsonObject)
           : undefined,
         ativo: raw.ativo,
+        latCentroid: raw.lat_centroid ?? null,
+        lngCentroid: raw.lng_centroid ?? null,
       },
       {
         id: raw.id,
