@@ -2,8 +2,10 @@ import { FilterDistribuicaoInput } from '@modules/quarteirao/dtos/filter-distrib
 import { FilterQuarteiraoInput } from '@modules/quarteirao/dtos/filter-quarteirao.input';
 import {
   CoberturaCicloResult,
+  CoberturaQuarteiraoItem,
   QuarteiraoReadRepository,
 } from '@modules/quarteirao/repositories/quarteirao-read.repository';
+import { Prisma } from '@prisma/client';
 import { DistribuicaoQuarteirao, Quarteirao } from '@modules/quarteirao/entities/quarteirao';
 import { Injectable } from '@nestjs/common';
 
@@ -68,35 +70,27 @@ export class PrismaQuarteiraoReadRepository implements QuarteiraoReadRepository 
     ciclo: number;
   }): Promise<CoberturaCicloResult> {
     const { clienteId, ciclo } = input;
-
-    const totalQuarteiroes = await this.prisma.client.quarteiroes.count({
-      where: {
-        cliente_id: clienteId,
-        deleted_at: null,
-        ativo: true,
-      },
-    });
-
-    const comAgente = await this.prisma.client.quarteiroes.count({
-      where: {
-        cliente_id: clienteId,
-        deleted_at: null,
-        ativo: true,
-        distribuicoes: {
-          some: { ciclo },
-        },
-      },
-    });
-
-    const semAgente = Math.max(0, totalQuarteiroes - comAgente);
-
-    return {
-      clienteId,
-      ciclo,
-      totalQuarteiroes,
-      comAgente,
-      semAgente,
-    };
+    return this.prisma.client.$queryRaw<CoberturaQuarteiraoItem[]>(Prisma.sql`
+      SELECT
+        i.quarteirao,
+        COUNT(DISTINCT i.id)::int          AS total_imoveis,
+        COUNT(DISTINCT v.imovel_id)::int   AS visitados,
+        ROUND(
+          COUNT(DISTINCT v.imovel_id) * 100.0
+          / NULLIF(COUNT(DISTINCT i.id), 0), 1
+        )::float                           AS pct_cobertura
+      FROM imoveis i
+      LEFT JOIN vistorias v
+        ON v.imovel_id = i.id
+       AND v.ciclo      = ${ciclo}
+       AND v.deleted_at IS NULL
+      WHERE i.cliente_id = ${clienteId}::uuid
+        AND i.deleted_at  IS NULL
+        AND i.quarteirao  IS NOT NULL
+        AND i.quarteirao  <> ''
+      GROUP BY i.quarteirao
+      ORDER BY i.quarteirao
+    `);
   }
 
   private buildWhereQuarteiroes(filters: FilterQuarteiraoInput) {

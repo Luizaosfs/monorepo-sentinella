@@ -133,7 +133,7 @@ export default function AdminScoreSurto() {
                   const progressColor = scoreProgressColor(row.score_total);
                   return (
                     <tr
-                      key={row.regiao_id}
+                      key={row.regiao_id ?? idx}
                       className={cn(
                         'border-b last:border-0 hover:bg-muted/20 transition-colors',
                         idx % 2 !== 0 && 'bg-muted/5'

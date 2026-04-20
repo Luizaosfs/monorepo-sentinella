@@ -4,13 +4,14 @@ import { FilterDistribuicaoInput } from '../dtos/filter-distribuicao.input';
 import { FilterQuarteiraoInput } from '../dtos/filter-quarteirao.input';
 import { DistribuicaoQuarteirao, Quarteirao } from '../entities/quarteirao';
 
-export type CoberturaCicloResult = {
-  clienteId: string;
-  ciclo: number;
-  totalQuarteiroes: number;
-  comAgente: number;
-  semAgente: number;
+export type CoberturaQuarteiraoItem = {
+  quarteirao: string;
+  total_imoveis: number;
+  visitados: number;
+  pct_cobertura: number;
 };
+
+export type CoberturaCicloResult = CoberturaQuarteiraoItem[];
 
 @Injectable()
 export abstract class QuarteiraoReadRepository {

@@ -138,7 +138,6 @@ export class PrismaLevantamentoReadRepository implements LevantamentoReadReposit
       itemId: r.item_id,
       url: r.url,
       tipo: r.tipo ?? null,
-      legenda: r.legenda ?? null,
       publicId: r.public_id ?? null,
       createdAt: r.created_at,
     }));

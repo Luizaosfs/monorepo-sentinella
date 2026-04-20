@@ -12,10 +12,12 @@ import { usePilotoFunil, usePilotoDespachosSupervisor, usePilotoProdAgentes } fr
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function horas(h: number | null | undefined): string {
+function horas(h: number | string | null | undefined): string {
   if (h == null) return '—';
-  if (h < 1) return `${Math.round(h * 60)} min`;
-  return `${h.toFixed(1)} h`;
+  const n = Number(h);
+  if (isNaN(n)) return '—';
+  if (n < 1) return `${Math.round(n * 60)} min`;
+  return `${n.toFixed(1)} h`;
 }
 
 // ── Sub-components ────────────────────────────────────────────────────────────

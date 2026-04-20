@@ -24,7 +24,6 @@ export interface ItemEvidencia {
   itemId: string;
   url: string;
   tipo: string | null;
-  legenda: string | null;
   publicId: string | null;
   createdAt: Date;
 }

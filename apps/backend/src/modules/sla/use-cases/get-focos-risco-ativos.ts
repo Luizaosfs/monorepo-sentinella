@@ -34,7 +34,7 @@ export class GetFocosRiscoAtivos {
 
   executeAll(clienteId: string) {
     return this.prisma.client.$queryRaw(Prisma.sql`
-      ${BASE_SQL} AND fr.cliente_id = ${clienteId}::uuid AND status_sla_inteligente IS NOT NULL
+      ${BASE_SQL} AND fr.cliente_id = ${clienteId}::uuid
       ORDER BY fr.created_at DESC
     `)
   }

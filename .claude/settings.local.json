@@ -69,7 +69,18 @@
       "Bash(/c/Program Files/GitHub CLI/gh.exe pr *)",
       "Bash(git push *)",
       "Bash('/c/Program Files/GitHub CLI/gh.exe' pr create --title 'chore\\(frente2\\): remove api-supabase.ts \\(legado Supabase\\)' --base main --body ' *)",
-      "Bash(pnpm --filter frontend test -- --run src/hooks/useClienteAtivo.test.tsx)"
+      "Bash(pnpm --filter frontend test -- --run src/hooks/useClienteAtivo.test.tsx)",
+      "Bash(pnpm test:e2e)",
+      "Bash(PGPASSWORD=147852369 C:/Program Files/PostgreSQL/17/bin/psql *)",
+      "Bash(pnpm --filter backend generate)",
+      "Bash(python3 *)",
+      "Bash(PGPASSWORD=147852369 \"C:/Program Files/PostgreSQL/17/bin/psql\" -U postgres -d sentinella -h localhost -t -A -F'|' -c \"SELECT table_name, column_name FROM information_schema.columns WHERE table_schema = 'public' ORDER BY table_name, ordinal_position;\")",
+      "Bash(python \"D:/sentinella/monorepo-sentinella/audit_prisma.py\")",
+      "Bash(pnpm --filter backend build)",
+      "Bash(grep -rn \"origin.*'\\\\*'\\\\|origin.*\\\\\"\\\\\\\\*\\\\\"\" src/ --include=\"*.ts\")",
+      "Bash(PGPASSWORD=147852369 psql *)",
+      "Bash(node dist/main.js)",
+      "Bash(echo \"PID:$!\")"
     ]
   }
 }
