@@ -395,20 +395,20 @@ export default function PainelExecutivo() {
             <div className="grid grid-cols-3 gap-4">
               <Card>
                 <CardContent className="pt-4">
-                  <div className="text-2xl font-bold">{coberturaAgregada?.total_imoveis ?? '—'}</div>
+                  <div className="text-2xl font-bold">{coberturaAgregada?.totalImoveis ?? '—'}</div>
                   <p className="text-muted-foreground text-sm">Total de imóveis</p>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="pt-4">
-                  <div className="text-2xl font-bold">{coberturaAgregada?.visitados_30d ?? '—'}</div>
+                  <div className="text-2xl font-bold">{coberturaAgregada?.visitados30d ?? '—'}</div>
                   <p className="text-muted-foreground text-sm">Visitados (30d)</p>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="pt-4">
                   <div className="text-2xl font-bold">
-                    {coberturaAgregada?.bairros_risco_baixo_cobertura ?? '—'}
+                    {coberturaAgregada?.bairrosEmRisco ?? '—'}
                   </div>
                   <p className="text-muted-foreground text-sm">Bairros com cobertura &lt; 50%</p>
                 </CardContent>
@@ -529,7 +529,7 @@ export default function PainelExecutivo() {
                             </span>
                           </td>
                           <td className="py-2 pr-4">
-                            <TendenciaChip value={b.tendencia} />
+                            <TendenciaChip value={b.classificacao_tendencia} />
                           </td>
                           <td className="py-2 pr-4 text-right">{b.focos_novos_7d ?? 0}</td>
                           <td className="py-2 pr-4 text-right">{b.focos_novos_30d ?? 0}</td>
@@ -573,14 +573,14 @@ export default function PainelExecutivo() {
                   const metricas: MetricaDef[] = [
                     {
                       label: 'Focos identificados',
-                      atual: comparativo.focos_identificados_atual,
-                      anterior: comparativo.focos_identificados_anterior,
+                      atual: comparativo.focos_atual,
+                      anterior: comparativo.focos_anterior,
                       menorMelhor: true,
                     },
                     {
                       label: 'Focos resolvidos',
-                      atual: comparativo.focos_resolvidos_atual,
-                      anterior: comparativo.focos_resolvidos_anterior,
+                      atual: comparativo.resolucao_atual,
+                      anterior: comparativo.resolucao_anterior,
                       menorMelhor: false,
                     },
                     {
