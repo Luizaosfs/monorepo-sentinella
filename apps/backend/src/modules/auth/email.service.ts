@@ -17,7 +17,7 @@ export class EmailService {
 
   async sendPasswordReset(to: string, resetUrl: string): Promise<void> {
     if (!env.SMTP_HOST) {
-      this.logger.warn(`[EmailService] SMTP não configurado — link de reset: ${resetUrl}`);
+      this.logger.warn('[EmailService] SMTP não configurado — reset solicitado mas email não enviado');
       return;
     }
 
@@ -44,7 +44,8 @@ export class EmailService {
         `,
       });
     } catch (err: any) {
-      this.logger.error(`[EmailService] Falha ao enviar email para ${to}: ${err?.message}`);
+      const maskedEmail = `${to.substring(0, 3)}***@${to.split('@')[1] ?? '***'}`;
+      this.logger.error(`[EmailService] Falha ao enviar email para ${maskedEmail}: ${err?.message}`);
     }
   }
 }
