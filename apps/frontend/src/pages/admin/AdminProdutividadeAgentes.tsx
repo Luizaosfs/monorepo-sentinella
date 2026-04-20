@@ -232,7 +232,7 @@ export default function AdminProdutividadeAgentes() {
               <tbody>
                 {rows.map((row, idx) => (
                   <tr
-                    key={row.agente_id}
+                    key={row.agente_id ?? idx}
                     className={cn(
                       'border-b last:border-0 hover:bg-muted/20 transition-colors',
                       idx % 2 !== 0 && 'bg-muted/5'
