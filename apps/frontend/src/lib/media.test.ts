@@ -1,8 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/lib/supabase', () => ({
-  supabaseUrl: 'https://test-project.supabase.co',
-}));
+// vi.hoisted roda antes de qualquer import — garante que a constante de módulo
+// em media.ts leia a URL de teste e não a URL real do .env.
+vi.hoisted(() => {
+  (import.meta.env as Record<string, string>).VITE_SUPABASE_URL = 'https://test-project.supabase.co';
+});
 
 import { resolveMediaUrl } from './media';
 
