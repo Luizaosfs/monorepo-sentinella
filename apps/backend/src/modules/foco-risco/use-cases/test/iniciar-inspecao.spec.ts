@@ -23,7 +23,7 @@ describe('IniciarInspecao', () => {
         IniciarInspecao,
         { provide: FocoRiscoReadRepository, useValue: readRepo },
         { provide: FocoRiscoWriteRepository, useValue: writeRepo },
-        { provide: REQUEST, useValue: mockRequest() },
+        { provide: REQUEST, useValue: mockRequest({ tenantId: 'cliente-uuid-1', user: { id: 'agente-uuid-1' } as never }) },
       ],
     }).compile();
 
@@ -31,7 +31,7 @@ describe('IniciarInspecao', () => {
   });
 
   it('deve mudar aguarda_inspecao → em_inspecao e preencher inspecaoEm', async () => {
-    const foco = new FocoRiscoBuilder().withStatus('aguarda_inspecao').build();
+    const foco = new FocoRiscoBuilder().withStatus('aguarda_inspecao').withResponsavelId('agente-uuid-1').build();
     readRepo.findById.mockResolvedValue(foco);
     writeRepo.save.mockResolvedValue();
     writeRepo.createHistorico.mockResolvedValue({
@@ -55,7 +55,7 @@ describe('IniciarInspecao', () => {
   });
 
   it('deve rejeitar se status != aguarda_inspecao', async () => {
-    const foco = new FocoRiscoBuilder().withStatus('suspeita').build();
+    const foco = new FocoRiscoBuilder().withStatus('suspeita').withResponsavelId('agente-uuid-1').build();
     readRepo.findById.mockResolvedValue(foco);
 
     await expectHttpException(

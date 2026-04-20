@@ -45,15 +45,13 @@ describe('CancelarReinspecao', () => {
     readRepo.findById.mockResolvedValue(r);
     writeRepo.save.mockResolvedValue();
 
-    const canceladoPor = '99999999-9999-4999-8999-999999999999';
     const result = await useCase.execute(r.id!, {
       motivoCancelamento: 'mudança de plano',
-      canceladoPor,
     });
 
     expect(result.reinspecao.status).toBe('cancelada');
     expect(result.reinspecao.motivoCancelamento).toBe('mudança de plano');
-    expect(result.reinspecao.canceladoPor).toBe(canceladoPor);
+    expect(result.reinspecao.canceladoPor).toBe('test-user-id');
     expect(writeRepo.save).toHaveBeenCalled();
   });
 

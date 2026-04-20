@@ -42,6 +42,15 @@ describe('RefreshTokenUseCase', () => {
       sub: 'auth-id-1',
       type: 'refresh',
     });
+    prisma.client.refresh_tokens.findUnique.mockResolvedValue({
+      id: 'rt-1',
+      auth_id: 'auth-id-1',
+      token_hash: 'hash',
+      used_at: null,
+      revoked_at: null,
+      expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    } as any);
+    prisma.client.$transaction.mockResolvedValue([]);
     prisma.client.usuarios.findUnique.mockResolvedValue(usuarioBase);
     jwtService.signAsync
       .mockResolvedValueOnce('novo-access')

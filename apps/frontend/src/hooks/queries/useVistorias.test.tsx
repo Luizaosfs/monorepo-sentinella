@@ -164,7 +164,7 @@ describe('useCreateVistoriaMutation', () => {
     };
     result.current.mutate(payload);
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(mockCreate).toHaveBeenCalledWith(payload);
+    expect(mockCreate).toHaveBeenCalledWith(payload, expect.any(Object));
   });
 });
 

@@ -23,7 +23,7 @@ describe('AtribuirAgente', () => {
         AtribuirAgente,
         { provide: FocoRiscoReadRepository, useValue: readRepo },
         { provide: FocoRiscoWriteRepository, useValue: writeRepo },
-        { provide: REQUEST, useValue: mockRequest() },
+        { provide: REQUEST, useValue: mockRequest({ tenantId: 'cliente-uuid-1' }) },
       ],
     }).compile();
 

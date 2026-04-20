@@ -65,7 +65,7 @@ describe('useFocosAtribuidos', () => {
     });
     await waitFor(() => expect(mockList).toHaveBeenCalled());
     expect(mockList).toHaveBeenCalledWith('cli-1', {
-      status: ['aguarda_inspecao', 'em_inspecao'],
+      status: ['aguarda_inspecao', 'em_inspecao', 'confirmado', 'em_tratamento'],
       responsavel_id: 'resp-1',
       pageSize: 50,
     });
