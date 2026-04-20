@@ -190,7 +190,7 @@ export class PluvioController {
   @Get('risco')
   @Roles('admin', 'supervisor', 'analista_regional', 'agente')
   @ApiOperation({ summary: 'Listar riscos pluviométricos por região' })
-  async filterRisco(@Query('regiaoIds') regiaoIds: string | string[]) {
+  async filterRisco(@Query('regiaoId') regiaoIds: string | string[]) {
     const ids = Array.isArray(regiaoIds) ? regiaoIds : [regiaoIds];
     const { riscos } = await this.filterRiscoUC.execute(ids);
     return riscos.map(PluvioRiscoViewModel.toHttp);
