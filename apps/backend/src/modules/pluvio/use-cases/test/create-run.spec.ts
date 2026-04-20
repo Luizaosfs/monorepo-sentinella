@@ -26,7 +26,7 @@ describe('CreateRun', () => {
   });
 
   it('deve criar run com clienteId do input ou fallback tenant', async () => {
-    const created = new PluvioRunBuilder().withClienteId('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa').build();
+    const created = new PluvioRunBuilder().withClienteId('test-cliente-id').build();
     writeRepo.createRun.mockResolvedValue(created);
 
     const explicit = {
@@ -37,7 +37,7 @@ describe('CreateRun', () => {
     await useCase.execute(explicit);
 
     expect(writeRepo.createRun).toHaveBeenCalledWith(
-      expect.objectContaining({ clienteId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' }),
+      expect.objectContaining({ clienteId: 'test-cliente-id' }),
     );
 
     writeRepo.createRun.mockResolvedValue(new PluvioRunBuilder().build());

@@ -33,7 +33,7 @@ describe('FilterPlanoAcao', () => {
       clienteId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
     });
     expect(readRepo.findAllActive).toHaveBeenCalledWith(
-      expect.objectContaining({ clienteId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' }),
+      expect.objectContaining({ clienteId: 'test-cliente-id' }),
     );
     expect(explicit.planosAcao).toEqual(list);
 

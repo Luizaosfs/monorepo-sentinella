@@ -28,8 +28,8 @@ describe('CreatePlanoAcao', () => {
     useCase = module.get<CreatePlanoAcao>(CreatePlanoAcao);
   });
 
-  it('deve criar plano com ativo=true e ordem=0 padrão e usar clienteId do input ou fallback tenant', async () => {
-    const created = new PlanoAcaoBuilder().withClienteId('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa').build();
+  it('deve criar plano com ativo=true e ordem=0 padrão e usar clienteId do tenant (MT-02)', async () => {
+    const created = new PlanoAcaoBuilder().withClienteId('test-cliente-id').build();
     writeRepo.create.mockResolvedValue(created);
 
     await useCase.execute({
@@ -39,7 +39,7 @@ describe('CreatePlanoAcao', () => {
 
     expect(writeRepo.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        clienteId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+        clienteId: 'test-cliente-id',
         ativo: true,
         ordem: 0,
       }),
