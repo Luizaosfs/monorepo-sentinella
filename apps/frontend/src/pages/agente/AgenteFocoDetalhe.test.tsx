@@ -89,7 +89,7 @@ function renderPage(focoData: FocoRiscoAtivo | null) {
   });
 
   // Pre-populate the cache so the query resolves synchronously
-  qc.setQueryData(['foco_risco_ativo_agente', 'foco-test-id'], focoData);
+  qc.setQueryData(['foco_risco_agente', 'foco-test-id'], focoData);
 
   return render(
     <QueryClientProvider client={qc}>
@@ -125,10 +125,10 @@ describe('AgenteFocoDetalhe — CTAs por status', () => {
     expect(screen.queryByRole('button', { name: /resolver foco/i })).not.toBeInTheDocument();
   });
 
-  it('em_inspecao: exibe "Confirmar foco" e "Descartar foco"', () => {
+  it('em_inspecao: exibe "Realizar vistoria completa" e "Descartar foco"', () => {
     renderPage(makeFoco('em_inspecao'));
 
-    expect(screen.getByRole('button', { name: /confirmar foco/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /realizar vistoria completa/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /descartar foco/i })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /iniciar inspeção/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /iniciar tratamento/i })).not.toBeInTheDocument();
