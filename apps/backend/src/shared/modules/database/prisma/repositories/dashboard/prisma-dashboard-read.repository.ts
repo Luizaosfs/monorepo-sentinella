@@ -84,13 +84,13 @@ export class PrismaDashboardReadRepository implements DashboardReadRepository {
         COUNT(DISTINCT v.id) FILTER (WHERE v.acesso_realizado = true)   AS com_acesso,
         COUNT(DISTINCT vd_pos.vistoria_id)                              AS total_positivos,
         COUNT(vd.id)                                                     AS total_depositos,
-        COUNT(vd.id) FILTER (WHERE vd.com_larva = true)                 AS depositos_positivos
+        COUNT(vd.id) FILTER (WHERE vd.qtd_com_focos > 0)               AS depositos_positivos
       FROM vistorias v
       LEFT JOIN vistoria_depositos vd     ON vd.vistoria_id = v.id
       LEFT JOIN (
         SELECT DISTINCT vistoria_id
         FROM vistoria_depositos
-        WHERE com_larva = true
+        WHERE qtd_com_focos > 0
       ) vd_pos ON vd_pos.vistoria_id = v.id
       WHERE v.cliente_id = ${clienteId}::uuid
         AND v.acesso_realizado = true
@@ -141,7 +141,7 @@ export class PrismaDashboardReadRepository implements DashboardReadRepository {
         COUNT(DISTINCT v.id) FILTER (WHERE v.acesso_realizado = true)    AS com_acesso,
         COUNT(DISTINCT v.id) FILTER (WHERE v.acesso_realizado = false)   AS sem_acesso,
         COUNT(vd.id)                                                      AS total_depositos,
-        COUNT(vd.id) FILTER (WHERE vd.com_larva = true)                  AS depositos_com_larva
+        COUNT(vd.id) FILTER (WHERE vd.qtd_com_focos > 0)                 AS depositos_com_larva
       FROM vistorias v
       JOIN usuarios u ON u.id = v.agente_id
       LEFT JOIN vistoria_depositos vd ON vd.vistoria_id = v.id
@@ -252,7 +252,7 @@ export class PrismaDashboardReadRepository implements DashboardReadRepository {
         COUNT(DISTINCT v.id)                                                         AS total_vistorias,
         COUNT(DISTINCT v.id) FILTER (WHERE v.acesso_realizado = true)               AS vistorias_com_acesso,
         COUNT(vd.id)                                                                 AS total_depositos,
-        COUNT(vd.id) FILTER (WHERE vd.com_larva = true)                             AS depositos_positivos,
+        COUNT(vd.id) FILTER (WHERE vd.qtd_com_focos > 0)                             AS depositos_positivos,
         COUNT(DISTINCT fr.id)                                                        AS focos_ativos
       FROM regioes r
       LEFT JOIN imoveis im   ON im.regiao_id = r.id AND im.deleted_at IS NULL
@@ -379,7 +379,7 @@ export class PrismaDashboardReadRepository implements DashboardReadRepository {
         COUNT(DISTINCT v.id) FILTER (WHERE v.acesso_realizado = true)    AS com_acesso,
         COUNT(DISTINCT v.id) FILTER (WHERE v.acesso_realizado = false)   AS sem_acesso,
         COUNT(vd.id)                                                      AS total_depositos,
-        COUNT(vd.id) FILTER (WHERE vd.com_larva = true)                  AS depositos_positivos,
+        COUNT(vd.id) FILTER (WHERE vd.qtd_com_focos > 0)                  AS depositos_positivos,
         COUNT(vd.id) FILTER (WHERE vd.tratado = true)                    AS depositos_tratados
       FROM vistorias v
       JOIN usuarios u ON u.id = v.agente_id
@@ -655,7 +655,7 @@ export class PrismaDashboardReadRepository implements DashboardReadRepository {
     const rows = await this.prisma.client.$queryRaw<Row[]>`
       SELECT
         v.ciclo,
-        i.bairro,
+        COALESCE(i.bairro, r.nome) AS bairro,
         i.quarteirao,
         COUNT(DISTINCT v.id) FILTER (WHERE v.acesso_realizado = true)
           AS imoveis_inspecionados,
@@ -683,13 +683,14 @@ export class PrismaDashboardReadRepository implements DashboardReadRepository {
           AS larvicida_total_g
       FROM vistorias v
       JOIN imoveis i ON i.id = v.imovel_id
+      LEFT JOIN regioes r ON r.id = i.regiao_id
       LEFT JOIN vistoria_depositos vd ON vd.vistoria_id = v.id
       WHERE v.cliente_id = ${clienteId}::uuid
         AND v.deleted_at IS NULL
         AND i.quarteirao IS NOT NULL
         ${cicloFilter}
-      GROUP BY v.ciclo, i.bairro, i.quarteirao
-      ORDER BY i.bairro ASC NULLS LAST, i.quarteirao ASC
+      GROUP BY v.ciclo, COALESCE(i.bairro, r.nome), i.quarteirao
+      ORDER BY COALESCE(i.bairro, r.nome) ASC NULLS LAST, i.quarteirao ASC
     `;
 
     return rows.map((r) => {
