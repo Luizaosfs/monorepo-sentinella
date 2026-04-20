@@ -20,7 +20,11 @@ import { ResetPasswordUseCase } from './use-cases/reset-password.use-case';
     JwtModule.register({
       global: true,
       secret: env.SECRET_JWT,
-      signOptions: { expiresIn: env.JWT_EXPIRES_IN as any },
+      signOptions: {
+        expiresIn: env.JWT_EXPIRES_IN as any,
+        audience: 'sentinella-api',
+        issuer: 'sentinella-auth',
+      },
     }),
   ],
   controllers: [AuthController],

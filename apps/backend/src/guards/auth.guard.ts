@@ -90,6 +90,8 @@ export class AuthGuard implements CanActivate {
     try {
       const payload = await this.jwtService.verifyAsync(token, {
         secret: env.SECRET_JWT,
+        audience: 'sentinella-api',
+        issuer: 'sentinella-auth',
       });
       if (!payload?.sub) throw AuthException.unauthorized();
       authId = payload.sub as string;

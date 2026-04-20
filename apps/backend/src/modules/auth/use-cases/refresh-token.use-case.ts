@@ -21,6 +21,8 @@ export class RefreshTokenUseCase {
     try {
       decoded = await this.jwtService.verifyAsync(input.refreshToken, {
         secret: env.SECRET_JWT,
+        audience: 'sentinella-api',
+        issuer: 'sentinella-auth',
       });
     } catch {
       throw AuthException.unauthorized();
