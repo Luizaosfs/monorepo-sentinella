@@ -23,6 +23,14 @@ export abstract class SlaReadRepository {
   ): Promise<SlaOperacional[]>;
   abstract countPendentes(clienteId: string): Promise<{ total: number }>;
   abstract findConfig(clienteId: string): Promise<SlaConfig | null>;
+  abstract findConfigByRegiao(
+    clienteId: string,
+    regiaoId: string,
+  ): Promise<SlaConfig | null>;
+  abstract findByFocoRiscoId(
+    focoRiscoId: string,
+    tx?: unknown,
+  ): Promise<SlaOperacional | null>;
   abstract findConfigRegioes(
     clienteId: string,
   ): Promise<Array<{ id: string; regiaoId: string; config: JsonObject }>>;

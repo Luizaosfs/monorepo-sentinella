@@ -18,6 +18,7 @@ export class FocoRiscoBuilder {
   private confirmadoEm: Date | undefined = undefined;
   private resolvidoEm: Date | undefined = undefined;
   private desfecho: string | undefined = undefined;
+  private origemLevantamentoItemId: string | undefined = undefined;
 
   withId(id: string) { this.id = id; return this; }
   withClienteId(id: string) { this.clienteId = id; return this; }
@@ -36,6 +37,7 @@ export class FocoRiscoBuilder {
   withConfirmadoEm(d: Date) { this.confirmadoEm = d; return this; }
   withResolvidoEm(d: Date) { this.resolvidoEm = d; return this; }
   withDesfecho(d: string) { this.desfecho = d; return this; }
+  withOrigemLevantamentoItemId(id: string) { this.origemLevantamentoItemId = id; return this; }
 
   build(): FocoRisco {
     return new FocoRisco(
@@ -56,6 +58,7 @@ export class FocoRiscoBuilder {
         confirmadoEm: this.confirmadoEm,
         resolvidoEm: this.resolvidoEm,
         desfecho: this.desfecho,
+        origemLevantamentoItemId: this.origemLevantamentoItemId,
       },
       { id: this.id },
     );

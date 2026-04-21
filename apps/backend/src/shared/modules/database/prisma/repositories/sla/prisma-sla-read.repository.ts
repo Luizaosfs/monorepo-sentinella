@@ -98,6 +98,36 @@ export class PrismaSlaReadRepository implements SlaReadRepository {
     return raw ? PrismaSlaMapper.slaConfigToDomain(raw as any) : null;
   }
 
+  async findConfigByRegiao(
+    clienteId: string,
+    regiaoId: string,
+  ): Promise<SlaConfig | null> {
+    const raw = await this.prisma.client.sla_config_regiao.findFirst({
+      where: { cliente_id: clienteId, regiao_id: regiaoId },
+    });
+    if (!raw) return null;
+    // Adapta `sla_config_regiao` ao shape de `SlaConfig` (mesmo `config` JSON).
+    return PrismaSlaMapper.slaConfigToDomain({
+      id: raw.id,
+      cliente_id: raw.cliente_id,
+      config: raw.config,
+      created_at: raw.created_at,
+      updated_at: raw.updated_at,
+    } as any);
+  }
+
+  async findByFocoRiscoId(
+    focoRiscoId: string,
+    tx?: unknown,
+  ): Promise<SlaOperacional | null> {
+    const client = (tx ?? this.prisma.client) as any;
+    const raw = await client.sla_operacional.findFirst({
+      where: { foco_risco_id: focoRiscoId, deleted_at: null },
+      orderBy: { created_at: 'desc' },
+    });
+    return raw ? PrismaSlaMapper.slaOperacionalToDomain(raw) : null;
+  }
+
   async findConfigRegioes(
     clienteId: string,
   ): Promise<

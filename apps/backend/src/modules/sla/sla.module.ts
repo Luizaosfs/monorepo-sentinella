@@ -10,8 +10,10 @@ import { CountPendentes } from './use-cases/count-pendentes';
 import { CreateFeriado } from './use-cases/create-feriado';
 import { DeleteFeriado } from './use-cases/delete-feriado';
 import { EscalarSla } from './use-cases/escalar-sla';
+import { FecharSlaAoResolverFoco } from './use-cases/fechar-sla-ao-resolver-foco';
 import { GetConfig } from './use-cases/get-config';
 import { GetFocoConfig } from './use-cases/get-foco-config';
+import { IniciarSlaAoConfirmarFoco } from './use-cases/iniciar-sla-ao-confirmar-foco';
 import { ListConfigRegioes } from './use-cases/list-config-regioes';
 import { ListErrosCriacao } from './use-cases/list-erros-criacao';
 import { ListFeriados } from './use-cases/list-feriados';
@@ -20,6 +22,7 @@ import { ListSlaPainel } from './use-cases/list-sla-painel';
 import { ListSlaIminentes } from './use-cases/list-sla-iminentes';
 import { PaginationSla } from './use-cases/pagination-sla';
 import { ReabrirSla } from './use-cases/reabrir-sla';
+import { ResolveSlaConfig } from './use-cases/resolve-sla-config';
 import { SaveConfig } from './use-cases/save-config';
 import { SaveFocoConfig } from './use-cases/save-foco-config';
 import { UpdateSlaStatus } from './use-cases/update-sla-status';
@@ -51,11 +54,18 @@ import { GetFocosRiscoAtivos } from './use-cases/get-focos-risco-ativos';
     ListErrosCriacao,
     GetFocosRiscoAtivos,
     SlaSchedulerService,
+    ResolveSlaConfig,
+    IniciarSlaAoConfirmarFoco,
+    FecharSlaAoResolverFoco,
     JwtService,
     PrismaService,
   ],
   controllers: [SlaController],
-  exports: [SlaSchedulerService],
+  exports: [
+    SlaSchedulerService,
+    IniciarSlaAoConfirmarFoco,
+    FecharSlaAoResolverFoco,
+  ],
   imports: [DatabaseModule],
 })
 export class SlaModule {}

@@ -7,6 +7,33 @@ import { SlaOperacional } from '../entities/sla-operacional';
 @Injectable()
 export abstract class SlaWriteRepository {
   abstract save(entity: SlaOperacional): Promise<void>;
+  abstract createFromFoco(
+    data: {
+      clienteId: string;
+      focoRiscoId: string;
+      levantamentoItemId: string | null;
+      prioridade: string;
+      slaHoras: number;
+      inicio: Date;
+      prazoFinal: Date;
+    },
+    tx?: unknown,
+  ): Promise<{ id: string; conflicted: boolean }>;
+  abstract vincularAFoco(
+    focoRiscoId: string,
+    levantamentoItemId: string,
+    tx?: unknown,
+  ): Promise<number>;
+  abstract fecharTodosPorFoco(
+    focoRiscoId: string,
+    tx?: unknown,
+  ): Promise<number>;
+  abstract registrarErroCriacao(data: {
+    clienteId: string | null;
+    focoRiscoId: string | null;
+    erro: string;
+    contexto: JsonObject;
+  }): Promise<void>;
   abstract upsertConfig(
     clienteId: string,
     config: JsonObject,

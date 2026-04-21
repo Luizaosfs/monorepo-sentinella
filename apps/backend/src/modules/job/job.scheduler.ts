@@ -115,7 +115,7 @@ export class JobScheduler {
     await this.billingScheduler.snapshot();
   }
 
-  @Cron('0 6 * * *')
+  @Cron('*/15 * * * *')
   async slaMarcarVencidos() {
     this.logger.log('[JobScheduler.slaMarcarVencidos] Marcando SLAs vencidos');
     await this.slaScheduler.marcarVencidos();
@@ -127,7 +127,7 @@ export class JobScheduler {
     await this.slaScheduler.pushCritico();
   }
 
-  @Cron(CronExpression.EVERY_DAY_AT_8AM)
+  @Cron('0 8 * * 1')  // Segunda-feira às 8h UTC
   async relatorioSemanal() {
     this.logger.log('[JobScheduler.relatorioSemanal] Gerando relatório semanal');
     await this.dashboardScheduler.relatorioSemanal();
@@ -163,5 +163,48 @@ export class JobScheduler {
         AND deleted_at IS NULL
     `;
     this.logger.log(`[JobScheduler.escalarFocosSuspeitos] Escalados: ${count}`);
+  }
+
+  /**
+   * Equivalente ao pg_cron `score-recalculo-diario` do Supabase legado.
+   * Enfileira um job `recalcular_score_lote` por cliente ativo.
+   * Workers (ScoreWorkerService) consomem via processQueue (EVERY_MINUTE).
+   */
+  @Cron('0 7 * * *') // 07h UTC diariamente
+  async scoreDiario() {
+    this.logger.log('[JobScheduler.scoreDiario] Enfileirando recalcular_score_lote por cliente');
+
+    const clientes = await this.prisma.client.clientes.findMany({
+      where: { deleted_at: null, ativo: true },
+      select: { id: true },
+    });
+
+    if (clientes.length === 0) {
+      this.logger.log('[JobScheduler.scoreDiario] Nenhum cliente ativo');
+      return;
+    }
+
+    const data = clientes.map((c) => ({
+      tipo: 'recalcular_score_lote',
+      status: 'pendente',
+      payload: { cliente_id: c.id, motivo: 'cron_diario' } as unknown as object,
+    }));
+
+    const { count } = await this.prisma.client.job_queue.createMany({
+      data,
+      skipDuplicates: true,
+    });
+
+    this.logger.log(`[JobScheduler.scoreDiario] Enfileirados: ${count}/${clientes.length}`);
+  }
+
+  /**
+   * Equivalente ao pg_cron `retencao-logs-redact` do Supabase legado.
+   * LGPD: nullifica campos sensíveis em logs após prazo legal.
+   */
+  @Cron('0 2 * * *') // 02h UTC diariamente
+  async redactSensitiveLogs() {
+    this.logger.log('[JobScheduler.redactSensitiveLogs] Redação LGPD de campos sensíveis');
+    await this.auditCleanup.redactSensitiveFields();
   }
 }

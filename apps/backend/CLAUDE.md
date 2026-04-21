@@ -11,17 +11,19 @@ Backend REST API do **Sentinella Web** — plataforma B2G SaaS de vigilância en
 
 ## CONTEXTO
 
-Migração do Supabase concluída (2026-04-20, Fase 6 de 6). Legado arquivado em `docs/legacy/`.
+Migração do Supabase concluída (2026-04-20, Fase 6 de 6).
 
 - Auth: JWT HS256 próprio (`SECRET_JWT`) + refresh tokens em `public.refresh_tokens`
 - Storage: Cloudinary (`CloudinaryService`)
 - Edge Functions: NestJS services + `@nestjs/schedule`
-- RLS: Removido. Segurança via `AuthGuard` + `TenantGuard`
-- Analytics: Use Cases com `$queryRaw` inline — sem views PostgreSQL
+- RLS: Removido. Segurança via `AuthGuard` + `TenantGuard` (ambos globais via `APP_GUARD`)
+- Analytics: Use Cases com `$queryRaw` inline. Existem views PostgreSQL declaradas em `prisma/migrations/create_analytics_views.sql` (legado de compatibilidade), mas o código TypeScript não as consome (`grep "v_executivo_kpis" src/` → 0).
 
 ---
 
-## ARQUITETURA SOLID — PADRÃO OBRIGATÓRIO
+## ARQUITETURA SOLID — PADRÃO PARA MÓDULOS DE DOMÍNIO
+
+Estrutura canônica (módulos de domínio — ex.: `foco-risco`, `vistoria`, `imovel`, `sla`, `operacao`, `levantamento`, `plano-acao`, `drone`):
 
 ```
 src/modules/{nome}/
@@ -36,6 +38,18 @@ src/modules/{nome}/
 └── errors/{nome}.exception.ts  # createExceptionFactory()
 ```
 
+Nem todos os 32 módulos seguem essa estrutura completa. Módulos de infraestrutura / serviços transversais usam formas enxutas, orientadas a services:
+
+- `auth/` — sem `entities/`/`repositories/`/`view-model/`. Tem `email.service.ts`, `use-cases/`, `dtos/`.
+- `cloudinary/`, `ia/`, `seed/` — apenas `controller` + `module` + `*.service.ts`.
+- `piloto/`, `recorrencias/`, `alerta-retorno/` — apenas `controller` + `module` + `use-cases/`.
+- `agrupamentos/` — `controller` + `module` + `dtos` + `use-cases/` (+ `tags.controller.ts`).
+- `denuncia/` — sem `entities/`/`repositories/`/`view-model/`. Tem `dtos/`, `errors/`, `use-cases/`.
+- `cnes/` — sem `entities/`/`repositories/`/`view-model/`. Tem `cnes.service.ts`, `cnes.scheduler.ts`, `use-cases/`.
+- `dashboard/` — múltiplos controllers (`analitico`, `analytics`, `dashboard`, `eficacia`, `executivo`, `health`, `piloto`, `reincidencia`) + services (`dashboard-scheduler`, `health-check`, `liraa-export`) + estrutura domínio.
+- `job/` — estrutura domínio + `job.scheduler.ts` + `score-worker.service.ts` + `audit-cleanup.service.ts`.
+- `notificacao/` — estrutura domínio + `push.service.ts` + `canal-cidadao.service.ts` + `helpers/`.
+
 Implementação Prisma em:
 ```
 src/shared/modules/database/prisma/
@@ -45,24 +59,29 @@ src/shared/modules/database/prisma/
 
 ### Fluxo de request
 ```
-Request → AuthGuard → RolesGuard → TenantGuard
+Request → ThrottlerGuard → AuthGuard → RolesGuard → TenantGuard
   → Controller (Zod parse) → UseCase (regra de negócio)
   → Repository (abstract) → PrismaRepository (implementação)
   → Mapper.toDomain() / toPrisma()
   → ViewModel.toHttp() → Response
 ```
 
+Os 4 guards são **globais** via `APP_GUARD` em `src/app.module.ts` (ordem: `throttle → auth → roles → tenant`). Não declarar `@UseGuards(...)` nos controllers — o app não declara nenhum dos 4 guards em controllers (`grep -rn "UseGuards(TenantGuard" src/` → 0). Opt-out explícito via `@Public()` (sem auth) ou `@SkipTenant()` (autenticado sem tenant).
+
 ---
 
-## MÓDULOS (29)
+## MÓDULOS (32)
+
+Saída real de `ls apps/backend/src/modules/ | sort`:
 
 ```
-auth          billing       ciclo         cliente       cloudinary
-cnes          dashboard     denuncia      drone         foco-risco
-ia            imovel        import-log    job           levantamento
-notificacao   operacao      piloto        planejamento  plano-acao
-pluvio        quarteirao    regiao        reinspecao    risk-engine
-seed          sla           usuario       vistoria
+agrupamentos   alerta-retorno auth           billing        ciclo
+cliente        cloudinary     cnes           dashboard      denuncia
+drone          foco-risco     ia             imovel         import-log
+job            levantamento   notificacao    operacao       piloto
+planejamento   plano-acao     pluvio         quarteirao     recorrencias
+regiao         reinspecao     risk-engine    seed           sla
+usuario        vistoria
 ```
 
 ---
@@ -84,26 +103,28 @@ seed          sla           usuario       vistoria
 - Admin sem `cliente_id` seleciona tenant via `?clienteId=xxx`
 - Todo repository de tenant DEVE filtrar por `cliente_id`
 
-### Máquina de estados — focos_risco
-```
-suspeita → em_triagem → aguarda_inspecao → em_inspecao → confirmado → em_tratamento → resolvido
-         ↘           ↘                  ↘             ↘            ↘              ↘ descartado
-```
+### Máquina de estados — focos_risco (8 estados)
 
-Transições válidas:
+Fonte da verdade: `TRANSICOES_VALIDAS` em `src/modules/foco-risco/entities/foco-risco.ts`.
+
+Transições válidas **pelo endpoint genérico** `POST /focos-risco/:id/transicionar`:
 - `suspeita` → `em_triagem`
 - `em_triagem` → `aguarda_inspecao` | `descartado`
-- `aguarda_inspecao` → `em_inspecao` | `descartado`
+- `aguarda_inspecao` → `descartado`
 - `em_inspecao` → `confirmado` | `descartado`
 - `confirmado` → `em_tratamento`
 - `em_tratamento` → `resolvido` | `descartado`
+- `resolvido` → (terminal)
+- `descartado` → (terminal)
+
+**`aguarda_inspecao` → `em_inspecao` NÃO passa pelo endpoint genérico.** Essa transição ocorre pelo use-case `IniciarInspecao` via endpoint próprio `PATCH /focos-risco/:id/iniciar-inspecao` (evento operacional + histórico `inicio_inspecao`). Comentário explícito em `entities/foco-risco.ts` reforça isso.
 
 Toda transição DEVE gerar registro em `foco_risco_historico` (append-only).
 `resolvido` e `descartado` são terminais — não reabre; cria novo foco com `foco_anterior_id`.
 
 ### SLA
 - Prazo canônico: `sla_operacional.prazo_final` (banco)
-- SLA inicia quando foco transiciona para `confirmado`
+- SLA é criado pelo backend durante o fluxo do foco confirmado (ver módulo `sla/` e view-model `foco-risco/view-model/foco-sla-snapshot.ts`). A criação inicial em `sla_operacional` visível no código TypeScript ocorre em bulk pelo use-case `pluvio/use-cases/gerar-slas-run.ts`; para focos individuais confirmados, a criação pode depender de trigger SQL — consultar os use-cases antes de alterar.
 - Configurável por cliente e por região (`sla_config`, `sla_config_regiao`)
 
 ### PostGIS
@@ -111,16 +132,17 @@ Toda transição DEVE gerar registro em `foco_risco_historico` (append-only).
 - `planejamento.area` — `geometry(Polygon,4326)`
 - Índices GIST em ambas as colunas para `ST_Contains` no despacho de agentes
 
-### Analytics — sem views no banco
-Toda query analítica (dashboard executivo, piloto, regional, eficácia, reincidência) é implementada como Use Case com `$queryRaw` inline. **Nunca criar views PostgreSQL** para analytics.
+### Analytics — sem views consumidas pelo código
+Toda query analítica (dashboard executivo, piloto, regional, eficácia, reincidência) é implementada como Use Case com `$queryRaw` inline. O arquivo `prisma/migrations/create_analytics_views.sql` declara views (ex.: `v_executivo_kpis`) por compatibilidade histórica, mas **nenhuma é consumida pelo TypeScript** (`grep -r v_executivo_kpis src/` → 0). Não introduzir novas views sem consumo TS correspondente.
 
 ---
 
 ## PADRÕES DE CÓDIGO
 
 ### Controller
+Guards (Throttle/Auth/Roles/Tenant) são globais — não declarar no controller.
+
 ```typescript
-@UseGuards(TenantGuard)
 @UseInterceptors(PrismaInterceptor)
 @UsePipes(MyZodValidationPipe)
 @ApiTags('Nome')
@@ -202,16 +224,47 @@ Split em arquivos por domínio em `prisma/schema/`.
 Tipos PostGIS: `Unsupported("geometry(Polygon,4326)")`.
 Após qualquer alteração: `pnpm generate`.
 
+### Extensions do Prisma Client
+
+`PrismaService` aplica `$extends` no construtor. O getter `get client()` retorna o cliente **estendido** — 668 usos em `src/modules/**` são transparentemente cobertos.
+
+| Extension | Arquivo | Função |
+|---|---|---|
+| `updated-at` | `shared/modules/database/prisma/extensions/updated-at.extension.ts` | Injeta `updated_at = new Date()` em `update`/`updateMany`/`upsert.update` para 36 modelos específicos. Substitui o trigger SQL `trg_<tabela>_updated_at` do Supabase legado (perdido na migração). Respeita valor explícito do chamador. |
+| `created-by` | `shared/modules/database/prisma/extensions/created-by.extension.ts` | Injeta autoria automática em 6 tabelas LGPD. **INSERT** → `created_by` (focos_risco/casos_notificados/vistorias) ou `alterado_por` (foco_risco_historico/levantamento_item_status_historico). **UPDATE** → `updated_by` (levantamento_itens). Lê `request.user.id` via `ClsServiceManager.getClsService()`; NULL silencioso fora de request (crons, seeds) — replica comportamento `auth.uid()` do Supabase. Aplicado via `.$extends(createdByExtension)` direto em `prisma.service.ts` (sem factory genérica — quebraria TypeMap do Prisma). |
+| `audit-log` | `shared/modules/database/prisma/extensions/audit-log.extension.ts` + `audit-log.config.ts` | Grava automaticamente em `audit_log` as operações INSERT/UPDATE/DELETE de 4 tabelas administrativas/LGPD: `papeis_usuarios`, `cliente_plano`, `cliente_integracoes`, `usuarios` (UPDATE só quando `ativo` muda). Campos sensíveis filtrados: `senha_hash`, `api_key`. Resolve `cliente_id` para `audit_log.cliente_id` (lookup extra em `usuarios.auth_id` para `papeis_usuarios`) e traduz `auth_id` do CLS → `usuarios.id` para `audit_log.usuario_id`. **Fail-safe transparente:** escrita fire-and-forget + try/catch silencioso — falha em audit NUNCA quebra a operação de negócio. Usa `rawClient` (sem extensions) para evitar recursão. Aplicado via `.$extends(buildAuditLogExtension(this.prisma))` em `prisma.service.ts`. |
+
+**Dependência da B.1:** `UserContextInterceptor` (`shared/interceptors/user-context.interceptor.ts`) registrado globalmente via `APP_INTERCEPTOR` em `app.module.ts` — propaga `request.user.id` para CLS na key `'sentinella:userId'` (exportada como `CLS_USER_ID_KEY`).
+
+**Nota Prisma 7:** `prisma.$use(...)` foi removido na v7. Todas as extensões de comportamento global devem usar `Prisma.defineExtension` + `$extends`.
+
+**Nota operacional (Fase B.2, abr/2026):** antes desta fase, todo `UPDATE` deixava `updated_at` congelado no valor do INSERT — quebrando cache invalidation, ordenação por "mais recente" e lógica temporal. O extension restaura esse comportamento **no app**, sem recriar trigger no banco.
+
+**Fase B COMPLETA (abr/2026):** ~~`updated_at`~~ (B.2) + ~~`created_by`/`updated_by`/`alterado_por`~~ (B.1) + ~~`audit_log`~~ (B.3) agora todos automatizados via Prisma Extensions encadeados. Os 3 triggers originais do Supabase (`trg_*_updated_at`, `fn_set_*_from_jwt`, `fn_audit_trail`) estão replicados no app.
+
+**Nota operacional (Fase B.3, abr/2026):** escopo fechado em 4 tabelas administrativas. `usuarios` audita UPDATE apenas quando `ativo` muda (evita ruído de edição de perfil). O padrão é fail-safe: qualquer erro na gravação do `audit_log` é engolido silenciosamente — trilha de auditoria NUNCA pode quebrar a request. Ampliar o escopo exige adicionar entrada em `AUDIT_CONFIG` (audit-log.config.ts) + teste em `audit-log.config.spec.ts`.
+
 ---
 
 ## CRON JOBS (`@nestjs/schedule`)
 
-| Service | Frequência | Responsabilidade |
-|---|---|---|
-| `SlaSchedulerService` | Múltiplas | Escalar focos, marcar SLAs vencidos, push crítico |
-| `CnesSchedulerService` | Semanal | Sync unidades de saúde (CNES) |
-| `PluvioSchedulerService` | Diário 6h | Cálculo de risco pluvial |
-| `ReinspecaoSchedulerService` | Diário 6h | Marcar reinspeções vencidas |
+Apenas **4 classes** possuem métodos `@Cron`:
+
+| Classe | Arquivo | Crons | Responsabilidades |
+|---|---|---|---|
+| `JobScheduler` | `modules/job/job.scheduler.ts` | 11 | Orquestrador central. `processQueue` (a cada minuto, consome `job_queue`) + `billingSnapshot` (meia-noite) + `slaMarcarVencidos` (`*/15 * * * *`) + `slaPushCritico` (`*/15 * * * *`) + `relatorioSemanal` (`0 8 * * 1`, segunda 8h) + `resumoDiario` (meia-noite) + `cloudinaryCleanup` (semanal) + `limpezaLogs` (3h) + `escalarFocosSuspeitos` (horária) + `scoreDiario` (7h, enfileira `recalcular_score_lote` por cliente) + `redactSensitiveLogs` (2h, LGPD — invoca `AuditCleanupService.redactSensitiveFields`). |
+| `CnesScheduler` | `modules/cnes/cnes.scheduler.ts` | 1 | `EVERY_WEEK` — sync CNES. |
+| `PluvioScheduler` | `modules/pluvio/pluvio.scheduler.ts` | 1 | `0 6 * * *` — risco pluvial. |
+| `ReinspecaoScheduler` | `modules/reinspecao/reinspecao.scheduler.ts` | 1 | `0 6 * * *` — marcar reinspeções vencidas. |
+| `HealthCheckService` | `modules/dashboard/health-check.service.ts` | 1 | `*/5 * * * *` — ping de sanidade. |
+
+Nomes terminados em `*SchedulerService` (ex.: `SlaSchedulerService`, `BillingSchedulerService`, `DashboardSchedulerService`, `PluvioSchedulerService`) **não são cron** — são services sem `@Cron`, invocados pelo `JobScheduler`.
+
+> **Exceção:** `HealthCheckService` (em `dashboard/`) **tem `@Cron` próprio** (ping */5min), embora siga o sufixo `*Service` — ele é o único service com cron direto fora dos 4 schedulers principais.
+>
+> **Aviso (Fase A, abr/2026):** o cron `slaMarcarVencidos` foi restaurado de `0 6 * * *` para `*/15 * * * *` e `relatorioSemanal` de diário para `0 8 * * 1` (segunda 8h). O cron `scoreDiario` (equivalente ao `score-recalculo-diario` do pg_cron legado) passou a existir. O cron `redactSensitiveLogs` (equivalente LGPD ao `retencao-logs-redact`) passou a existir.
+>
+> **Débito conhecido (NÃO tratado na Fase A):** o mapa de escalada de prioridades em `SlaSchedulerService.marcarVencidos` usa `baixa/media/alta/critica` enquanto o `sla_operacional.prioridade` real usa `Crítica/Urgente/Alta/Moderada/Média/Baixa/Monitoramento` (ver `apps/frontend/src/types/sla.ts`). A escalada atual do TS **não surte efeito** nos dados reais. Tratar em tarefa separada.
 
 ---
 
@@ -220,12 +273,12 @@ Após qualquer alteração: `pnpm generate`.
 ### foco-risco
 - Toda transição de status gera registro em `foco_risco_historico`
 - `score_prioridade` calculado pelo trigger `trg_recalcular_score_prioridade` — não atualizar manualmente
-- Colunas REMOVIDAS de `levantamento_itens` (migration 20260711): `status_atendimento`, `acao_aplicada`, `data_resolucao` — não referenciar
+- Colunas não existentes no schema atual de `levantamento_itens` (removidas em migrações anteriores ao monorepo): `status_atendimento`, `acao_aplicada`, `data_resolucao` — não referenciar
 
 ### reinspecao
-- Foco entra em `em_tratamento` → trigger cria reinspeção pendente (7 dias)
-- Foco resolvido/descartado → trigger cancela reinspeções pendentes
-- Máx. 1 reinspeção pendente por `(foco_risco_id, tipo)`
+- `ReinspecaoScheduler` (cron diário `0 6 * * *`) marca reinspeções pendentes como vencidas.
+- Criação manual via use-case `modules/reinspecao/use-cases/criar-manual.ts`. A criação automática ao foco entrar em `em_tratamento` e o cancelamento automático ao foco ir para `resolvido`/`descartado`, quando existem, ocorrem por trigger SQL — não estão implementados em TypeScript. Antes de modificar, consultar `modules/reinspecao/use-cases/`.
+- Máx. 1 reinspeção pendente por `(foco_risco_id, tipo)` (restrição histórica do banco).
 
 ### regiao
 - `area geometry(Polygon,4326)` populada via `ST_GeomFromGeoJSON(geojson::text)` no `PrismaRegiaoWriteRepository.syncArea()`
@@ -235,6 +288,9 @@ Após qualquer alteração: `pnpm generate`.
 - `sla_foco_config` define prazos por fase
 - `sla_config_regiao` sobrepõe config geral por região
 - Feriados via `sla_feriados` (por cliente)
+- **Fase C.1 (abr/2026):** criação e fechamento de SLA por foco migraram dos triggers SQL `fn_iniciar_sla_ao_confirmar_foco` / `fn_vincular_sla_ao_confirmar` / `fn_fechar_sla_ao_resolver_foco` para 3 use-cases TypeScript: `IniciarSlaAoConfirmarFoco`, `FecharSlaAoResolverFoco`, `ResolveSlaConfig`. Eles são invocados dentro de `$transaction(async (tx) => {...})` no `TransicionarFocoRisco` — primeiro uso do padrão **transação interativa** no backend. Diferente do `$transaction([array])` pré-existente, o callback permite lógica entre queries (ex.: idempotência + vínculo + create ON CONFLICT).
+- **Padrão de compensação:** se o hook de SLA falhar dentro da tx, o erro é **capturado** (não relançado) — foco + histórico ainda commitam. A falha é gravada em `sla_erros_criacao` **FORA da transação** (caso contrário seria revertida com ela). O `.catch()` final do log-de-log engole erro residual — trilha de erro de SLA NUNCA pode quebrar a request.
+- **ResolveSlaConfig:** resolve prioridade → slaHoras na ordem `sla_config_regiao` → `sla_config` → fallback hard-coded (P1=4, P2=12, P3=24, P4=72, P5=168). `Logger.warn` ao cair no fallback, para visibilidade operacional de clientes sem config.
 
 ### ia
 - Cache `ia_insights` verificado antes de chamar Claude Haiku
@@ -246,32 +302,72 @@ Após qualquer alteração: `pnpm generate`.
 - Inativação: `ativo=false`, nunca DELETE
 
 ### denuncia
-- `POST /denuncia/cidadao` é público (`@Public()`)
-- Rate limit: `canal_cidadao_rate_limit` (10/hora por IP por cliente)
-- Retorna `{ ok, foco_id, deduplicado }`; protocolo = primeiros 8 chars do `foco_id`
+Controller `@Controller('denuncias')` (plural). 4 rotas reais:
+
+| Método | Rota | Auth | Throttle | Use-case |
+|---|---|---|---|---|
+| POST | `/denuncias/cidadao` | `@Public()` | 5/min (`{ limit: 5, ttl: 60_000 }`) | `DenunciarCidadao` (V1, SQL legado) ou `DenunciarCidadaoV2` (V2, TS) |
+| POST | `/denuncias/upload-foto` | `@Public()` | 5/min | `UploadFotoDenuncia` |
+| GET  | `/denuncias/stats` | `@Roles('admin','supervisor','analista_regional')` | (sem @Throttle) | `CanalCidadaoStats` |
+| GET  | `/denuncias/consultar` | `@Public()` | 30/min | `ConsultarDenuncia` |
+
+- Flag `env.CANAL_CIDADAO_V2_ENABLED` (default `false` em `src/lib/env/server.ts`) escolhe entre V1 e V2 no POST `/denuncias/cidadao`.
+  - V1: `use-cases/denunciar-cidadao.ts` → chama função SQL `denunciar_cidadao()`.
+  - V2: `use-cases/denunciar-cidadao-v2.ts` → TypeScript puro, cria `focos_risco` e `foco_risco_historico` via Prisma.
+- Retorno de V2: `{ protocolo, id }` (protocolo = primeiros 8 chars do `foco_id` sem hífens).
+- `GET /denuncias/consultar` ainda depende da função SQL `consultar_denuncia_cidadao()` (não há fallback TypeScript).
+- Hash de IP (V2) usa `env.CANAL_CIDADAO_IP_SALT`.
 
 ---
 
 ## SEGURANÇA — NÃO REVERTER
 
-- `platform_admin` é valor morto — nenhum usuário deve tê-lo
-- IDOR cross-tenant: `findById` sempre filtra por `cliente_id` quando `clienteId != null`
-- `denunciar_cidadao` cria `foco_risco` diretamente com rate limit
-- Sem RLS no banco — toda segurança é NestJS guards
+- `platform_admin` é valor morto — nenhum usuário deve tê-lo.
+- Proteção cross-tenant: o repositório `findById(id, clienteId?)` filtra por `cliente_id` quando o `clienteId` é passado. Use-cases de domínio DEVEM passar `tenantId` no `findById`. Parte dos use-cases ainda usa `findById(id)` sem tenant e faz validação `assert`/`assertTenantOwnership` a posteriori (`src/shared/security/tenant-ownership.util.ts`). Ao criar novo código, **sempre passar tenant no `findById`** — não confiar em asserts a posteriori.
+- `denunciar_cidadao` (V1 SQL ou V2 TS) cria `focos_risco` diretamente com rate limit de 5/min por IP.
+- Sem RLS no banco — toda segurança é NestJS guards (`AuthGuard`, `RolesGuard`, `TenantGuard`) e asserts em use-cases.
+- `TenantGuard` é global via `APP_GUARD`; opt-out via `@Public()` ou `@SkipTenant()`.
 
 ---
 
 ## VARIÁVEIS DE AMBIENTE
 
+Fonte: `src/lib/env/server.ts` (Zod).
+
+**Obrigatórias (sem default):**
 ```env
 DATABASE_URL=postgresql://...
 SECRET_JWT=...
-JWT_EXPIRES_IN=7d
-PORT=3333
-CLOUDINARY_CLOUD_NAME=...
-CLOUDINARY_API_KEY=...
-CLOUDINARY_API_SECRET=...
-ANTHROPIC_API_KEY=...
+```
+
+**Com default:**
+```env
+JWT_EXPIRES_IN=7d                         # default '7d'
+REFRESH_TOKEN_EXPIRES_IN=30d              # default '30d'
+PORT=3333                                 # default '3333'
+NODE_ENV=development                      # enum development|production|test, default development
+SMTP_PORT=587                             # default '587'
+CANAL_CIDADAO_IP_SALT=sentinella-dev-salt # default 'sentinella-dev-salt'
+CANAL_CIDADAO_V2_ENABLED=false            # default false (boolean via transform)
+```
+
+**Opcionais (sem default):**
+```env
+CLIENT_URL=https://app.exemplo.com,https://admin.exemplo.com  # obrigatória em produção (main.ts lança erro com NODE_ENV != 'development' se ausente)
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
+ANTHROPIC_API_KEY=
+ESUS_API_URL=
+ESUS_API_TOKEN=
+CNES_API_URL=
+VAPID_PUBLIC_KEY=
+VAPID_PRIVATE_KEY=
+VAPID_SUBJECT=
+SMTP_HOST=
+SMTP_USER=
+SMTP_PASS=
+SMTP_FROM=
 ```
 
 ---

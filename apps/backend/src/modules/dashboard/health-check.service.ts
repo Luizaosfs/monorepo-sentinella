@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 import { env } from 'src/lib/env/server';
+import { Cron } from '@nestjs/schedule';
 
 @Injectable()
 export class HealthCheckService {
@@ -64,5 +65,23 @@ export class HealthCheckService {
       supabase_bridge_ativa: false, // Bridge removida na Fase 5 — campo mantido para compatibilidade de contrato com frontend antigo
       canal_cidadao_v2_ativo: env.CANAL_CIDADAO_V2_ENABLED,
     };
+  }
+
+  /**
+   * Equivalente ao pg_cron `health-check-job` do Supabase legado.
+   * Ping de sanidade a cada 5 minutos.
+   */
+  @Cron('*/5 * * * *')
+  async healthCheckCron() {
+    try {
+      const result = await this.check();
+      if (result.status !== 'ok') {
+        this.logger.warn(`[HealthCheckService.healthCheckCron] status=${result.status}`);
+      }
+    } catch (err: unknown) {
+      this.logger.error(
+        `[HealthCheckService.healthCheckCron] falhou: ${(err as Error).message ?? err}`,
+      );
+    }
   }
 }

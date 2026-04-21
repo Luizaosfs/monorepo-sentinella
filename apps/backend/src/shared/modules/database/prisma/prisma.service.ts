@@ -4,6 +4,13 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
 import { Pool, type PoolConfig } from 'pg';
 
+import { buildAuditLogExtension } from './extensions/audit-log.extension';
+import { createdByExtension } from './extensions/created-by.extension';
+import {
+  applyUpdatedAtExtension,
+  type ExtendedPrismaClient,
+} from './extensions/updated-at.extension';
+
 function buildPoolConfig(connectionString: string): PoolConfig {
   const config: PoolConfig = { connectionString };
 
@@ -49,6 +56,14 @@ function buildPoolConfig(connectionString: string): PoolConfig {
 export class PrismaService implements OnModuleInit, OnModuleDestroy {
   private prisma: PrismaClient;
 
+  /**
+   * Cliente estendido (com extensions aplicadas — atualmente: updated-at).
+   * É ESTE que deve ser consumido pelo resto da aplicação via `get client()`.
+   * O cliente original `this.prisma` é mantido para `$connect`/`$disconnect`,
+   * que não estão disponíveis no tipo estendido.
+   */
+  private extendedPrisma!: ExtendedPrismaClient;
+
   constructor() {
     const databaseUrl = process.env.DATABASE_URL;
 
@@ -61,6 +76,10 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     this.prisma = new PrismaClient({
       adapter: new PrismaPg(pool, { disposeExternalPool: true }),
     });
+
+    this.extendedPrisma = applyUpdatedAtExtension(this.prisma)
+      .$extends(createdByExtension)
+      .$extends(buildAuditLogExtension(this.prisma));
   }
 
   async onModuleInit() {
@@ -78,7 +97,7 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
   }
 
   get client() {
-    return this.prisma;
+    return this.extendedPrisma;
   }
 
   async onModuleDestroy() {

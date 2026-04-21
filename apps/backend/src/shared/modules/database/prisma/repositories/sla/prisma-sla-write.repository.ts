@@ -19,10 +19,113 @@ import { PrismaService } from '../../prisma.service';
 export class PrismaSlaWriteRepository implements SlaWriteRepository {
   constructor(private prisma: PrismaService) {}
 
+  /**
+   * Se `tx` veio de dentro de um `$transaction(callback)`, usa o tx-client;
+   * caso contrário cai no cliente estendido padrão. Permite que o mesmo
+   * repo seja chamado dentro e fora de transações sem duplicar métodos.
+   */
+  private resolveClient(tx?: unknown) {
+    return (tx ?? this.prisma.client) as any;
+  }
+
   async save(entity: SlaOperacional): Promise<void> {
     await this.prisma.client.sla_operacional.update({
       where: { id: entity.id },
       data: PrismaSlaMapper.slaOperacionalToPrisma(entity),
+    });
+  }
+
+  async createFromFoco(
+    data: {
+      clienteId: string;
+      focoRiscoId: string;
+      levantamentoItemId: string | null;
+      prioridade: string;
+      slaHoras: number;
+      inicio: Date;
+      prazoFinal: Date;
+    },
+    tx?: unknown,
+  ): Promise<{ id: string; conflicted: boolean }> {
+    const client = this.resolveClient(tx);
+    try {
+      const row = await client.sla_operacional.create({
+        data: {
+          cliente_id: data.clienteId,
+          foco_risco_id: data.focoRiscoId,
+          levantamento_item_id: data.levantamentoItemId,
+          prioridade: data.prioridade,
+          sla_horas: data.slaHoras,
+          inicio: data.inicio,
+          prazo_final: data.prazoFinal,
+          status: 'pendente',
+          violado: false,
+          escalonado: false,
+          escalonado_automatico: false,
+        },
+      });
+      return { id: row.id, conflicted: false };
+    } catch (err: unknown) {
+      // P2002 = unique constraint — equivalente a ON CONFLICT DO NOTHING.
+      // Outro foco já tinha SLA criado em paralelo: não é erro, idempotência.
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+        return { id: '', conflicted: true };
+      }
+      throw err;
+    }
+  }
+
+  async vincularAFoco(
+    focoRiscoId: string,
+    levantamentoItemId: string,
+    tx?: unknown,
+  ): Promise<number> {
+    const client = this.resolveClient(tx);
+    const result = await client.sla_operacional.updateMany({
+      where: {
+        levantamento_item_id: levantamentoItemId,
+        foco_risco_id: null,
+        deleted_at: null,
+      },
+      data: { foco_risco_id: focoRiscoId },
+    });
+    return result.count;
+  }
+
+  async fecharTodosPorFoco(
+    focoRiscoId: string,
+    tx?: unknown,
+  ): Promise<number> {
+    const client = this.resolveClient(tx);
+    const result = await client.sla_operacional.updateMany({
+      where: {
+        foco_risco_id: focoRiscoId,
+        status: { in: ['pendente', 'em_atendimento'] },
+        deleted_at: null,
+      },
+      data: {
+        status: 'concluido',
+        concluido_em: new Date(),
+      },
+    });
+    return result.count;
+  }
+
+  async registrarErroCriacao(data: {
+    clienteId: string | null;
+    focoRiscoId: string | null;
+    erro: string;
+    contexto: JsonObject;
+  }): Promise<void> {
+    // Compensação: roda SEMPRE fora da transação que falhou, caso contrário
+    // o rollback do outer tx apagaria o log. Usa `this.prisma.client` direto.
+    await this.prisma.client.sla_erros_criacao.create({
+      data: {
+        cliente_id: data.clienteId,
+        item_id: data.focoRiscoId,
+        erro: data.erro,
+        contexto: data.contexto as Prisma.InputJsonValue,
+      },
     });
   }
 

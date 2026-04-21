@@ -94,7 +94,9 @@
       "Bash(pnpm exec *)",
       "Bash(python scripts/remove-tenant-guard.py)",
       "Bash(rm scripts/remove-tenant-guard.py)",
-      "Bash(rmdir scripts *)"
+      "Bash(rmdir scripts *)",
+      "Bash(pnpm --filter @sentinella/backend run build)",
+      "Bash(git stash *)"
     ]
   }
 }

@@ -34,4 +34,43 @@ export class AuditCleanupService {
     this.logger.log(`[AuditCleanupService.cleanupLogs] deletados=${deletados}`);
     return { deletados };
   }
+
+  /**
+   * Equivalente LGPD ao pg_cron `retencao-logs-redact` do Supabase legado
+   * (função `fn_redact_sensitive_log_fields`). Nullifica campos sensíveis
+   * após prazos — NÃO deleta registros (preserva rastreabilidade).
+   */
+  async redactSensitiveFields(): Promise<{
+    esusRespostaApi: number;
+    analiseIaClusters: number;
+  }> {
+    // a) item_notificacoes_esus.resposta_api → NULL após 90 dias
+    const esusResult = await this.prisma.client.$executeRaw`
+      UPDATE item_notificacoes_esus
+      SET resposta_api = NULL,
+          resposta_redacted_at = NOW()
+      WHERE resposta_api IS NOT NULL
+        AND resposta_redacted_at IS NULL
+        AND created_at < NOW() - INTERVAL '90 days'
+    `;
+
+    // b) levantamento_analise_ia.clusters → NULL após 1 ano
+    const iaResult = await this.prisma.client.$executeRaw`
+      UPDATE levantamento_analise_ia
+      SET clusters = NULL,
+          clusters_redacted_at = NOW()
+      WHERE clusters IS NOT NULL
+        AND clusters_redacted_at IS NULL
+        AND created_at < NOW() - INTERVAL '1 year'
+    `;
+
+    const esusRespostaApi = Number(esusResult);
+    const analiseIaClusters = Number(iaResult);
+
+    this.logger.log(
+      `[AuditCleanupService.redactSensitiveFields] esus=${esusRespostaApi} ia_clusters=${analiseIaClusters}`,
+    );
+
+    return { esusRespostaApi, analiseIaClusters };
+  }
 }

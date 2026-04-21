@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma, PrismaClient } from '@prisma/client';
 import { ClsService } from 'nestjs-cls';
 
+import type {
+  ExtendedPrismaClient,
+  ExtendedTransactionClient,
+} from './extensions/updated-at.extension';
 import { PrismaService } from './prisma.service';
 
 @Injectable()
@@ -11,7 +14,7 @@ export class PrismaContext {
     private prisma: PrismaService,
   ) {}
 
-  setTransaction(tx: Prisma.TransactionClient) {
+  setTransaction(tx: ExtendedTransactionClient) {
     this.cls.set('prismaTx', tx);
   }
 
@@ -19,19 +22,19 @@ export class PrismaContext {
     this.cls.set('prismaTx', null);
   }
 
-  getTransaction(): Prisma.TransactionClient | null {
+  getTransaction(): ExtendedTransactionClient | null {
     return this.cls.get('prismaTx');
   }
 
-  get client(): Prisma.TransactionClient | PrismaClient {
+  get client(): ExtendedTransactionClient | ExtendedPrismaClient {
     const tx = this.getTransaction();
     return tx ?? this.prisma.client;
   }
 
   async executeInTransaction<T>(
-    operation: (client: Prisma.TransactionClient) => Promise<T>,
+    operation: (client: ExtendedTransactionClient) => Promise<T>,
   ): Promise<T> {
     const client = this.client;
-    return operation(client as Prisma.TransactionClient);
+    return operation(client as ExtendedTransactionClient);
   }
 }

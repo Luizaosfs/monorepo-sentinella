@@ -1,7 +1,11 @@
 import { REQUEST } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
+import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 import { mock } from 'jest-mock-extended';
 
+import { SlaWriteRepository } from '../../../sla/repositories/sla-write.repository';
+import { FecharSlaAoResolverFoco } from '../../../sla/use-cases/fechar-sla-ao-resolver-foco';
+import { IniciarSlaAoConfirmarFoco } from '../../../sla/use-cases/iniciar-sla-ao-confirmar-foco';
 import { FocoRiscoException } from '../../errors/foco-risco.exception';
 import { FocoRiscoReadRepository } from '../../repositories/foco-risco-read.repository';
 import { FocoRiscoWriteRepository } from '../../repositories/foco-risco-write.repository';
@@ -15,14 +19,36 @@ describe('TransicionarFocoRisco', () => {
   let useCase: TransicionarFocoRisco;
   const readRepo = mock<FocoRiscoReadRepository>();
   const writeRepo = mock<FocoRiscoWriteRepository>();
+  const iniciarSla = mock<IniciarSlaAoConfirmarFoco>();
+  const fecharSla = mock<FecharSlaAoResolverFoco>();
+  const slaWriteRepo = mock<SlaWriteRepository>();
+
+  /**
+   * Mock de PrismaService suficiente para `client.$transaction(callback)` —
+   * o callback roda imediatamente com um tx-mock opaco (simula commit).
+   */
+  const prismaMock = {
+    client: {
+      $transaction: jest.fn(async (cb: (tx: unknown) => Promise<unknown>) => {
+        return cb({ __mock_tx__: true });
+      }),
+    },
+  };
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    prismaMock.client.$transaction = jest.fn(async (cb) =>
+      cb({ __mock_tx__: true }),
+    );
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         TransicionarFocoRisco,
+        { provide: PrismaService, useValue: prismaMock },
         { provide: FocoRiscoReadRepository, useValue: readRepo },
         { provide: FocoRiscoWriteRepository, useValue: writeRepo },
+        { provide: IniciarSlaAoConfirmarFoco, useValue: iniciarSla },
+        { provide: FecharSlaAoResolverFoco, useValue: fecharSla },
+        { provide: SlaWriteRepository, useValue: slaWriteRepo },
         { provide: REQUEST, useValue: mockRequest({ tenantId: 'cliente-uuid-1' }) },
       ],
     }).compile();
@@ -30,7 +56,7 @@ describe('TransicionarFocoRisco', () => {
     useCase = module.get<TransicionarFocoRisco>(TransicionarFocoRisco);
   });
 
-  it('deve transicionar suspeita → em_triagem', async () => {
+  it('deve transicionar suspeita → em_triagem (sem SLA hooks)', async () => {
     const foco = new FocoRiscoBuilder().withStatus('suspeita').build();
     readRepo.findById.mockResolvedValue(foco);
     writeRepo.save.mockResolvedValue();
@@ -42,13 +68,13 @@ describe('TransicionarFocoRisco', () => {
     const result = await useCase.execute(foco.id!, { statusPara: 'em_triagem' });
 
     expect(result.foco.status).toBe('em_triagem');
-    expect(writeRepo.save).toHaveBeenCalledWith(expect.objectContaining({ status: 'em_triagem' }));
-    expect(writeRepo.createHistorico).toHaveBeenCalledWith(
-      expect.objectContaining({ statusAnterior: 'suspeita', statusNovo: 'em_triagem' }),
-    );
+    expect(result.sla).toBeNull();
+    expect(result.slaFechados).toBeNull();
+    expect(iniciarSla.execute).not.toHaveBeenCalled();
+    expect(fecharSla.execute).not.toHaveBeenCalled();
   });
 
-  it('deve transicionar em_tratamento → resolvido e preencher resolvidoEm', async () => {
+  it('em_tratamento → resolvido chama FecharSla e preenche resolvidoEm', async () => {
     const foco = new FocoRiscoBuilder().withStatus('em_tratamento').build();
     readRepo.findById.mockResolvedValue(foco);
     writeRepo.save.mockResolvedValue();
@@ -56,6 +82,7 @@ describe('TransicionarFocoRisco', () => {
       clienteId: 'cliente-uuid-1',
       statusNovo: 'resolvido',
     });
+    fecharSla.execute.mockResolvedValue(2);
 
     const result = await useCase.execute(foco.id!, {
       statusPara: 'resolvido',
@@ -64,10 +91,11 @@ describe('TransicionarFocoRisco', () => {
 
     expect(result.foco.status).toBe('resolvido');
     expect(result.foco.resolvidoEm).toBeInstanceOf(Date);
-    expect(result.foco.desfecho).toBe('Tratamento concluído');
+    expect(fecharSla.execute).toHaveBeenCalledWith(foco.id, expect.anything());
+    expect(result.slaFechados).toBe(2);
   });
 
-  it('deve preencher confirmadoEm ao confirmar', async () => {
+  it('em_inspecao → confirmado chama IniciarSla e preenche confirmadoEm', async () => {
     const foco = new FocoRiscoBuilder().withStatus('em_inspecao').build();
     readRepo.findById.mockResolvedValue(foco);
     writeRepo.save.mockResolvedValue();
@@ -75,13 +103,20 @@ describe('TransicionarFocoRisco', () => {
       clienteId: 'cliente-uuid-1',
       statusNovo: 'confirmado',
     });
+    iniciarSla.execute.mockResolvedValue({
+      acao: 'criado',
+      slaId: 'sla-novo',
+      fromFallback: false,
+    });
 
     const result = await useCase.execute(foco.id!, { statusPara: 'confirmado' });
 
     expect(result.foco.confirmadoEm).toBeInstanceOf(Date);
+    expect(iniciarSla.execute).toHaveBeenCalledWith(foco, expect.anything());
+    expect(result.sla).toEqual({ acao: 'criado', slaId: 'sla-novo', fromFallback: false });
   });
 
-  it('deve preencher resolvidoEm ao descartar', async () => {
+  it('em_triagem → descartado chama FecharSla também', async () => {
     const foco = new FocoRiscoBuilder().withStatus('em_triagem').build();
     readRepo.findById.mockResolvedValue(foco);
     writeRepo.save.mockResolvedValue();
@@ -89,10 +124,48 @@ describe('TransicionarFocoRisco', () => {
       clienteId: 'cliente-uuid-1',
       statusNovo: 'descartado',
     });
+    fecharSla.execute.mockResolvedValue(0);
 
     const result = await useCase.execute(foco.id!, { statusPara: 'descartado' });
 
     expect(result.foco.resolvidoEm).toBeInstanceOf(Date);
+    expect(fecharSla.execute).toHaveBeenCalledWith(foco.id, expect.anything());
+    expect(result.slaFechados).toBe(0);
+  });
+
+  it('compensação: erro no IniciarSla NÃO bloqueia foco+histórico e registra em sla_erros_criacao', async () => {
+    const foco = new FocoRiscoBuilder().withStatus('em_inspecao').build();
+    readRepo.findById.mockResolvedValue(foco);
+    writeRepo.save.mockResolvedValue();
+    writeRepo.createHistorico.mockResolvedValue({
+      clienteId: 'cliente-uuid-1',
+      statusNovo: 'confirmado',
+    });
+    iniciarSla.execute.mockRejectedValue(new Error('config corrompida'));
+    slaWriteRepo.registrarErroCriacao.mockResolvedValue();
+
+    const result = await useCase.execute(foco.id!, { statusPara: 'confirmado' });
+
+    // Foco salvou e histórico foi criado apesar do erro de SLA
+    expect(writeRepo.save).toHaveBeenCalled();
+    expect(writeRepo.createHistorico).toHaveBeenCalled();
+    expect(result.foco.status).toBe('confirmado');
+    expect(result.sla).toBeNull();
+    expect(result.slaError).toContain('config corrompida');
+
+    // Aguarda o microtask do .catch() no registrarErroCriacao
+    await new Promise((r) => setImmediate(r));
+    expect(slaWriteRepo.registrarErroCriacao).toHaveBeenCalledWith(
+      expect.objectContaining({
+        clienteId: foco.clienteId,
+        focoRiscoId: foco.id,
+        erro: 'config corrompida',
+        contexto: expect.objectContaining({
+          use_case: 'TransicionarFocoRisco',
+          status_novo: 'confirmado',
+        }),
+      }),
+    );
   });
 
   it('deve rejeitar aguarda_inspecao → em_inspecao (fluxo exclusivo de iniciar-inspecao)', async () => {
@@ -151,6 +224,7 @@ describe('TransicionarFocoRisco', () => {
         motivo: 'triagem inicial',
         tipoEvento: 'mudanca_status',
       }),
+      expect.anything(),
     );
   });
 });

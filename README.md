@@ -89,15 +89,15 @@ Admin pode selecionar tenant via `?clienteId=xxx`.
 
 ## Módulos principais
 
-- **Focos de risco** — state machine 7 estados, SLA, score territorial, recorrência
-- **Vistoria de campo** — stepper 5 etapas, offline-first, depósitos PNCD (A1–E)
-- **Canal cidadão** — denúncia pública via QR, protocolo, rate limit
-- **Casos notificados** — cruzamento automático caso ↔ foco (PostGIS 300m)
-- **Pipeline drone** — YOLO, triagem IA, Cloudinary, evidências
-- **SLA operacional** — regras por prioridade, push crítico, auditoria
-- **Score territorial** — 13 fatores, calibrável por cliente, cron diário
-- **Integração CNES** — sincronização automática de unidades de saúde
-- **LIRAa** — IIP/IBP por quarteirão, boletim exportável
+- **Focos de risco** (`foco-risco`) — state machine 8 estados, SLA, score territorial, recorrência
+- **Vistoria de campo** (`vistoria`) — stepper 5 etapas, offline-first, depósitos PNCD (A1–E)
+- **Canal cidadão** (`denuncia`) — denúncia pública via QR, protocolo, rate limit 5/min
+- **Casos notificados** (`notificacao`) — cruzamento automático caso ↔ foco (PostGIS 300m)
+- **Pipeline drone** (`drone`) — YOLO, triagem IA, Cloudinary, evidências
+- **SLA operacional** (`sla`) — regras por prioridade, push crítico, auditoria
+- **Score territorial** (`risk-engine`) — calibrável por cliente via `score_config` (tabela Prisma `score_config.prisma`)
+- **Integração CNES** (`cnes`) — sincronização automática de unidades de saúde
+- **LIRAa** (via `dashboard`: `liraa-export.service.ts`) — IIP/IBP por quarteirão, boletim exportável
 
 ---
 

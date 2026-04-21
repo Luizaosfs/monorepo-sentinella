@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { DatabaseModule } from '@shared/modules/database/database.module';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 
+import { SlaModule } from '../sla/sla.module';
 import { FocoRiscoController } from './foco-risco.controller';
 import { AtribuirAgente } from './use-cases/atribuir-agente';
 import { AtribuirAgenteLote } from './use-cases/atribuir-agente-lote';
@@ -43,6 +44,6 @@ import { UpdateFocoRisco } from './use-cases/update-foco-risco';
     PrismaService,
   ],
   controllers: [FocoRiscoController],
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, SlaModule],
 })
 export class FocoRiscoModule {}
