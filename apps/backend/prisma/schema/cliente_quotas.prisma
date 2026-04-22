@@ -1,6 +1,6 @@
 model cliente_quotas {
   id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  cliente_id     String   @db.Uuid
+  cliente_id     String   @unique @db.Uuid
   voos_mes       Int?
   levantamentos_mes Int?
   itens_mes      Int?

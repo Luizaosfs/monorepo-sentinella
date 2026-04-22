@@ -4,6 +4,7 @@ import { mock } from 'jest-mock-extended';
 import { LevantamentoException } from '../../errors/levantamento.exception';
 import { LevantamentoReadRepository } from '../../repositories/levantamento-read.repository';
 import { LevantamentoWriteRepository } from '../../repositories/levantamento-write.repository';
+import { CriarFocoDeLevantamentoItem } from '@/modules/foco-risco/use-cases/auto-criacao/criar-foco-de-levantamento-item';
 import { expectHttpException } from '@test/utils/expect-http-exception';
 import { mockRequest } from '@test/utils/user-helpers';
 
@@ -14,6 +15,7 @@ describe('CriarItemManual', () => {
   let useCase: CriarItemManual;
   const readRepo = mock<LevantamentoReadRepository>();
   const writeRepo = mock<LevantamentoWriteRepository>();
+  const criarFoco = { execute: jest.fn().mockResolvedValue({ criado: false }) };
 
   const planejamentoAtivo = {
     id: 'plan-1',
@@ -39,6 +41,7 @@ describe('CriarItemManual', () => {
         CriarItemManual,
         { provide: LevantamentoReadRepository, useValue: readRepo },
         { provide: LevantamentoWriteRepository, useValue: writeRepo },
+        { provide: CriarFocoDeLevantamentoItem, useValue: criarFoco },
         { provide: 'REQUEST', useValue: mockRequest({ tenantId: 'test-cliente-id' }) },
       ],
     }).compile();
@@ -269,5 +272,53 @@ describe('CriarItemManual', () => {
     await useCase.execute({ ...baseInput, tags: ['a', 'b'] });
 
     expect(writeRepo.criarItemTags).toHaveBeenCalledWith('item-tags', ['a', 'b']);
+  });
+
+  it('deve invocar hook CriarFocoDeLevantamentoItem após criar item (best-effort)', async () => {
+    readRepo.findPlanejamento.mockResolvedValue(planejamentoAtivo);
+    readRepo.findByPlanejamentoDataTipo.mockResolvedValue(
+      new LevantamentoBuilder().withId('lev-h').build(),
+    );
+    readRepo.findSlaConfig.mockResolvedValue(null);
+    const now = new Date('2026-04-20');
+    writeRepo.criarItemManual.mockResolvedValue({
+      id: 'item-h',
+      levantamentoId: 'lev-h',
+      latitude: -10,
+      longitude: -20,
+      prioridade: 'P1',
+      risco: 'alto',
+      enderecoCurto: 'Rua Y',
+      createdAt: now,
+    });
+
+    await useCase.execute(baseInput);
+
+    expect(criarFoco.execute).toHaveBeenCalledWith(
+      expect.objectContaining({
+        itemId: 'item-h',
+        levantamentoId: 'lev-h',
+        latitude: -10,
+        longitude: -20,
+        prioridade: 'P1',
+      }),
+    );
+  });
+
+  it('falha no hook não deve quebrar o use-case', async () => {
+    readRepo.findPlanejamento.mockResolvedValue(planejamentoAtivo);
+    readRepo.findByPlanejamentoDataTipo.mockResolvedValue(
+      new LevantamentoBuilder().withId('lev-e').build(),
+    );
+    readRepo.findSlaConfig.mockResolvedValue(null);
+    writeRepo.criarItemManual.mockResolvedValue({
+      id: 'item-err',
+      levantamentoId: 'lev-e',
+      createdAt: new Date(),
+    });
+    criarFoco.execute.mockRejectedValueOnce(new Error('boom'));
+
+    const r = await useCase.execute(baseInput);
+    expect(r.levantamentoItem.id).toBe('item-err');
   });
 });

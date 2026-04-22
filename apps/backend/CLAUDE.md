@@ -275,10 +275,141 @@ Nomes terminados em `*SchedulerService` (ex.: `SlaSchedulerService`, `BillingSch
 - `score_prioridade` calculado pelo trigger `trg_recalcular_score_prioridade` — não atualizar manualmente
 - Colunas não existentes no schema atual de `levantamento_itens` (removidas em migrações anteriores ao monorepo): `status_atendimento`, `acao_aplicada`, `data_resolucao` — não referenciar
 
+### Fase C.3 — Auto-criação de Foco (abr/2026)
+
+Porte de 3 funções SQL do legado Supabase para TypeScript, mais a incorporação
+do comportamento de `fn_auto_triagem_foco` (focos nascem direto em
+`status='em_triagem'`, sem passar por `suspeita`):
+
+| Legado (SQL)                                 | Novo (TS)                                                                                  | Gatilho                                                   |
+|----------------------------------------------|--------------------------------------------------------------------------------------------|-----------------------------------------------------------|
+| `fn_prioridade_para_p`                       | `prioridadeParaP` (util puro, `foco-risco/use-cases/auto-criacao/prioridade-para-p.ts`)    | —                                                         |
+| `fn_criar_foco_de_levantamento_item`         | `CriarFocoDeLevantamentoItem` (`foco-risco/use-cases/auto-criacao/`)                       | Após `CreateLevantamentoItem` e `CriarItemManual`         |
+| `fn_criar_foco_de_vistoria_deposito`         | `CriarFocoDeVistoriaDeposito` (`foco-risco/use-cases/auto-criacao/`)                       | Após `AddDeposito` e `CreateVistoriaCompleta`             |
+| `fn_auto_triagem_foco`                       | (incorporado) — todos os INSERTs já usam `status='em_triagem'`                             | —                                                         |
+
+**Filtro de criação (paridade fiel com legado):**
+- `payload.fonte = 'cidadao'` (cidadão) — sempre cria foco.
+- Demais origens — só cria se `prioridade ∈ {P1,P2,P3}` OR `risco ∈ {alto, crítico, critico}`.
+
+**Match de imóvel (PostGIS):** `ST_DWithin((lng,lat)::geography, imoveis.geo, 30)`
+(raio 30m). Se achar, usa `imovel_id`; senão usa apenas as coordenadas.
+
+**origem_tipo:** `cidadao` (se payload.fonte), `drone` (se `tipoEntrada='drone'`
+no planejamento), `agente` (caso padrão / vistoria).
+
+**Padrão de integração (best-effort):** os 2 hooks rodam FORA de qualquer
+`$transaction` do use-case de domínio. Cada hook é envolto em `try/catch` com
+`logger.error`. Falha na auto-criação de foco NUNCA impede a criação do
+levantamento-item, depósito ou vistoria completa.
+
+**Chain C.3 → C.4:** tanto `CriarFocoDeLevantamentoItem` quanto
+`CriarFocoDeVistoriaDeposito` chamam `CruzarFocoNovoComCasos` best-effort
+após inserir o foco — permite que focos recém-criados já sejam cruzados com
+casos notificados próximos no mesmo fluxo.
+
+**Dedup em vistoria:** o legado tinha trigger que populava `vistorias.foco_risco_id`
+quando um foco era criado com `origem_vistoria_id`. No schema atual não existe
+esse trigger (verificado no dump de 2026-04-19). Para preservar paridade
+prática (1 foco por vistoria), `CreateVistoriaCompleta` itera `data.depositos`
+e dá `break` no primeiro com `comLarva=true`. `AddDeposito` avançado ainda
+checa `foco_risco_id` da vistoria antes de criar (short-circuit se já houver).
+
+**Circular deps:** nenhum forwardRef necessário. `LevantamentoModule` e
+`VistoriaModule` importam `FocoRiscoModule`; `FocoRiscoModule` não importa
+nenhum dos dois.
+
+**Rollback:** `apps/backend/scripts/rollback-fase-C3.sql` (code-only — sem
+alterações de schema).
+
+### Fase C.4 — Cruzamento caso↔foco (PostGIS, abr/2026)
+
+Porte dos 3 triggers SQL bidirecionais que mantinham a relação geográfica entre `casos_notificados` e `focos_risco` (raio 300m) para 3 use-cases TypeScript:
+
+| Legado (SQL)                                    | Novo (TS)                                                            | Gatilho                                    |
+|-------------------------------------------------|----------------------------------------------------------------------|--------------------------------------------|
+| `fn_cruzar_caso_com_focos`                      | `CruzarCasoComFocos` (`modules/notificacao/use-cases/`)              | Após criar caso notificado                 |
+| `fn_cruzar_foco_novo_com_casos`                 | `CruzarFocoNovoComCasos` (`modules/foco-risco/use-cases/`)           | Após criar foco (com `origem_levantamento_item_id`) |
+| `fn_reverter_prioridade_caso_descartado`        | `ReverterPrioridadeCasoDescartado` (`modules/notificacao/use-cases/`)| `SaveCaso` na transição PARA `descartado`  |
+
+`fn_sincronizar_casos_foco` **NÃO foi portado** — era redundante com os 3 hooks acima (mesma atualização de `casos_ids` / `prioridade_original_antes_caso` / `prioridade='P1'`).
+
+**Tabela alvo:** `caso_foco_cruzamento` (singular). Chave única: `(caso_id, levantamento_item_id)`. Por isso os cruzamentos só existem para focos com `origem_levantamento_item_id IS NOT NULL` — restrição do schema, preservada do legado.
+
+**Padrão de integração (best-effort):** os 3 hooks rodam FORA da `$transaction` do use-case de domínio. O hook é envolto em `try/catch` com `logger.error`. Falha no cruzamento NUNCA impede a criação do caso/foco ou a transição de status. Regra: "cruzamento é otimizador operacional; nunca bloqueia fluxo de negócio".
+
+**Bugs do legado preservados (decisão deliberada):**
+
+- `CruzarCasoComFocos` e `CruzarFocoNovoComCasos` só atualizam focos com `prioridade IS DISTINCT FROM 'P1'`. Consequência: focos já em P1 não recebem o `caso_id` em `casos_ids`. Reproduz comportamento original do `UPDATE ... WHERE prioridade <> 'P1'`.
+- `ReverterPrioridadeCasoDescartado` restaura `prioridade` via `COALESCE(prioridade_original_antes_caso, prioridade)` e zera o backup (paridade fiel com `fn_reverter_prioridade_caso_descartado`, D-02). Correção do patch aplicado em 21-abr-2026 após auditoria — implementação inicial tinha deixado a linha do `COALESCE` fora por malentendido do comportamento legado.
+- Cruzamento só é criado se o foco tem `origem_levantamento_item_id` (restrição de schema, idêntica ao legado).
+
+**`denunciar-cidadao-v2.ts` NÃO chama `CruzarFocoNovoComCasos`** — denúncias de cidadão criam foco com `origem_tipo='cidadao'` sem `origem_levantamento_item_id`, então o hook seria no-op de qualquer forma. Idêntico ao legado (que também não fazia nada para esses focos por falta da FK de cruzamento).
+
+**Rollback:** `apps/backend/scripts/rollback-fase-C4.sql` (code-only — sem alterações de schema).
+
+### Fase C.5 — Guards DELETE LGPD (abr/2026)
+
+Defesa em profundidade contra hard delete em `clientes`, `imoveis` e `vistorias` (tabelas com dados de saúde pública / LGPD). Dupla camada:
+
+**A — DB-level (triggers BEFORE DELETE):** `apps/backend/prisma/migrations/c5_delete_guards.sql` recria os 3 triggers do Supabase legado (`trg_bloquear_delete_cliente`, `trg_bloquear_delete_imovel`, `trg_bloquear_delete_vistoria`). Aplicar em produção com `psql -f`. Migration SQL direta — não usa Prisma Migrate (mesmo padrão das demais migrations do repo).
+
+**B — Code-level (invariante estática):** `src/shared/test/delete-guards.invariant.spec.ts` varre os repositórios Prisma e falha no CI se alguém introduzir `.delete({...})` ou `.deleteMany({...})` nessas 3 tabelas. Quebra a build antes de chegar em runtime.
+
+**Exceptions dedicadas:** `ClienteException.deleteBloqueado`, `ImovelException.deleteBloqueado`, `VistoriaException.deleteBloqueado` — usar caso algum use-case futuro precise recusar um delete explicitamente.
+
+**Padrão canônico de "delete":** soft delete via `ativo=false + deleted_at=now()`. Cliente e vistoria **não têm endpoint DELETE** (intencional — não existe caso de uso legítimo). Imóvel tem `DeleteImovel` use-case que já chama `softDelete(id, userId, clienteId)`.
+
+**Ops/testes que precisam dropar dados reais:**
+```sql
+BEGIN;
+SET LOCAL session_replication_role = replica;  -- desliga triggers só nesta tx
+DELETE FROM vistorias WHERE ...;
+COMMIT;
+```
+Nunca usar isso em produção. O bypass fica limitado à transação.
+
+**E2E runtime (opcional):** `test/e2e/c5-delete-guards.e2e.spec.ts` valida que as 3 triggers estão instaladas. `describe.skip` por padrão — rodar com `E2E_DB=true` num ambiente com DB real + migration aplicada.
+
+**Rollback:** `apps/backend/scripts/rollback-fase-C5.sql` (não recomendado em produção).
+
+### Fase C.6 — Seeds on Cliente Insert (abr/2026)
+
+Porte de **7 triggers AFTER INSERT** em `clientes` do Supabase legado para um único use-case TypeScript `SeedClienteNovo` (`modules/cliente/use-cases/seed-cliente-novo.ts`), invocado dentro do `$transaction` de `CreateCliente`.
+
+| Legado (SQL trigger / função)                              | Novo (TS helper privado)        | Tabela alvo                          |
+|------------------------------------------------------------|---------------------------------|--------------------------------------|
+| `trg_seed_cliente_plano` → `trg_seed_cliente_plano()`     | `seedClientePlano`              | `cliente_plano` (linka plano "basico") |
+| `trg_seed_cliente_quotas` → `trg_seed_cliente_quotas()`   | `seedClienteQuotas`             | `cliente_quotas`                     |
+| `trg_seed_score_config` → `fn_seed_score_config()`        | `seedScoreConfig`               | `score_config` (cliente_id é PK)     |
+| `trg_seed_sla_foco_config` → `fn_seed_sla_foco_config()`  | `seedSlaFocoConfig`             | `sla_foco_config` (4 fases)          |
+| `trg_seed_sla_feriados_on_cliente` → `seed_sla_feriados_nacionais()` | `seedSlaFeriados` | `sla_feriados` (20 feriados 2025-2026) |
+| `trg_seed_drone_risk_config_on_cliente` → `seed_drone_risk_config()` | `seedDroneRiskConfig` + `seedYoloClassConfig` + `seedYoloSynonyms` | `sentinela_drone_risk_config` (1) + `sentinela_yolo_class_config` (8) + `sentinela_yolo_synonym` (5) |
+| `trg_seed_plano_acao_catalogo_on_cliente` → `seed_plano_acao_catalogo()` + `seed_plano_acao_catalogo_por_tipo()` | `seedPlanoAcaoCatalogo` | `plano_acao_catalogo` (10 genéricos + 12 por tipo = 22) |
+
+**Atomicidade:** o INSERT do cliente + os 7 seeds rodam dentro do mesmo `$transaction(callback)`. Falha em qualquer seed faz rollback do cliente — paridade fiel com o legado, onde falha em trigger AFTER INSERT abortava o INSERT da raiz.
+
+**Diferença do padrão Fase C.1/C.3/C.4 (best-effort):** aqui NÃO há try/catch interno. Setup de cliente novo é uma operação de configuração que precisa ser íntegra — diferente de hooks operacionais (SLA, cruzamento de focos) que são otimizadores e não devem bloquear fluxo de negócio.
+
+**Repository tx-aware:** `ClienteWriteRepository.create(cliente, tx?)` aceita `tx` opcional. `PrismaClienteWriteRepository.create` faz `(tx as typeof this.prisma.client) ?? this.prisma.client` — único caller (CreateCliente) sempre passa tx.
+
+**Idempotência:** preservada conforme legado:
+- `cliente_plano`/`cliente_quotas`/`score_config`/`sentinela_drone_risk_config` — `upsert` (cliente_id UNIQUE).
+- `sla_foco_config`/`sla_feriados`/`sentinela_yolo_class_config`/`sentinela_yolo_synonym` — `createMany skipDuplicates: true` (composto UNIQUE: `(cliente_id, fase|data|item_key|synonym)`).
+- `plano_acao_catalogo` — `count() === 0` guard manual (genéricos por `tipo_item IS NULL`, e por cada tipo) — espelha `IF NOT EXISTS` do `seed_plano_acao_catalogo_por_tipo`.
+
+**Migration de schema necessária:** `prisma/migrations/c6_seeds_uniques.sql` adiciona 7 constraints UNIQUE faltantes + 3 `DEFAULT now()` em `created_at`/`updated_at` que não existiam no schema importado. Aplicar com `psql -f` antes de subir o código.
+
+**Plano "basico" requerido:** se a tabela `planos` não tiver registro com `nome='basico'`, `seedClientePlano` retorna `'pulado_sem_plano_basico'` (warn no log). Demais seeds prosseguem normalmente. Cliente fica sem `cliente_plano` até alguém criar manualmente.
+
+**Rollback:** `apps/backend/scripts/rollback-fase-C6.sql` (drops das constraints/defaults adicionados pela migration). Para reverter o use-case basta `git revert` — não há triggers SQL para recriar.
+
 ### reinspecao
 - `ReinspecaoScheduler` (cron diário `0 6 * * *`) marca reinspeções pendentes como vencidas.
-- Criação manual via use-case `modules/reinspecao/use-cases/criar-manual.ts`. A criação automática ao foco entrar em `em_tratamento` e o cancelamento automático ao foco ir para `resolvido`/`descartado`, quando existem, ocorrem por trigger SQL — não estão implementados em TypeScript. Antes de modificar, consultar `modules/reinspecao/use-cases/`.
-- Máx. 1 reinspeção pendente por `(foco_risco_id, tipo)` (restrição histórica do banco).
+- Criação manual via use-case `modules/reinspecao/use-cases/criar-manual.ts`.
+- **Fase C.2 (abr/2026):** criação automática pós-tratamento e cancelamento em massa ao fechar foco migraram dos triggers SQL `fn_criar_reinspecao_pos_tratamento` / `fn_cancelar_reinspecoes_ao_fechar_foco` para 2 use-cases TypeScript: `CriarReinspecaoPosTratamento` (dispara no `em_tratamento`, cria pendente com `data_prevista = now() + 7 dias`, tipo `eficacia_pos_tratamento`, origem `tratamento_confirmado`) e `CancelarReinspecoesAoFecharFoco` (dispara em `resolvido`/`descartado`, cancela todas pendentes com motivo `Foco fechado automaticamente`). Invocados dentro do mesmo `$transaction(callback)` do `TransicionarFocoRisco` criado na Fase C.1. Reaproveitam a compensação em `sla_erros_criacao` (variável `slaError` é compartilhada entre hooks para simplicidade).
+- Idempotência de `CriarReinspecaoPosTratamento` é via `findFirst` pendente (o schema atual não traz o unique partial index do Supabase legado).
+- Máx. 1 reinspeção pendente por `(foco_risco_id, tipo)` — invariante mantido em software; restrição histórica do banco ainda documentada mas não enforced em CONSTRAINT no self-hosted.
 
 ### regiao
 - `area geometry(Polygon,4326)` populada via `ST_GeomFromGeoJSON(geojson::text)` no `PrismaRegiaoWriteRepository.syncArea()`

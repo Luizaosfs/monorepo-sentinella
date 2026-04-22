@@ -106,9 +106,11 @@ export class DroneController {
   @Roles('admin', 'supervisor', 'agente')
   @ApiOperation({ summary: 'Avalia condições meteorológicas para voo baseado em pluvio_risco' })
   async condicoesVoo(
-    @Query('data') dataStr: string,
+    @Query('data') dataStr?: string,
   ) {
-    const { data } = z.object({ data: z.coerce.date() }).parse({ data: dataStr });
+    const { data } = z
+      .object({ data: z.coerce.date().default(() => new Date()) })
+      .parse({ data: dataStr });
     // MT-02: tenantId do guard sempre vence — nunca aceita clienteId do frontend
     const clienteId = this.req['tenantId'] as string;
     return this.avaliarCondicoesVoo.execute(clienteId, data);

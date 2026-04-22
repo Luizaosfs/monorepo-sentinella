@@ -1,12 +1,18 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 
 import { CreateCasoBody } from '../dtos/create-notificacao.body';
 import { CasoNotificado } from '../entities/notificacao';
 import { NotificacaoWriteRepository } from '../repositories/notificacao-write.repository';
+import { CruzarCasoComFocos } from './cruzar-caso-com-focos';
 
 @Injectable()
 export class CreateCaso {
-  constructor(private repository: NotificacaoWriteRepository) {}
+  private readonly logger = new Logger(CreateCaso.name);
+
+  constructor(
+    private repository: NotificacaoWriteRepository,
+    private cruzarCasoComFocos: CruzarCasoComFocos,
+  ) {}
 
   async execute(
     clienteId: string,
@@ -34,6 +40,21 @@ export class CreateCaso {
       {},
     );
     const created = await this.repository.createCaso(entity);
+
+    // Fase C.4 — hook best-effort. Falha no cruzamento NÃO quebra a criação.
+    try {
+      await this.cruzarCasoComFocos.execute({
+        casoId: created.id,
+        clienteId: created.clienteId,
+        latitude: created.latitude,
+        longitude: created.longitude,
+      });
+    } catch (err) {
+      this.logger.error(
+        `Hook CruzarCasoComFocos falhou para caso ${created.id}: ${(err as Error).message}`,
+      );
+    }
+
     return { caso: created };
   }
 }

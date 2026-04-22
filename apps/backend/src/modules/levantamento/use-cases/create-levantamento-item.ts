@@ -1,4 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+
+import { CriarFocoDeLevantamentoItem } from '@/modules/foco-risco/use-cases/auto-criacao/criar-foco-de-levantamento-item';
 
 import { CreateLevantamentoItemBody } from '../dtos/create-levantamento-item.body';
 import { LevantamentoException } from '../errors/levantamento.exception';
@@ -7,9 +9,12 @@ import { LevantamentoWriteRepository } from '../repositories/levantamento-write.
 
 @Injectable()
 export class CreateLevantamentoItem {
+  private readonly logger = new Logger(CreateLevantamentoItem.name);
+
   constructor(
     private readRepository: LevantamentoReadRepository,
     private writeRepository: LevantamentoWriteRepository,
+    private criarFocoDeLevantamentoItem: CriarFocoDeLevantamentoItem,
   ) {}
 
   async execute(levantamentoId: string, input: CreateLevantamentoItemBody) {
@@ -36,6 +41,28 @@ export class CreateLevantamentoItem {
       payload: input.payload,
       imagePublicId: input.imagePublicId,
     });
+
+    if (item.id) {
+      try {
+        await this.criarFocoDeLevantamentoItem.execute({
+          itemId: item.id,
+          levantamentoId,
+          latitude: item.latitude ?? null,
+          longitude: item.longitude ?? null,
+          prioridade: item.prioridade ?? null,
+          risco: item.risco ?? null,
+          enderecoCurto: item.enderecoCurto ?? null,
+          payload: (item.payload ?? null) as Record<string, unknown> | null,
+          createdAt: item.createdAt ?? new Date(),
+        });
+      } catch (err) {
+        this.logger.error(
+          `Hook CriarFocoDeLevantamentoItem falhou: item=${item.id} erro=${
+            err instanceof Error ? err.message : String(err)
+          }`,
+        );
+      }
+    }
 
     return { item };
   }

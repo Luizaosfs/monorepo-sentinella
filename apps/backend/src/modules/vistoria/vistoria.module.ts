@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { DatabaseModule } from '@shared/modules/database/database.module';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 
+import { FocoRiscoModule } from '../foco-risco/foco-risco.module';
 import { AddDeposito } from './use-cases/add-deposito';
 import { AddRiscos } from './use-cases/add-riscos';
 import { AddSintomas } from './use-cases/add-sintomas';
@@ -33,6 +34,6 @@ import { VistoriaController } from './vistoria.controller';
     PrismaService,
   ],
   controllers: [VistoriaController],
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, FocoRiscoModule],
 })
 export class VistoriaModule {}

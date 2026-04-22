@@ -162,7 +162,7 @@ const grupoRiscoClima = [
 const grupoConfiguracoes = [
   { to: '/gestor/regioes',               label: 'Regiões',                    icon: MapPin,         adminOnly: false },
   { to: '/admin/usuarios',              label: 'Usuários da Plataforma',      icon: Users,          adminOnly: true  },
-  { to: '/operador/usuarios',            label: 'Agentes de Campo',           icon: Users,          adminOnly: false },
+  { to: '/operador/usuarios',            label: 'Usuários',                   icon: Users,          adminOnly: false },
   { to: '/gestor/unidades-saude',        label: 'Unidades de Saúde',          icon: Building2,      adminOnly: false },
   { to: '/gestor/imoveis',               label: 'Imóveis',                    icon: Home,           adminOnly: false },
   { to: '/gestor/importar-imoveis',      label: 'Importar Imóveis (CSV/XLSX)', icon: FileSpreadsheet, adminOnly: false },

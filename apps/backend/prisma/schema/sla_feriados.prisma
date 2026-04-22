@@ -4,10 +4,11 @@ model sla_feriados {
   data       DateTime @db.Date
   descricao  String
   nacional   Boolean  @default(false)
-  created_at DateTime @db.Timestamptz
+  created_at DateTime @default(now()) @db.Timestamptz
 
   cliente clientes @relation(fields: [cliente_id], references: [id])
 
+  @@unique([cliente_id, data])
   @@index([cliente_id])
   @@map("sla_feriados")
   @@schema("public")

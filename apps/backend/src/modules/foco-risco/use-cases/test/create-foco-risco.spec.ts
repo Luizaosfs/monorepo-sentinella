@@ -6,18 +6,22 @@ import { FocoRiscoWriteRepository } from '../../repositories/foco-risco-write.re
 import { mockRequest } from '@test/utils/user-helpers';
 
 import { CreateFocoRisco } from '../create-foco-risco';
+import { CruzarFocoNovoComCasos } from '../cruzar-foco-novo-com-casos';
 import { FocoRiscoBuilder } from './builders/foco-risco.builder';
 
 describe('CreateFocoRisco', () => {
   let useCase: CreateFocoRisco;
   const writeRepo = mock<FocoRiscoWriteRepository>();
+  const cruzarFocoNovoComCasos = mock<CruzarFocoNovoComCasos>();
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    cruzarFocoNovoComCasos.execute.mockResolvedValue({ cruzamentos: 0 });
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CreateFocoRisco,
         { provide: FocoRiscoWriteRepository, useValue: writeRepo },
+        { provide: CruzarFocoNovoComCasos, useValue: cruzarFocoNovoComCasos },
         { provide: REQUEST, useValue: mockRequest({ tenantId: 'cliente-uuid-1' }) },
       ],
     }).compile();
@@ -80,5 +84,35 @@ describe('CreateFocoRisco', () => {
     expect(writeRepo.create).toHaveBeenCalledWith(
       expect.objectContaining({ clienteId: 'cliente-uuid-1' }),
     );
+  });
+
+  it('deve invocar CruzarFocoNovoComCasos após criar foco', async () => {
+    const focoMock = new FocoRiscoBuilder().build();
+    writeRepo.create.mockResolvedValue(focoMock);
+    writeRepo.createHistorico.mockResolvedValue({
+      clienteId: 'cliente-uuid-1',
+      statusNovo: 'suspeita',
+    });
+
+    await useCase.execute({ origemTipo: 'agente', classificacaoInicial: 'suspeito' });
+
+    expect(cruzarFocoNovoComCasos.execute).toHaveBeenCalledTimes(1);
+  });
+
+  it('falha no hook de cruzamento NÃO quebra a criação', async () => {
+    const focoMock = new FocoRiscoBuilder().build();
+    writeRepo.create.mockResolvedValue(focoMock);
+    writeRepo.createHistorico.mockResolvedValue({
+      clienteId: 'cliente-uuid-1',
+      statusNovo: 'suspeita',
+    });
+    cruzarFocoNovoComCasos.execute.mockRejectedValueOnce(new Error('DB down'));
+
+    const result = await useCase.execute({
+      origemTipo: 'agente',
+      classificacaoInicial: 'suspeito',
+    });
+
+    expect(result.foco).toBeDefined();
   });
 });

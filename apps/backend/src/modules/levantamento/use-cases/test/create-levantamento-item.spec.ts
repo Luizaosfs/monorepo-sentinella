@@ -4,6 +4,7 @@ import { mock } from 'jest-mock-extended';
 import { LevantamentoException } from '../../errors/levantamento.exception';
 import { LevantamentoReadRepository } from '../../repositories/levantamento-read.repository';
 import { LevantamentoWriteRepository } from '../../repositories/levantamento-write.repository';
+import { CriarFocoDeLevantamentoItem } from '@/modules/foco-risco/use-cases/auto-criacao/criar-foco-de-levantamento-item';
 import { expectHttpException } from '@test/utils/expect-http-exception';
 
 import { CreateLevantamentoItem } from '../create-levantamento-item';
@@ -13,6 +14,7 @@ describe('CreateLevantamentoItem', () => {
   let useCase: CreateLevantamentoItem;
   const readRepo = mock<LevantamentoReadRepository>();
   const writeRepo = mock<LevantamentoWriteRepository>();
+  const criarFoco = { execute: jest.fn().mockResolvedValue({ criado: false }) };
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -21,6 +23,7 @@ describe('CreateLevantamentoItem', () => {
         CreateLevantamentoItem,
         { provide: LevantamentoReadRepository, useValue: readRepo },
         { provide: LevantamentoWriteRepository, useValue: writeRepo },
+        { provide: CriarFocoDeLevantamentoItem, useValue: criarFoco },
       ],
     }).compile();
 
@@ -95,5 +98,40 @@ describe('CreateLevantamentoItem', () => {
       () => useCase.execute('nao-existe', {}),
       LevantamentoException.notFound(),
     );
+  });
+
+  it('deve invocar hook CriarFocoDeLevantamentoItem após criar item (best-effort)', async () => {
+    const lev = new LevantamentoBuilder().withId('lev-1').build();
+    readRepo.findById.mockResolvedValue(lev);
+    writeRepo.createItem.mockResolvedValue({
+      id: 'item-9',
+      latitude: -23.5,
+      longitude: -46.6,
+      prioridade: 'P2',
+      risco: 'alto',
+      enderecoCurto: 'Rua X',
+      payload: undefined,
+      createdAt: new Date('2026-04-20'),
+    } as any);
+
+    await useCase.execute('lev-1', {});
+
+    expect(criarFoco.execute).toHaveBeenCalledWith(
+      expect.objectContaining({
+        itemId: 'item-9',
+        levantamentoId: 'lev-1',
+        latitude: -23.5,
+        longitude: -46.6,
+      }),
+    );
+  });
+
+  it('falha do hook não deve quebrar a criação do item', async () => {
+    readRepo.findById.mockResolvedValue(new LevantamentoBuilder().build());
+    writeRepo.createItem.mockResolvedValue({ id: 'item-err' } as any);
+    criarFoco.execute.mockRejectedValueOnce(new Error('boom'));
+
+    const r = await useCase.execute('lev-1', {});
+    expect(r.item).toEqual({ id: 'item-err' });
   });
 });

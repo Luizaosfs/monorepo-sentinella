@@ -11,7 +11,10 @@ import { STALE } from '@/lib/queryConfig';
 export function useCondicoesVoo(clienteId: string | null | undefined) {
   return useQuery<CondicaoVoo | null>({
     queryKey: ['condicoes_voo', clienteId],
-    queryFn: () => (clienteId ? api.condicoesVoo.avaliarByCliente(clienteId) : null),
+    queryFn: () =>
+      clienteId
+        ? api.condicoesVoo.avaliarByCliente(clienteId, new Date().toISOString().slice(0, 10))
+        : null,
     enabled: !!clienteId,
     staleTime: STALE.EXTENDED,
     refetchInterval: STALE.STATIC,

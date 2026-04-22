@@ -8,4 +8,10 @@ export const ClienteException = createExceptionFactory({
     type: 'conflict',
     message: 'Já existe um cliente com este slug',
   },
+  /** Hard delete LGPD — usar soft delete (C.5) */
+  deleteBloqueado: {
+    type: 'badRequest',
+    message:
+      'Cliente não pode ser apagado fisicamente. Use ativo=false + deleted_at=now() para desativar.',
+  },
 });

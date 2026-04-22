@@ -32,6 +32,8 @@ import { ListarCasosPaginado } from './use-cases/listar-casos-paginado';
 import { ListCasoIdsComCruzamento } from './use-cases/list-caso-ids-com-cruzamento';
 import { ListCruzamentos } from './use-cases/list-cruzamentos';
 import { GetCruzamentoCount } from './use-cases/get-cruzamento-count';
+import { CruzarCasoComFocos } from './use-cases/cruzar-caso-com-focos';
+import { ReverterPrioridadeCasoDescartado } from './use-cases/reverter-prioridade-caso-descartado';
 
 @Module({
   providers: [
@@ -63,6 +65,8 @@ import { GetCruzamentoCount } from './use-cases/get-cruzamento-count';
     ListCasoIdsComCruzamento,
     ListCruzamentos,
     GetCruzamentoCount,
+    CruzarCasoComFocos,
+    ReverterPrioridadeCasoDescartado,
     JwtService,
     PrismaService,
   ],

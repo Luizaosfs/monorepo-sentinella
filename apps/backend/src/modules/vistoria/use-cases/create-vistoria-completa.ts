@@ -1,6 +1,8 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
+
+import { CriarFocoDeVistoriaDeposito } from '@/modules/foco-risco/use-cases/auto-criacao/criar-foco-de-vistoria-deposito';
 
 import { CreateVistoriaCompletaBody } from '../dtos/create-vistoria-completa.body';
 import { Vistoria } from '../entities/vistoria';
@@ -8,8 +10,11 @@ import { VistoriaWriteRepository } from '../repositories/vistoria-write.reposito
 
 @Injectable()
 export class CreateVistoriaCompleta {
+  private readonly logger = new Logger(CreateVistoriaCompleta.name);
+
   constructor(
     private writeRepository: VistoriaWriteRepository,
+    private criarFocoDeVistoriaDeposito: CriarFocoDeVistoriaDeposito,
     @Inject(REQUEST) private req: Request,
   ) {}
 
@@ -67,6 +72,29 @@ export class CreateVistoriaCompleta {
       },
       data.idempotencyKey,
     );
+
+    // Hook C.3: após commit da tx, criar foco a partir do primeiro depósito
+    // com foco. O break garante dedup em 1 foco por vistoria mesmo sem trigger
+    // auto-atualizando vistorias.foco_risco_id.
+    const depositos = data.depositos ?? [];
+    for (const dep of depositos) {
+      // depositoToPrisma mapeia `comLarva ? 1 : 0` para qtd_com_focos
+      if (dep.comLarva) {
+        try {
+          await this.criarFocoDeVistoriaDeposito.execute({
+            vistoriaId: id,
+            qtdComFocos: 1,
+          });
+        } catch (err) {
+          this.logger.error(
+            `Hook CriarFocoDeVistoriaDeposito falhou: vistoria=${id} erro=${
+              err instanceof Error ? err.message : String(err)
+            }`,
+          );
+        }
+        break;
+      }
+    }
 
     return { id };
   }

@@ -13,6 +13,27 @@ import { PrismaService } from '../../prisma.service';
 export class PrismaReinspecaoReadRepository implements ReinspecaoReadRepository {
   constructor(private prisma: PrismaService) {}
 
+  private resolveClient(tx?: unknown) {
+    return (tx ?? this.prisma.client) as any;
+  }
+
+  async findPendenteByFocoETipo(
+    focoRiscoId: string,
+    tipo: string,
+    tx?: unknown,
+  ): Promise<Reinspecao | null> {
+    const client = this.resolveClient(tx);
+    const raw = await client.reinspecoes_programadas.findFirst({
+      where: {
+        foco_risco_id: focoRiscoId,
+        tipo,
+        status: 'pendente',
+      },
+      orderBy: { created_at: 'desc' },
+    });
+    return raw ? PrismaReinspecaoMapper.toDomain(raw) : null;
+  }
+
   async findById(id: string, clienteId?: string | null): Promise<Reinspecao | null> {
     // MT-06: findUnique não aceita cliente_id junto; usa findFirst para filtrar por tenant
     const raw = await this.prisma.client.reinspecoes_programadas.findFirst({

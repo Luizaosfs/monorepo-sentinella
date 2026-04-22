@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, Injectable, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 import * as crypto from 'crypto';
@@ -10,12 +10,29 @@ import { buildAuthUser } from './_helpers/build-auth-user';
 
 @Injectable()
 export class RefreshTokenUseCase {
+  private readonly logger = new Logger(RefreshTokenUseCase.name);
+
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
   ) {}
 
   async execute(input: RefreshBody) {
+    try {
+      return await this.executeInternal(input);
+    } catch (err) {
+      // HttpException já é tratada (401/403 etc) — propagar sem logar
+      if (err instanceof HttpException) throw err;
+      // Erro inesperado (Prisma, transação, etc) — logar e devolver 401 limpo
+      this.logger.error(
+        `Erro inesperado em /auth/refresh: ${(err as Error).message}`,
+        (err as Error).stack,
+      );
+      throw AuthException.refreshTokenInvalid();
+    }
+  }
+
+  private async executeInternal(input: RefreshBody) {
     let decoded: any;
 
     try {
@@ -25,11 +42,11 @@ export class RefreshTokenUseCase {
         issuer: 'sentinella-auth',
       });
     } catch {
-      throw AuthException.unauthorized();
+      throw AuthException.refreshTokenExpired();
     }
 
     if (decoded.type !== 'refresh' || !decoded.sub) {
-      throw AuthException.unauthorized();
+      throw AuthException.refreshTokenInvalid();
     }
 
     // Valida token na whitelist — rejeita tokens usados, revogados ou expirados
@@ -38,9 +55,10 @@ export class RefreshTokenUseCase {
       where: { token_hash: tokenHash },
     });
 
-    if (!tokenRecord || tokenRecord.used_at || tokenRecord.revoked_at || tokenRecord.expires_at < new Date()) {
-      throw AuthException.unauthorized();
-    }
+    if (!tokenRecord) throw AuthException.refreshTokenInvalid();
+    if (tokenRecord.used_at) throw AuthException.refreshTokenAlreadyUsed();
+    if (tokenRecord.revoked_at) throw AuthException.refreshTokenRevoked();
+    if (tokenRecord.expires_at < new Date()) throw AuthException.refreshTokenExpired();
 
     const usuario = await this.prisma.client.usuarios.findUnique({
       where: { auth_id: decoded.sub },

@@ -1,0 +1,30 @@
+-- =========================================================================
+-- ROLLBACK — Fase C.4 (Cruzamento caso <-> foco, PostGIS 300m)
+-- =========================================================================
+--
+-- ATENÇÃO: esta é uma fase CODE-ONLY. Não há alteração de schema a reverter.
+-- A fase C.4 substituiu 3 triggers SQL legados (`fn_cruzar_caso_com_focos`,
+-- `fn_cruzar_foco_novo_com_casos`, `fn_reverter_prioridade_caso_descartado`)
+-- por 3 use-cases TypeScript executados em best-effort nos fluxos dos
+-- use-cases `CreateCaso`, `SaveCaso` e `CreateFocoRisco`.
+--
+-- Este arquivo existe por convenção das fases anteriores. O rollback
+-- EFETIVO é remover o código:
+--
+--   * apps/backend/src/modules/notificacao/use-cases/cruzar-caso-com-focos.ts
+--   * apps/backend/src/modules/notificacao/use-cases/reverter-prioridade-caso-descartado.ts
+--   * apps/backend/src/modules/foco-risco/use-cases/cruzar-foco-novo-com-casos.ts
+--   * Remover providers dos módulos (notificacao.module.ts / foco-risco.module.ts)
+--   * Reverter hooks em CreateCaso / SaveCaso / CreateFocoRisco
+--
+-- SE você quiser restaurar os triggers legados (ambiente que dependia deles),
+-- será necessário aplicar as definições originais do Supabase — não as temos
+-- no repositório atual. Consultar backup de 2026-04-19 em:
+--   D:\sentinella\backup_20260419_115127\database\database.sql
+--
+-- Não é recomendado executar este rollback em produção: os use-cases
+-- substituem os triggers com comportamento idêntico (incluindo os bugs
+-- preservados) e têm melhor observabilidade (Logger).
+-- =========================================================================
+
+SELECT 'Fase C.4 — rollback é code-only; nada a executar no banco.' AS aviso;

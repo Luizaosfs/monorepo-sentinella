@@ -74,25 +74,25 @@ describe('RefreshTokenUseCase', () => {
     });
   });
 
-  it('deve lançar unauthorized quando refresh expirado (verifyAsync throws)', async () => {
+  it('deve lançar refreshTokenExpired quando verifyAsync throws (jwt expired)', async () => {
     jwtService.verifyAsync.mockRejectedValue(new Error('jwt expired'));
 
     await expectHttpException(
       () => useCase.execute({ refreshToken: 'token-expirado' }),
-      AuthException.unauthorized(),
+      AuthException.refreshTokenExpired(),
     );
   });
 
-  it('deve lançar unauthorized quando secret errado (verifyAsync throws)', async () => {
+  it('deve lançar refreshTokenExpired quando secret errado (verifyAsync throws)', async () => {
     jwtService.verifyAsync.mockRejectedValue(new Error('invalid signature'));
 
     await expectHttpException(
       () => useCase.execute({ refreshToken: 'token-com-secret-errado' }),
-      AuthException.unauthorized(),
+      AuthException.refreshTokenExpired(),
     );
   });
 
-  it('deve lançar unauthorized quando payload.type !== refresh', async () => {
+  it('deve lançar refreshTokenInvalid quando payload.type !== refresh', async () => {
     jwtService.verifyAsync.mockResolvedValue({
       sub: 'auth-id-1',
       type: 'access',
@@ -100,7 +100,51 @@ describe('RefreshTokenUseCase', () => {
 
     await expectHttpException(
       () => useCase.execute({ refreshToken: 'access-token-como-refresh' }),
-      AuthException.unauthorized(),
+      AuthException.refreshTokenInvalid(),
+    );
+  });
+
+  it('deve lançar refreshTokenAlreadyUsed quando token tem used_at setado', async () => {
+    jwtService.verifyAsync.mockResolvedValue({ sub: 'auth-id-1', type: 'refresh' });
+    prisma.client.refresh_tokens.findUnique.mockResolvedValue({
+      id: 'rt-1',
+      auth_id: 'auth-id-1',
+      token_hash: 'hash',
+      used_at: new Date(),
+      revoked_at: null,
+      expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    } as any);
+
+    await expectHttpException(
+      () => useCase.execute({ refreshToken: 'token-ja-usado' }),
+      AuthException.refreshTokenAlreadyUsed(),
+    );
+  });
+
+  it('deve lançar refreshTokenRevoked quando token tem revoked_at setado', async () => {
+    jwtService.verifyAsync.mockResolvedValue({ sub: 'auth-id-1', type: 'refresh' });
+    prisma.client.refresh_tokens.findUnique.mockResolvedValue({
+      id: 'rt-1',
+      auth_id: 'auth-id-1',
+      token_hash: 'hash',
+      used_at: null,
+      revoked_at: new Date(),
+      expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    } as any);
+
+    await expectHttpException(
+      () => useCase.execute({ refreshToken: 'token-revogado' }),
+      AuthException.refreshTokenRevoked(),
+    );
+  });
+
+  it('deve lançar refreshTokenInvalid quando token nao existe na whitelist', async () => {
+    jwtService.verifyAsync.mockResolvedValue({ sub: 'auth-id-1', type: 'refresh' });
+    prisma.client.refresh_tokens.findUnique.mockResolvedValue(null);
+
+    await expectHttpException(
+      () => useCase.execute({ refreshToken: 'token-fantasma' }),
+      AuthException.refreshTokenInvalid(),
     );
   });
 });

@@ -1,14 +1,18 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Request } from 'express';
 
 import { CreateFocoRiscoBody } from '../dtos/create-foco-risco.body';
 import { FocoRisco } from '../entities/foco-risco';
 import { FocoRiscoWriteRepository } from '../repositories/foco-risco-write.repository';
+import { CruzarFocoNovoComCasos } from './cruzar-foco-novo-com-casos';
 
 @Injectable()
 export class CreateFocoRisco {
+  private readonly logger = new Logger(CreateFocoRisco.name);
+
   constructor(
     private repository: FocoRiscoWriteRepository,
+    private cruzarFocoNovoComCasos: CruzarFocoNovoComCasos,
     @Inject('REQUEST') private req: Request,
   ) {}
 
@@ -49,6 +53,21 @@ export class CreateFocoRisco {
       tipoEvento: 'criacao',
       classificacaoNova: created.classificacaoInicial,
     });
+
+    // Fase C.4 — hook best-effort. Falha no cruzamento NÃO quebra a criação.
+    try {
+      await this.cruzarFocoNovoComCasos.execute({
+        focoId: created.id,
+        clienteId: created.clienteId,
+        origemLevantamentoItemId: created.origemLevantamentoItemId,
+        latitude: created.latitude,
+        longitude: created.longitude,
+      });
+    } catch (err) {
+      this.logger.error(
+        `Hook CruzarFocoNovoComCasos falhou para foco ${created.id}: ${(err as Error).message}`,
+      );
+    }
 
     return { foco: created };
   }

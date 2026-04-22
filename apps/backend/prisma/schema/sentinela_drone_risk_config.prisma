@@ -1,6 +1,6 @@
 model sentinela_drone_risk_config {
   id                    String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  cliente_id            String   @db.Uuid
+  cliente_id            String   @unique @db.Uuid
   base_by_risco         Json     @default("{\"alto\": 85, \"baixo\": 25, \"medio\": 55}")
   priority_thresholds   Json     @default("{\"P1\": 85, \"P2\": 60, \"P3\": 40, \"P4\": 20, \"P5\": 0}")
   sla_by_priority_hours Json     @default("{\"P1\": 24, \"P2\": 72, \"P3\": 168, \"P4\": 336, \"P5\": 720}")

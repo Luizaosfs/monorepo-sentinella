@@ -1,12 +1,18 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
+import { CriarFocoDeVistoriaDeposito } from '@/modules/foco-risco/use-cases/auto-criacao/criar-foco-de-vistoria-deposito';
 import { AddDepositoInput } from '../dtos/add-vistoria-child.body';
 import { VistoriaException } from '../errors/vistoria.exception';
 
 @Injectable()
 export class AddDeposito {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(AddDeposito.name);
+
+  constructor(
+    private prisma: PrismaService,
+    private criarFocoDeVistoriaDeposito: CriarFocoDeVistoriaDeposito,
+  ) {}
 
   async execute(vistoriaId: string, clienteId: string, data: AddDepositoInput) {
     const vistoria = await this.prisma.client.vistorias.findFirst({
@@ -31,6 +37,20 @@ export class AddDeposito {
         ia_identificacao:  (data.iaIdentificacao ?? Prisma.JsonNull) as Prisma.InputJsonValue,
       },
     });
+
+    try {
+      await this.criarFocoDeVistoriaDeposito.execute({
+        vistoriaId,
+        qtdComFocos: data.qtdComFocos,
+      });
+    } catch (err) {
+      this.logger.error(
+        `Hook CriarFocoDeVistoriaDeposito falhou: vistoria=${vistoriaId} erro=${
+          err instanceof Error ? err.message : String(err)
+        }`,
+      );
+    }
+
     return { deposito };
   }
 }

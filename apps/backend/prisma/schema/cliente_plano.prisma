@@ -1,6 +1,6 @@
 model cliente_plano {
   id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  cliente_id           String    @db.Uuid
+  cliente_id           String    @unique @db.Uuid
   plano_id             String    @db.Uuid
   data_inicio          DateTime  @default(dbgenerated("CURRENT_DATE")) @db.Date
   data_fim             DateTime? @db.Date

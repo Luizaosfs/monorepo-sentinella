@@ -3,6 +3,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 import { mock } from 'jest-mock-extended';
 
+import { CancelarReinspecoesAoFecharFoco } from '../../../reinspecao/use-cases/cancelar-reinspecoes-ao-fechar-foco';
+import { CriarReinspecaoPosTratamento } from '../../../reinspecao/use-cases/criar-reinspecao-pos-tratamento';
 import { SlaWriteRepository } from '../../../sla/repositories/sla-write.repository';
 import { FecharSlaAoResolverFoco } from '../../../sla/use-cases/fechar-sla-ao-resolver-foco';
 import { IniciarSlaAoConfirmarFoco } from '../../../sla/use-cases/iniciar-sla-ao-confirmar-foco';
@@ -22,6 +24,8 @@ describe('TransicionarFocoRisco', () => {
   const iniciarSla = mock<IniciarSlaAoConfirmarFoco>();
   const fecharSla = mock<FecharSlaAoResolverFoco>();
   const slaWriteRepo = mock<SlaWriteRepository>();
+  const criarReinspecao = mock<CriarReinspecaoPosTratamento>();
+  const cancelarReinspecoes = mock<CancelarReinspecoesAoFecharFoco>();
 
   /**
    * Mock de PrismaService suficiente para `client.$transaction(callback)` —
@@ -49,6 +53,8 @@ describe('TransicionarFocoRisco', () => {
         { provide: IniciarSlaAoConfirmarFoco, useValue: iniciarSla },
         { provide: FecharSlaAoResolverFoco, useValue: fecharSla },
         { provide: SlaWriteRepository, useValue: slaWriteRepo },
+        { provide: CriarReinspecaoPosTratamento, useValue: criarReinspecao },
+        { provide: CancelarReinspecoesAoFecharFoco, useValue: cancelarReinspecoes },
         { provide: REQUEST, useValue: mockRequest({ tenantId: 'cliente-uuid-1' }) },
       ],
     }).compile();
@@ -114,6 +120,86 @@ describe('TransicionarFocoRisco', () => {
     expect(result.foco.confirmadoEm).toBeInstanceOf(Date);
     expect(iniciarSla.execute).toHaveBeenCalledWith(foco, expect.anything());
     expect(result.sla).toEqual({ acao: 'criado', slaId: 'sla-novo', fromFallback: false });
+  });
+
+  it('confirmado → em_tratamento chama CriarReinspecaoPosTratamento', async () => {
+    const foco = new FocoRiscoBuilder().withStatus('confirmado').build();
+    readRepo.findById.mockResolvedValue(foco);
+    writeRepo.save.mockResolvedValue();
+    writeRepo.createHistorico.mockResolvedValue({
+      clienteId: 'cliente-uuid-1',
+      statusNovo: 'em_tratamento',
+    });
+    criarReinspecao.execute.mockResolvedValue({
+      acao: 'criada',
+      reinspecaoId: 'reinsp-1',
+      dataPrevista: new Date('2026-05-01'),
+    });
+
+    const result = await useCase.execute(foco.id!, {
+      statusPara: 'em_tratamento',
+    });
+
+    expect(result.foco.status).toBe('em_tratamento');
+    expect(criarReinspecao.execute).toHaveBeenCalledWith(foco, expect.anything());
+    expect(iniciarSla.execute).not.toHaveBeenCalled();
+    expect(fecharSla.execute).not.toHaveBeenCalled();
+    expect(result.reinspecao).toEqual(
+      expect.objectContaining({ acao: 'criada', reinspecaoId: 'reinsp-1' }),
+    );
+  });
+
+  it('em_tratamento → resolvido cancela reinspeções pendentes', async () => {
+    const foco = new FocoRiscoBuilder().withStatus('em_tratamento').build();
+    readRepo.findById.mockResolvedValue(foco);
+    writeRepo.save.mockResolvedValue();
+    writeRepo.createHistorico.mockResolvedValue({
+      clienteId: 'cliente-uuid-1',
+      statusNovo: 'resolvido',
+    });
+    fecharSla.execute.mockResolvedValue(1);
+    cancelarReinspecoes.execute.mockResolvedValue(3);
+
+    const result = await useCase.execute(foco.id!, { statusPara: 'resolvido' });
+
+    expect(cancelarReinspecoes.execute).toHaveBeenCalledWith(
+      foco.id,
+      'test-user-id',
+      expect.anything(),
+    );
+    expect(result.reinspecoesCanceladas).toBe(3);
+    expect(result.slaFechados).toBe(1);
+  });
+
+  it('compensação: erro no CriarReinspecao NÃO bloqueia foco+histórico', async () => {
+    const foco = new FocoRiscoBuilder().withStatus('confirmado').build();
+    readRepo.findById.mockResolvedValue(foco);
+    writeRepo.save.mockResolvedValue();
+    writeRepo.createHistorico.mockResolvedValue({
+      clienteId: 'cliente-uuid-1',
+      statusNovo: 'em_tratamento',
+    });
+    criarReinspecao.execute.mockRejectedValue(new Error('reinspecao falhou'));
+    slaWriteRepo.registrarErroCriacao.mockResolvedValue();
+
+    const result = await useCase.execute(foco.id!, {
+      statusPara: 'em_tratamento',
+    });
+
+    expect(writeRepo.save).toHaveBeenCalled();
+    expect(writeRepo.createHistorico).toHaveBeenCalled();
+    expect(result.foco.status).toBe('em_tratamento');
+    expect(result.reinspecao).toBeNull();
+    expect(result.slaError).toContain('reinspecao falhou');
+
+    await new Promise((r) => setImmediate(r));
+    expect(slaWriteRepo.registrarErroCriacao).toHaveBeenCalledWith(
+      expect.objectContaining({
+        clienteId: foco.clienteId,
+        focoRiscoId: foco.id,
+        erro: 'reinspecao falhou',
+      }),
+    );
   });
 
   it('em_triagem → descartado chama FecharSla também', async () => {

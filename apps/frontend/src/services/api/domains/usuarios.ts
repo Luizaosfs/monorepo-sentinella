@@ -30,8 +30,25 @@ export const usuarios = {
     return Array.isArray(raw) ? raw.length > 0 : false;
   },
 
-  insert: async (payload: Parameters<typeof _sb.usuarios.insert>[0]): Promise<Ret<typeof _sb.usuarios.insert>> =>
-    deepToSnake(await http.post('/usuarios', payload)) as Ret<typeof _sb.usuarios.insert>,
+  insert: async (payload: Parameters<typeof _sb.usuarios.insert>[0]): Promise<Ret<typeof _sb.usuarios.insert>> => {
+    const p = payload as unknown as {
+      nome: string;
+      email: string;
+      senha: string;
+      cliente_id?: string;
+      clienteId?: string;
+      papel?: string;
+      papeis?: string[];
+    };
+    const body = {
+      nome: p.nome,
+      email: p.email,
+      senha: p.senha,
+      clienteId: p.clienteId ?? p.cliente_id,
+      papeis: p.papeis ?? (p.papel ? [p.papel] : undefined),
+    };
+    return deepToSnake(await http.post('/usuarios', body)) as Ret<typeof _sb.usuarios.insert>;
+  },
 
   update: async (id: string, payload: Parameters<typeof _sb.usuarios.update>[1]): Promise<Ret<typeof _sb.usuarios.update>> =>
     deepToSnake(await http.patch(`/usuarios/${id}`, payload)) as Ret<typeof _sb.usuarios.update>,

@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { DatabaseModule } from '@shared/modules/database/database.module';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 
+import { FocoRiscoModule } from '../foco-risco/foco-risco.module';
 import { LevantamentoController } from './levantamento.controller';
 import { AddItemEvidencia } from './use-cases/add-item-evidencia';
 import { CreateLevantamento } from './use-cases/create-levantamento';
@@ -49,6 +50,6 @@ import { ItemStatusesByCliente } from './use-cases/item-statuses-by-cliente';
     PrismaService,
   ],
   controllers: [LevantamentoController],
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, FocoRiscoModule],
 })
 export class LevantamentoModule {}

@@ -12,6 +12,7 @@ import { GetIntegracoes } from './use-cases/get-integracoes';
 import { PaginationCliente } from './use-cases/pagination-cliente';
 import { ResolverPorCoordenada } from './use-cases/resolver-por-coordenada';
 import { SaveCliente } from './use-cases/save-cliente';
+import { SeedClienteNovo } from './use-cases/seed-cliente-novo';
 import { TestarIntegracao } from './use-cases/testar-integracao';
 import { UpdateIntegracaoMeta } from './use-cases/update-integracao-meta';
 import { UpsertIntegracao } from './use-cases/upsert-integracao';
@@ -23,6 +24,7 @@ import { UpsertIntegracao } from './use-cases/upsert-integracao';
     GetCliente,
     PaginationCliente,
     SaveCliente,
+    SeedClienteNovo,
     ResolverPorCoordenada,
     GetIntegracaoApiKey,
     GetIntegracoes,

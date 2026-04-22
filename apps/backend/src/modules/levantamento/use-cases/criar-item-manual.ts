@@ -1,5 +1,7 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Request } from 'express';
+
+import { CriarFocoDeLevantamentoItem } from '@/modules/foco-risco/use-cases/auto-criacao/criar-foco-de-levantamento-item';
 
 import { CriarItemManualBody } from '../dtos/criar-item-manual.body';
 import { LevantamentoException } from '../errors/levantamento.exception';
@@ -8,9 +10,12 @@ import { LevantamentoWriteRepository } from '../repositories/levantamento-write.
 
 @Injectable()
 export class CriarItemManual {
+  private readonly logger = new Logger(CriarItemManual.name);
+
   constructor(
     private readRepository: LevantamentoReadRepository,
     private writeRepository: LevantamentoWriteRepository,
+    private criarFocoDeLevantamentoItem: CriarFocoDeLevantamentoItem,
     @Inject('REQUEST') private req: Request,
   ) {}
 
@@ -93,6 +98,27 @@ export class CriarItemManual {
     // 6. Vincula tags se informadas
     if (input.tags?.length) {
       await this.writeRepository.criarItemTags(levantamentoItem.id, input.tags);
+    }
+
+    // Hook C.3: auto-criar foco se o item qualifica (best-effort)
+    try {
+      await this.criarFocoDeLevantamentoItem.execute({
+        itemId: levantamentoItem.id,
+        levantamentoId,
+        latitude: levantamentoItem.latitude ?? null,
+        longitude: levantamentoItem.longitude ?? null,
+        prioridade: levantamentoItem.prioridade ?? null,
+        risco: levantamentoItem.risco ?? null,
+        enderecoCurto: levantamentoItem.enderecoCurto ?? null,
+        payload: (levantamentoItem.payload ?? null) as Record<string, unknown> | null,
+        createdAt: levantamentoItem.createdAt ?? new Date(),
+      });
+    } catch (err) {
+      this.logger.error(
+        `Hook CriarFocoDeLevantamentoItem falhou: item=${levantamentoItem.id} erro=${
+          err instanceof Error ? err.message : String(err)
+        }`,
+      );
     }
 
     return { levantamentoItem, levantamentoCriado, levantamentoId };

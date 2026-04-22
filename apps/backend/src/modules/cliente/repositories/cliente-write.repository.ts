@@ -4,6 +4,6 @@ import { Cliente } from '../entities/cliente';
 
 @Injectable()
 export abstract class ClienteWriteRepository {
-  abstract create(cliente: Cliente): Promise<Cliente>;
+  abstract create(cliente: Cliente, tx?: unknown): Promise<Cliente>;
   abstract save(cliente: Cliente): Promise<void>;
 }

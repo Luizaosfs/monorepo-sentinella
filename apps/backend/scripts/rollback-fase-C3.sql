@@ -1,0 +1,37 @@
+-- =========================================================================
+-- ROLLBACK — Fase C.3 (Auto-criação de Foco a partir de Levantamento/Vistoria)
+-- =========================================================================
+--
+-- ATENÇÃO: esta é uma fase CODE-ONLY. Não há alteração de schema a reverter.
+-- A fase C.3 substituiu 3 funções SQL legadas (`fn_criar_foco_de_levantamento_item`,
+-- `fn_criar_foco_de_vistoria_deposito`, `fn_prioridade_para_p`) por 2 use-cases
+-- TypeScript + 1 utilitário puro, executados em best-effort nos fluxos dos
+-- use-cases `CreateLevantamentoItem`, `CriarItemManual`, `AddDeposito` e
+-- `CreateVistoriaCompleta`.
+--
+-- Também incorporou o comportamento de `fn_auto_triagem_foco` ao inserir focos
+-- diretamente com `status='em_triagem'` (pulando o estado intermediário
+-- `suspeita`).
+--
+-- Este arquivo existe por convenção das fases anteriores. O rollback
+-- EFETIVO é remover o código:
+--
+--   * apps/backend/src/modules/foco-risco/use-cases/auto-criacao/prioridade-para-p.ts
+--   * apps/backend/src/modules/foco-risco/use-cases/auto-criacao/criar-foco-de-levantamento-item.ts
+--   * apps/backend/src/modules/foco-risco/use-cases/auto-criacao/criar-foco-de-vistoria-deposito.ts
+--   * Remover providers/exports de foco-risco.module.ts
+--   * Remover FocoRiscoModule dos imports de levantamento.module.ts e vistoria.module.ts
+--   * Reverter hooks em CreateLevantamentoItem / CriarItemManual / AddDeposito / CreateVistoriaCompleta
+--
+-- SE você quiser restaurar as funções SQL legadas (ambiente que dependia delas),
+-- será necessário aplicar as definições originais do Supabase — não as temos
+-- no repositório atual. Consultar backup de 2026-04-19 em:
+--   D:\sentinella\backup_20260419_115127\database\database.sql
+--
+-- Não é recomendado executar este rollback em produção: os use-cases
+-- substituem os triggers com comportamento idêntico (incluindo a filtragem
+-- cidadão-sempre-passa / P1-P3-ou-risco-alto para os demais) e têm melhor
+-- observabilidade (Logger).
+-- =========================================================================
+
+SELECT 'Fase C.3 — rollback é code-only; nada a executar no banco.' AS aviso;

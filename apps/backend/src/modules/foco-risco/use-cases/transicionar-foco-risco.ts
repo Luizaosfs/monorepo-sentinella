@@ -3,6 +3,11 @@ import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 import { Request } from 'express';
 import type { AuthenticatedUser } from 'src/guards/auth.guard';
 
+import { CancelarReinspecoesAoFecharFoco } from '../../reinspecao/use-cases/cancelar-reinspecoes-ao-fechar-foco';
+import {
+  CriarReinspecaoPosTratamento,
+  CriarReinspecaoResult,
+} from '../../reinspecao/use-cases/criar-reinspecao-pos-tratamento';
 import { FecharSlaAoResolverFoco } from '../../sla/use-cases/fechar-sla-ao-resolver-foco';
 import {
   IniciarSlaAoConfirmarFoco,
@@ -33,6 +38,8 @@ export class TransicionarFocoRisco {
     private iniciarSla: IniciarSlaAoConfirmarFoco,
     private fecharSla: FecharSlaAoResolverFoco,
     private slaWriteRepo: SlaWriteRepository,
+    private criarReinspecao: CriarReinspecaoPosTratamento,
+    private cancelarReinspecoes: CancelarReinspecoesAoFecharFoco,
     @Inject('REQUEST') private req: Request,
   ) {}
 
@@ -58,29 +65,42 @@ export class TransicionarFocoRisco {
       if (input.desfecho) foco.desfecho = input.desfecho;
     }
 
-    // ── Transação interativa: foco + SLA hooks + histórico atômicos ───────
-    // Se qualquer passo LEGÍTIMO (não SLA) lançar, rollback total.
-    // Para SLA, capturamos o erro na variável `slaError` e seguimos o fluxo —
+    // ── Transação interativa: foco + SLA/reinspeção hooks + histórico atômicos
+    // Se qualquer passo LEGÍTIMO (não SLA/reinspeção) lançar, rollback total.
+    // Para SLA/reinspeção, capturamos erro em `slaError` e seguimos o fluxo —
     // a compensação (registro em `sla_erros_criacao`) roda FORA da tx.
+    // `slaError` é nome histórico mas cobre ambas as trilhas de hook.
     let slaResult: IniciarSlaResult | null = null;
     let slaFechados: number | null = null;
+    let reinspecaoResult: CriarReinspecaoResult | null = null;
+    let reinspecoesCanceladas: number | null = null;
     let slaError: unknown = null;
 
     await this.prisma.client.$transaction(async (tx) => {
       await this.writeRepository.save(foco, tx);
 
-      // Hook SLA: confirmado → inicia; resolvido/descartado → fecha
+      // Hook SLA + reinspeção:
+      //   confirmado          → inicia SLA
+      //   em_tratamento       → cria reinspeção pós-tratamento
+      //   resolvido/descartado → fecha SLA + cancela reinspeções pendentes
       try {
         if (novoStatus === 'confirmado') {
           slaResult = await this.iniciarSla.execute(foco, tx);
+        } else if (novoStatus === 'em_tratamento') {
+          reinspecaoResult = await this.criarReinspecao.execute(foco, tx);
         } else if (STATUS_FECHAMENTO.includes(novoStatus) && foco.id) {
           slaFechados = await this.fecharSla.execute(foco.id, tx);
+          reinspecoesCanceladas = await this.cancelarReinspecoes.execute(
+            foco.id,
+            this.req['user']?.id,
+            tx,
+          );
         }
       } catch (err) {
         // Compensação: NÃO relança. foco + histórico seguem salvos.
         slaError = err;
         this.logger.error(
-          `SLA hook falhou em transição ${statusAnterior} → ${novoStatus} do foco ${foco.id}`,
+          `Hook (sla/reinspecao) falhou em transição ${statusAnterior} → ${novoStatus} do foco ${foco.id}`,
           err instanceof Error ? err.stack : String(err),
         );
       }
@@ -127,6 +147,8 @@ export class TransicionarFocoRisco {
       foco,
       sla: slaResult,
       slaFechados,
+      reinspecao: reinspecaoResult,
+      reinspecoesCanceladas,
       slaError: slaError ? String(slaError) : null,
     };
   }

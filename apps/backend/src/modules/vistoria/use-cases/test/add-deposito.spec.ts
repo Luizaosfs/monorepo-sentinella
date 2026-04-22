@@ -9,6 +9,10 @@ const mockPrisma = {
   },
 } as any;
 
+const mockCriarFoco = {
+  execute: jest.fn().mockResolvedValue({ criado: false }),
+} as any;
+
 const baseInput = {
   tipo: 'A1',
   qtdInspecionados: 2,
@@ -27,7 +31,7 @@ describe('AddDeposito', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    useCase = new AddDeposito(mockPrisma);
+    useCase = new AddDeposito(mockPrisma, mockCriarFoco);
     mockFindFirst.mockResolvedValue({ id: 'v-1' });
   });
 
@@ -69,5 +73,25 @@ describe('AddDeposito', () => {
     mockCreate.mockRejectedValue(new Error('DB error'));
 
     await expect(useCase.execute('v-1', 'c-1', baseInput)).rejects.toThrow('DB error');
+  });
+
+  it('invoca hook CriarFocoDeVistoriaDeposito após criar depósito', async () => {
+    mockCreate.mockResolvedValue({ id: 'dep-1' });
+
+    await useCase.execute('v-1', 'c-1', baseInput);
+
+    expect(mockCriarFoco.execute).toHaveBeenCalledWith({
+      vistoriaId: 'v-1',
+      qtdComFocos: 1,
+    });
+  });
+
+  it('falha no hook não deve quebrar a criação do depósito', async () => {
+    mockCreate.mockResolvedValue({ id: 'dep-1' });
+    mockCriarFoco.execute.mockRejectedValueOnce(new Error('boom'));
+
+    const result = await useCase.execute('v-1', 'c-1', baseInput);
+
+    expect(result.deposito).toEqual({ id: 'dep-1' });
   });
 });

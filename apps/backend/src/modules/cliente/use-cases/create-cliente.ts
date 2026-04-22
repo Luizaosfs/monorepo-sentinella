@@ -1,4 +1,5 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 import { Request } from 'express';
 
 import { CreateClienteBody } from '../dtos/create-cliente.body';
@@ -6,12 +7,17 @@ import { Cliente } from '../entities/cliente';
 import { ClienteException } from '../errors/cliente.exception';
 import { ClienteReadRepository } from '../repositories/cliente-read.repository';
 import { ClienteWriteRepository } from '../repositories/cliente-write.repository';
+import { SeedClienteNovo, SeedClienteNovoResult } from './seed-cliente-novo';
 
 @Injectable()
 export class CreateCliente {
+  private readonly logger = new Logger(CreateCliente.name);
+
   constructor(
+    private prisma: PrismaService,
     private readRepository: ClienteReadRepository,
     private writeRepository: ClienteWriteRepository,
+    private seedClienteNovo: SeedClienteNovo,
     @Inject('REQUEST') private req: Request,
   ) {}
 
@@ -48,7 +54,23 @@ export class CreateCliente {
       { createdBy: this.req['user']?.id },
     );
 
-    const created = await this.writeRepository.create(cliente);
+    // Cliente novo + 7 seeds em transação atômica.
+    // Falha em qualquer seed faz rollback do INSERT do cliente — paridade fiel
+    // com os 7 triggers AFTER INSERT do Supabase legado, mas com rollback
+    // explícito (no legado, falha em trigger também derrubava o INSERT).
+    let created!: Cliente;
+    let seedResult!: SeedClienteNovoResult;
+    await this.prisma.client.$transaction(async (tx) => {
+      created = await this.writeRepository.create(cliente, tx);
+      if (!created.id) {
+        throw new Error('Cliente criado sem id retornado pelo repository');
+      }
+      seedResult = await this.seedClienteNovo.execute(created.id, tx);
+    });
+
+    this.logger.log(
+      `Cliente ${created.id} criado e seeds aplicados: ${JSON.stringify(seedResult)}`,
+    );
 
     return { cliente: created };
   }

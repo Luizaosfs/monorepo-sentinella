@@ -12,9 +12,10 @@ import { PrismaService } from '../../prisma.service';
 export class PrismaClienteWriteRepository implements ClienteWriteRepository {
   constructor(private prisma: PrismaService) {}
 
-  async create(cliente: Cliente): Promise<Cliente> {
+  async create(cliente: Cliente, tx?: unknown): Promise<Cliente> {
     const data = PrismaClienteMapper.toPrisma(cliente);
-    const created = await this.prisma.client.clientes.create({ data });
+    const client = (tx as typeof this.prisma.client) ?? this.prisma.client;
+    const created = await client.clientes.create({ data });
     return PrismaClienteMapper.toDomain(created as any);
   }
 

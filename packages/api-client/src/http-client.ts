@@ -25,29 +25,45 @@ export function configureHttpClient(url: string): void {
   baseUrl = url.replace(/\/$/, '');
 }
 
+// Deduplicação: enquanto um refresh estiver em voo, chamadas concorrentes
+// aguardam a mesma Promise — evita rotacionar o refresh_token N vezes em
+// paralelo (o backend marca used_at na 1ª e rejeita as demais como 401).
+let inflightRefresh: Promise<boolean> | null = null;
+
 async function refreshTokens(): Promise<boolean> {
+  if (inflightRefresh) return inflightRefresh;
+
   const refresh = tokenStore.getRefreshToken();
   if (!refresh) return false;
 
-  try {
-    const res = await fetch(`${baseUrl}/auth/refresh`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refreshToken: refresh }),
-    });
-    if (!res.ok) return false;
-    const data = (await res.json()) as { accessToken: string; refreshToken: string };
-    tokenStore.setTokens(data.accessToken, data.refreshToken);
-    return true;
-  } catch {
-    return false;
-  }
+  inflightRefresh = (async () => {
+    try {
+      const res = await fetch(`${baseUrl}/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken: refresh }),
+      });
+      if (!res.ok) return false;
+      const data = (await res.json()) as { accessToken: string; refreshToken: string };
+      tokenStore.setTokens(data.accessToken, data.refreshToken);
+      return true;
+    } catch {
+      return false;
+    } finally {
+      inflightRefresh = null;
+    }
+  })();
+
+  return inflightRefresh;
 }
 
 function handleSessionExpired(): never {
   tokenStore.clear();
   window.dispatchEvent(new Event('sentinella:session-expired'));
-  throw new HttpClientError(401, 'Sessão expirada. Faça login novamente.');
+  throw new HttpClientError(
+    401,
+    'Sua sessão foi encerrada. Isso pode acontecer se você ficou muito tempo sem usar o sistema, fez login em outro dispositivo, ou trocou sua senha. Faça login novamente.',
+  );
 }
 
 export async function httpRequest<T>(

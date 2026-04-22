@@ -96,7 +96,21 @@
       "Bash(rm scripts/remove-tenant-guard.py)",
       "Bash(rmdir scripts *)",
       "Bash(pnpm --filter @sentinella/backend run build)",
-      "Bash(git stash *)"
+      "Bash(git stash *)",
+      "Bash(pnpm jest *)",
+      "Read(//d/d/sentinella/monorepo-sentinella/apps/backend/src/modules/foco-risco/**)",
+      "Read(//d/d/sentinella/monorepo-sentinella/apps/backend/src/modules/levantamento/**)",
+      "Read(//d/d/sentinella/monorepo-sentinella/apps/backend/src/modules/vistoria/**)",
+      "PowerShell(Select-String -Path 'D:\\\\sentinella\\\\backup_20260419_115127\\\\database\\\\database.sql' -Pattern 'UPDATE vistorias' -SimpleMatch | Select-Object -First 20 | ForEach-Object { \"$\\($_.LineNumber\\): $\\($_.Line.Substring\\(0, [Math]::Min\\(200, $_.Line.Length\\)\\)\\)\" })",
+      "PowerShell(& \"C:\\\\Program Files\\\\nodejs\\\\npx.cmd\" tsc --noEmit 2>&1 | Select-Object -Last 80)",
+      "PowerShell($out = & \"C:\\\\Program Files\\\\nodejs\\\\npx.cmd\" tsc --noEmit 2>&1; $count = \\($out | Measure-Object -Line\\).Lines; $errCount = \\($out | Where-Object { $_ -match 'error TS' } | Measure-Object\\).Count; \"TS errors: $errCount`nTotal lines: $count\"; $out | Select-Object -First 30)",
+      "PowerShell(git log *)",
+      "PowerShell($ErrorActionPreference='Continue'; & \"C:\\\\Program Files\\\\nodejs\\\\npx.cmd\" jest --testPathPattern=\"cliente|seed-cliente-novo\" --silent 2>&1 | Select-Object -Last 25)",
+      "PowerShell($ErrorActionPreference='Continue'; & \"C:\\\\Program Files\\\\nodejs\\\\npx.cmd\" jest --testPathPattern=cliente --silent 2>&1 | Select-Object -Last 25)",
+      "PowerShell($ErrorActionPreference='Continue'; & \"C:\\\\Program Files\\\\nodejs\\\\npx.cmd\" jest --testPathPattern=seed-cliente-novo 2>&1 | Select-Object -Last 30)",
+      "PowerShell($ErrorActionPreference='Continue'; & \"C:\\\\Program Files\\\\nodejs\\\\npx.cmd\" tsc --noEmit -p tsconfig.json 2>&1 | Measure-Object -Line | Select-Object -ExpandProperty Lines)",
+      "PowerShell($ErrorActionPreference='Continue'; & \"C:\\\\Program Files\\\\nodejs\\\\npx.cmd\" jest --silent 2>&1 | Select-String -Pattern \"FAIL \" | Select-Object -First 15)",
+      "PowerShell(& \"C:\\\\Program Files\\\\nodejs\\\\npx.cmd\" jest --testPathPattern=prisma-cliente-write.repository.spec --no-coverage 2>&1 | Select-Object -Last 60)"
     ]
   }
 }

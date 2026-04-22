@@ -72,8 +72,34 @@ export const reincidencia = {
     http.get(`/dashboard/reincidencia/historico-ciclos${qs({ imovelId })}`),
 };
 
+type RegionalKpiRow = {
+  cliente_id: string;
+  municipio_nome: string;
+  total_focos: number | string | null;
+  focos_ativos: number | string | null;
+  focos_resolvidos: number | string | null;
+};
+
 export const admin = {
-  comparativoMunicipios: (): Promise<unknown> => http.get('/analytics/regional/comparativo-municipios'),
+  comparativoMunicipios: async (): Promise<import('@/types/database').MunicipioStats[]> => {
+    const raw = await http.get<RegionalKpiRow[]>('/analytics/regional/comparativo-municipios');
+    const rows = Array.isArray(raw) ? raw : [];
+    return rows.map((r) => {
+      const total = Number(r.total_focos) || 0;
+      const resolvidos = Number(r.focos_resolvidos) || 0;
+      const ativos = Number(r.focos_ativos) || 0;
+      return {
+        clienteId: r.cliente_id,
+        nome: r.municipio_nome,
+        total,
+        resolvidos,
+        pendentes: ativos,
+        em_atendimento: 0,
+        criticos: 0,
+        altos: 0,
+      };
+    });
+  },
 };
 
 export const piloto = {

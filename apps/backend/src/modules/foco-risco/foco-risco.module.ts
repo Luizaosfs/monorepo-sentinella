@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { DatabaseModule } from '@shared/modules/database/database.module';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 
+import { ReinspecaoModule } from '../reinspecao/reinspecao.module';
 import { SlaModule } from '../sla/sla.module';
 import { FocoRiscoController } from './foco-risco.controller';
 import { AtribuirAgente } from './use-cases/atribuir-agente';
@@ -21,6 +22,9 @@ import { ListFocosByIds } from './use-cases/list-focos-by-ids';
 import { PaginationFocoRisco } from './use-cases/pagination-foco-risco';
 import { TransicionarFocoRisco } from './use-cases/transicionar-foco-risco';
 import { UpdateFocoRisco } from './use-cases/update-foco-risco';
+import { CruzarFocoNovoComCasos } from './use-cases/cruzar-foco-novo-com-casos';
+import { CriarFocoDeLevantamentoItem } from './use-cases/auto-criacao/criar-foco-de-levantamento-item';
+import { CriarFocoDeVistoriaDeposito } from './use-cases/auto-criacao/criar-foco-de-vistoria-deposito';
 
 @Module({
   providers: [
@@ -40,10 +44,14 @@ import { UpdateFocoRisco } from './use-cases/update-foco-risco';
     PaginationFocoRisco,
     TransicionarFocoRisco,
     UpdateFocoRisco,
+    CruzarFocoNovoComCasos,
+    CriarFocoDeLevantamentoItem,
+    CriarFocoDeVistoriaDeposito,
     JwtService,
     PrismaService,
   ],
   controllers: [FocoRiscoController],
-  imports: [DatabaseModule, SlaModule],
+  imports: [DatabaseModule, SlaModule, ReinspecaoModule],
+  exports: [CriarFocoDeLevantamentoItem, CriarFocoDeVistoriaDeposito],
 })
 export class FocoRiscoModule {}

@@ -6,4 +6,10 @@ export const VistoriaException = createExceptionFactory({
     type: 'badRequest',
     message: 'Imóvel é obrigatório para este tipo de vistoria',
   },
+  /** Hard delete LGPD — usar soft delete (C.5) */
+  deleteBloqueado: {
+    type: 'badRequest',
+    message:
+      'Vistorias não podem ser apagadas. Use deleted_at=now() para inativação.',
+  },
 });
