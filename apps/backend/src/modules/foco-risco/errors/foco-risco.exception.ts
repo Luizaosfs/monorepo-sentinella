@@ -10,12 +10,16 @@ export const FocoRiscoException = createExceptionFactory({
     type: 'badRequest',
     message: 'Status inválido para esta operação',
   },
-  inicioInspecaoSemResponsavel: {
-    type: 'badRequest',
-    message: 'Atribua um agente responsável antes de iniciar a inspeção',
-  },
-  inicioInspecaoApenasResponsavel: {
+  papelNaoDefinido: {
     type: 'forbidden',
-    message: 'Apenas o agente responsável pode iniciar a inspeção neste foco',
+    message: 'Usuário sem papel definido — acesso negado',
+  },
+  usuarioInativo: {
+    type: 'forbidden',
+    message: 'Usuário inativo — acesso negado',
+  },
+  apenasAgenteInicia: {
+    type: 'forbidden',
+    message: 'Apenas agentes podem iniciar inspeções',
   },
 });

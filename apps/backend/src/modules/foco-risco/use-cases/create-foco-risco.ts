@@ -4,6 +4,7 @@ import { Request } from 'express';
 import { CreateFocoRiscoBody } from '../dtos/create-foco-risco.body';
 import { FocoRisco } from '../entities/foco-risco';
 import { FocoRiscoWriteRepository } from '../repositories/foco-risco-write.repository';
+import { autoClassificarFoco } from './auto-criacao/auto-classificar-foco';
 import { CruzarFocoNovoComCasos } from './cruzar-foco-novo-com-casos';
 
 @Injectable()
@@ -35,7 +36,10 @@ export class CreateFocoRisco {
         focoAnteriorId: input.focoAnteriorId,
         casosIds: [],
         observacao: input.observacao,
-        classificacaoInicial: input.classificacaoInicial ?? 'suspeito',
+        classificacaoInicial: autoClassificarFoco({
+          origemTipo: input.origemTipo,
+          classificacaoInicial: input.classificacaoInicial,
+        }),
         scorePrioridade: 0,
       },
       { createdBy: this.req['user']?.id },

@@ -1,8 +1,10 @@
-import { HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 
+import { autoClassificarFoco } from '../../foco-risco/use-cases/auto-criacao/auto-classificar-foco';
 import { DenunciaCidadaoBody } from '../dtos/denuncia-cidadao.body';
+import { EnfileirarNotifCanalCidadao } from './enfileirar-notif-canal-cidadao';
 
 const RATE_LIMIT_MAX = 5;     // por IP por janela de 30 min (igual à função SQL)
 const RATE_LIMIT_WINDOW = 30; // minutos
@@ -20,7 +22,12 @@ function calcCiclo(): number {
 
 @Injectable()
 export class DenunciarCidadaoV2 {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(DenunciarCidadaoV2.name);
+
+  constructor(
+    private prisma: PrismaService,
+    private enfileirarNotifCanalCidadao: EnfileirarNotifCanalCidadao,
+  ) {}
 
   async execute(
     input: DenunciaCidadaoBody,
@@ -143,17 +150,23 @@ export class DenunciarCidadaoV2 {
     }
 
     // 5. Criar foco_risco
+    const classificacaoInicial = autoClassificarFoco({
+      origemTipo: 'cidadao',
+      classificacaoInicial: 'suspeito',
+    });
+    const suspeitaEm = new Date();
     const foco = await this.prisma.client.focos_risco.create({
       data: {
         cliente_id: clienteId,
         regiao_id: regiaoId,
         origem_tipo: 'cidadao',
         status: 'suspeita',
-        classificacao_inicial: 'suspeito',
+        classificacao_inicial: classificacaoInicial,
         prioridade: 'P3',
         ciclo: calcCiclo(),
         latitude: input.latitude ?? null,
         longitude: input.longitude ?? null,
+        suspeita_em: suspeitaEm,
         observacao: input.descricao,
         payload: {
           bairro_id: input.bairroId ?? null,
@@ -162,6 +175,25 @@ export class DenunciarCidadaoV2 {
       },
       select: { id: true },
     });
+
+    // Hook best-effort — port de fn_notificar_foco_cidadao (AFTER INSERT trigger).
+    try {
+      await this.enfileirarNotifCanalCidadao.execute({
+        focoId: foco.id,
+        clienteId,
+        latitude: input.latitude ?? null,
+        longitude: input.longitude ?? null,
+        endereco: null,
+        suspeitaEm,
+        origemLevantamentoItemId: null,
+      });
+    } catch (err) {
+      this.logger.error(
+        `Hook EnfileirarNotifCanalCidadao falhou: foco=${foco.id} erro=${
+          err instanceof Error ? err.message : String(err)
+        }`,
+      );
+    }
 
     // 6. Registrar evento inicial no histórico
     this.prisma.client.foco_risco_historico

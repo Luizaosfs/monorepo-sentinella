@@ -350,28 +350,15 @@ Porte dos 3 triggers SQL bidirecionais que mantinham a relação geográfica ent
 
 ### Fase C.5 — Guards DELETE LGPD (abr/2026)
 
-Defesa em profundidade contra hard delete em `clientes`, `imoveis` e `vistorias` (tabelas com dados de saúde pública / LGPD). Dupla camada:
+Defesa em profundidade contra hard delete em `clientes`, `imoveis` e `vistorias` (tabelas com dados de saúde pública / LGPD). **Apenas camada code-level** — a política do projeto é zero triggers no banco; toda regra de domínio fica em use-cases/testes.
 
-**A — DB-level (triggers BEFORE DELETE):** `apps/backend/prisma/migrations/c5_delete_guards.sql` recria os 3 triggers do Supabase legado (`trg_bloquear_delete_cliente`, `trg_bloquear_delete_imovel`, `trg_bloquear_delete_vistoria`). Aplicar em produção com `psql -f`. Migration SQL direta — não usa Prisma Migrate (mesmo padrão das demais migrations do repo).
-
-**B — Code-level (invariante estática):** `src/shared/test/delete-guards.invariant.spec.ts` varre os repositórios Prisma e falha no CI se alguém introduzir `.delete({...})` ou `.deleteMany({...})` nessas 3 tabelas. Quebra a build antes de chegar em runtime.
+**Code-level (invariante estática):** `src/shared/test/delete-guards.invariant.spec.ts` varre os repositórios Prisma e falha no CI se alguém introduzir `.delete({...})` ou `.deleteMany({...})` nessas 3 tabelas. Quebra a build antes de chegar em runtime.
 
 **Exceptions dedicadas:** `ClienteException.deleteBloqueado`, `ImovelException.deleteBloqueado`, `VistoriaException.deleteBloqueado` — usar caso algum use-case futuro precise recusar um delete explicitamente.
 
 **Padrão canônico de "delete":** soft delete via `ativo=false + deleted_at=now()`. Cliente e vistoria **não têm endpoint DELETE** (intencional — não existe caso de uso legítimo). Imóvel tem `DeleteImovel` use-case que já chama `softDelete(id, userId, clienteId)`.
 
-**Ops/testes que precisam dropar dados reais:**
-```sql
-BEGIN;
-SET LOCAL session_replication_role = replica;  -- desliga triggers só nesta tx
-DELETE FROM vistorias WHERE ...;
-COMMIT;
-```
-Nunca usar isso em produção. O bypass fica limitado à transação.
-
-**E2E runtime (opcional):** `test/e2e/c5-delete-guards.e2e.spec.ts` valida que as 3 triggers estão instaladas. `describe.skip` por padrão — rodar com `E2E_DB=true` num ambiente com DB real + migration aplicada.
-
-**Rollback:** `apps/backend/scripts/rollback-fase-C5.sql` (não recomendado em produção).
+**Descartado:** o arquivo `c5_delete_guards.sql` (triggers `trg_bloquear_delete_*`) e o e2e `c5-delete-guards.e2e.spec.ts` foram removidos — a trava DB-level conflita com a diretriz "tudo via use-case".
 
 ### Fase C.6 — Seeds on Cliente Insert (abr/2026)
 

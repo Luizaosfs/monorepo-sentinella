@@ -189,6 +189,26 @@ describe('CriarFocoDeLevantamentoItem', () => {
     });
   });
 
+  it('autoClassificarFoco: levantamento DRONE → classificacao_inicial=foco', async () => {
+    p.findUnique.mockResolvedValue({ cliente_id: 'cli-1', tipo_entrada: 'DRONE' });
+    await useCase.execute(baseInput);
+    expect(p.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ classificacao_inicial: 'foco' }),
+      }),
+    );
+  });
+
+  it('autoClassificarFoco: levantamento manual cidadão → classificacao_inicial=suspeito', async () => {
+    p.findUnique.mockResolvedValue({ cliente_id: 'cli-1', tipo_entrada: 'MANUAL' });
+    await useCase.execute({ ...baseInput, payload: { fonte: 'cidadao' } });
+    expect(p.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ classificacao_inicial: 'suspeito' }),
+      }),
+    );
+  });
+
   it('falha no CruzarFocoNovoComCasos não reverte criação do foco', async () => {
     p.findUnique.mockResolvedValue({ cliente_id: 'cli-1', tipo_entrada: 'DRONE' });
     c.execute.mockRejectedValue(new Error('boom'));

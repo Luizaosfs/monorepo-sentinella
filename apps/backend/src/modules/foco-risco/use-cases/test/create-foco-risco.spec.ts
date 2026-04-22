@@ -99,6 +99,42 @@ describe('CreateFocoRisco', () => {
     expect(cruzarFocoNovoComCasos.execute).toHaveBeenCalledTimes(1);
   });
 
+  it('autoClassificarFoco: origemTipo=drone → classificacao_inicial=foco (ignora input.classificacaoInicial)', async () => {
+    const focoMock = new FocoRiscoBuilder().build();
+    writeRepo.create.mockResolvedValue(focoMock);
+    writeRepo.createHistorico.mockResolvedValue({
+      clienteId: 'cliente-uuid-1',
+      statusNovo: 'suspeita',
+    });
+
+    await useCase.execute({
+      origemTipo: 'drone',
+      classificacaoInicial: 'suspeito',
+    });
+
+    expect(writeRepo.create).toHaveBeenCalledWith(
+      expect.objectContaining({ classificacaoInicial: 'foco' }),
+    );
+  });
+
+  it('autoClassificarFoco: origemTipo=pluvio → classificacao_inicial=risco', async () => {
+    const focoMock = new FocoRiscoBuilder().build();
+    writeRepo.create.mockResolvedValue(focoMock);
+    writeRepo.createHistorico.mockResolvedValue({
+      clienteId: 'cliente-uuid-1',
+      statusNovo: 'suspeita',
+    });
+
+    await useCase.execute({
+      origemTipo: 'pluvio',
+      classificacaoInicial: 'suspeito',
+    });
+
+    expect(writeRepo.create).toHaveBeenCalledWith(
+      expect.objectContaining({ classificacaoInicial: 'risco' }),
+    );
+  });
+
   it('falha no hook de cruzamento NÃO quebra a criação', async () => {
     const focoMock = new FocoRiscoBuilder().build();
     writeRepo.create.mockResolvedValue(focoMock);

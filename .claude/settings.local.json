@@ -110,7 +110,10 @@
       "PowerShell($ErrorActionPreference='Continue'; & \"C:\\\\Program Files\\\\nodejs\\\\npx.cmd\" jest --testPathPattern=seed-cliente-novo 2>&1 | Select-Object -Last 30)",
       "PowerShell($ErrorActionPreference='Continue'; & \"C:\\\\Program Files\\\\nodejs\\\\npx.cmd\" tsc --noEmit -p tsconfig.json 2>&1 | Measure-Object -Line | Select-Object -ExpandProperty Lines)",
       "PowerShell($ErrorActionPreference='Continue'; & \"C:\\\\Program Files\\\\nodejs\\\\npx.cmd\" jest --silent 2>&1 | Select-String -Pattern \"FAIL \" | Select-Object -First 15)",
-      "PowerShell(& \"C:\\\\Program Files\\\\nodejs\\\\npx.cmd\" jest --testPathPattern=prisma-cliente-write.repository.spec --no-coverage 2>&1 | Select-Object -Last 60)"
+      "PowerShell(& \"C:\\\\Program Files\\\\nodejs\\\\npx.cmd\" jest --testPathPattern=prisma-cliente-write.repository.spec --no-coverage 2>&1 | Select-Object -Last 60)",
+      "Bash(npx tsc *)",
+      "Bash(echo \"TSC_EXIT=$?\")",
+      "Bash(rm tsc-out.txt)"
     ]
   }
 }

@@ -17,21 +17,31 @@ export class IniciarInspecao {
   ) {}
 
   async execute(id: string, input: IniciarInspecaoInput) {
+    const user = this.req['user'] as AuthenticatedUser | undefined;
+
+    // G2: AuthGuard já filtra usuário inativo (lança 401 antes de chegar aqui).
+    // Defense-in-depth: ausência de user equivale a "não autenticado / inativo".
+    if (!user) throw FocoRiscoException.usuarioInativo();
+
+    // G1: papel NULL — usuário sem entrada em papeis_usuarios.
+    if (!user.papeis || user.papeis.length === 0) {
+      throw FocoRiscoException.papelNaoDefinido();
+    }
+
+    // G3: legado é estrito — apenas papel canônico 'agente' inicia.
+    // Admin NÃO bypassa (paridade fiel com fn_iniciar_inspecao_foco hardening_final).
+    if (!user.papeis.includes('agente')) {
+      throw FocoRiscoException.apenasAgenteInicia();
+    }
+
     const foco = await this.readRepository.findById(id);
     if (!foco) throw FocoRiscoException.notFound();
 
     this.assertFocoDoTenant(foco);
 
-    const user = this.req['user'] as AuthenticatedUser | undefined;
-    const isAdmin = user?.isPlatformAdmin ?? false;
-
-    if (!isAdmin) {
-      if (!foco.responsavelId) {
-        throw FocoRiscoException.inicioInspecaoSemResponsavel();
-      }
-      if (user?.id !== foco.responsavelId) {
-        throw FocoRiscoException.inicioInspecaoApenasResponsavel();
-      }
+    // G4: idempotência — foco já em inspeção retorna ok sem alterar.
+    if (foco.status === 'em_inspecao') {
+      return { foco, jaEmInspecao: true };
     }
 
     if (foco.status !== 'aguarda_inspecao') {
@@ -40,7 +50,9 @@ export class IniciarInspecao {
 
     const statusAnterior = foco.status;
     foco.status = 'em_inspecao';
-    foco.inspecaoEm = new Date();
+    // G6: COALESCE — preservar valores existentes.
+    foco.responsavelId = foco.responsavelId ?? user.id;
+    foco.inspecaoEm = foco.inspecaoEm ?? new Date();
     if (input.observacao) foco.observacao = input.observacao;
 
     await this.writeRepository.save(foco);
@@ -50,18 +62,19 @@ export class IniciarInspecao {
       clienteId: foco.clienteId,
       statusAnterior: statusAnterior,
       statusNovo: 'em_inspecao',
-      alteradoPor: this.req['user']?.id,
+      alteradoPor: user.id,
       motivo: input.observacao,
-      tipoEvento: 'inicio_inspecao',
+      // G5: tipo_evento canônico (paridade com fn_registrar_historico_foco).
+      tipoEvento: 'inspecao_iniciada',
     });
 
-    return { foco };
+    return { foco, jaEmInspecao: false };
   }
 
   private assertFocoDoTenant(foco: FocoRisco) {
-    const user = this.req['user'] as AuthenticatedUser | undefined;
+    // Paridade fn_iniciar_inspecao_foco: só agente do tenant atual inicia.
+    // Admin não bypassa (já bloqueado em G3) — tenant check é estrito.
     const tenantId = this.req['tenantId'] as string | undefined;
-    if (user?.isPlatformAdmin) return;
     if (!tenantId || foco.clienteId !== tenantId) {
       throw FocoRiscoException.notFound();
     }

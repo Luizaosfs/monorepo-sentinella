@@ -191,6 +191,19 @@ describe('CriarFocoDeVistoriaDeposito', () => {
     expect(c.execute).toHaveBeenCalled();
   });
 
+  it('autoClassificarFoco: origem agente → classificacao_inicial=suspeito (default)', async () => {
+    p.vistoriasFind.mockResolvedValue({
+      cliente_id: 'cli-1',
+      imovel_id: null,
+      ciclo: 1,
+      foco_risco_id: null,
+    });
+    await useCase.execute({ vistoriaId: 'v-1', qtdComFocos: 1 });
+    expect(p.focoCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({ classificacao_inicial: 'suspeito' }),
+    });
+  });
+
   it('falha em CruzarFocoNovoComCasos não reverte criação', async () => {
     p.vistoriasFind.mockResolvedValue({
       cliente_id: 'cli-1',

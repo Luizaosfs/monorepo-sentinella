@@ -2,15 +2,12 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 /**
- * Invariante C.5: guards DELETE LGPD (defesa em profundidade).
+ * Invariante C.5: guards DELETE LGPD.
  *
- * Complementa os 3 triggers BEFORE DELETE do banco (c5_delete_guards.sql).
- * Este spec varre os repositórios Prisma procurando chamadas `.delete({`
- * ou `.deleteMany({` em clientes/imoveis/vistorias. Se alguém introduzir
- * hard delete dessas tabelas, falha aqui ANTES de chegar em produção
- * (o trigger já bloquearia em runtime, mas falhar em CI é melhor).
- *
- * NÃO inclui o próprio arquivo deste spec nem arquivos *.md na busca.
+ * Política do projeto: zero triggers no banco — toda regra fica em use-case/teste.
+ * Este spec varre os repositórios Prisma procurando chamadas `.delete({` ou
+ * `.deleteMany({` em clientes/imoveis/vistorias e falha o CI se alguém
+ * introduzir hard delete nessas tabelas.
  *
  * Soft delete é o padrão: usar `softDelete(id, userId, clienteId)` nos
  * repositórios. Nunca `prisma.client.clientes.delete({ ... })`.
@@ -90,11 +87,4 @@ describe('[C.5] Invariante — guards DELETE LGPD', () => {
     },
   );
 
-  it('arquivo c5_delete_guards.sql existe', () => {
-    const migrationPath = path.resolve(
-      __dirname,
-      '../../../prisma/migrations/c5_delete_guards.sql',
-    );
-    expect(fs.existsSync(migrationPath)).toBe(true);
-  });
 });
