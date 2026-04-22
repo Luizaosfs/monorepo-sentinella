@@ -71,7 +71,7 @@ export class RegiaoController {
   ) {}
 
   @Get()
-  @Roles('admin', 'supervisor', 'agente')
+  @Roles('admin', 'supervisor', 'agente', 'notificador', 'analista_regional')
   @ApiOperation({ summary: 'Listar regiões com filtros' })
   async filter(@Query() filters: FilterRegiaoInput) {
     const parsed = filterRegiaoSchema.parse(filters);
@@ -80,7 +80,7 @@ export class RegiaoController {
   }
 
   @Get('pagination')
-  @Roles('admin', 'supervisor', 'agente')
+  @Roles('admin', 'supervisor', 'agente', 'notificador', 'analista_regional')
   @ApiOperation({ summary: 'Listar regiões com paginação' })
   async pagination(
     @Query() filters: FilterRegiaoInput,
@@ -99,7 +99,7 @@ export class RegiaoController {
   }
 
   @Get(':id')
-  @Roles('admin', 'supervisor', 'agente')
+  @Roles('admin', 'supervisor', 'agente', 'notificador', 'analista_regional')
   @ApiOperation({ summary: 'Buscar região por ID' })
   async findById(@Param('id') id: string) {
     const { regiao } = await this.getRegiao.execute(id);

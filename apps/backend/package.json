@@ -16,8 +16,8 @@
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main -- --prod",
     "lint": "biome check ./src",
-    "test": "jest --testPathIgnorePatterns='.e2e.spec.ts$'",
-    "test:e2e": "jest --testRegex='.*\\.e2e\\.spec\\.ts$' --runInBand --testTimeout=120000 --forceExit",
+    "test": "jest --config jest.config.ts --testPathIgnorePatterns='.e2e.spec.ts$'",
+    "test:e2e": "jest --config jest.e2e.config.ts --runInBand --forceExit",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage"
   },

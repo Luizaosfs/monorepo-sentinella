@@ -85,25 +85,29 @@ export class RefreshTokenUseCase {
     });
 
     const newRefreshToken = await this.jwtService.signAsync(
-      { sub: usuario.auth_id, type: 'refresh' },
+      { sub: usuario.auth_id, type: 'refresh', jti: crypto.randomUUID() },
       { secret: env.SECRET_JWT, expiresIn: env.REFRESH_TOKEN_EXPIRES_IN as any },
     );
 
-    // Rotação: invalida token anterior e registra o novo
+    // Rotação: invalida token anterior (condicional em used_at IS NULL) e registra o novo.
+    // updateMany com where used_at: null evita race de duas refresh concorrentes vencerem ambas.
     const newTokenHash = crypto.createHash('sha256').update(newRefreshToken).digest('hex');
-    await this.prisma.client.$transaction([
-      this.prisma.client.refresh_tokens.update({
-        where: { id: tokenRecord.id },
+    await this.prisma.client.$transaction(async (tx) => {
+      const invalidated = await tx.refresh_tokens.updateMany({
+        where: { id: tokenRecord.id, used_at: null },
         data: { used_at: new Date() },
-      }),
-      this.prisma.client.refresh_tokens.create({
+      });
+      if (invalidated.count === 0) {
+        throw AuthException.refreshTokenAlreadyUsed();
+      }
+      await tx.refresh_tokens.create({
         data: {
           auth_id: usuario.auth_id!,
           token_hash: newTokenHash,
           expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         },
-      }),
-    ]);
+      });
+    });
 
     return { accessToken, refreshToken: newRefreshToken, user: buildAuthUser(usuario, papeis) };
   }

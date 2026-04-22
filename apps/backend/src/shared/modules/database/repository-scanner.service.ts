@@ -46,12 +46,25 @@ export class RepositoryScannerService {
   }
 
   private async autoScanFiles(): Promise<Function[]> {
-    const patterns = ['**/prisma*.repository.js'];
+    // Em build compilado (`nest build` → dist/*.js) varremos `.js`.
+    // Em jest (ts-jest in-memory) varremos `.ts` no src/, evitando o G15:
+    // sem dist/ os repositórios nunca eram registrados e o boot do AppModule
+    // falhava em DI silenciosamente dentro de `beforeAll`.
+    const isCompiled = __filename.endsWith('.js');
+    const ext = isCompiled ? 'js' : 'ts';
+    const patterns = [`**/prisma*.repository.${ext}`];
     const repositories: Function[] = [];
 
     for (const pattern of patterns) {
       try {
-        const files = await glob(pattern);
+        const files = await glob(pattern, {
+          ignore: [
+            '**/node_modules/**',
+            '**/dist/**',
+            '**/*.d.ts',
+            '**/*.spec.ts',
+          ],
+        });
         for (const file of files) {
           await this.loadRepositoryFromFile(file, repositories);
         }

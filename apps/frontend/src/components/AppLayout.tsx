@@ -796,7 +796,7 @@ const AppLayout = () => {
           <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)}>
             <Menu className="h-5 w-5" />
           </Button>
-          {!isAgente && <SlaAlertBell clienteId={clienteId ?? null} />}
+          {isAdminOrSupervisor && <SlaAlertBell clienteId={clienteId ?? null} />}
         </div>
 
         <main

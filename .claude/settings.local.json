@@ -113,7 +113,27 @@
       "PowerShell(& \"C:\\\\Program Files\\\\nodejs\\\\npx.cmd\" jest --testPathPattern=prisma-cliente-write.repository.spec --no-coverage 2>&1 | Select-Object -Last 60)",
       "Bash(npx tsc *)",
       "Bash(echo \"TSC_EXIT=$?\")",
-      "Bash(rm tsc-out.txt)"
+      "Bash(rm tsc-out.txt)",
+      "PowerShell(echo '{}' | node \"C:/Users/luiz/.claude/plugins/cache/context-mode/context-mode/1.0.25/hooks/pretooluse.mjs\" 2>&1 | Select-Object -First 25)",
+      "PowerShell($env:PGPASSWORD=\"147852369\"; & \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -U postgres -h localhost -tc \"SELECT 1 FROM pg_database WHERE datname='sentinella_test';\" 2>&1)",
+      "PowerShell($env:PGPASSWORD=\"147852369\"; & \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -U postgres -h localhost -d sentinella_test -c \"CREATE EXTENSION IF NOT EXISTS postgis;\" -c \"CREATE EXTENSION IF NOT EXISTS pgcrypto;\" 2>&1; \"EXIT:$LASTEXITCODE\")",
+      "PowerShell(Set-Location D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend; $output = pnpm.cmd test:e2e 2>&1; \"EXIT:$LASTEXITCODE\"; $output | Select-Object -Last 80)",
+      "PowerShell(Set-Location D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend; $output = pnpm.cmd test:e2e 2>&1; \"EXIT:$LASTEXITCODE\"; $output | Select-Object -Last 60)",
+      "PowerShell(pnpm.cmd test:e2e 2>&1 | Select-Object -Last 80)",
+      "PowerShell(npx.cmd tsc --noEmit 2>&1 | Select-Object -Last 30)",
+      "PowerShell(echo '{}' | node \"C:/Users/luiz/.claude/plugins/cache/context-mode/context-mode/1.0.25/hooks/posttooluse.mjs\" 2>&1 | Select-Object -First 40)",
+      "PowerShell($json = '{\"tool_name\":\"Edit\",\"tool_input\":{\"file_path\":\"D:/sentinella/monorepo-sentinella/test.txt\"}}'; $json | node \"C:/Users/luiz/.claude/plugins/cache/context-mode/context-mode/1.0.25/hooks/posttooluse.mjs\" 2>&1 | Select-Object -First 60; \"EXIT=$LASTEXITCODE\")",
+      "PowerShell($json = '{\"tool_name\":\"Edit\",\"tool_input\":{\"file_path\":\"D:/sentinella/monorepo-sentinella/test.txt\"}}'; $out = $json | node \"C:/Users/luiz/.claude/plugins/cache/context-mode/context-mode/1.0.25/hooks/posttooluse.mjs\" 2>&1; \"EXIT=$LASTEXITCODE\"; $out)",
+      "PowerShell($node = \"C:\\\\Program Files\\\\nodejs\\\\node.exe\"; & $node -e \"const r = require\\('module'\\).createRequire\\(process.cwd\\(\\) + '/hooks/'\\); try { const sqlite = require\\('better-sqlite3'\\); console.log\\('FOUND:', require.resolve\\('better-sqlite3'\\)\\); } catch \\(e\\) { console.log\\('ERR:', e.message\\); }\" 2>&1)",
+      "PowerShell($node = \"C:\\\\Program Files\\\\nodejs\\\\node.exe\"; $hookDir = \"C:/Users/luiz/.claude/plugins/cache/context-mode/context-mode/1.0.25/hooks\"; $payload = '{\"tool_name\":\"Edit\",\"tool_input\":{\"file_path\":\"D:/sentinella/monorepo-sentinella/test.txt\"},\"tool_response\":\"ok\"}'; $payload | & $node \"$hookDir/posttooluse.mjs\" 2>&1; \"EXIT=$LASTEXITCODE\")",
+      "PowerShell(ls \"C:/Users/luiz/.claude/context-mode/sessions/\" 2>&1 | Select-Object -First 10; \"---\"; Test-Path \"C:/Users/luiz/.claude/context-mode/sessions/\")",
+      "mcp__plugin_context-mode_context-mode__ctx_doctor",
+      "PowerShell(node \"C:\\\\Users\\\\luiz\\\\.claude\\\\plugins\\\\cache\\\\context-mode\\\\context-mode/build/cli.js\" doctor 2>&1)",
+      "PowerShell(Get-ChildItem \"C:/Users/luiz/.claude/plugins/cache/context-mode/context-mode/\" -Directory | Select-Object Name; \"---\"; Get-ChildItem \"C:/Users/luiz/.claude/plugins/cache/context-mode/context-mode/1.0.25/\" -Directory | Select-Object Name)",
+      "PowerShell(Get-ChildItem \"C:/Users/luiz/.claude/plugins/config.json\" -ErrorAction SilentlyContinue; \"---\"; Test-Path \"C:/Users/luiz/.claude/plugins/repos/\"; Get-ChildItem \"C:/Users/luiz/.claude/plugins/\" -Force | Select-Object Name)",
+      "PowerShell($env:CLAUDE_PLUGIN_ROOT=\"C:\\\\Users\\\\luiz\\\\.claude\\\\plugins\\\\cache\\\\context-mode\\\\context-mode\"; node \"$env:CLAUDE_PLUGIN_ROOT/hooks/posttooluse.mjs\" 2>&1; \"EXIT=$LASTEXITCODE\")",
+      "PowerShell(cmd /c \"rmdir /s /q \\\\\"C:\\\\Users\\\\luiz\\\\.claude\\\\plugins\\\\cache\\\\context-mode\\\\\"\" 2>&1; Test-Path \"C:\\\\Users\\\\luiz\\\\.claude\\\\plugins\\\\cache\\\\context-mode\")",
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\luiz\\\\.claude\\\\plugins\\\\cache\\\\context-mode\" -Recurse -Force 2>&1; \"---\"; Get-ChildItem \"C:\\\\Users\\\\luiz\\\\.claude\\\\plugins\\\\cache\\\\context-mode\\\\context-mode\\\\1.0.25\" -Recurse -Force -ErrorAction SilentlyContinue | Measure-Object | Select-Object Count)"
     ]
   }
 }
