@@ -6,6 +6,7 @@ import { expectHttpException } from '@test/utils/expect-http-exception';
 import { VistoriaException } from '../../errors/vistoria.exception';
 import { VistoriaReadRepository } from '../../repositories/vistoria-read.repository';
 import { VistoriaWriteRepository } from '../../repositories/vistoria-write.repository';
+import { ConsolidarVistoria } from '../consolidar-vistoria';
 import { SaveVistoria } from '../save-vistoria';
 import { VistoriaBuilder } from './builders/vistoria.builder';
 
@@ -13,6 +14,7 @@ describe('SaveVistoria', () => {
   let useCase: SaveVistoria;
   const readRepo = mock<VistoriaReadRepository>();
   const writeRepo = mock<VistoriaWriteRepository>();
+  const mockConsolidar = { execute: jest.fn().mockResolvedValue(undefined) };
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -21,6 +23,7 @@ describe('SaveVistoria', () => {
         SaveVistoria,
         { provide: VistoriaReadRepository, useValue: readRepo },
         { provide: VistoriaWriteRepository, useValue: writeRepo },
+        { provide: ConsolidarVistoria, useValue: mockConsolidar },
       ],
     }).compile();
 
@@ -51,5 +54,27 @@ describe('SaveVistoria', () => {
     expect(vistoria.status).toBe('concluida');
     expect(vistoria.observacao).toBe('ok');
     expect(writeRepo.save).toHaveBeenCalledWith(vistoria);
+  });
+
+  it('invoca hook ConsolidarVistoria após salvar vistoria', async () => {
+    const v = new VistoriaBuilder().withId('00000000-0000-4000-8000-0000000000d1').build();
+    readRepo.findById.mockResolvedValue(v);
+
+    await useCase.execute(v.id!, { status: 'concluida' });
+
+    expect(mockConsolidar.execute).toHaveBeenCalledWith({
+      vistoriaId: v.id,
+      motivo: 'automático — UPDATE em vistorias',
+    });
+  });
+
+  it('falha no hook ConsolidarVistoria não deve quebrar o save', async () => {
+    const v = new VistoriaBuilder().withId('00000000-0000-4000-8000-0000000000d2').build();
+    readRepo.findById.mockResolvedValue(v);
+    mockConsolidar.execute.mockRejectedValueOnce(new Error('boom'));
+
+    const result = await useCase.execute(v.id!, { status: 'concluida' });
+
+    expect(result.vistoria).toBe(v);
   });
 });

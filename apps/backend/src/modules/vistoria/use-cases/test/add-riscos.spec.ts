@@ -9,6 +9,8 @@ const mockPrisma = {
   },
 } as any;
 
+const mockConsolidar = { execute: jest.fn().mockResolvedValue(undefined) } as any;
+
 const baseInput = {
   vistoriaId:              'vistoria-uuid-1',
   menorIncapaz:            false,
@@ -32,7 +34,7 @@ describe('AddRiscos', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    useCase = new AddRiscos(mockPrisma);
+    useCase = new AddRiscos(mockPrisma, mockConsolidar);
     mockFindFirst.mockResolvedValue({ id: 'vistoria-uuid-1' });
   });
 
@@ -70,5 +72,26 @@ describe('AddRiscos', () => {
     mockCreate.mockRejectedValue(new Error('constraint violation'));
 
     await expect(useCase.execute('c-1', baseInput)).rejects.toThrow('constraint violation');
+  });
+
+  it('invoca hook ConsolidarVistoria após criar risco', async () => {
+    mockCreate.mockResolvedValue({ id: 'risco-1' });
+
+    await useCase.execute('c-1', baseInput);
+
+    expect(mockConsolidar.execute).toHaveBeenCalledWith({
+      vistoriaId: 'vistoria-uuid-1',
+      motivo: 'automático — INSERT em vistoria_riscos',
+    });
+  });
+
+  it('falha no hook ConsolidarVistoria não deve quebrar criação do risco', async () => {
+    const dbRow = { id: 'risco-1' };
+    mockCreate.mockResolvedValue(dbRow);
+    mockConsolidar.execute.mockRejectedValueOnce(new Error('boom'));
+
+    const result = await useCase.execute('c-1', baseInput);
+
+    expect(result.risco).toEqual(dbRow);
   });
 });

@@ -8,12 +8,14 @@ import { mockRequest } from '@test/utils/user-helpers';
 import { CreateVistoriaCompletaBody } from '../../dtos/create-vistoria-completa.body';
 import { Vistoria } from '../../entities/vistoria';
 import { VistoriaWriteRepository } from '../../repositories/vistoria-write.repository';
+import { ConsolidarVistoria } from '../consolidar-vistoria';
 import { CreateVistoriaCompleta } from '../create-vistoria-completa';
 
 describe('CreateVistoriaCompleta', () => {
   let useCase: CreateVistoriaCompleta;
   const writeRepo = mock<VistoriaWriteRepository>();
   const criarFoco = { execute: jest.fn().mockResolvedValue({ criado: false }) };
+  const mockConsolidar = { execute: jest.fn().mockResolvedValue(undefined) };
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -22,6 +24,7 @@ describe('CreateVistoriaCompleta', () => {
         CreateVistoriaCompleta,
         { provide: VistoriaWriteRepository, useValue: writeRepo },
         { provide: CriarFocoDeVistoriaDeposito, useValue: criarFoco },
+        { provide: ConsolidarVistoria, useValue: mockConsolidar },
         {
           provide: REQUEST,
           useValue: mockRequest({
@@ -108,7 +111,7 @@ describe('CreateVistoriaCompleta', () => {
     });
   });
 
-  it('não dispara hook quando nenhum depósito tem foco', async () => {
+  it('não dispara hook CriarFoco quando nenhum depósito tem foco', async () => {
     const id = '00000000-0000-4000-8000-0000000000b4';
     writeRepo.createCompleta.mockResolvedValue(id);
 
@@ -123,7 +126,7 @@ describe('CreateVistoriaCompleta', () => {
     expect(criarFoco.execute).not.toHaveBeenCalled();
   });
 
-  it('falha no hook não deve quebrar a criação da vistoria', async () => {
+  it('falha no hook CriarFoco não deve quebrar a criação da vistoria', async () => {
     const id = '00000000-0000-4000-8000-0000000000b5';
     writeRepo.createCompleta.mockResolvedValue(id);
     criarFoco.execute.mockRejectedValueOnce(new Error('boom'));
@@ -132,6 +135,36 @@ describe('CreateVistoriaCompleta', () => {
       ...baseInput(),
       depositos: [{ tipoDeposito: 'B', comLarva: true }],
     } as CreateVistoriaCompletaBody);
+
+    expect(result).toEqual({ id });
+  });
+
+  it('hook ConsolidarVistoria é chamado EXATAMENTE 1 vez mesmo com múltiplos depósitos (anti-recursão)', async () => {
+    const id = '00000000-0000-4000-8000-0000000000b6';
+    writeRepo.createCompleta.mockResolvedValue(id);
+
+    await useCase.execute({
+      ...baseInput(),
+      depositos: [
+        { tipoDeposito: 'A', comLarva: true },
+        { tipoDeposito: 'B', comLarva: true },
+        { tipoDeposito: 'C', comLarva: true },
+      ],
+    } as CreateVistoriaCompletaBody);
+
+    expect(mockConsolidar.execute).toHaveBeenCalledTimes(1);
+    expect(mockConsolidar.execute).toHaveBeenCalledWith({
+      vistoriaId: id,
+      motivo: 'automático — INSERT em vistorias',
+    });
+  });
+
+  it('falha no hook ConsolidarVistoria não deve quebrar a criação da vistoria', async () => {
+    const id = '00000000-0000-4000-8000-0000000000b7';
+    writeRepo.createCompleta.mockResolvedValue(id);
+    mockConsolidar.execute.mockRejectedValueOnce(new Error('consolidar boom'));
+
+    const result = await useCase.execute(baseInput());
 
     expect(result).toEqual({ id });
   });

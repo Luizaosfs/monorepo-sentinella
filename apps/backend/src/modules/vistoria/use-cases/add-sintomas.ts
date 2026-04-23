@@ -1,11 +1,18 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
+
 import { AddSintomasInput } from '../dtos/add-vistoria-child.body';
 import { VistoriaException } from '../errors/vistoria.exception';
+import { ConsolidarVistoria } from './consolidar-vistoria';
 
 @Injectable()
 export class AddSintomas {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(AddSintomas.name);
+
+  constructor(
+    private prisma: PrismaService,
+    private consolidarVistoria: ConsolidarVistoria,
+  ) {}
 
   async execute(clienteId: string, data: AddSintomasInput) {
     const vistoria = await this.prisma.client.vistorias.findFirst({
@@ -25,6 +32,20 @@ export class AddSintomas {
         moradores_sintomas_qtd: data.moradoresSintomasQtd,
       },
     });
+
+    try {
+      await this.consolidarVistoria.execute({
+        vistoriaId: data.vistoriaId,
+        motivo: 'automático — INSERT em vistoria_sintomas',
+      });
+    } catch (err) {
+      this.logger.error(
+        `Hook ConsolidarVistoria falhou: vistoriaId=${data.vistoriaId} erro=${
+          err instanceof Error ? err.message : String(err)
+        }`,
+      );
+    }
+
     return { sintoma };
   }
 }

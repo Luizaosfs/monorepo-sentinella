@@ -1,9 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
+
 import { CriarFocoDeVistoriaDeposito } from '@/modules/foco-risco/use-cases/auto-criacao/criar-foco-de-vistoria-deposito';
+
 import { AddDepositoInput } from '../dtos/add-vistoria-child.body';
 import { VistoriaException } from '../errors/vistoria.exception';
+import { ConsolidarVistoria } from './consolidar-vistoria';
 
 @Injectable()
 export class AddDeposito {
@@ -12,6 +15,7 @@ export class AddDeposito {
   constructor(
     private prisma: PrismaService,
     private criarFocoDeVistoriaDeposito: CriarFocoDeVistoriaDeposito,
+    private consolidarVistoria: ConsolidarVistoria,
   ) {}
 
   async execute(vistoriaId: string, clienteId: string, data: AddDepositoInput) {
@@ -46,6 +50,19 @@ export class AddDeposito {
     } catch (err) {
       this.logger.error(
         `Hook CriarFocoDeVistoriaDeposito falhou: vistoria=${vistoriaId} erro=${
+          err instanceof Error ? err.message : String(err)
+        }`,
+      );
+    }
+
+    try {
+      await this.consolidarVistoria.execute({
+        vistoriaId,
+        motivo: 'automático — INSERT em vistoria_depositos',
+      });
+    } catch (err) {
+      this.logger.error(
+        `Hook ConsolidarVistoria falhou: vistoriaId=${vistoriaId} erro=${
           err instanceof Error ? err.message : String(err)
         }`,
       );

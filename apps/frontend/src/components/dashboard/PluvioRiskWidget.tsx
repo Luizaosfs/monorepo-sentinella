@@ -88,7 +88,7 @@ export const PluvioRiskWidget = ({ clienteId }: PluvioRiskWidgetProps) => {
                 Janela crítica para focos de dengue
               </p>
               <p className="text-[11px] text-amber-700/80 dark:text-amber-400/80 mt-0.5">
-                {janelaCritica.length} região{janelaCritica.length > 1 ? 'ões' : ''} entre 3–6 dias após chuva intensa — larvas em desenvolvimento ativo.
+                {janelaCritica.length} {janelaCritica.length > 1 ? 'regiões' : 'região'} entre 3–6 dias após chuva intensa — larvas em desenvolvimento ativo.
               </p>
             </div>
             <Button

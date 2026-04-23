@@ -15,6 +15,33 @@ export interface CreateCompletaSubItems {
   calhas?: Omit<VistoriaCalha, 'id' | 'vistoriaId' | 'createdAt'>[];
 }
 
+export interface ConsolidacaoDados {
+  resultadoOperacional: string;
+  vulnerabilidadeDomiciliar: string;
+  alertaSaude: string;
+  riscoSocioambiental: string;
+  riscoVetorial: string;
+  prioridadeFinal: string;
+  prioridadeMotivo: string;
+  dimensaoDominante: string | null;
+  consolidacaoResumo: string;
+  consolidacaoJson: Record<string, unknown>;
+  consolidacaoIncompleta: boolean;
+  versaoRegraConsolidacao: string;
+  versaoPesosConsolidacao: string;
+}
+
+export interface ArquivamentoAnterior {
+  prioridadeFinal?: string;
+  dimensaoDominante?: string;
+  consolidacaoJson?: Record<string, unknown>;
+  versaoRegra?: string;
+  versaoPesos?: string;
+  consolidadoEm: Date;
+  motivo: string;
+  reprocessadoPor?: string;
+}
+
 @Injectable()
 export abstract class VistoriaWriteRepository {
   abstract create(entity: Vistoria): Promise<Vistoria>;
@@ -37,4 +64,10 @@ export abstract class VistoriaWriteRepository {
     subItems: CreateCompletaSubItems,
     idempotencyKey?: string,
   ): Promise<string>;
+  /** Arquiva consolidação anterior (se houver) e grava nova consolidação em vistorias. */
+  abstract salvarConsolidacao(
+    vistoriaId: string,
+    dados: ConsolidacaoDados,
+    arquivar?: ArquivamentoAnterior,
+  ): Promise<void>;
 }

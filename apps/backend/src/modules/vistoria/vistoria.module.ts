@@ -5,6 +5,7 @@ import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 
 import { FocoRiscoModule } from '../foco-risco/foco-risco.module';
 import { AddDeposito } from './use-cases/add-deposito';
+import { ConsolidarVistoria } from './use-cases/consolidar-vistoria';
 import { AddRiscos } from './use-cases/add-riscos';
 import { AddSintomas } from './use-cases/add-sintomas';
 import { CountVistoria } from './use-cases/count-vistoria';
@@ -19,6 +20,7 @@ import { VistoriaController } from './vistoria.controller';
 
 @Module({
   providers: [
+    ConsolidarVistoria,
     AddDeposito,
     AddSintomas,
     AddRiscos,

@@ -1,11 +1,18 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
+
 import { AddRiscosInput } from '../dtos/add-vistoria-child.body';
 import { VistoriaException } from '../errors/vistoria.exception';
+import { ConsolidarVistoria } from './consolidar-vistoria';
 
 @Injectable()
 export class AddRiscos {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(AddRiscos.name);
+
+  constructor(
+    private prisma: PrismaService,
+    private consolidarVistoria: ConsolidarVistoria,
+  ) {}
 
   async execute(clienteId: string, data: AddRiscosInput) {
     const vistoria = await this.prisma.client.vistorias.findFirst({
@@ -34,6 +41,20 @@ export class AddRiscos {
         outro_risco_vetorial:      data.outroRiscoVetorial ?? null,
       },
     });
+
+    try {
+      await this.consolidarVistoria.execute({
+        vistoriaId: data.vistoriaId,
+        motivo: 'automático — INSERT em vistoria_riscos',
+      });
+    } catch (err) {
+      this.logger.error(
+        `Hook ConsolidarVistoria falhou: vistoriaId=${data.vistoriaId} erro=${
+          err instanceof Error ? err.message : String(err)
+        }`,
+      );
+    }
+
     return { risco };
   }
 }

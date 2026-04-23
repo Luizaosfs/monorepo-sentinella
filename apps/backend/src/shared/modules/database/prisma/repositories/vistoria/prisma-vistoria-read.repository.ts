@@ -3,8 +3,17 @@ import {
   Vistoria,
   VistoriaPaginated,
 } from '@modules/vistoria/entities/vistoria';
+import {
+  CalhaAgregada,
+  DadosConsolidacao,
+  DepositoAgregado,
+  RiscoConsolidacao,
+  SintomaConsolidacao,
+  VistoriaParaConsolidacao,
+} from '@modules/vistoria/repositories/vistoria-read.repository';
 import { VistoriaReadRepository } from '@modules/vistoria/repositories/vistoria-read.repository';
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PaginationProps } from 'src/shared/dtos/pagination-body';
 import { Paginate } from 'src/utils/pagination';
 
@@ -96,5 +105,139 @@ export class PrismaVistoriaReadRepository implements VistoriaReadRepository {
 
   async count(filters: FilterVistoriaInput): Promise<number> {
     return this.prisma.client.vistorias.count({ where: this.buildWhere(filters) });
+  }
+
+  async findDadosParaConsolidacao(vistoriaId: string): Promise<DadosConsolidacao | null> {
+    const v = await this.prisma.client.vistorias.findUnique({
+      where: { id: vistoriaId },
+      select: {
+        imovel_id: true,
+        acesso_realizado: true,
+        moradores_qtd: true,
+        gravidas: true,
+        idosos: true,
+        criancas_7anos: true,
+        cliente_id: true,
+        consolidado_em: true,
+        prioridade_final: true,
+        dimensao_dominante: true,
+        consolidacao_json: true,
+        versao_regra_consolidacao: true,
+        versao_pesos_consolidacao: true,
+      },
+    });
+    if (!v) return null;
+
+    const vistoria: VistoriaParaConsolidacao = {
+      imovelId: v.imovel_id ?? null,
+      acessoRealizado: v.acesso_realizado ?? true,
+      moradoresQtd: v.moradores_qtd ?? null,
+      gravidas: v.gravidas ?? false,
+      idosos: v.idosos ?? false,
+      criancas7anos: v.criancas_7anos ?? false,
+      clienteId: v.cliente_id,
+      consolidadoEm: v.consolidado_em ?? null,
+      prioridadeFinal: v.prioridade_final ?? null,
+      dimensaoDominante: v.dimensao_dominante ?? null,
+      consolidacaoJson: (v.consolidacao_json as Record<string, unknown>) ?? null,
+      versaoRegraConsolidacao: v.versao_regra_consolidacao ?? null,
+      versaoPesosConsolidacao: v.versao_pesos_consolidacao ?? null,
+    };
+
+    const rawSintoma = await this.prisma.client.vistoria_sintomas.findFirst({
+      where: { vistoria_id: vistoriaId, deleted_at: null },
+      select: {
+        febre: true,
+        manchas_vermelhas: true,
+        dor_articulacoes: true,
+        dor_cabeca: true,
+        moradores_sintomas_qtd: true,
+      },
+    });
+    const sintomas: SintomaConsolidacao | null = rawSintoma
+      ? {
+          febre: rawSintoma.febre,
+          manchasVermelhas: rawSintoma.manchas_vermelhas,
+          dorArticulacoes: rawSintoma.dor_articulacoes,
+          dorCabeca: rawSintoma.dor_cabeca,
+          moradoresSintomasQtd: rawSintoma.moradores_sintomas_qtd,
+        }
+      : null;
+
+    const rawRisco = await this.prisma.client.vistoria_riscos.findFirst({
+      where: { vistoria_id: vistoriaId, deleted_at: null },
+      select: {
+        menor_incapaz: true,
+        idoso_incapaz: true,
+        dep_quimico: true,
+        risco_alimentar: true,
+        risco_moradia: true,
+        criadouro_animais: true,
+        lixo: true,
+        residuos_organicos: true,
+        residuos_quimicos: true,
+        residuos_medicos: true,
+        acumulo_material_organico: true,
+        animais_sinais_lv: true,
+        caixa_destampada: true,
+        outro_risco_vetorial: true,
+      },
+    });
+    const riscos: RiscoConsolidacao | null = rawRisco
+      ? {
+          menorIncapaz: rawRisco.menor_incapaz,
+          idosoIncapaz: rawRisco.idoso_incapaz,
+          depQuimico: rawRisco.dep_quimico,
+          riscoAlimentar: rawRisco.risco_alimentar,
+          riscoMoradia: rawRisco.risco_moradia,
+          criadouroAnimais: rawRisco.criadouro_animais,
+          lixo: rawRisco.lixo,
+          residuosOrganicos: rawRisco.residuos_organicos,
+          residuosQuimicos: rawRisco.residuos_quimicos,
+          residuosMedicos: rawRisco.residuos_medicos,
+          acumuloMaterialOrganico: rawRisco.acumulo_material_organico,
+          animaisSinaisLv: rawRisco.animais_sinais_lv,
+          caixaDestampada: rawRisco.caixa_destampada,
+          outroRiscoVetorial: rawRisco.outro_risco_vetorial ?? null,
+        }
+      : null;
+
+    const [depRows, calhaRows] = await Promise.all([
+      this.prisma.client.$queryRaw<Array<{ focos: bigint; inspecionados: bigint }>>(Prisma.sql`
+        SELECT
+          COALESCE(SUM(qtd_com_focos), 0)::bigint AS focos,
+          COALESCE(SUM(qtd_inspecionados), 0)::bigint AS inspecionados
+        FROM vistoria_depositos
+        WHERE vistoria_id = ${vistoriaId}::uuid
+      `),
+      this.prisma.client.$queryRaw<Array<{ com_foco: boolean; com_agua: boolean }>>(Prisma.sql`
+        SELECT
+          COALESCE(bool_or(com_foco), false) AS com_foco,
+          COALESCE(bool_or(condicao = 'com_agua_parada'), false) AS com_agua
+        FROM vistoria_calhas
+        WHERE vistoria_id = ${vistoriaId}::uuid
+          AND deleted_at IS NULL
+      `),
+    ]);
+
+    const dep = depRows[0];
+    const depositos: DepositoAgregado = {
+      qtdComFocosTotal: dep ? Number(dep.focos) : 0,
+      qtdInspecionados: dep ? Number(dep.inspecionados) : 0,
+    };
+
+    const calha = calhaRows[0];
+    const calhas: CalhaAgregada = {
+      comFoco: calha?.com_foco ?? false,
+      comAguaParada: calha?.com_agua ?? false,
+    };
+
+    return { vistoria, sintomas, riscos, depositos, calhas };
+  }
+
+  async countSemAcessoPorImovel(imovelId: string): Promise<number> {
+    return this.prisma.client.vistorias.count({
+      where: { imovel_id: imovelId, acesso_realizado: false },
+    });
   }
 }

@@ -7,6 +7,7 @@ import { mockRequest } from '@test/utils/user-helpers';
 import { CreateVistoriaBody } from '../../dtos/create-vistoria.body';
 import { VistoriaReadRepository } from '../../repositories/vistoria-read.repository';
 import { VistoriaWriteRepository } from '../../repositories/vistoria-write.repository';
+import { ConsolidarVistoria } from '../consolidar-vistoria';
 import { CreateVistoria } from '../create-vistoria';
 import { VistoriaBuilder } from './builders/vistoria.builder';
 
@@ -14,6 +15,7 @@ describe('CreateVistoria', () => {
   let useCase: CreateVistoria;
   const readRepo = mock<VistoriaReadRepository>();
   const writeRepo = mock<VistoriaWriteRepository>();
+  const mockConsolidar = { execute: jest.fn().mockResolvedValue(undefined) };
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -22,6 +24,7 @@ describe('CreateVistoria', () => {
         CreateVistoria,
         { provide: VistoriaReadRepository, useValue: readRepo },
         { provide: VistoriaWriteRepository, useValue: writeRepo },
+        { provide: ConsolidarVistoria, useValue: mockConsolidar },
         {
           provide: REQUEST,
           useValue: mockRequest({
@@ -109,5 +112,32 @@ describe('CreateVistoria', () => {
         clienteId: '00000000-0000-4000-8000-000000000001',
       }),
     );
+  });
+
+  it('invoca hook ConsolidarVistoria após criar vistoria', async () => {
+    const id = '00000000-0000-4000-8000-0000000000a3';
+    const created = new VistoriaBuilder().withId(id).build();
+    writeRepo.create.mockResolvedValue(created);
+    readRepo.findByIdComDetalhes.mockResolvedValue(created);
+
+    await useCase.execute(baseInput());
+
+    expect(mockConsolidar.execute).toHaveBeenCalledWith({
+      vistoriaId: id,
+      motivo: 'automático — INSERT em vistorias',
+    });
+  });
+
+  it('falha no hook ConsolidarVistoria não deve quebrar a criação da vistoria', async () => {
+    const id = '00000000-0000-4000-8000-0000000000a4';
+    const created = new VistoriaBuilder().withId(id).build();
+    writeRepo.create.mockResolvedValue(created);
+    const full = new VistoriaBuilder().build();
+    readRepo.findByIdComDetalhes.mockResolvedValue(full);
+    mockConsolidar.execute.mockRejectedValueOnce(new Error('stub boom'));
+
+    const result = await useCase.execute(baseInput());
+
+    expect(result.vistoria).toBe(full);
   });
 });

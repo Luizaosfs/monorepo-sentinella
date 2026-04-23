@@ -482,7 +482,7 @@ export default function CentralOperacional() {
           <MapPinOff className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
-              {regioesSemCobertura.length} região{regioesSemCobertura.length > 1 ? 'ões' : ''} sem vistoria hoje
+              {regioesSemCobertura.length} {regioesSemCobertura.length > 1 ? 'regiões' : 'região'} sem vistoria hoje
             </p>
             <p className="text-xs text-amber-700/70 dark:text-amber-400/70 mt-0.5 line-clamp-1">
               {regioesSemCobertura.map((r) => r.regiao).join(' · ')}

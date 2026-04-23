@@ -133,7 +133,15 @@
       "PowerShell(Get-ChildItem \"C:/Users/luiz/.claude/plugins/config.json\" -ErrorAction SilentlyContinue; \"---\"; Test-Path \"C:/Users/luiz/.claude/plugins/repos/\"; Get-ChildItem \"C:/Users/luiz/.claude/plugins/\" -Force | Select-Object Name)",
       "PowerShell($env:CLAUDE_PLUGIN_ROOT=\"C:\\\\Users\\\\luiz\\\\.claude\\\\plugins\\\\cache\\\\context-mode\\\\context-mode\"; node \"$env:CLAUDE_PLUGIN_ROOT/hooks/posttooluse.mjs\" 2>&1; \"EXIT=$LASTEXITCODE\")",
       "PowerShell(cmd /c \"rmdir /s /q \\\\\"C:\\\\Users\\\\luiz\\\\.claude\\\\plugins\\\\cache\\\\context-mode\\\\\"\" 2>&1; Test-Path \"C:\\\\Users\\\\luiz\\\\.claude\\\\plugins\\\\cache\\\\context-mode\")",
-      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\luiz\\\\.claude\\\\plugins\\\\cache\\\\context-mode\" -Recurse -Force 2>&1; \"---\"; Get-ChildItem \"C:\\\\Users\\\\luiz\\\\.claude\\\\plugins\\\\cache\\\\context-mode\\\\context-mode\\\\1.0.25\" -Recurse -Force -ErrorAction SilentlyContinue | Measure-Object | Select-Object Count)"
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\luiz\\\\.claude\\\\plugins\\\\cache\\\\context-mode\" -Recurse -Force 2>&1; \"---\"; Get-ChildItem \"C:\\\\Users\\\\luiz\\\\.claude\\\\plugins\\\\cache\\\\context-mode\\\\context-mode\\\\1.0.25\" -Recurse -Force -ErrorAction SilentlyContinue | Measure-Object | Select-Object Count)",
+      "Read(//c/Users/luiz/.claude/plugins/**)",
+      "Read(//c/Users/luiz/.claude/plugins/cache/**)",
+      "Read(//c/Users/luiz/.claude/plugins/marketplaces/**)",
+      "Bash(pnpm test:e2e --forceExit)",
+      "Bash(\"D:/sentinella/monorepo-sentinella/apps/backend/node_modules/.bin/tsc\" --noEmit --project \"D:/sentinella/monorepo-sentinella/apps/backend/tsconfig.json\")",
+      "Bash(\"./node_modules/.bin/tsc\" --noEmit)",
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(echo \"TSC_EXIT: $?\")"
     ]
   }
 }

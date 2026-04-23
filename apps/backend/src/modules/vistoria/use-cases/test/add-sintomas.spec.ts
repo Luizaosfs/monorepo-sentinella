@@ -9,6 +9,8 @@ const mockPrisma = {
   },
 } as any;
 
+const mockConsolidar = { execute: jest.fn().mockResolvedValue(undefined) } as any;
+
 const baseInput = {
   vistoriaId:           'vistoria-uuid-1',
   febre:                true,
@@ -23,7 +25,7 @@ describe('AddSintomas', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    useCase = new AddSintomas(mockPrisma);
+    useCase = new AddSintomas(mockPrisma, mockConsolidar);
     mockFindFirst.mockResolvedValue({ id: 'vistoria-uuid-1' });
   });
 
@@ -62,5 +64,26 @@ describe('AddSintomas', () => {
     mockCreate.mockRejectedValue(new Error('DB error'));
 
     await expect(useCase.execute('c-1', baseInput)).rejects.toThrow('DB error');
+  });
+
+  it('invoca hook ConsolidarVistoria após criar sintoma', async () => {
+    mockCreate.mockResolvedValue({ id: 'sint-1' });
+
+    await useCase.execute('c-1', baseInput);
+
+    expect(mockConsolidar.execute).toHaveBeenCalledWith({
+      vistoriaId: 'vistoria-uuid-1',
+      motivo: 'automático — INSERT em vistoria_sintomas',
+    });
+  });
+
+  it('falha no hook ConsolidarVistoria não deve quebrar criação do sintoma', async () => {
+    const dbRow = { id: 'sint-1' };
+    mockCreate.mockResolvedValue(dbRow);
+    mockConsolidar.execute.mockRejectedValueOnce(new Error('consolidar boom'));
+
+    const result = await useCase.execute('c-1', baseInput);
+
+    expect(result.sintoma).toEqual(dbRow);
   });
 });

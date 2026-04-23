@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
 
@@ -6,13 +6,17 @@ import { CreateVistoriaBody } from '../dtos/create-vistoria.body';
 import { Vistoria } from '../entities/vistoria';
 import { VistoriaReadRepository } from '../repositories/vistoria-read.repository';
 import { VistoriaWriteRepository } from '../repositories/vistoria-write.repository';
+import { ConsolidarVistoria } from './consolidar-vistoria';
 
 @Injectable()
 export class CreateVistoria {
+  private readonly logger = new Logger(CreateVistoria.name);
+
   constructor(
     private readRepository: VistoriaReadRepository,
     private writeRepository: VistoriaWriteRepository,
     @Inject(REQUEST) private req: Request,
+    private consolidarVistoria: ConsolidarVistoria,
   ) {}
 
   async execute(data: CreateVistoriaBody) {
@@ -80,6 +84,19 @@ export class CreateVistoria {
       for (const calha of data.calhas) {
         await this.writeRepository.createCalha({ ...calha, vistoriaId: created.id!, clienteId });
       }
+    }
+
+    try {
+      await this.consolidarVistoria.execute({
+        vistoriaId: created.id!,
+        motivo: 'automático — INSERT em vistorias',
+      });
+    } catch (err) {
+      this.logger.error(
+        `Hook ConsolidarVistoria falhou: vistoriaId=${created.id!} erro=${
+          err instanceof Error ? err.message : String(err)
+        }`,
+      );
     }
 
     const full = await this.readRepository.findByIdComDetalhes(created.id!);

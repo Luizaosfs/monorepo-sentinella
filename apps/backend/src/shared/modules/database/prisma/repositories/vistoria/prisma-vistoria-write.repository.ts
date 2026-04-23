@@ -6,10 +6,13 @@ import {
   VistoriaSintoma,
 } from '@modules/vistoria/entities/vistoria';
 import {
+  ArquivamentoAnterior,
+  ConsolidacaoDados,
   CreateCompletaSubItems,
   VistoriaWriteRepository,
 } from '@modules/vistoria/repositories/vistoria-write.repository';
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 
 import { PrismaRepository } from '@/decorators/prisma-repository.decorator';
 
@@ -127,6 +130,58 @@ export class PrismaVistoriaWriteRepository implements VistoriaWriteRepository {
       }
 
       return raw.id;
+    });
+  }
+
+  async salvarConsolidacao(
+    vistoriaId: string,
+    dados: ConsolidacaoDados,
+    arquivar?: ArquivamentoAnterior,
+  ): Promise<void> {
+    const now = new Date();
+    await this.prisma.client.$transaction(async (tx) => {
+      if (arquivar) {
+        await tx.vistoria_consolidacao_historico.create({
+          data: {
+            vistoria_id: vistoriaId,
+            prioridade_final: arquivar.prioridadeFinal ?? null,
+            dimensao_dominante: arquivar.dimensaoDominante ?? null,
+            consolidacao_json:
+              arquivar.consolidacaoJson != null
+                ? (arquivar.consolidacaoJson as Prisma.InputJsonValue)
+                : Prisma.DbNull,
+            versao_regra: arquivar.versaoRegra ?? null,
+            versao_pesos: arquivar.versaoPesos ?? null,
+            consolidado_em: arquivar.consolidadoEm,
+            motivo_reprocessamento: arquivar.motivo,
+            reprocessado_por: arquivar.reprocessadoPor ?? null,
+          },
+        });
+      }
+
+      await tx.vistorias.update({
+        where: { id: vistoriaId },
+        data: {
+          resultado_operacional: dados.resultadoOperacional,
+          vulnerabilidade_domiciliar: dados.vulnerabilidadeDomiciliar,
+          alerta_saude: dados.alertaSaude,
+          risco_socioambiental: dados.riscoSocioambiental,
+          risco_vetorial: dados.riscoVetorial,
+          prioridade_final: dados.prioridadeFinal,
+          prioridade_motivo: dados.prioridadeMotivo,
+          dimensao_dominante: dados.dimensaoDominante ?? null,
+          consolidacao_resumo: dados.consolidacaoResumo,
+          consolidacao_json: dados.consolidacaoJson as Prisma.InputJsonValue,
+          consolidacao_incompleta: dados.consolidacaoIncompleta,
+          versao_regra_consolidacao: dados.versaoRegraConsolidacao,
+          versao_pesos_consolidacao: dados.versaoPesosConsolidacao,
+          consolidado_em: now,
+          ...(arquivar && {
+            reprocessado_em: now,
+            reprocessado_por: arquivar.reprocessadoPor ?? null,
+          }),
+        },
+      });
     });
   }
 }

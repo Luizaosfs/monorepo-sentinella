@@ -7,6 +7,7 @@ import { CriarFocoDeVistoriaDeposito } from '@/modules/foco-risco/use-cases/auto
 import { CreateVistoriaCompletaBody } from '../dtos/create-vistoria-completa.body';
 import { Vistoria } from '../entities/vistoria';
 import { VistoriaWriteRepository } from '../repositories/vistoria-write.repository';
+import { ConsolidarVistoria } from './consolidar-vistoria';
 
 @Injectable()
 export class CreateVistoriaCompleta {
@@ -16,6 +17,7 @@ export class CreateVistoriaCompleta {
     private writeRepository: VistoriaWriteRepository,
     private criarFocoDeVistoriaDeposito: CriarFocoDeVistoriaDeposito,
     @Inject(REQUEST) private req: Request,
+    private consolidarVistoria: ConsolidarVistoria,
   ) {}
 
   async execute(data: CreateVistoriaCompletaBody): Promise<{ id: string }> {
@@ -94,6 +96,21 @@ export class CreateVistoriaCompleta {
         }
         break;
       }
+    }
+
+    // Hook C.8.A: consolidar vistoria após commit de vistoria + todas sub-tabelas.
+    // Dispara EXATAMENTE 1 vez (anti-recursão — paridade com pg_trigger_depth() > 1 do SQL legado).
+    try {
+      await this.consolidarVistoria.execute({
+        vistoriaId: id,
+        motivo: 'automático — INSERT em vistorias',
+      });
+    } catch (err) {
+      this.logger.error(
+        `Hook ConsolidarVistoria falhou: vistoriaId=${id} erro=${
+          err instanceof Error ? err.message : String(err)
+        }`,
+      );
     }
 
     return { id };

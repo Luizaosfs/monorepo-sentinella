@@ -1,15 +1,19 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 
 import { SaveVistoriaBody } from '../dtos/save-vistoria.body';
 import { VistoriaException } from '../errors/vistoria.exception';
 import { VistoriaReadRepository } from '../repositories/vistoria-read.repository';
 import { VistoriaWriteRepository } from '../repositories/vistoria-write.repository';
+import { ConsolidarVistoria } from './consolidar-vistoria';
 
 @Injectable()
 export class SaveVistoria {
+  private readonly logger = new Logger(SaveVistoria.name);
+
   constructor(
     private readRepository: VistoriaReadRepository,
     private writeRepository: VistoriaWriteRepository,
+    private consolidarVistoria: ConsolidarVistoria,
   ) {}
 
   async execute(id: string, data: SaveVistoriaBody) {
@@ -96,6 +100,23 @@ export class SaveVistoria {
       vistoria.reprocessadoPor = data.reprocessadoPor;
 
     await this.writeRepository.save(vistoria);
+
+    // TODO C.8.B: comparar colunas-input antes de disparar (acesso_realizado,
+    // status, moradores_qtd, gravidas, idosos, criancas_7anos) — paridade com
+    // WHEN clause do trigger SQL. Por ora dispara sempre (hook é idempotente no stub).
+    try {
+      await this.consolidarVistoria.execute({
+        vistoriaId: id,
+        motivo: 'automático — UPDATE em vistorias',
+      });
+    } catch (err) {
+      this.logger.error(
+        `Hook ConsolidarVistoria falhou: vistoriaId=${id} erro=${
+          err instanceof Error ? err.message : String(err)
+        }`,
+      );
+    }
+
     return { vistoria };
   }
 }

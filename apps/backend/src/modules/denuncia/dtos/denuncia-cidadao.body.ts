@@ -1,3 +1,4 @@
+import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 
 export const denunciaCidadaoSchema = z.object({
@@ -10,4 +11,4 @@ export const denunciaCidadaoSchema = z.object({
   fotoPublicId: z.string().max(255).optional(),
 });
 
-export type DenunciaCidadaoBody = z.infer<typeof denunciaCidadaoSchema>;
+export class DenunciaCidadaoBody extends createZodDto(denunciaCidadaoSchema) {}
