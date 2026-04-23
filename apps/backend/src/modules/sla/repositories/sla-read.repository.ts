@@ -44,6 +44,14 @@ export abstract class SlaReadRepository {
     Array<{ id: string; erro: string; criado_em: Date; contexto: unknown }>
   >;
   abstract findIminentes(clienteId: string): Promise<SlaIminente[]>;
+  abstract findIminentesGlobal(pctLimiar?: number): Promise<SlaIminenteGlobal[]>;
+}
+
+export interface SlaIminenteGlobal {
+  id: string;
+  clienteId: string | null;
+  prioridade: string;
+  prazoFinal: Date;
 }
 
 export interface SlaIminente {

@@ -43,4 +43,15 @@ export class PrismaFocoRiscoWriteRepository implements FocoRiscoWriteRepository 
     const created = await client.foco_risco_historico.create({ data });
     return PrismaFocoRiscoMapper.historicToDomain(created);
   }
+
+  async updateScorePrioridade(focoId: string, score: number): Promise<void> {
+    // $executeRaw bypasses the updated_at extension — score é campo calculado,
+    // não deve tocar updated_at (paridade com trigger SQL que só faz SET score_prioridade).
+    await this.prisma.client.$executeRaw`
+      UPDATE focos_risco
+      SET score_prioridade = ${score}
+      WHERE id = ${focoId}::uuid
+        AND deleted_at IS NULL
+    `;
+  }
 }

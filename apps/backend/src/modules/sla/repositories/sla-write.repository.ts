@@ -61,4 +61,5 @@ export abstract class SlaWriteRepository {
     clienteId: string,
     configs: Array<{ fase: string; prazoMinutos: number; ativo: boolean }>,
   ): Promise<SlaFocoConfig[]>;
+  abstract marcarEscalonadoAutomatico(slaIds: string[]): Promise<number>;
 }

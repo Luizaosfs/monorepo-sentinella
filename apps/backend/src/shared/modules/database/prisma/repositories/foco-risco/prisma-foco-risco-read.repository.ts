@@ -6,6 +6,7 @@ import {
 import {
   ContagemTriagemResult,
   FocoRiscoReadRepository,
+  ScoreInputsRow,
   TimelineItem,
 } from '@modules/foco-risco/repositories/foco-risco-read.repository';
 import { Injectable } from '@nestjs/common';
@@ -229,6 +230,52 @@ export class PrismaFocoRiscoReadRepository implements FocoRiscoReadRepository {
       ) timeline
       ORDER BY ts DESC NULLS LAST
     `;
+  }
+
+  async findInputsParaScorePrioridade(focoId: string): Promise<ScoreInputsRow | null> {
+    const rows = await this.prisma.client.$queryRaw<ScoreInputsRow[]>(Prisma.sql`
+      SELECT
+        f.cliente_id AS "clienteId",
+        f.status,
+        f.foco_anterior_id AS "focoAnteriorId",
+        f.latitude,
+        f.longitude,
+        sfc.prazo_minutos AS "prazoMinutos",
+        EXTRACT(EPOCH FROM (now() - MAX(frh.alterado_em)))::integer / 60 AS "tempoNoEstadoMinutos",
+        (
+          SELECT COUNT(*)::integer
+          FROM casos_notificados cn
+          WHERE cn.cliente_id = f.cliente_id
+            AND cn.deleted_at IS NULL
+            AND f.latitude IS NOT NULL
+            AND f.longitude IS NOT NULL
+            AND cn.latitude IS NOT NULL
+            AND cn.longitude IS NOT NULL
+            AND ST_DWithin(
+              ST_SetSRID(ST_MakePoint(cn.longitude, cn.latitude), 4326)::geography,
+              ST_SetSRID(ST_MakePoint(f.longitude, f.latitude), 4326)::geography,
+              300
+            )
+        ) AS "casosProximosCount"
+      FROM focos_risco f
+      LEFT JOIN sla_foco_config sfc
+        ON sfc.cliente_id = f.cliente_id
+        AND sfc.ativo = true
+        AND sfc.fase = CASE f.status
+          WHEN 'suspeita'         THEN 'triagem'
+          WHEN 'em_triagem'       THEN 'triagem'
+          WHEN 'aguarda_inspecao' THEN 'triagem'
+          WHEN 'em_inspecao'      THEN 'inspecao'
+          WHEN 'confirmado'       THEN 'confirmacao'
+          WHEN 'em_tratamento'    THEN 'tratamento'
+          ELSE NULL
+        END
+      LEFT JOIN foco_risco_historico frh ON frh.foco_risco_id = f.id
+      WHERE f.id = ${focoId}::uuid
+        AND f.deleted_at IS NULL
+      GROUP BY f.id, f.cliente_id, f.status, f.foco_anterior_id, f.latitude, f.longitude, sfc.prazo_minutos
+    `);
+    return rows[0] ?? null;
   }
 
   private buildWhere(filters: FilterFocoRiscoInput) {

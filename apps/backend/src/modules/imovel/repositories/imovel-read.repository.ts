@@ -11,11 +11,19 @@ export interface ScoreConfig {
   pesoFocoRecorrente: number;
   pesoHistorico3focos: number;
   pesoCaso300m: number;
+  pesoChuvaAlta: number;
+  pesoTemperatura30: number;
+  pesoDenunciaCidadao: number;
   pesoSlaVencido: number;
   pesoVistoriaNegativa: number;
   pesoImovelRecusa: number;
   pesoFocoResolvido: number;
-  janelaDias: number;
+  janelaResolucaoDias: number;
+  janelaVistoriaDias: number;
+  janelaCasoDias: number;
+  capFocos: number;
+  capEpidemio: number;
+  capHistorico: number;
 }
 
 export interface ScoreInputs {
@@ -27,6 +35,9 @@ export interface ScoreInputs {
   slaVencidosCount: number;
   vistoriasNegativasCount: number;
   casosProximosCount: number;
+  denunciaCidadaoCount: number;
+  chuvaAlta: boolean;
+  tempAlta: boolean;
 }
 
 export interface ImovelResumo {
@@ -94,6 +105,7 @@ export abstract class ImovelReadRepository {
     pagination: PaginationProps,
   ): Promise<ImovelPaginated>;
   abstract findScoreInputs(imovelId: string, clienteId: string): Promise<ScoreInputs>;
+  abstract findScoreConfig(clienteId: string): Promise<ScoreConfig | null>;
   abstract listResumo(clienteId: string, regiaoId?: string): Promise<ImovelResumo[]>;
   abstract getResumoById(id: string, clienteId?: string | null): Promise<ImovelResumo | null>;
   abstract listProblematicos(clienteId: string): Promise<ImovelHistoricoAcesso[]>;

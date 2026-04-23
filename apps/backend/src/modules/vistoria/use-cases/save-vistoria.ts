@@ -20,6 +20,16 @@ export class SaveVistoria {
     const vistoria = await this.readRepository.findById(id);
     if (!vistoria) throw VistoriaException.notFound();
 
+    // Snapshot ANTES das mutações — paridade com OLD do trigger SQL
+    const antes = {
+      acessoRealizado: vistoria.acessoRealizado,
+      status: vistoria.status,
+      moradoresQtd: vistoria.moradoresQtd,
+      gravidas: vistoria.gravidas,
+      idosos: vistoria.idosos,
+      criancas7anos: vistoria.criancas7anos,
+    };
+
     if (data.agenteId !== undefined) vistoria.agenteId = data.agenteId;
     if (data.status !== undefined) vistoria.status = data.status;
     if (data.dataVisita !== undefined) vistoria.dataVisita = data.dataVisita;
@@ -101,20 +111,29 @@ export class SaveVistoria {
 
     await this.writeRepository.save(vistoria);
 
-    // TODO C.8.B: comparar colunas-input antes de disparar (acesso_realizado,
-    // status, moradores_qtd, gravidas, idosos, criancas_7anos) — paridade com
-    // WHEN clause do trigger SQL. Por ora dispara sempre (hook é idempotente no stub).
-    try {
-      await this.consolidarVistoria.execute({
-        vistoriaId: id,
-        motivo: 'automático — UPDATE em vistorias',
-      });
-    } catch (err) {
-      this.logger.error(
-        `Hook ConsolidarVistoria falhou: vistoriaId=${id} erro=${
-          err instanceof Error ? err.message : String(err)
-        }`,
-      );
+    // Paridade com WHEN clause de trg_consolidar_vistoria_update (SQL legado):
+    // dispara apenas se 1+ das 6 colunas-input mudou.
+    const alteracaoRelevante =
+      antes.acessoRealizado !== vistoria.acessoRealizado ||
+      antes.status !== vistoria.status ||
+      antes.moradoresQtd !== vistoria.moradoresQtd ||
+      antes.gravidas !== vistoria.gravidas ||
+      antes.idosos !== vistoria.idosos ||
+      antes.criancas7anos !== vistoria.criancas7anos;
+
+    if (alteracaoRelevante) {
+      try {
+        await this.consolidarVistoria.execute({
+          vistoriaId: id,
+          motivo: 'automático — UPDATE em vistorias',
+        });
+      } catch (err) {
+        this.logger.error(
+          `Hook ConsolidarVistoria falhou: vistoriaId=${id} erro=${
+            err instanceof Error ? err.message : String(err)
+          }`,
+        );
+      }
     }
 
     return { vistoria };

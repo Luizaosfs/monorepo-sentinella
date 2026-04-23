@@ -1,48 +1,91 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 
+import { SlaReadRepository } from './repositories/sla-read.repository';
+import { SlaWriteRepository } from './repositories/sla-write.repository';
+import { EscalarSla } from './use-cases/escalar-sla';
+
 @Injectable()
 export class SlaSchedulerService {
   private readonly logger = new Logger(SlaSchedulerService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private readRepository: SlaReadRepository,
+    private writeRepository: SlaWriteRepository,
+    private escalarSla: EscalarSla,
+  ) {}
 
-  async marcarVencidos(): Promise<{ vencidos: number; escalados: number }> {
+  /**
+   * Marca SLAs com prazo expirado como status='vencido', violado=true.
+   * NÃO escala — escalada é responsabilidade de escalarIminentes().
+   */
+  async marcarVencidos(): Promise<{ vencidos: number }> {
     const now = new Date();
 
     const { count: vencidos } = await this.prisma.client.sla_operacional.updateMany({
       where: {
         status: { in: ['pendente', 'em_atendimento'] },
         prazo_final: { lt: now },
+        deleted_at: null,
       },
       data: { status: 'vencido', violado: true },
     });
 
-    // Escala SLAs iminentes (prazo nos próximos 20% do tempo restante)
-    const escalados = await this.prisma.client.$executeRaw`
-      UPDATE sla_operacional
-      SET prioridade = CASE
-        WHEN prioridade = 'baixa'  THEN 'media'
-        WHEN prioridade = 'media'  THEN 'alta'
-        WHEN prioridade = 'alta'   THEN 'critica'
-        ELSE prioridade
-      END
-      WHERE status IN ('pendente', 'em_atendimento')
-        AND prazo_final > NOW()
-        AND prazo_final < NOW() + (
-          EXTRACT(EPOCH FROM (prazo_final - created_at)) * 0.2 * INTERVAL '1 second'
-        )
-    `;
+    this.logger.log(`[SlaSchedulerService.marcarVencidos] vencidos=${vencidos}`);
+    return { vencidos };
+  }
+
+  /**
+   * Escala SLAs iminentes (dentro de pctLimiar% do prazo restante).
+   * Paridade com legado fn_escalar_slas_iminentes (dump linha 2826).
+   *
+   * @param pctLimiar porcentagem do prazo restante que dispara escalada (default 20)
+   */
+  async escalarIminentes(pctLimiar = 20): Promise<{ candidatos: number; escalados: number; erros: number }> {
+    const iminentes = await this.readRepository.findIminentesGlobal(pctLimiar);
+
+    if (iminentes.length === 0) {
+      this.logger.log('[SlaSchedulerService.escalarIminentes] nenhum candidato');
+      return { candidatos: 0, escalados: 0, erros: 0 };
+    }
+
+    let escalados = 0;
+    let erros = 0;
+    const escaladosIds: string[] = [];
+
+    for (const sla of iminentes) {
+      try {
+        const resultado = await this.escalarSla.execute(sla.id, {
+          tenantId: null,
+          userId: null,
+        });
+        if (resultado.escalado) {
+          escalados++;
+          escaladosIds.push(sla.id);
+        }
+      } catch (err) {
+        erros++;
+        this.logger.warn(
+          `[SlaSchedulerService.escalarIminentes] falha em SLA ${sla.id}: ${err instanceof Error ? err.message : String(err)}`,
+        );
+      }
+    }
+
+    if (escaladosIds.length > 0) {
+      await this.writeRepository.marcarEscalonadoAutomatico(escaladosIds);
+    }
 
     this.logger.log(
-      `[SlaSchedulerService.marcarVencidos] vencidos=${vencidos} escalados=${escalados}`,
+      `[SlaSchedulerService.escalarIminentes] candidatos=${iminentes.length} escalados=${escalados} erros=${erros}`,
     );
-    return { vencidos, escalados };
+    return { candidatos: iminentes.length, escalados, erros };
   }
 
   async pushCritico(): Promise<{ enviados: number }> {
+    // P1 e P2 são os "críticos" no formato P1-P5 (fix Bug 2: era ['alta', 'critica'])
     const slas = await this.prisma.client.sla_operacional.findMany({
-      where: { status: 'vencido', prioridade: { in: ['alta', 'critica'] } },
+      where: { status: 'vencido', prioridade: { in: ['P1', 'P2'] } },
       take: 100,
     });
 

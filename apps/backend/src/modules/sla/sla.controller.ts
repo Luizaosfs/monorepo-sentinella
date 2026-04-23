@@ -175,7 +175,9 @@ export class SlaController {
   @ApiOperation({ summary: 'Escalar prioridade do SLA' })
   async escalar(@Param('id') id: string, @Body() body: EscalarSlaBody) {
     escalarSlaSchema.parse(body);
-    return this.escalarSla.execute(id);
+    const tenantId = this.req['tenantId'] as string | null;
+    const userId = (this.req['user'] as { id: string } | undefined)?.id ?? null;
+    return this.escalarSla.execute(id, { tenantId, userId });
   }
 
   @Post(':id/reabrir')

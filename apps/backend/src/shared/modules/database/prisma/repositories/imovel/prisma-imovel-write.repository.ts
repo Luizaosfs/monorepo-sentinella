@@ -34,6 +34,14 @@ export class PrismaImovelWriteRepository implements ImovelWriteRepository {
     });
   }
 
+  async seedScoreConfigIfMissing(clienteId: string): Promise<void> {
+    await this.prisma.client.$executeRaw`
+      INSERT INTO score_config (cliente_id)
+      VALUES (${clienteId}::uuid)
+      ON CONFLICT (cliente_id) DO NOTHING
+    `;
+  }
+
   async upsertScore(data: UpsertScoreData): Promise<void> {
     const now = new Date();
     await this.prisma.client.territorio_score.upsert({

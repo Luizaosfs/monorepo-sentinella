@@ -3,7 +3,9 @@ import { JwtService } from '@nestjs/jwt';
 import { DatabaseModule } from '@shared/modules/database/database.module';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 
+import { EnfileirarScoreImovel } from '../job/enfileirar-score-imovel';
 import { FocoRiscoModule } from '../foco-risco/foco-risco.module';
+import { BackfillConsolidacaoService } from './services/backfill-consolidacao.service';
 import { AddDeposito } from './use-cases/add-deposito';
 import { ConsolidarVistoria } from './use-cases/consolidar-vistoria';
 import { AddRiscos } from './use-cases/add-riscos';
@@ -21,6 +23,7 @@ import { VistoriaController } from './vistoria.controller';
 @Module({
   providers: [
     ConsolidarVistoria,
+    BackfillConsolidacaoService,
     AddDeposito,
     AddSintomas,
     AddRiscos,
@@ -32,6 +35,7 @@ import { VistoriaController } from './vistoria.controller';
     ListVistoriasConsolidadas,
     PaginationVistoria,
     SaveVistoria,
+    EnfileirarScoreImovel,
     JwtService,
     PrismaService,
   ],

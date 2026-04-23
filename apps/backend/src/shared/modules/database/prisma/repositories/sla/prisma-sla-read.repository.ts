@@ -10,6 +10,7 @@ import {
 } from '@modules/sla/entities/sla-operacional';
 import {
   SlaIminente,
+  SlaIminenteGlobal,
   SlaReadRepository,
 } from '@modules/sla/repositories/sla-read.repository';
 import { Injectable } from '@nestjs/common';
@@ -253,6 +254,39 @@ export class PrismaSlaReadRepository implements SlaReadRepository {
       escalonadoAutomatico: r.escalonado_automatico,
       minutosRestantes: Number(r.minutos_restantes),
       pctConsumido: Number(r.pct_consumido),
+    }));
+  }
+
+  async findIminentesGlobal(pctLimiar = 20): Promise<SlaIminenteGlobal[]> {
+    type Row = {
+      id: string;
+      cliente_id: string | null;
+      prioridade: string;
+      prazo_final: Date;
+    };
+
+    const rows = await this.prisma.client.$queryRaw<Row[]>`
+      SELECT
+        s.id,
+        s.cliente_id,
+        s.prioridade,
+        s.prazo_final
+      FROM sla_operacional s
+      WHERE s.status IN ('pendente', 'em_atendimento')
+        AND s.deleted_at IS NULL
+        AND s.escalonado_automatico = false
+        AND s.prioridade != 'P1'
+        AND s.prazo_final > NOW()
+        AND EXTRACT(EPOCH FROM (s.prazo_final - NOW()))
+            <= s.sla_horas * 3600 * (${pctLimiar}::numeric / 100)
+      ORDER BY s.prazo_final ASC
+    `;
+
+    return rows.map((r) => ({
+      id: r.id,
+      clienteId: r.cliente_id,
+      prioridade: r.prioridade,
+      prazoFinal: r.prazo_final,
     }));
   }
 

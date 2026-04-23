@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { DatabaseModule } from '@shared/modules/database/database.module';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 
+import { EnfileirarScoreImovel } from '../job/enfileirar-score-imovel';
 import { NotificacaoController } from './notificacao.controller';
 import { CreateCaso } from './use-cases/create-caso';
 import { CreateEsus } from './use-cases/create-esus';
@@ -67,6 +68,7 @@ import { ReverterPrioridadeCasoDescartado } from './use-cases/reverter-prioridad
     GetCruzamentoCount,
     CruzarCasoComFocos,
     ReverterPrioridadeCasoDescartado,
+    EnfileirarScoreImovel,
     JwtService,
     PrismaService,
   ],

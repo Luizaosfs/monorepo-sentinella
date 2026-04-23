@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { DatabaseModule } from '@shared/modules/database/database.module';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 
+import { EnfileirarScoreImovel } from '../job/enfileirar-score-imovel';
 import { ReinspecaoModule } from '../reinspecao/reinspecao.module';
 import { SlaModule } from '../sla/sla.module';
 import { FocoRiscoController } from './foco-risco.controller';
@@ -25,6 +26,7 @@ import { UpdateFocoRisco } from './use-cases/update-foco-risco';
 import { CruzarFocoNovoComCasos } from './use-cases/cruzar-foco-novo-com-casos';
 import { CriarFocoDeLevantamentoItem } from './use-cases/auto-criacao/criar-foco-de-levantamento-item';
 import { CriarFocoDeVistoriaDeposito } from './use-cases/auto-criacao/criar-foco-de-vistoria-deposito';
+import { RecalcularScorePrioridadeFoco } from './use-cases/recalcular-score-prioridade-foco';
 
 @Module({
   providers: [
@@ -47,6 +49,8 @@ import { CriarFocoDeVistoriaDeposito } from './use-cases/auto-criacao/criar-foco
     CruzarFocoNovoComCasos,
     CriarFocoDeLevantamentoItem,
     CriarFocoDeVistoriaDeposito,
+    RecalcularScorePrioridadeFoco,
+    EnfileirarScoreImovel,
     JwtService,
     PrismaService,
   ],

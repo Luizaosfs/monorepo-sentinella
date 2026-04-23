@@ -3,6 +3,7 @@ import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 import { Request } from 'express';
 import type { AuthenticatedUser } from 'src/guards/auth.guard';
 
+import { EnfileirarScoreImovel } from '../../job/enfileirar-score-imovel';
 import { CancelarReinspecoesAoFecharFoco } from '../../reinspecao/use-cases/cancelar-reinspecoes-ao-fechar-foco';
 import {
   CriarReinspecaoPosTratamento,
@@ -19,6 +20,7 @@ import { FocoRisco, FocoRiscoStatus } from '../entities/foco-risco';
 import { FocoRiscoException } from '../errors/foco-risco.exception';
 import { FocoRiscoReadRepository } from '../repositories/foco-risco-read.repository';
 import { FocoRiscoWriteRepository } from '../repositories/foco-risco-write.repository';
+import { RecalcularScorePrioridadeFoco } from './recalcular-score-prioridade-foco';
 
 /**
  * Status terminais que fecham SLAs remanescentes do foco. Alinhado com o
@@ -40,6 +42,8 @@ export class TransicionarFocoRisco {
     private slaWriteRepo: SlaWriteRepository,
     private criarReinspecao: CriarReinspecaoPosTratamento,
     private cancelarReinspecoes: CancelarReinspecoesAoFecharFoco,
+    private recalcularScore: RecalcularScorePrioridadeFoco,
+    private enfileirarScore: EnfileirarScoreImovel,
     @Inject('REQUEST') private req: Request,
   ) {}
 
@@ -141,6 +145,21 @@ export class TransicionarFocoRisco {
             logErr instanceof Error ? logErr.stack : String(logErr),
           );
         });
+    }
+
+    // Fase F.1.A — recalcula score após transição de status (best-effort)
+    try {
+      await this.recalcularScore.execute(foco.id!);
+    } catch (err) {
+      this.logger.error(
+        `Hook RecalcularScorePrioridadeFoco falhou em transição → ${novoStatus} do foco ${foco.id}`,
+        err instanceof Error ? err.stack : String(err),
+      );
+    }
+
+    // Fase F.1.B — enfileira recálculo do score territorial do imóvel (best-effort)
+    if (foco.imovelId) {
+      await this.enfileirarScore.enfileirarPorImovel(foco.imovelId, foco.clienteId);
     }
 
     return {

@@ -1,6 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { REQUEST } from '@nestjs/core';
-import { Request } from 'express';
+import { Injectable } from '@nestjs/common';
 import { AuthenticatedUser } from 'src/guards/auth.guard';
 
 import { SlaException } from '../errors/sla.exception';
@@ -17,16 +15,24 @@ const HORAS_POR_PRIORIDADE: Record<string, number> = {
   P1: 8,
 };
 
+export interface EscalarSlaOpts {
+  /** Override do tenantId. null = admin global (sem filtro de tenant). */
+  tenantId?: string | null;
+  /** Override do userId para escaladoPor. null = sem usuário humano (cron). */
+  userId?: string | null;
+}
+
 @Injectable()
 export class EscalarSla {
   constructor(
     private readRepository: SlaReadRepository,
     private writeRepository: SlaWriteRepository,
-    @Inject(REQUEST) private req: Request,
   ) {}
 
-  async execute(id: string) {
-    const tenantId = this.req['tenantId'] as string | null;
+  async execute(id: string, opts?: EscalarSlaOpts) {
+    const tenantId = opts?.tenantId !== undefined ? opts.tenantId : null;
+    const userId = opts?.userId !== undefined ? opts.userId : null;
+
     const sla = await this.readRepository.findById(id, tenantId);
     if (!sla) throw SlaException.notFound();
 
@@ -48,9 +54,12 @@ export class EscalarSla {
     sla.escalonado = true;
     sla.escalonadoEm = new Date();
     sla.prazoFinal = new Date(Date.now() + novasHoras * 3600 * 1000);
-    sla.escaladoPor = (this.req['user'] as AuthenticatedUser).id;
+    sla.escaladoPor = userId ?? undefined;
 
     await this.writeRepository.save(sla);
     return { escalado: true, sla };
   }
 }
+
+// Re-export para que callers de HTTP não precisem mudar a importação
+export type { AuthenticatedUser };

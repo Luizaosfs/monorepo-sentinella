@@ -57,7 +57,7 @@ describe('SaveVistoria', () => {
   });
 
   it('invoca hook ConsolidarVistoria após salvar vistoria', async () => {
-    const v = new VistoriaBuilder().withId('00000000-0000-4000-8000-0000000000d1').build();
+    const v = new VistoriaBuilder().withId('00000000-0000-4000-8000-0000000000d1').withStatus('pendente').build();
     readRepo.findById.mockResolvedValue(v);
 
     await useCase.execute(v.id!, { status: 'concluida' });
@@ -69,12 +69,39 @@ describe('SaveVistoria', () => {
   });
 
   it('falha no hook ConsolidarVistoria não deve quebrar o save', async () => {
-    const v = new VistoriaBuilder().withId('00000000-0000-4000-8000-0000000000d2').build();
+    const v = new VistoriaBuilder().withId('00000000-0000-4000-8000-0000000000d2').withStatus('pendente').build();
     readRepo.findById.mockResolvedValue(v);
     mockConsolidar.execute.mockRejectedValueOnce(new Error('boom'));
 
     const result = await useCase.execute(v.id!, { status: 'concluida' });
 
     expect(result.vistoria).toBe(v);
+  });
+
+  it('muda coluna-input (status) → hook é chamado', async () => {
+    const v = new VistoriaBuilder().withId('00000000-0000-4000-8000-0000000000d3').withStatus('pendente').build();
+    readRepo.findById.mockResolvedValue(v);
+
+    await useCase.execute(v.id!, { status: 'concluida' });
+
+    expect(mockConsolidar.execute).toHaveBeenCalledTimes(1);
+  });
+
+  it('muda apenas campo não-input (observacao) → hook NÃO é chamado', async () => {
+    const v = new VistoriaBuilder().withId('00000000-0000-4000-8000-0000000000d4').withStatus('concluida').build();
+    readRepo.findById.mockResolvedValue(v);
+
+    await useCase.execute(v.id!, { observacao: 'nova observacao' });
+
+    expect(mockConsolidar.execute).not.toHaveBeenCalled();
+  });
+
+  it('múltiplas colunas-input mudam → hook é chamado apenas 1 vez', async () => {
+    const v = new VistoriaBuilder().withId('00000000-0000-4000-8000-0000000000d5').withStatus('pendente').build();
+    readRepo.findById.mockResolvedValue(v);
+
+    await useCase.execute(v.id!, { status: 'concluida', gravidas: true, idosos: true });
+
+    expect(mockConsolidar.execute).toHaveBeenCalledTimes(1);
   });
 });

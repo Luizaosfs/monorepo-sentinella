@@ -1,4 +1,3 @@
-import { REQUEST } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import { mock } from 'jest-mock-extended';
 
@@ -6,7 +5,6 @@ import { SlaException } from '../../errors/sla.exception';
 import { SlaReadRepository } from '../../repositories/sla-read.repository';
 import { SlaWriteRepository } from '../../repositories/sla-write.repository';
 import { expectHttpException } from '@test/utils/expect-http-exception';
-import { mockRequest } from '@test/utils/user-helpers';
 
 import { EscalarSla } from '../escalar-sla';
 import { SlaOperacionalBuilder } from './builders/sla-operacional.builder';
@@ -16,11 +14,6 @@ describe('EscalarSla', () => {
   const readRepo = mock<SlaReadRepository>();
   const writeRepo = mock<SlaWriteRepository>();
 
-  const requestWithUser = () => mockRequest({
-    tenantId: 'test-cliente-id',
-    user: { id: 'escalador-user-id' } as never,
-  });
-
   beforeEach(async () => {
     jest.clearAllMocks();
     jest.useFakeTimers();
@@ -29,7 +22,6 @@ describe('EscalarSla', () => {
         EscalarSla,
         { provide: SlaReadRepository, useValue: readRepo },
         { provide: SlaWriteRepository, useValue: writeRepo },
-        { provide: REQUEST, useValue: requestWithUser() },
       ],
     }).compile();
     useCase = module.get<EscalarSla>(EscalarSla);
@@ -46,7 +38,7 @@ describe('EscalarSla', () => {
     readRepo.findById.mockResolvedValue(sla);
     writeRepo.save.mockResolvedValue();
 
-    const result = await useCase.execute(sla.id!);
+    const result = await useCase.execute(sla.id!, { tenantId: 'test-cliente-id', userId: 'escalador-user-id' });
 
     expect(result.escalado).toBe(true);
     const atual = result.sla!;
@@ -71,7 +63,7 @@ describe('EscalarSla', () => {
     readRepo.findById.mockResolvedValue(sla);
     writeRepo.save.mockResolvedValue();
 
-    const result = await useCase.execute(sla.id!);
+    const result = await useCase.execute(sla.id!, { tenantId: 'test-cliente-id', userId: 'escalador-user-id' });
 
     expect(result.escalado).toBe(true);
     const atual = result.sla!;
@@ -83,7 +75,7 @@ describe('EscalarSla', () => {
     const sla = new SlaOperacionalBuilder().withPrioridade('P1').withSlaHoras(8).build();
     readRepo.findById.mockResolvedValue(sla);
 
-    const result = await useCase.execute(sla.id!);
+    const result = await useCase.execute(sla.id!, { tenantId: null, userId: null });
 
     expect(result.escalado).toBe(false);
     expect(result.mensagem).toBe('Já está na prioridade máxima');
@@ -94,7 +86,7 @@ describe('EscalarSla', () => {
     const sla = new SlaOperacionalBuilder().withPrioridade('PX').build();
     readRepo.findById.mockResolvedValue(sla);
 
-    const result = await useCase.execute(sla.id!);
+    const result = await useCase.execute(sla.id!, { tenantId: null, userId: null });
 
     expect(result.escalado).toBe(false);
     expect(writeRepo.save).not.toHaveBeenCalled();
@@ -107,7 +99,7 @@ describe('EscalarSla', () => {
     readRepo.findById.mockResolvedValue(sla);
     writeRepo.save.mockResolvedValue();
 
-    const result = await useCase.execute(sla.id!);
+    const result = await useCase.execute(sla.id!, { tenantId: null, userId: null });
 
     const atual = result.sla!;
     expect(atual.escalonado).toBe(true);
@@ -118,6 +110,53 @@ describe('EscalarSla', () => {
   it('deve rejeitar SLA não encontrado', async () => {
     readRepo.findById.mockResolvedValue(null);
 
-    await expectHttpException(() => useCase.execute('nao-existe'), SlaException.notFound());
+    await expectHttpException(
+      () => useCase.execute('nao-existe', { tenantId: null, userId: null }),
+      SlaException.notFound(),
+    );
+  });
+
+  // Novos testes — opts opcionais (scheduler context)
+
+  it('context scheduler: execute com {tenantId: null, userId: null} funciona sem REQUEST', async () => {
+    jest.setSystemTime(new Date('2025-01-10T12:00:00Z'));
+
+    const sla = new SlaOperacionalBuilder().withPrioridade('P3').withSlaHoras(48).build();
+    readRepo.findById.mockResolvedValue(sla);
+    writeRepo.save.mockResolvedValue();
+
+    const result = await useCase.execute(sla.id!, { tenantId: null, userId: null });
+
+    expect(result.escalado).toBe(true);
+    expect(result.sla!.escaladoPor).toBeUndefined();
+    expect(readRepo.findById).toHaveBeenCalledWith(sla.id, null);
+  });
+
+  it('opts.userId é usado como escaladoPor em vez de REQUEST', async () => {
+    jest.setSystemTime(new Date('2025-01-10T12:00:00Z'));
+
+    const sla = new SlaOperacionalBuilder().withPrioridade('P4').withSlaHoras(72).build();
+    readRepo.findById.mockResolvedValue(sla);
+    writeRepo.save.mockResolvedValue();
+
+    const result = await useCase.execute(sla.id!, { tenantId: 'tenant-x', userId: 'user-123' });
+
+    expect(result.escalado).toBe(true);
+    expect(result.sla!.escaladoPor).toBe('user-123');
+    expect(readRepo.findById).toHaveBeenCalledWith(sla.id, 'tenant-x');
+  });
+
+  it('execute sem opts — tenantId=null, escaladoPor=undefined (fallback scheduler)', async () => {
+    jest.setSystemTime(new Date('2025-01-10T12:00:00Z'));
+
+    const sla = new SlaOperacionalBuilder().withPrioridade('P5').withSlaHoras(120).build();
+    readRepo.findById.mockResolvedValue(sla);
+    writeRepo.save.mockResolvedValue();
+
+    const result = await useCase.execute(sla.id!);
+
+    expect(result.escalado).toBe(true);
+    expect(result.sla!.escaladoPor).toBeUndefined();
+    expect(readRepo.findById).toHaveBeenCalledWith(sla.id, null);
   });
 });

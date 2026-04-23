@@ -141,7 +141,21 @@
       "Bash(\"D:/sentinella/monorepo-sentinella/apps/backend/node_modules/.bin/tsc\" --noEmit --project \"D:/sentinella/monorepo-sentinella/apps/backend/tsconfig.json\")",
       "Bash(\"./node_modules/.bin/tsc\" --noEmit)",
       "Bash(echo \"EXIT: $?\")",
-      "Bash(echo \"TSC_EXIT: $?\")"
+      "Bash(echo \"TSC_EXIT: $?\")",
+      "PowerShell(cd \"D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend\"; $result = & \"D:\\\\sentinella\\\\monorepo-sentinella\\\\node_modules\\\\.bin\\\\nest.cmd\" build --no-debug 2>&1; Write-Output \"EXIT: $LASTEXITCODE\"; $result | Select-Object -First 50)",
+      "PowerShell(cd \"D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend\"; $result = & \"D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend\\\\node_modules\\\\.bin\\\\nest.CMD\" build --no-debug 2>&1; Write-Output \"EXIT: $LASTEXITCODE\"; $result | Select-Object -First 80)",
+      "PowerShell(cd \"D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend\"; $result = & \"D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend\\\\node_modules\\\\.bin\\\\nest.CMD\" build 2>&1; Write-Output \"EXIT: $LASTEXITCODE\"; $result | Select-Object -First 80)",
+      "Bash(dir \"D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend\\\\src\\\\modules\\\\sla\\\\test\")",
+      "Bash(dir \"D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend\\\\src\\\\modules\\\\vistoria\")",
+      "Bash(D:/sentinella/monorepo-sentinella/node_modules/.bin/tsc --noEmit -p D:/sentinella/monorepo-sentinella/apps/backend/tsconfig.json)",
+      "Bash(\"/d/sentinella/monorepo-sentinella/node_modules/.bin/tsc\" --noEmit -p \"/d/sentinella/monorepo-sentinella/apps/backend/tsconfig.json\")",
+      "Bash(echo \"TSC_EXIT:$?\")",
+      "PowerShell($out = echo '{}' | node \"C:/Users/luiz/.claude/plugins/cache/context-mode/context-mode/1.0.89/hooks/pretooluse.mjs\" 2>&1; \"EXIT=$LASTEXITCODE\"; $out | Select-Object -First 25)",
+      "PowerShell($pluginDir = \"C:/Users/luiz/.claude/plugins/cache/context-mode/context-mode/1.0.89\"; $json = '{\"tool_name\":\"Grep\",\"tool_input\":{\"pattern\":\"test\",\"path\":\".\"}}'; $out = $json | node \"$pluginDir/hooks/pretooluse.mjs\" 2>&1; \"EXIT=$LASTEXITCODE\"; $out | Select-Object -First 30)",
+      "PowerShell($pluginDir = \"C:/Users/luiz/.claude/plugins/cache/context-mode/context-mode/1.0.89\"; $json = '{\"tool_name\":\"Read\",\"tool_input\":{\"file_path\":\"D:/sentinella/monorepo-sentinella/apps/backend/src/app.module.ts\"}}'; $out = $json | node \"$pluginDir/hooks/pretooluse.mjs\" 2>&1; \"EXIT=$LASTEXITCODE\"; $out | Select-Object -First 30)",
+      "PowerShell($pluginDir = \"C:/Users/luiz/.claude/plugins/cache/context-mode/context-mode/1.0.89\"; $json = '{\"tool_name\":\"Read\",\"tool_input\":{\"file_path\":\"test\"},\"tool_response\":\"ok\"}'; $psi = New-Object System.Diagnostics.ProcessStartInfo; $psi.FileName = \"node\"; $psi.Arguments = \"`\"$pluginDir/hooks/posttooluse.mjs`\"\"; $psi.RedirectStandardInput = $true; $psi.RedirectStandardOutput = $true; $psi.RedirectStandardError = $true; $psi.UseShellExecute = $false; $p = [System.Diagnostics.Process]::Start\\($psi\\); $p.StandardInput.WriteLine\\($json\\); $p.StandardInput.Close\\(\\); $stdout = $p.StandardOutput.ReadToEnd\\(\\); $stderr = $p.StandardError.ReadToEnd\\(\\); $p.WaitForExit\\(\\); \"EXIT=$\\($p.ExitCode\\)\"; \"STDERR=[$stderr]\"; \"STDOUT_START=$\\($stdout.Substring\\(0, [Math]::Min\\(200, $stdout.Length\\)\\)\\)\")",
+      "PowerShell(node --version; node -e \"console.log\\(process.versions.modules\\)\")",
+      "PowerShell($pluginDir = \"C:/Users/luiz/.claude/plugins/cache/context-mode/context-mode/1.0.89\"; node -e \"const db = new \\(require\\('$pluginDir/node_modules/better-sqlite3'\\)\\)\\(':memory:'\\); db.close\\(\\); console.log\\('sqlite3 OK'\\)\" 2>&1)"
     ]
   }
 }

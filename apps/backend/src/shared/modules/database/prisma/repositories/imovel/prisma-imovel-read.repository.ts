@@ -67,54 +67,129 @@ export class PrismaImovelReadRepository implements ImovelReadRepository {
       this.prisma.client.score_config.findUnique({ where: { cliente_id: clienteId } }),
     ]);
 
-    const janela = configRaw?.janela_resolucao_dias ?? 30;
-    const janelaDate = new Date(Date.now() - janela * 86400000);
+    const janelaResolucaoDias = configRaw?.janela_resolucao_dias ?? 30;
+    const janelaVistoriaDias = configRaw?.janela_vistoria_dias ?? 45;
+    const janelaCasoDias = configRaw?.janela_caso_dias ?? 60;
+    const janelaResolucaoDate = new Date(Date.now() - janelaResolucaoDias * 86400000);
+    const janelaVistoriaDate = new Date(Date.now() - janelaVistoriaDias * 86400000);
+    const janelaCasoDate = new Date(Date.now() - janelaCasoDias * 86400000);
 
-    const [focosAtivos, focosResolvidosCount, slaVencidosCount, vistoriasNegativasCount] =
-      await Promise.all([
-        this.prisma.client.focos_risco.findMany({
-          where: {
-            imovel_id: imovelId,
-            deleted_at: null,
-            status: { notIn: ['resolvido', 'descartado'] },
-          },
-          select: { status: true, foco_anterior_id: true },
-        }),
-        this.prisma.client.focos_risco.count({
-          where: {
-            imovel_id: imovelId,
-            deleted_at: null,
-            status: 'resolvido',
-            resolvido_em: { gte: janelaDate },
-          },
-        }),
-        this.prisma.client.sla_operacional.count({
-          where: {
-            cliente_id: clienteId,
-            violado: true,
-            deleted_at: null,
-            status: { not: 'concluido' },
-          },
-        }),
-        this.prisma.client.vistorias.count({
-          where: {
-            imovel_id: imovelId,
-            deleted_at: null,
-            acesso_realizado: true,
-            created_at: { gte: janelaDate },
-          },
-        }),
-      ]);
+    const [
+      focosAtivos,
+      // SQL 2.4: COUNT total histórico, SEM filtro de janela.
+      historicoFocosCount,
+      // SQL 2.5: focos resolvidos dentro da janela_resolucao_dias
+      focosResolvidosCount,
+      // SQL 2.9: slas violados vinculados ao imóvel via foco_risco, SEM filtro de status
+      slaVencidosCount,
+      // SQL 2.11: vistoria com acesso=true, SEM depósitos com focos, dentro da janela_vistoria_dias
+      vistoriasNegativasCount,
+      // SQL 2.8: focos de cidadão ATIVOS (sem janela de tempo)
+      denunciaCidadaoCount,
+    ] = await Promise.all([
+      // SQL 2.1 + 2.2 + 2.3: todos focos não-terminais para filtrar por status no use-case
+      this.prisma.client.focos_risco.findMany({
+        where: {
+          imovel_id: imovelId,
+          cliente_id: clienteId,
+          deleted_at: null,
+          status: { notIn: ['resolvido', 'descartado'] },
+        },
+        select: { status: true, foco_anterior_id: true },
+      }),
+      this.prisma.client.focos_risco.count({
+        where: {
+          imovel_id: imovelId,
+          cliente_id: clienteId,
+          deleted_at: null,
+          // SEM filtro de created_at — paridade SQL 2.4
+        },
+      }),
+      this.prisma.client.focos_risco.count({
+        where: {
+          imovel_id: imovelId,
+          cliente_id: clienteId,
+          deleted_at: null,
+          status: 'resolvido',
+          resolvido_em: { gte: janelaResolucaoDate },
+        },
+      }),
+      // SQL 2.9: JOIN implícito via relação foco_risco → imovel_id; sem filtro de status
+      this.prisma.client.sla_operacional.count({
+        where: {
+          cliente_id: clienteId,
+          violado: true,
+          deleted_at: null,
+          foco_risco: { imovel_id: imovelId },
+        },
+      }),
+      // SQL 2.11: acesso_realizado=TRUE + NONE de depósitos com focos
+      this.prisma.client.vistorias.count({
+        where: {
+          imovel_id: imovelId,
+          cliente_id: clienteId,
+          deleted_at: null,
+          acesso_realizado: true,
+          created_at: { gte: janelaVistoriaDate },
+          depositos: { none: { qtd_com_focos: { gt: 0 } } },
+        },
+      }),
+      // SQL 2.8: origem_tipo='cidadao', status ativo, SEM janela de tempo
+      this.prisma.client.focos_risco.count({
+        where: {
+          imovel_id: imovelId,
+          cliente_id: clienteId,
+          deleted_at: null,
+          origem_tipo: 'cidadao',
+          status: { notIn: ['resolvido', 'descartado'] },
+        },
+      }),
+    ]);
 
+    // SQL 2.6: bounding-box aproximado de 300m (~0.003°). Filtros faltantes adicionados:
+    // status IN ('suspeito','confirmado') e janela created_at.
+    // DÉBITO: bounding box é aproximação; PostGIS exato fica para fase futura.
     let casosProximosCount = 0;
     if (imovelRaw?.latitude != null && imovelRaw?.longitude != null) {
       casosProximosCount = await this.prisma.client.casos_notificados.count({
         where: {
           cliente_id: clienteId,
+          deleted_at: null,
+          status: { in: ['suspeito', 'confirmado'] },
+          created_at: { gte: janelaCasoDate },
           latitude: { gte: imovelRaw.latitude - 0.003, lte: imovelRaw.latitude + 0.003 },
           longitude: { gte: imovelRaw.longitude - 0.003, lte: imovelRaw.longitude + 0.003 },
         },
       });
+    }
+
+    // SQL 2.7: clima via pluvio. Threshold exato do SQL: chuva > 60, temp > 30.
+    // DIVERGÊNCIA: SQL usa poi.cliente_id, mas pluvio_operacional_item não tem esse campo
+    // no schema atual — usando por.cliente_id (pluvio_operacional_run) que existe.
+    let chuvaAlta = false;
+    let tempAlta = false;
+    if (imovelRaw?.bairro != null || imovelRaw?.regiao_id != null) {
+      type PluvioRow = { chuva_7d_mm: number | null; temp_media_c: number | null };
+      const bairroCond = imovelRaw?.bairro
+        ? Prisma.sql`poi.bairro_nome = ${imovelRaw.bairro}`
+        : Prisma.sql`false`;
+      const regiaoCond = imovelRaw?.regiao_id
+        ? Prisma.sql`poi.regiao_id = ${imovelRaw.regiao_id}::uuid`
+        : Prisma.sql`false`;
+      const pluvioRows = await this.prisma.client.$queryRaw<PluvioRow[]>`
+        SELECT poi.chuva_7d_mm::float8, poi.temp_media_c::float8
+        FROM pluvio_operacional_item poi
+        JOIN pluvio_operacional_run por ON por.id = poi.run_id
+        WHERE por.cliente_id = ${clienteId}::uuid
+          AND (${bairroCond} OR ${regiaoCond})
+        ORDER BY por.created_at DESC
+        LIMIT 1
+      `;
+      if (pluvioRows.length) {
+        // SQL: COALESCE(chuva_7d_mm,0) > 60 (estrito), COALESCE(temp_media_c,0) > 30 (estrito)
+        chuvaAlta = (pluvioRows[0].chuva_7d_mm ?? 0) > 60;
+        tempAlta = (pluvioRows[0].temp_media_c ?? 0) > 30;
+      }
     }
 
     const imovel = imovelRaw ? PrismaImovelMapper.toDomain(imovelRaw as any) : null;
@@ -127,11 +202,19 @@ export class PrismaImovelReadRepository implements ImovelReadRepository {
           pesoFocoRecorrente: configRaw.peso_foco_recorrente,
           pesoHistorico3focos: configRaw.peso_historico_3focos,
           pesoCaso300m: configRaw.peso_caso_300m,
+          pesoChuvaAlta: configRaw.peso_chuva_alta,
+          pesoTemperatura30: configRaw.peso_temperatura_30,
+          pesoDenunciaCidadao: configRaw.peso_denuncia_cidadao,
           pesoSlaVencido: configRaw.peso_sla_vencido,
           pesoVistoriaNegativa: configRaw.peso_vistoria_negativa,
           pesoImovelRecusa: configRaw.peso_imovel_recusa,
           pesoFocoResolvido: configRaw.peso_foco_resolvido,
-          janelaDias: configRaw.janela_resolucao_dias,
+          janelaResolucaoDias,
+          janelaVistoriaDias,
+          janelaCasoDias,
+          capFocos: configRaw.cap_focos,
+          capEpidemio: configRaw.cap_epidemio,
+          capHistorico: configRaw.cap_historico,
         }
       : null;
 
@@ -142,11 +225,42 @@ export class PrismaImovelReadRepository implements ImovelReadRepository {
         status: f.status,
         focoAnteriorId: f.foco_anterior_id,
       })),
-      historicoFocosCount: focosResolvidosCount,
+      historicoFocosCount,
       focosResolvidosCount,
       slaVencidosCount,
       vistoriasNegativasCount,
       casosProximosCount,
+      denunciaCidadaoCount,
+      chuvaAlta,
+      tempAlta,
+    };
+  }
+
+  async findScoreConfig(clienteId: string): Promise<ScoreConfig | null> {
+    const configRaw = await this.prisma.client.score_config.findUnique({
+      where: { cliente_id: clienteId },
+    });
+    if (!configRaw) return null;
+    return {
+      pesoFocoSuspeito: configRaw.peso_foco_suspeito,
+      pesoFocoConfirmado: configRaw.peso_foco_confirmado,
+      pesoFocoEmTratamento: configRaw.peso_foco_em_tratamento,
+      pesoFocoRecorrente: configRaw.peso_foco_recorrente,
+      pesoHistorico3focos: configRaw.peso_historico_3focos,
+      pesoCaso300m: configRaw.peso_caso_300m,
+      pesoChuvaAlta: configRaw.peso_chuva_alta,
+      pesoTemperatura30: configRaw.peso_temperatura_30,
+      pesoDenunciaCidadao: configRaw.peso_denuncia_cidadao,
+      pesoSlaVencido: configRaw.peso_sla_vencido,
+      pesoVistoriaNegativa: configRaw.peso_vistoria_negativa,
+      pesoImovelRecusa: configRaw.peso_imovel_recusa,
+      pesoFocoResolvido: configRaw.peso_foco_resolvido,
+      janelaResolucaoDias: configRaw.janela_resolucao_dias,
+      janelaVistoriaDias: configRaw.janela_vistoria_dias,
+      janelaCasoDias: configRaw.janela_caso_dias,
+      capFocos: configRaw.cap_focos,
+      capEpidemio: configRaw.cap_epidemio,
+      capHistorico: configRaw.cap_historico,
     };
   }
 

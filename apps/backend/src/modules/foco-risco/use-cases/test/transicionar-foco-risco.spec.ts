@@ -3,6 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 import { mock } from 'jest-mock-extended';
 
+import { EnfileirarScoreImovel } from '../../../job/enfileirar-score-imovel';
 import { CancelarReinspecoesAoFecharFoco } from '../../../reinspecao/use-cases/cancelar-reinspecoes-ao-fechar-foco';
 import { CriarReinspecaoPosTratamento } from '../../../reinspecao/use-cases/criar-reinspecao-pos-tratamento';
 import { SlaWriteRepository } from '../../../sla/repositories/sla-write.repository';
@@ -15,6 +16,7 @@ import { expectHttpException } from '@test/utils/expect-http-exception';
 import { mockRequest } from '@test/utils/user-helpers';
 
 import { TransicionarFocoRisco } from '../transicionar-foco-risco';
+import { RecalcularScorePrioridadeFoco } from '../recalcular-score-prioridade-foco';
 import { FocoRiscoBuilder } from './builders/foco-risco.builder';
 
 describe('TransicionarFocoRisco', () => {
@@ -26,6 +28,8 @@ describe('TransicionarFocoRisco', () => {
   const slaWriteRepo = mock<SlaWriteRepository>();
   const criarReinspecao = mock<CriarReinspecaoPosTratamento>();
   const cancelarReinspecoes = mock<CancelarReinspecoesAoFecharFoco>();
+  const recalcularScore = mock<RecalcularScorePrioridadeFoco>();
+  const enfileirarScore = mock<EnfileirarScoreImovel>();
 
   /**
    * Mock de PrismaService suficiente para `client.$transaction(callback)` —
@@ -44,6 +48,8 @@ describe('TransicionarFocoRisco', () => {
     prismaMock.client.$transaction = jest.fn(async (cb) =>
       cb({ __mock_tx__: true }),
     );
+    recalcularScore.execute.mockResolvedValue({ score: 30 });
+    enfileirarScore.enfileirarPorImovel.mockResolvedValue();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         TransicionarFocoRisco,
@@ -55,6 +61,8 @@ describe('TransicionarFocoRisco', () => {
         { provide: SlaWriteRepository, useValue: slaWriteRepo },
         { provide: CriarReinspecaoPosTratamento, useValue: criarReinspecao },
         { provide: CancelarReinspecoesAoFecharFoco, useValue: cancelarReinspecoes },
+        { provide: RecalcularScorePrioridadeFoco, useValue: recalcularScore },
+        { provide: EnfileirarScoreImovel, useValue: enfileirarScore },
         { provide: REQUEST, useValue: mockRequest({ tenantId: 'cliente-uuid-1' }) },
       ],
     }).compile();
@@ -289,6 +297,37 @@ describe('TransicionarFocoRisco', () => {
     );
   });
 
+  it('chama RecalcularScorePrioridadeFoco após transição bem-sucedida', async () => {
+    const foco = new FocoRiscoBuilder().withStatus('suspeita').build();
+    readRepo.findById.mockResolvedValue(foco);
+    writeRepo.save.mockResolvedValue();
+    writeRepo.createHistorico.mockResolvedValue({
+      clienteId: 'cliente-uuid-1',
+      statusNovo: 'em_triagem',
+    });
+
+    await useCase.execute(foco.id!, { statusPara: 'em_triagem' });
+
+    expect(recalcularScore.execute).toHaveBeenCalledWith(foco.id);
+  });
+
+  it('falha no RecalcularScore NÃO interrompe a transição', async () => {
+    const foco = new FocoRiscoBuilder().withStatus('suspeita').build();
+    readRepo.findById.mockResolvedValue(foco);
+    writeRepo.save.mockResolvedValue();
+    writeRepo.createHistorico.mockResolvedValue({
+      clienteId: 'cliente-uuid-1',
+      statusNovo: 'em_triagem',
+    });
+    recalcularScore.execute.mockRejectedValueOnce(new Error('score db error'));
+
+    const result = await useCase.execute(foco.id!, { statusPara: 'em_triagem' });
+
+    expect(result.foco.status).toBe('em_triagem');
+    expect(writeRepo.save).toHaveBeenCalled();
+    expect(writeRepo.createHistorico).toHaveBeenCalled();
+  });
+
   it('deve gerar registro em historico com usuarioId do request', async () => {
     const foco = new FocoRiscoBuilder().withStatus('suspeita').build();
     readRepo.findById.mockResolvedValue(foco);
@@ -312,5 +351,36 @@ describe('TransicionarFocoRisco', () => {
       }),
       expect.anything(),
     );
+  });
+
+  it('enfileira score do imóvel após transição quando imovelId presente', async () => {
+    const foco = new FocoRiscoBuilder().withStatus('suspeita').withImovelId('imovel-uuid-1').build();
+    readRepo.findById.mockResolvedValue(foco);
+    writeRepo.save.mockResolvedValue();
+    writeRepo.createHistorico.mockResolvedValue({
+      clienteId: 'cliente-uuid-1',
+      statusNovo: 'em_triagem',
+    });
+
+    await useCase.execute(foco.id!, { statusPara: 'em_triagem' });
+
+    expect(enfileirarScore.enfileirarPorImovel).toHaveBeenCalledWith(
+      'imovel-uuid-1',
+      'cliente-uuid-1',
+    );
+  });
+
+  it('NÃO enfileira score quando foco não tem imovelId', async () => {
+    const foco = new FocoRiscoBuilder().withStatus('suspeita').build(); // sem imovelId
+    readRepo.findById.mockResolvedValue(foco);
+    writeRepo.save.mockResolvedValue();
+    writeRepo.createHistorico.mockResolvedValue({
+      clienteId: 'cliente-uuid-1',
+      statusNovo: 'em_triagem',
+    });
+
+    await useCase.execute(foco.id!, { statusPara: 'em_triagem' });
+
+    expect(enfileirarScore.enfileirarPorImovel).not.toHaveBeenCalled();
   });
 });

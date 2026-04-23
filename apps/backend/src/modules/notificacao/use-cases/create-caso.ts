@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 
+import { EnfileirarScoreImovel } from '../../job/enfileirar-score-imovel';
 import { CreateCasoBody } from '../dtos/create-notificacao.body';
 import { CasoNotificado } from '../entities/notificacao';
 import { NotificacaoWriteRepository } from '../repositories/notificacao-write.repository';
@@ -12,6 +13,7 @@ export class CreateCaso {
   constructor(
     private repository: NotificacaoWriteRepository,
     private cruzarCasoComFocos: CruzarCasoComFocos,
+    private enfileirarScore: EnfileirarScoreImovel,
   ) {}
 
   async execute(
@@ -53,6 +55,11 @@ export class CreateCaso {
       this.logger.error(
         `Hook CruzarCasoComFocos falhou para caso ${created.id}: ${(err as Error).message}`,
       );
+    }
+
+    // Fase F.1.B — enfileira recálculo dos scores territoriais próximos (best-effort)
+    if (created.latitude != null && created.longitude != null) {
+      await this.enfileirarScore.enfileirarPorCaso(created.id!, created.clienteId);
     }
 
     return { caso: created };

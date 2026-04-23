@@ -119,6 +119,7 @@ export class JobScheduler {
   async slaMarcarVencidos() {
     this.logger.log('[JobScheduler.slaMarcarVencidos] Marcando SLAs vencidos');
     await this.slaScheduler.marcarVencidos();
+    await this.slaScheduler.escalarIminentes();
   }
 
   @Cron('*/15 * * * *')

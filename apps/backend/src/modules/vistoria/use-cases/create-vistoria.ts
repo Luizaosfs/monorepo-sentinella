@@ -2,6 +2,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
 
+import { EnfileirarScoreImovel } from '../../job/enfileirar-score-imovel';
 import { CreateVistoriaBody } from '../dtos/create-vistoria.body';
 import { Vistoria } from '../entities/vistoria';
 import { VistoriaReadRepository } from '../repositories/vistoria-read.repository';
@@ -17,6 +18,7 @@ export class CreateVistoria {
     private writeRepository: VistoriaWriteRepository,
     @Inject(REQUEST) private req: Request,
     private consolidarVistoria: ConsolidarVistoria,
+    private enfileirarScore: EnfileirarScoreImovel,
   ) {}
 
   async execute(data: CreateVistoriaBody) {
@@ -97,6 +99,11 @@ export class CreateVistoria {
           err instanceof Error ? err.message : String(err)
         }`,
       );
+    }
+
+    // Fase F.1.B — enfileira recálculo do score territorial do imóvel (best-effort)
+    if (created.imovelId && (data.acessoRealizado ?? true) === true) {
+      await this.enfileirarScore.enfileirarPorImovel(created.imovelId, clienteId);
     }
 
     const full = await this.readRepository.findByIdComDetalhes(created.id!);

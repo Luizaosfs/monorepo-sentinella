@@ -234,6 +234,15 @@ export class PrismaSlaWriteRepository implements SlaWriteRepository {
     });
   }
 
+  async marcarEscalonadoAutomatico(slaIds: string[]): Promise<number> {
+    if (slaIds.length === 0) return 0;
+    const { count } = await this.prisma.client.sla_operacional.updateMany({
+      where: { id: { in: slaIds } },
+      data: { escalonado_automatico: true },
+    });
+    return count;
+  }
+
   async upsertFocoConfig(
     clienteId: string,
     configs: Array<{ fase: string; prazoMinutos: number; ativo: boolean }>,

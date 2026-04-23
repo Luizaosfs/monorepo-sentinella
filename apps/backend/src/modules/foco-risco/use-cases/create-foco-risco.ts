@@ -1,11 +1,13 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Request } from 'express';
 
+import { EnfileirarScoreImovel } from '../../job/enfileirar-score-imovel';
 import { CreateFocoRiscoBody } from '../dtos/create-foco-risco.body';
 import { FocoRisco } from '../entities/foco-risco';
 import { FocoRiscoWriteRepository } from '../repositories/foco-risco-write.repository';
 import { autoClassificarFoco } from './auto-criacao/auto-classificar-foco';
 import { CruzarFocoNovoComCasos } from './cruzar-foco-novo-com-casos';
+import { RecalcularScorePrioridadeFoco } from './recalcular-score-prioridade-foco';
 
 @Injectable()
 export class CreateFocoRisco {
@@ -14,6 +16,8 @@ export class CreateFocoRisco {
   constructor(
     private repository: FocoRiscoWriteRepository,
     private cruzarFocoNovoComCasos: CruzarFocoNovoComCasos,
+    private recalcularScore: RecalcularScorePrioridadeFoco,
+    private enfileirarScore: EnfileirarScoreImovel,
     @Inject('REQUEST') private req: Request,
   ) {}
 
@@ -71,6 +75,20 @@ export class CreateFocoRisco {
       this.logger.error(
         `Hook CruzarFocoNovoComCasos falhou para foco ${created.id}: ${(err as Error).message}`,
       );
+    }
+
+    // Fase F.1.A — score de prioridade inicial (best-effort)
+    try {
+      await this.recalcularScore.execute(created.id!);
+    } catch (err) {
+      this.logger.error(
+        `Hook RecalcularScorePrioridadeFoco falhou para foco ${created.id}: ${(err as Error).message}`,
+      );
+    }
+
+    // Fase F.1.B — enfileira recálculo do score territorial do imóvel (best-effort)
+    if (created.imovelId) {
+      await this.enfileirarScore.enfileirarPorImovel(created.imovelId, created.clienteId);
     }
 
     return { foco: created };

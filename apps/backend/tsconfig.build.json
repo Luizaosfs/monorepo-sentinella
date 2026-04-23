@@ -10,6 +10,7 @@
     "test",
     "prisma.config.ts",
     "jest.config.ts",
+    "jest.e2e.config.ts",
     "**/*.spec.ts",
     "**/*.e2e.spec.ts",
     "**/*.test.ts",

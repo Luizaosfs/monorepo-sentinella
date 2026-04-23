@@ -10,4 +10,5 @@ export abstract class FocoRiscoWriteRepository {
     historico: FocoRiscoHistorico,
     tx?: unknown,
   ): Promise<FocoRiscoHistorico>;
+  abstract updateScorePrioridade(focoId: string, score: number): Promise<void>;
 }

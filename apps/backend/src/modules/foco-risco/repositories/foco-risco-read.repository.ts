@@ -4,6 +4,17 @@ import { PaginationProps } from 'src/shared/dtos/pagination-body';
 import { FilterFocoRiscoInput } from '../dtos/filter-foco-risco.input';
 import { FocoRisco, FocoRiscoPaginated } from '../entities/foco-risco';
 
+export interface ScoreInputsRow {
+  clienteId: string;
+  status: string;
+  focoAnteriorId: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  prazoMinutos: number | null;
+  tempoNoEstadoMinutos: number | null;
+  casosProximosCount: number;
+}
+
 export interface ContagemTriagemResult {
   total: number;
   suspeita: number;
@@ -27,6 +38,7 @@ export abstract class FocoRiscoReadRepository {
   abstract findContagemTriagem(filters: FilterFocoRiscoInput): Promise<ContagemTriagemResult>;
   abstract findContagemPorStatus(clienteId: string): Promise<Record<string, number>>;
   abstract findTimeline(focoId: string): Promise<TimelineItem[]>;
+  abstract findInputsParaScorePrioridade(focoId: string): Promise<ScoreInputsRow | null>;
 }
 
 export interface TimelineItem {

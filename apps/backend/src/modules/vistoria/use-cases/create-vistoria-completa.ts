@@ -3,6 +3,7 @@ import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
 
 import { CriarFocoDeVistoriaDeposito } from '@/modules/foco-risco/use-cases/auto-criacao/criar-foco-de-vistoria-deposito';
+import { EnfileirarScoreImovel } from '../../job/enfileirar-score-imovel';
 
 import { CreateVistoriaCompletaBody } from '../dtos/create-vistoria-completa.body';
 import { Vistoria } from '../entities/vistoria';
@@ -18,6 +19,7 @@ export class CreateVistoriaCompleta {
     private criarFocoDeVistoriaDeposito: CriarFocoDeVistoriaDeposito,
     @Inject(REQUEST) private req: Request,
     private consolidarVistoria: ConsolidarVistoria,
+    private enfileirarScore: EnfileirarScoreImovel,
   ) {}
 
   async execute(data: CreateVistoriaCompletaBody): Promise<{ id: string }> {
@@ -111,6 +113,11 @@ export class CreateVistoriaCompleta {
           err instanceof Error ? err.message : String(err)
         }`,
       );
+    }
+
+    // Fase F.1.B — enfileira recálculo do score territorial do imóvel (best-effort)
+    if (data.imovelId && (data.acessoRealizado ?? true) === true) {
+      await this.enfileirarScore.enfileirarPorImovel(data.imovelId, clienteId);
     }
 
     return { id };
