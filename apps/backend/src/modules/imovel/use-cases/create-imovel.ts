@@ -1,14 +1,19 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Request } from 'express';
 
+import { QuarteiraoWriteRepository } from '../../quarteirao/repositories/quarteirao-write.repository';
 import { CreateImovelBody } from '../dtos/create-imovel.body';
 import { Imovel } from '../entities/imovel';
 import { ImovelWriteRepository } from '../repositories/imovel-write.repository';
+import { normalizarQuarteirao } from './normalizar-quarteirao';
 
 @Injectable()
 export class CreateImovel {
+  private readonly logger = new Logger(CreateImovel.name);
+
   constructor(
     private writeRepository: ImovelWriteRepository,
+    private quarteiraoWriteRepository: QuarteiraoWriteRepository,
     @Inject('REQUEST') private req: Request,
   ) {}
 
@@ -22,7 +27,7 @@ export class CreateImovel {
         numero: input.numero,
         complemento: input.complemento,
         bairro: input.bairro,
-        quarteirao: input.quarteirao,
+        quarteirao: normalizarQuarteirao(input.quarteirao) ?? undefined,
         latitude: input.latitude,
         longitude: input.longitude,
         ativo: true,
@@ -40,6 +45,23 @@ export class CreateImovel {
     );
 
     const created = await this.writeRepository.create(imovel);
+
+    // K.5 — fn_sync_quarteirao_mestre: garante entrada na tabela mestre (best-effort)
+    const quarteirao = normalizarQuarteirao(input.quarteirao);
+    if (quarteirao) {
+      try {
+        await this.quarteiraoWriteRepository.upsertMestreIfMissing(
+          this.req['tenantId'] as string,
+          input.bairro,
+          quarteirao,
+        );
+      } catch (err) {
+        this.logger.error(
+          `[CreateImovel] Falha ao sincronizar quarteirao mestre "${quarteirao}": ${(err as Error).message}`,
+        );
+      }
+    }
+
     return { imovel: created };
   }
 }

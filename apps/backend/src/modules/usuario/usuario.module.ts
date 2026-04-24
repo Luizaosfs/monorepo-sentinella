@@ -3,6 +3,8 @@ import { JwtService } from '@nestjs/jwt';
 import { DatabaseModule } from '@shared/modules/database/database.module';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 
+import { BillingModule } from '../billing/billing.module';
+
 import { CreateUsuario } from './use-cases/create-usuario';
 import { DeleteUsuario } from './use-cases/delete-usuario';
 import { FilterUsuario } from './use-cases/filter-usuario';
@@ -25,6 +27,6 @@ import { UsuarioController } from './usuario.controller';
     PrismaService,
   ],
   controllers: [UsuarioController],
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, BillingModule],
 })
 export class UsuarioModule {}

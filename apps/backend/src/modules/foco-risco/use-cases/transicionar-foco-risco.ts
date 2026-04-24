@@ -159,7 +159,14 @@ export class TransicionarFocoRisco {
 
     // Fase F.1.B — enfileira recálculo do score territorial do imóvel (best-effort)
     if (foco.imovelId) {
-      await this.enfileirarScore.enfileirarPorImovel(foco.imovelId, foco.clienteId);
+      try {
+        await this.enfileirarScore.enfileirarPorImovel(foco.imovelId, foco.clienteId);
+      } catch (err) {
+        this.logger.error(
+          `[TransicionarFocoRisco] Falha ao enfileirar score do imóvel ${foco.imovelId}: ${(err as Error).message}`,
+          (err as Error).stack,
+        );
+      }
     }
 
     return {

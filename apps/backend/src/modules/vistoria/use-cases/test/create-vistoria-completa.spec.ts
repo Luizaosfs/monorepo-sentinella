@@ -1,8 +1,11 @@
 import { REQUEST } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import { mock } from 'jest-mock-extended';
+import { ForbiddenException } from '@nestjs/common';
 
 import { CriarFocoDeVistoriaDeposito } from '@/modules/foco-risco/use-cases/auto-criacao/criar-foco-de-vistoria-deposito';
+import { VerificarQuota } from '../../../billing/use-cases/verificar-quota';
+import { EnfileirarScoreImovel } from '../../../job/enfileirar-score-imovel';
 import { mockRequest } from '@test/utils/user-helpers';
 
 import { CreateVistoriaCompletaBody } from '../../dtos/create-vistoria-completa.body';
@@ -10,21 +13,30 @@ import { Vistoria } from '../../entities/vistoria';
 import { VistoriaWriteRepository } from '../../repositories/vistoria-write.repository';
 import { ConsolidarVistoria } from '../consolidar-vistoria';
 import { CreateVistoriaCompleta } from '../create-vistoria-completa';
+import { ValidarCicloVistoria } from '../validar-ciclo-vistoria';
 
 describe('CreateVistoriaCompleta', () => {
   let useCase: CreateVistoriaCompleta;
   const writeRepo = mock<VistoriaWriteRepository>();
   const criarFoco = { execute: jest.fn().mockResolvedValue({ criado: false }) };
   const mockConsolidar = { execute: jest.fn().mockResolvedValue(undefined) };
+  const mockEnfileirar = { enfileirarPorImovel: jest.fn().mockResolvedValue(undefined) };
+  const mockVerificarQuota = { execute: jest.fn().mockResolvedValue({ ok: true, usado: 0, limite: null }) };
+  const mockValidarCiclo = { execute: jest.fn().mockResolvedValue(undefined) };
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    mockVerificarQuota.execute.mockResolvedValue({ ok: true, usado: 0, limite: null });
+    mockValidarCiclo.execute.mockResolvedValue(undefined);
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CreateVistoriaCompleta,
         { provide: VistoriaWriteRepository, useValue: writeRepo },
         { provide: CriarFocoDeVistoriaDeposito, useValue: criarFoco },
         { provide: ConsolidarVistoria, useValue: mockConsolidar },
+        { provide: EnfileirarScoreImovel, useValue: mockEnfileirar },
+        { provide: VerificarQuota, useValue: mockVerificarQuota },
+        { provide: ValidarCicloVistoria, useValue: mockValidarCiclo },
         {
           provide: REQUEST,
           useValue: mockRequest({
@@ -165,6 +177,69 @@ describe('CreateVistoriaCompleta', () => {
     mockConsolidar.execute.mockRejectedValueOnce(new Error('consolidar boom'));
 
     const result = await useCase.execute(baseInput());
+
+    expect(result).toEqual({ id });
+  });
+
+  it('enfileira score do imóvel quando imovelId presente e acessoRealizado=true', async () => {
+    const id = '00000000-0000-4000-8000-0000000000b8';
+    writeRepo.createCompleta.mockResolvedValue(id);
+
+    await useCase.execute({ ...baseInput(), imovelId: 'imovel-uuid-1', acessoRealizado: true } as any);
+
+    expect(mockEnfileirar.enfileirarPorImovel).toHaveBeenCalledWith(
+      'imovel-uuid-1',
+      '00000000-0000-4000-8000-000000000001',
+    );
+  });
+
+  it('quota ok → cria vistoria completa normalmente', async () => {
+    const id = '00000000-0000-4000-8000-0000000000ba';
+    writeRepo.createCompleta.mockResolvedValue(id);
+
+    const result = await useCase.execute(baseInput());
+
+    expect(result).toEqual({ id });
+    expect(mockVerificarQuota.execute).toHaveBeenCalledWith(
+      '00000000-0000-4000-8000-000000000001',
+      { metrica: 'vistorias_mes' },
+    );
+  });
+
+  it('quota excedida → throw ForbiddenException antes de criar vistoria completa', async () => {
+    mockVerificarQuota.execute.mockResolvedValue({ ok: false, usado: 50, limite: 50, motivo: 'excedido' });
+
+    await expect(useCase.execute(baseInput())).rejects.toThrow(ForbiddenException);
+
+    expect(writeRepo.createCompleta).not.toHaveBeenCalled();
+  });
+
+  it('ciclo inválido → BadRequestException antes de criar vistoria completa', async () => {
+    mockValidarCiclo.execute.mockRejectedValueOnce(new ForbiddenException('ciclo inválido'));
+
+    await expect(useCase.execute(baseInput())).rejects.toThrow(ForbiddenException);
+
+    expect(writeRepo.createCompleta).not.toHaveBeenCalled();
+  });
+
+  it('ValidarCicloVistoria é chamado com clienteId do tenant e ciclo do input', async () => {
+    const id = '00000000-0000-4000-8000-0000000000bc';
+    writeRepo.createCompleta.mockResolvedValue(id);
+
+    await useCase.execute({ ...baseInput(), ciclo: 2 } as CreateVistoriaCompletaBody);
+
+    expect(mockValidarCiclo.execute).toHaveBeenCalledWith(
+      '00000000-0000-4000-8000-000000000001',
+      2,
+    );
+  });
+
+  it('falha no hook enfileirarScore NÃO interrompe a criação da vistoria completa', async () => {
+    const id = '00000000-0000-4000-8000-0000000000b9';
+    writeRepo.createCompleta.mockResolvedValue(id);
+    mockEnfileirar.enfileirarPorImovel.mockRejectedValueOnce(new Error('job_queue down'));
+
+    const result = await useCase.execute({ ...baseInput(), imovelId: 'imovel-uuid-1', acessoRealizado: true } as any);
 
     expect(result).toEqual({ id });
   });

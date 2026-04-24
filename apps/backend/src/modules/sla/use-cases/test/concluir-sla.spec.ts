@@ -84,4 +84,20 @@ describe('ConcluirSla', () => {
 
     await expectHttpException(() => useCase.execute('nao-existe'), SlaException.notFound());
   });
+
+  // K.2 — trg_sla_reset_escalonado_automatico
+  it('K.2 — escalonadoAutomatico=true é resetado para false ao concluir', async () => {
+    jest.setSystemTime(new Date('2025-06-01T10:00:00Z'));
+
+    const sla = new SlaOperacionalBuilder()
+      .withPrazoFinal(new Date('2025-06-02T10:00:00Z'))
+      .withEscalonadoAutomatico(true)
+      .build();
+    readRepo.findById.mockResolvedValue(sla);
+    writeRepo.save.mockResolvedValue();
+
+    const result = await useCase.execute(sla.id!);
+
+    expect(result.sla.escalonadoAutomatico).toBe(false);
+  });
 });

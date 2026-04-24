@@ -15,6 +15,13 @@ export interface UsoMensal {
   usuariosAtivos: number;
 }
 
+export type MetricaContagem =
+  | 'voos_mes'
+  | 'levantamentos_mes'
+  | 'itens_mes'
+  | 'vistorias_mes'
+  | 'usuarios_ativos';
+
 @Injectable()
 export abstract class BillingReadRepository {
   abstract findPlanos(): Promise<Plano[]>;
@@ -32,4 +39,8 @@ export abstract class BillingReadRepository {
     mesInicio: Date,
     mesFim: Date,
   ): Promise<UsoMensal[]>;
+  abstract findContagemMetrica(
+    clienteId: string,
+    metrica: MetricaContagem,
+  ): Promise<number>;
 }

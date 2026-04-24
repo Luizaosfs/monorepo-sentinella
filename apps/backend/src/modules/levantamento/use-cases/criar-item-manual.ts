@@ -2,6 +2,8 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Request } from 'express';
 
 import { CriarFocoDeLevantamentoItem } from '@/modules/foco-risco/use-cases/auto-criacao/criar-foco-de-levantamento-item';
+import { QuotaException } from '../../billing/errors/quota.exception';
+import { VerificarQuota } from '../../billing/use-cases/verificar-quota';
 
 import { CriarItemManualBody } from '../dtos/criar-item-manual.body';
 import { LevantamentoException } from '../errors/levantamento.exception';
@@ -17,6 +19,7 @@ export class CriarItemManual {
     private writeRepository: LevantamentoWriteRepository,
     private criarFocoDeLevantamentoItem: CriarFocoDeLevantamentoItem,
     @Inject('REQUEST') private req: Request,
+    private verificarQuota: VerificarQuota,
   ) {}
 
   async execute(input: CriarItemManualBody) {
@@ -29,6 +32,10 @@ export class CriarItemManual {
     );
     if (!planejamento) throw LevantamentoException.planejamentoNotFound();
     if (!planejamento.ativo) throw LevantamentoException.planejamentoInativo();
+
+    // Fase I — enforcement de quota
+    const { ok, usado, limite, motivo } = await this.verificarQuota.execute(clienteId, { metrica: 'itens_mes' });
+    if (!ok) throw QuotaException.excedida({ metrica: 'itens_mes', usado, limite, motivo });
 
     const tipoEntrada = planejamento.tipoEntrada ?? 'manual';
 

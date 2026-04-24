@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { BillingModule } from '@modules/billing/billing.module';
 import { CnesModule } from '@modules/cnes/cnes.module';
@@ -21,6 +21,7 @@ import { CreateJob } from './use-cases/create-job';
 import { FilterJob } from './use-cases/filter-job';
 import { GetJob } from './use-cases/get-job';
 import { RetryJob } from './use-cases/retry-job';
+import { EnfileirarScoreImovel } from './enfileirar-score-imovel';
 
 @Module({
   providers: [
@@ -32,9 +33,11 @@ import { RetryJob } from './use-cases/retry-job';
     JobScheduler,
     ScoreWorkerService,
     AuditCleanupService,
+    EnfileirarScoreImovel,
     JwtService,
     PrismaService,
   ],
+  exports: [EnfileirarScoreImovel],
   controllers: [JobController],
   imports: [
     DatabaseModule,
@@ -46,7 +49,7 @@ import { RetryJob } from './use-cases/retry-job';
     CnesModule,
     IaModule,
     ImovelModule,
-    NotificacaoModule,
+    forwardRef(() => NotificacaoModule),
   ],
 })
 export class JobModule {}

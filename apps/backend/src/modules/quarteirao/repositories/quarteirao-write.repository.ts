@@ -19,4 +19,10 @@ export abstract class QuarteiraoWriteRepository {
     cicloOrigem: number;
     cicloDestino: number;
   }): Promise<{ copiadas: number }>;
+
+  abstract upsertMestreIfMissing(
+    clienteId: string,
+    bairro: string | null | undefined,
+    codigo: string,
+  ): Promise<void>;
 }

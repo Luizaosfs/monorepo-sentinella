@@ -1,51 +1,100 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 
-import { VerificarQuotaQuery } from '../dtos/verificar-quota.input';
-import { BillingReadRepository } from '../repositories/billing-read.repository';
-import { mesAtual } from './meu-uso-mensal';
+import { BillingReadRepository, MetricaContagem } from '../repositories/billing-read.repository';
 
-type Metrica = 'voos_mes' | 'levantamentos_mes' | 'itens_mes' | 'usuarios_ativos';
+export type Metrica =
+  | 'voos_mes'
+  | 'levantamentos_mes'
+  | 'itens_mes'
+  | 'vistorias_mes'
+  | 'usuarios_ativos'
+  | 'ia_calls_mes'
+  | 'storage_gb';
 
 export interface VerificarQuotaResult {
   ok: boolean;
   usado: number;
   limite: number | null;
+  motivo?: 'tenant_bloqueado' | 'excedido' | 'fail_safe';
 }
 
 @Injectable()
 export class VerificarQuota {
+  private readonly logger = new Logger(VerificarQuota.name);
+
   constructor(private readRepository: BillingReadRepository) {}
 
-  async execute(clienteId: string, input: VerificarQuotaQuery): Promise<VerificarQuotaResult> {
-    const metrica = input.metrica as Metrica;
-    const { mesInicio, mesFim } = mesAtual();
+  async execute(
+    clienteId: string,
+    input: { metrica: Metrica },
+  ): Promise<VerificarQuotaResult> {
+    try {
+      const metrica = input.metrica;
 
-    const [uso, quotas] = await Promise.all([
-      this.readRepository.findUsoMensal(clienteId, mesInicio, mesFim),
-      this.readRepository.findQuotas(clienteId),
-    ]);
+      // Placeholders — not implemented in this phase
+      if (metrica === 'ia_calls_mes' || metrica === 'storage_gb') {
+        return { ok: true, usado: 0, limite: null };
+      }
 
-    const usadoMap: Record<Metrica, number> = {
-      voos_mes: uso.voosMes,
-      levantamentos_mes: uso.levantamentosMes,
-      itens_mes: uso.itensMes,
-      usuarios_ativos: uso.usuariosAtivos,
-    };
+      // Step 0: check tenant status
+      const clientePlano = await this.readRepository.findClientePlano(clienteId);
+      if (clientePlano) {
+        const { status, dataTrialFim } = clientePlano;
+        if (
+          status === 'suspenso' ||
+          status === 'cancelado' ||
+          (status === 'trial' && dataTrialFim != null && dataTrialFim < new Date())
+        ) {
+          return { ok: false, usado: 0, limite: 0, motivo: 'tenant_bloqueado' };
+        }
+      }
 
-    const limiteMap: Record<Metrica, number | null | undefined> = {
-      voos_mes: quotas?.voosMes,
-      levantamentos_mes: quotas?.levantamentosMes,
-      itens_mes: quotas?.itensMes,
-      usuarios_ativos: quotas?.usuariosAtivos,
-    };
+      // Step 1: resolve limit via COALESCE(override em cliente_quotas, limite do plano)
+      const [quotas, plano] = await Promise.all([
+        this.readRepository.findQuotas(clienteId),
+        clientePlano?.planoId
+          ? this.readRepository.findPlanoById(clientePlano.planoId)
+          : Promise.resolve(null),
+      ]);
 
-    const usado = usadoMap[metrica];
-    const limite = limiteMap[metrica] ?? null;
+      const metr = metrica as MetricaContagem;
 
-    return {
-      ok: limite === null || usado <= limite,
-      usado,
-      limite,
-    };
+      const overrideMap: Record<MetricaContagem, number | null | undefined> = {
+        voos_mes: quotas?.voosMes,
+        levantamentos_mes: quotas?.levantamentosMes,
+        itens_mes: quotas?.itensMes,
+        vistorias_mes: quotas?.vistoriasMes,
+        usuarios_ativos: quotas?.usuariosAtivos,
+      };
+
+      // itens_mes has no corresponding field in planos — override only
+      const planoLimiteMap: Record<MetricaContagem, number | null | undefined> = {
+        voos_mes: plano?.limiteVoosMes,
+        levantamentos_mes: plano?.limiteLevantamentosMes,
+        itens_mes: undefined,
+        vistorias_mes: plano?.limiteVistoriasMes,
+        usuarios_ativos: plano?.limiteUsuarios,
+      };
+
+      const limite: number | null = overrideMap[metr] ?? planoLimiteMap[metr] ?? null;
+
+      // Step 2: count actual usage with TZ-correct queries
+      const usado = await this.readRepository.findContagemMetrica(clienteId, metr);
+
+      // Step 3: result — blocks at limit (used >= limit), paridade com trigger SQL
+      const excedido = limite !== null && usado >= limite;
+      return {
+        ok: !excedido,
+        usado,
+        limite,
+        motivo: excedido ? 'excedido' : undefined,
+      };
+    } catch (err) {
+      this.logger.error(
+        `[VerificarQuota] fail_safe: ${(err as Error).message}`,
+        (err as Error).stack,
+      );
+      return { ok: true, usado: 0, limite: null, motivo: 'fail_safe' };
+    }
   }
 }

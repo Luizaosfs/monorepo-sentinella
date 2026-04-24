@@ -18,6 +18,7 @@ export class ConcluirSla {
     const agora = new Date();
     sla.status = 'concluido';
     sla.concluidoEm = agora;
+    sla.escalonadoAutomatico = false;
     if (sla.prazoFinal < agora) {
       sla.violado = true;
     }

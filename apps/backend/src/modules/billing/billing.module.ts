@@ -45,7 +45,7 @@ import { VerificarQuota } from './use-cases/verificar-quota';
     PrismaService,
   ],
   controllers: [BillingController],
-  exports: [BillingSchedulerService],
+  exports: [BillingSchedulerService, VerificarQuota],
   imports: [DatabaseModule],
 })
 export class BillingModule {}

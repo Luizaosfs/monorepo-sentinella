@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import {
   BillingCiclo,
   ClientePlano,
@@ -7,6 +8,7 @@ import {
 } from 'src/modules/billing/entities/billing';
 import {
   BillingReadRepository,
+  MetricaContagem,
   UsoMensal,
 } from 'src/modules/billing/repositories/billing-read.repository';
 
@@ -116,5 +118,59 @@ export class PrismaBillingReadRepository implements BillingReadRepository {
     return Promise.all(
       clientes.map((c) => this.findUsoMensal(c.id, mesInicio, mesFim)),
     );
+  }
+
+  async findContagemMetrica(clienteId: string, metrica: MetricaContagem): Promise<number> {
+    if (metrica === 'usuarios_ativos') {
+      return this.prisma.client.usuarios.count({
+        where: { cliente_id: clienteId, ativo: true },
+      });
+    }
+
+    // All monthly metrics use TZ America/Sao_Paulo to avoid month-boundary bugs
+    const mesInicioBr = Prisma.sql`(date_trunc('month', now() AT TIME ZONE 'America/Sao_Paulo') AT TIME ZONE 'America/Sao_Paulo')`;
+
+    if (metrica === 'voos_mes') {
+      const [row] = await this.prisma.client.$queryRaw<[{ total: number }]>(Prisma.sql`
+        SELECT COUNT(*)::int AS total
+        FROM voos v
+        JOIN planejamentos p ON p.id = v.planejamento_id
+        WHERE p.cliente_id = ${clienteId}::uuid
+          AND p.deleted_at IS NULL
+          AND v.created_at >= ${mesInicioBr}
+      `);
+      return row.total;
+    }
+
+    if (metrica === 'levantamentos_mes') {
+      const [row] = await this.prisma.client.$queryRaw<[{ total: number }]>(Prisma.sql`
+        SELECT COUNT(*)::int AS total
+        FROM levantamentos
+        WHERE cliente_id = ${clienteId}::uuid
+          AND deleted_at IS NULL
+          AND created_at >= ${mesInicioBr}
+      `);
+      return row.total;
+    }
+
+    if (metrica === 'itens_mes') {
+      const [row] = await this.prisma.client.$queryRaw<[{ total: number }]>(Prisma.sql`
+        SELECT COUNT(*)::int AS total
+        FROM levantamento_itens
+        WHERE cliente_id = ${clienteId}::uuid
+          AND deleted_at IS NULL
+          AND created_at >= ${mesInicioBr}
+      `);
+      return row.total;
+    }
+
+    // vistorias_mes — vistorias não têm deleted_at (bloqueado por guard LGPD)
+    const [row] = await this.prisma.client.$queryRaw<[{ total: number }]>(Prisma.sql`
+      SELECT COUNT(*)::int AS total
+      FROM vistorias
+      WHERE cliente_id = ${clienteId}::uuid
+        AND created_at >= ${mesInicioBr}
+    `);
+    return row.total;
   }
 }

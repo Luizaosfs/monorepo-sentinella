@@ -59,7 +59,14 @@ export class CreateCaso {
 
     // Fase F.1.B — enfileira recálculo dos scores territoriais próximos (best-effort)
     if (created.latitude != null && created.longitude != null) {
-      await this.enfileirarScore.enfileirarPorCaso(created.id!, created.clienteId);
+      try {
+        await this.enfileirarScore.enfileirarPorCaso(created.id!, created.clienteId);
+      } catch (err) {
+        this.logger.error(
+          `[CreateCaso] Falha ao enfileirar score por caso ${created.id}: ${(err as Error).message}`,
+          (err as Error).stack,
+        );
+      }
     }
 
     return { caso: created };

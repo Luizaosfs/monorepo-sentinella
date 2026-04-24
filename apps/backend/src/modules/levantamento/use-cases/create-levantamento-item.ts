@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 
 import { CriarFocoDeLevantamentoItem } from '@/modules/foco-risco/use-cases/auto-criacao/criar-foco-de-levantamento-item';
+import { QuotaException } from '../../billing/errors/quota.exception';
+import { VerificarQuota } from '../../billing/use-cases/verificar-quota';
 
 import { CreateLevantamentoItemBody } from '../dtos/create-levantamento-item.body';
 import { LevantamentoException } from '../errors/levantamento.exception';
@@ -15,11 +17,18 @@ export class CreateLevantamentoItem {
     private readRepository: LevantamentoReadRepository,
     private writeRepository: LevantamentoWriteRepository,
     private criarFocoDeLevantamentoItem: CriarFocoDeLevantamentoItem,
+    private verificarQuota: VerificarQuota,
   ) {}
 
   async execute(levantamentoId: string, input: CreateLevantamentoItemBody) {
     const levantamento = await this.readRepository.findById(levantamentoId);
     if (!levantamento) throw LevantamentoException.notFound();
+
+    const { ok, usado, limite, motivo } = await this.verificarQuota.execute(
+      levantamento.clienteId,
+      { metrica: 'itens_mes' },
+    );
+    if (!ok) throw QuotaException.excedida({ metrica: 'itens_mes', usado, limite, motivo });
 
     const item = await this.writeRepository.createItem({
       levantamentoId,

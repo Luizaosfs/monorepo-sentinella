@@ -3,10 +3,13 @@ import { JwtService } from '@nestjs/jwt';
 import { DatabaseModule } from '@shared/modules/database/database.module';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 
-import { EnfileirarScoreImovel } from '../job/enfileirar-score-imovel';
+import { BillingModule } from '../billing/billing.module';
 import { FocoRiscoModule } from '../foco-risco/foco-risco.module';
+import { IniciarInspecao } from '../foco-risco/use-cases/iniciar-inspecao';
+import { JobModule } from '../job/job.module';
 import { BackfillConsolidacaoService } from './services/backfill-consolidacao.service';
 import { AddDeposito } from './use-cases/add-deposito';
+import { ValidarCicloVistoria } from './use-cases/validar-ciclo-vistoria';
 import { ConsolidarVistoria } from './use-cases/consolidar-vistoria';
 import { AddRiscos } from './use-cases/add-riscos';
 import { AddSintomas } from './use-cases/add-sintomas';
@@ -35,11 +38,12 @@ import { VistoriaController } from './vistoria.controller';
     ListVistoriasConsolidadas,
     PaginationVistoria,
     SaveVistoria,
-    EnfileirarScoreImovel,
+    ValidarCicloVistoria,
+    IniciarInspecao,
     JwtService,
     PrismaService,
   ],
   controllers: [VistoriaController],
-  imports: [DatabaseModule, FocoRiscoModule],
+  imports: [DatabaseModule, FocoRiscoModule, JobModule, BillingModule],
 })
 export class VistoriaModule {}

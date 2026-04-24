@@ -3,6 +3,8 @@ import { JwtService } from '@nestjs/jwt';
 import { DatabaseModule } from '@shared/modules/database/database.module';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 
+import { BillingModule } from '../billing/billing.module';
+
 import { DroneController } from './drone.controller';
 import { AvaliarCondicoesVoo } from './use-cases/avaliar-condicoes-voo';
 import { CreateDrone } from './use-cases/create-drone';
@@ -57,6 +59,6 @@ import { YoloQualidadeResumo } from './use-cases/yolo-qualidade-resumo';
     PrismaService,
   ],
   controllers: [DroneController],
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, BillingModule],
 })
 export class DroneModule {}

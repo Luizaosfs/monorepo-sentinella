@@ -3,9 +3,12 @@ import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
 
 import { CriarFocoDeVistoriaDeposito } from '@/modules/foco-risco/use-cases/auto-criacao/criar-foco-de-vistoria-deposito';
+import { QuotaException } from '../../billing/errors/quota.exception';
+import { VerificarQuota } from '../../billing/use-cases/verificar-quota';
 import { EnfileirarScoreImovel } from '../../job/enfileirar-score-imovel';
 
 import { CreateVistoriaCompletaBody } from '../dtos/create-vistoria-completa.body';
+import { ValidarCicloVistoria } from './validar-ciclo-vistoria';
 import { Vistoria } from '../entities/vistoria';
 import { VistoriaWriteRepository } from '../repositories/vistoria-write.repository';
 import { ConsolidarVistoria } from './consolidar-vistoria';
@@ -20,11 +23,20 @@ export class CreateVistoriaCompleta {
     @Inject(REQUEST) private req: Request,
     private consolidarVistoria: ConsolidarVistoria,
     private enfileirarScore: EnfileirarScoreImovel,
+    private verificarQuota: VerificarQuota,
+    private validarCicloVistoria: ValidarCicloVistoria,
   ) {}
 
   async execute(data: CreateVistoriaCompletaBody): Promise<{ id: string }> {
     // MT-02: tenantId do guard sempre vence — nunca aceita clienteId do frontend
     const clienteId = this.req['tenantId'] as string;
+
+    // G.6 — rejeita ciclo diferente do ativo
+    await this.validarCicloVistoria.execute(clienteId, data.ciclo);
+
+    // Fase I — enforcement de quota
+    const { ok, usado, limite, motivo } = await this.verificarQuota.execute(clienteId, { metrica: 'vistorias_mes' });
+    if (!ok) throw QuotaException.excedida({ metrica: 'vistorias_mes', usado, limite, motivo });
 
     const vistoria = new Vistoria(
       {
@@ -117,7 +129,14 @@ export class CreateVistoriaCompleta {
 
     // Fase F.1.B — enfileira recálculo do score territorial do imóvel (best-effort)
     if (data.imovelId && (data.acessoRealizado ?? true) === true) {
-      await this.enfileirarScore.enfileirarPorImovel(data.imovelId, clienteId);
+      try {
+        await this.enfileirarScore.enfileirarPorImovel(data.imovelId, clienteId);
+      } catch (err) {
+        this.logger.error(
+          `[CreateVistoriaCompleta] Falha ao enfileirar score do imóvel ${data.imovelId}: ${(err as Error).message}`,
+          (err as Error).stack,
+        );
+      }
     }
 
     return { id };

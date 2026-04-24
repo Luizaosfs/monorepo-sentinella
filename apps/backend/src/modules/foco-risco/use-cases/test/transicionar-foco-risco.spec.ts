@@ -29,7 +29,7 @@ describe('TransicionarFocoRisco', () => {
   const criarReinspecao = mock<CriarReinspecaoPosTratamento>();
   const cancelarReinspecoes = mock<CancelarReinspecoesAoFecharFoco>();
   const recalcularScore = mock<RecalcularScorePrioridadeFoco>();
-  const enfileirarScore = mock<EnfileirarScoreImovel>();
+  const enfileirarScore = { enfileirarPorImovel: jest.fn().mockResolvedValue(undefined) };
 
   /**
    * Mock de PrismaService suficiente para `client.$transaction(callback)` —
@@ -49,7 +49,7 @@ describe('TransicionarFocoRisco', () => {
       cb({ __mock_tx__: true }),
     );
     recalcularScore.execute.mockResolvedValue({ score: 30 });
-    enfileirarScore.enfileirarPorImovel.mockResolvedValue();
+    enfileirarScore.enfileirarPorImovel.mockResolvedValue(undefined);
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         TransicionarFocoRisco,
@@ -357,30 +357,34 @@ describe('TransicionarFocoRisco', () => {
     const foco = new FocoRiscoBuilder().withStatus('suspeita').withImovelId('imovel-uuid-1').build();
     readRepo.findById.mockResolvedValue(foco);
     writeRepo.save.mockResolvedValue();
-    writeRepo.createHistorico.mockResolvedValue({
-      clienteId: 'cliente-uuid-1',
-      statusNovo: 'em_triagem',
-    });
+    writeRepo.createHistorico.mockResolvedValue({ clienteId: 'cliente-uuid-1', statusNovo: 'em_triagem' });
 
     await useCase.execute(foco.id!, { statusPara: 'em_triagem' });
 
-    expect(enfileirarScore.enfileirarPorImovel).toHaveBeenCalledWith(
-      'imovel-uuid-1',
-      'cliente-uuid-1',
-    );
+    expect(enfileirarScore.enfileirarPorImovel).toHaveBeenCalledWith('imovel-uuid-1', 'cliente-uuid-1');
   });
 
   it('NÃO enfileira score quando foco não tem imovelId', async () => {
-    const foco = new FocoRiscoBuilder().withStatus('suspeita').build(); // sem imovelId
+    const foco = new FocoRiscoBuilder().withStatus('suspeita').build();
     readRepo.findById.mockResolvedValue(foco);
     writeRepo.save.mockResolvedValue();
-    writeRepo.createHistorico.mockResolvedValue({
-      clienteId: 'cliente-uuid-1',
-      statusNovo: 'em_triagem',
-    });
+    writeRepo.createHistorico.mockResolvedValue({ clienteId: 'cliente-uuid-1', statusNovo: 'em_triagem' });
 
     await useCase.execute(foco.id!, { statusPara: 'em_triagem' });
 
     expect(enfileirarScore.enfileirarPorImovel).not.toHaveBeenCalled();
   });
+
+  it('falha no hook enfileirarScore NÃO interrompe a transição', async () => {
+    const foco = new FocoRiscoBuilder().withStatus('suspeita').withImovelId('imovel-uuid-1').build();
+    readRepo.findById.mockResolvedValue(foco);
+    writeRepo.save.mockResolvedValue();
+    writeRepo.createHistorico.mockResolvedValue({ clienteId: 'cliente-uuid-1', statusNovo: 'em_triagem' });
+    enfileirarScore.enfileirarPorImovel.mockRejectedValueOnce(new Error('job_queue down'));
+
+    const result = await useCase.execute(foco.id!, { statusPara: 'em_triagem' });
+
+    expect(result.foco.status).toBe('em_triagem');
+  });
 });
+

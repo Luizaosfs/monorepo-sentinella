@@ -1,6 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { mock } from 'jest-mock-extended';
+import { ForbiddenException } from '@nestjs/common';
 
+import { VerificarQuota } from '../../../billing/use-cases/verificar-quota';
 import { LevantamentoException } from '../../errors/levantamento.exception';
 import { LevantamentoReadRepository } from '../../repositories/levantamento-read.repository';
 import { LevantamentoWriteRepository } from '../../repositories/levantamento-write.repository';
@@ -15,15 +17,18 @@ describe('CreateLevantamentoItem', () => {
   const readRepo = mock<LevantamentoReadRepository>();
   const writeRepo = mock<LevantamentoWriteRepository>();
   const criarFoco = { execute: jest.fn().mockResolvedValue({ criado: false }) };
+  const mockVerificarQuota = { execute: jest.fn().mockResolvedValue({ ok: true, usado: 0, limite: null }) };
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    mockVerificarQuota.execute.mockResolvedValue({ ok: true, usado: 0, limite: null });
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CreateLevantamentoItem,
         { provide: LevantamentoReadRepository, useValue: readRepo },
         { provide: LevantamentoWriteRepository, useValue: writeRepo },
         { provide: CriarFocoDeLevantamentoItem, useValue: criarFoco },
+        { provide: VerificarQuota, useValue: mockVerificarQuota },
       ],
     }).compile();
 
@@ -124,6 +129,26 @@ describe('CreateLevantamentoItem', () => {
         longitude: -46.6,
       }),
     );
+  });
+
+  it('quota ok → cria item normalmente', async () => {
+    const lev = new LevantamentoBuilder().withId('lev-q').withClienteId('cli-q').build();
+    readRepo.findById.mockResolvedValue(lev);
+    writeRepo.createItem.mockResolvedValue({ id: 'item-q' } as any);
+
+    await useCase.execute('lev-q', {});
+
+    expect(mockVerificarQuota.execute).toHaveBeenCalledWith('cli-q', { metrica: 'itens_mes' });
+    expect(writeRepo.createItem).toHaveBeenCalled();
+  });
+
+  it('quota excedida → throw ForbiddenException antes de criar item', async () => {
+    readRepo.findById.mockResolvedValue(new LevantamentoBuilder().build());
+    mockVerificarQuota.execute.mockResolvedValue({ ok: false, usado: 100, limite: 100, motivo: 'excedido' });
+
+    await expect(useCase.execute('lev-1', {})).rejects.toThrow(ForbiddenException);
+
+    expect(writeRepo.createItem).not.toHaveBeenCalled();
   });
 
   it('falha do hook não deve quebrar a criação do item', async () => {

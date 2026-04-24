@@ -25,6 +25,11 @@ export class VistoriaBuilder {
     return this;
   }
 
+  withImovelId(imovelId: string) {
+    this.imovelId = imovelId;
+    return this;
+  }
+
   withStatus(status: string) {
     this.status = status;
     return this;

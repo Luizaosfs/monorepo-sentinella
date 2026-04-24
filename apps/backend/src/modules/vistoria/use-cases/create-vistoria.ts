@@ -2,8 +2,12 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
 
+import { QuotaException } from '../../billing/errors/quota.exception';
+import { VerificarQuota } from '../../billing/use-cases/verificar-quota';
+import { IniciarInspecao } from '../../foco-risco/use-cases/iniciar-inspecao';
 import { EnfileirarScoreImovel } from '../../job/enfileirar-score-imovel';
 import { CreateVistoriaBody } from '../dtos/create-vistoria.body';
+import { ValidarCicloVistoria } from './validar-ciclo-vistoria';
 import { Vistoria } from '../entities/vistoria';
 import { VistoriaReadRepository } from '../repositories/vistoria-read.repository';
 import { VistoriaWriteRepository } from '../repositories/vistoria-write.repository';
@@ -19,11 +23,21 @@ export class CreateVistoria {
     @Inject(REQUEST) private req: Request,
     private consolidarVistoria: ConsolidarVistoria,
     private enfileirarScore: EnfileirarScoreImovel,
+    private verificarQuota: VerificarQuota,
+    private validarCicloVistoria: ValidarCicloVistoria,
+    private iniciarInspecao: IniciarInspecao,
   ) {}
 
   async execute(data: CreateVistoriaBody) {
     // MT-02: tenantId do guard sempre vence — nunca aceita clienteId do frontend
     const clienteId = this.req['tenantId'] as string;
+
+    // G.6 — rejeita ciclo diferente do ativo
+    await this.validarCicloVistoria.execute(clienteId, data.ciclo);
+
+    // Fase I — enforcement de quota
+    const { ok, usado, limite, motivo } = await this.verificarQuota.execute(clienteId, { metrica: 'vistorias_mes' });
+    if (!ok) throw QuotaException.excedida({ metrica: 'vistorias_mes', usado, limite, motivo });
 
     const vistoria = new Vistoria(
       {
@@ -88,6 +102,17 @@ export class CreateVistoria {
       }
     }
 
+    // K.3 — fn_auto_em_inspecao_por_vistoria: vincula inspeção ao foco (best-effort)
+    if (created.focoRiscoId) {
+      try {
+        await this.iniciarInspecao.execute(created.focoRiscoId, {});
+      } catch (err) {
+        this.logger.error(
+          `[CreateVistoria] Hook IniciarInspecao falhou para foco ${created.focoRiscoId}: ${(err as Error).message}`,
+        );
+      }
+    }
+
     try {
       await this.consolidarVistoria.execute({
         vistoriaId: created.id!,
@@ -103,7 +128,14 @@ export class CreateVistoria {
 
     // Fase F.1.B — enfileira recálculo do score territorial do imóvel (best-effort)
     if (created.imovelId && (data.acessoRealizado ?? true) === true) {
-      await this.enfileirarScore.enfileirarPorImovel(created.imovelId, clienteId);
+      try {
+        await this.enfileirarScore.enfileirarPorImovel(created.imovelId, clienteId);
+      } catch (err) {
+        this.logger.error(
+          `[CreateVistoria] Falha ao enfileirar score do imóvel ${created.imovelId}: ${(err as Error).message}`,
+          (err as Error).stack,
+        );
+      }
     }
 
     const full = await this.readRepository.findByIdComDetalhes(created.id!);

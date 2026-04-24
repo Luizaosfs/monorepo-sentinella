@@ -1,9 +1,10 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { DatabaseModule } from '@shared/modules/database/database.module';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 
-import { EnfileirarScoreImovel } from '../job/enfileirar-score-imovel';
+import { JobModule } from '../job/job.module';
+
 import { NotificacaoController } from './notificacao.controller';
 import { CreateCaso } from './use-cases/create-caso';
 import { CreateEsus } from './use-cases/create-esus';
@@ -68,12 +69,11 @@ import { ReverterPrioridadeCasoDescartado } from './use-cases/reverter-prioridad
     GetCruzamentoCount,
     CruzarCasoComFocos,
     ReverterPrioridadeCasoDescartado,
-    EnfileirarScoreImovel,
     JwtService,
     PrismaService,
   ],
   exports: [PushService, CanalCidadaoService],
   controllers: [NotificacaoController],
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, forwardRef(() => JobModule)],
 })
 export class NotificacaoModule {}

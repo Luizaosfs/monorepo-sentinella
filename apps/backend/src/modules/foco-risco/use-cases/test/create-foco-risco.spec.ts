@@ -8,6 +8,7 @@ import { mockRequest } from '@test/utils/user-helpers';
 
 import { CreateFocoRisco } from '../create-foco-risco';
 import { CruzarFocoNovoComCasos } from '../cruzar-foco-novo-com-casos';
+import { NormalizarCicloFoco } from '../normalizar-ciclo-foco';
 import { RecalcularScorePrioridadeFoco } from '../recalcular-score-prioridade-foco';
 import { FocoRiscoBuilder } from './builders/foco-risco.builder';
 
@@ -16,13 +17,15 @@ describe('CreateFocoRisco', () => {
   const writeRepo = mock<FocoRiscoWriteRepository>();
   const cruzarFocoNovoComCasos = mock<CruzarFocoNovoComCasos>();
   const recalcularScore = mock<RecalcularScorePrioridadeFoco>();
-  const enfileirarScore = mock<EnfileirarScoreImovel>();
+  const enfileirarScore = { enfileirarPorImovel: jest.fn().mockResolvedValue(undefined) };
+  const mockNormalizarCiclo = { execute: jest.fn().mockResolvedValue(1) };
 
   beforeEach(async () => {
     jest.clearAllMocks();
     cruzarFocoNovoComCasos.execute.mockResolvedValue({ cruzamentos: 0 });
     recalcularScore.execute.mockResolvedValue({ score: 10 });
-    enfileirarScore.enfileirarPorImovel.mockResolvedValue();
+    enfileirarScore.enfileirarPorImovel.mockResolvedValue(undefined);
+    mockNormalizarCiclo.execute.mockResolvedValue(1);
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CreateFocoRisco,
@@ -30,6 +33,7 @@ describe('CreateFocoRisco', () => {
         { provide: CruzarFocoNovoComCasos, useValue: cruzarFocoNovoComCasos },
         { provide: RecalcularScorePrioridadeFoco, useValue: recalcularScore },
         { provide: EnfileirarScoreImovel, useValue: enfileirarScore },
+        { provide: NormalizarCicloFoco, useValue: mockNormalizarCiclo },
         { provide: REQUEST, useValue: mockRequest({ tenantId: 'cliente-uuid-1' }) },
       ],
     }).compile();
@@ -181,29 +185,89 @@ describe('CreateFocoRisco', () => {
   it('enfileira score do imóvel quando imovelId está presente', async () => {
     const focoMock = new FocoRiscoBuilder().withImovelId('imovel-uuid-1').build();
     writeRepo.create.mockResolvedValue(focoMock);
-    writeRepo.createHistorico.mockResolvedValue({
-      clienteId: 'cliente-uuid-1',
-      statusNovo: 'suspeita',
-    });
+    writeRepo.createHistorico.mockResolvedValue({ clienteId: 'cliente-uuid-1', statusNovo: 'suspeita' });
 
     await useCase.execute({ origemTipo: 'agente', classificacaoInicial: 'suspeito' });
 
-    expect(enfileirarScore.enfileirarPorImovel).toHaveBeenCalledWith(
-      'imovel-uuid-1',
-      'cliente-uuid-1',
-    );
+    expect(enfileirarScore.enfileirarPorImovel).toHaveBeenCalledWith('imovel-uuid-1', 'cliente-uuid-1');
   });
 
   it('NÃO enfileira score quando imovelId é null', async () => {
-    const focoMock = new FocoRiscoBuilder().build(); // sem imovelId
+    const focoMock = new FocoRiscoBuilder().build();
     writeRepo.create.mockResolvedValue(focoMock);
-    writeRepo.createHistorico.mockResolvedValue({
-      clienteId: 'cliente-uuid-1',
-      statusNovo: 'suspeita',
-    });
+    writeRepo.createHistorico.mockResolvedValue({ clienteId: 'cliente-uuid-1', statusNovo: 'suspeita' });
 
     await useCase.execute({ origemTipo: 'agente', classificacaoInicial: 'suspeito' });
 
     expect(enfileirarScore.enfileirarPorImovel).not.toHaveBeenCalled();
   });
+
+  it('NormalizarCicloFoco é chamado com clienteId do tenant', async () => {
+    const focoMock = new FocoRiscoBuilder().build();
+    writeRepo.create.mockResolvedValue(focoMock);
+    writeRepo.createHistorico.mockResolvedValue({ clienteId: 'cliente-uuid-1', statusNovo: 'suspeita' });
+
+    await useCase.execute({ origemTipo: 'agente', classificacaoInicial: 'suspeito' });
+
+    expect(mockNormalizarCiclo.execute).toHaveBeenCalledWith('cliente-uuid-1');
+  });
+
+  it('ciclo retornado por NormalizarCicloFoco é incluído na entidade criada', async () => {
+    mockNormalizarCiclo.execute.mockResolvedValue(3);
+    const focoMock = new FocoRiscoBuilder().build();
+    writeRepo.create.mockResolvedValue(focoMock);
+    writeRepo.createHistorico.mockResolvedValue({ clienteId: 'cliente-uuid-1', statusNovo: 'suspeita' });
+
+    await useCase.execute({ origemTipo: 'agente', classificacaoInicial: 'suspeito' });
+
+    expect(writeRepo.create).toHaveBeenCalledWith(
+      expect.objectContaining({ ciclo: 3 }),
+    );
+  });
+
+  it('falha no hook enfileirarScore NÃO interrompe a criação', async () => {
+    const focoMock = new FocoRiscoBuilder().withImovelId('imovel-uuid-1').build();
+    writeRepo.create.mockResolvedValue(focoMock);
+    writeRepo.createHistorico.mockResolvedValue({ clienteId: 'cliente-uuid-1', statusNovo: 'suspeita' });
+    enfileirarScore.enfileirarPorImovel.mockRejectedValueOnce(new Error('job_queue down'));
+
+    const result = await useCase.execute({ origemTipo: 'agente', classificacaoInicial: 'suspeito' });
+
+    expect(result.foco).toBeDefined();
+  });
+
+  // K.1 — elevarPrioridadeRecorrencia
+  it('K.1 — focoAnteriorId presente → prioridade elevada (P3 → P2)', async () => {
+    const focoMock = new FocoRiscoBuilder().build();
+    writeRepo.create.mockResolvedValue(focoMock);
+    writeRepo.createHistorico.mockResolvedValue({ clienteId: 'cliente-uuid-1', statusNovo: 'suspeita' });
+
+    await useCase.execute({
+      origemTipo: 'agente',
+      classificacaoInicial: 'suspeito',
+      focoAnteriorId: 'foco-anterior-uuid',
+      prioridade: 'P3' as any,
+    });
+
+    expect(writeRepo.create).toHaveBeenCalledWith(
+      expect.objectContaining({ prioridade: 'P2' }),
+    );
+  });
+
+  it('K.1 — sem focoAnteriorId → prioridade original mantida (P3 → P3)', async () => {
+    const focoMock = new FocoRiscoBuilder().build();
+    writeRepo.create.mockResolvedValue(focoMock);
+    writeRepo.createHistorico.mockResolvedValue({ clienteId: 'cliente-uuid-1', statusNovo: 'suspeita' });
+
+    await useCase.execute({
+      origemTipo: 'agente',
+      classificacaoInicial: 'suspeito',
+      prioridade: 'P3' as any,
+    });
+
+    expect(writeRepo.create).toHaveBeenCalledWith(
+      expect.objectContaining({ prioridade: 'P3' }),
+    );
+  });
 });
+

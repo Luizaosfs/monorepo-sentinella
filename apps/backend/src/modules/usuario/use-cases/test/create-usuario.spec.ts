@@ -5,7 +5,9 @@ jest.mock('bcrypt', () => ({
 import * as bcrypt from 'bcrypt';
 import { Test, TestingModule } from '@nestjs/testing';
 import { mock } from 'jest-mock-extended';
+import { ForbiddenException } from '@nestjs/common';
 
+import { VerificarQuota } from '../../../billing/use-cases/verificar-quota';
 import { CreateUsuarioBody } from '../../dtos/create-usuario.body';
 import { UsuarioException } from '../../errors/usuario.exception';
 import { UsuarioReadRepository } from '../../repositories/usuario-read.repository';
@@ -20,15 +22,18 @@ describe('CreateUsuario', () => {
   let useCase: CreateUsuario;
   const readRepo = mock<UsuarioReadRepository>();
   const writeRepo = mock<UsuarioWriteRepository>();
+  const mockVerificarQuota = { execute: jest.fn().mockResolvedValue({ ok: true, usado: 0, limite: null }) };
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    mockVerificarQuota.execute.mockResolvedValue({ ok: true, usado: 0, limite: null });
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CreateUsuario,
         { provide: UsuarioReadRepository, useValue: readRepo },
         { provide: UsuarioWriteRepository, useValue: writeRepo },
         { provide: 'REQUEST', useValue: mockRequest({ tenantId: 'test-cliente-id' }) },
+        { provide: VerificarQuota, useValue: mockVerificarQuota },
       ],
     }).compile();
     useCase = module.get<CreateUsuario>(CreateUsuario);
@@ -66,6 +71,40 @@ describe('CreateUsuario', () => {
     } as CreateUsuarioBody);
 
     expect(bcrypt.hash).toHaveBeenCalledWith('minhasenha', 10);
+  });
+
+  it('quota ok → cria usuário normalmente', async () => {
+    readRepo.findByEmail.mockResolvedValue(null);
+    const created = new UsuarioBuilder().build();
+    writeRepo.create.mockResolvedValue(created);
+
+    const result = await useCase.execute({
+      nome: 'Fulano',
+      email: 'ok@test.com',
+      senha: 'senha123456',
+      papeis: ['agente'],
+      clienteId: 'cliente-uuid-1',
+    } as CreateUsuarioBody);
+
+    expect(result.usuario).toBe(created);
+    expect(mockVerificarQuota.execute).toHaveBeenCalledWith('cliente-uuid-1', { metrica: 'usuarios_ativos' });
+  });
+
+  it('quota excedida → throw ForbiddenException antes de criar usuário', async () => {
+    readRepo.findByEmail.mockResolvedValue(null);
+    mockVerificarQuota.execute.mockResolvedValue({ ok: false, usado: 10, limite: 10, motivo: 'excedido' });
+
+    await expect(
+      useCase.execute({
+        nome: 'X',
+        email: 'x@test.com',
+        senha: 'senha123456',
+        papeis: ['agente'],
+        clienteId: 'cliente-uuid-1',
+      } as CreateUsuarioBody),
+    ).rejects.toThrow(ForbiddenException);
+
+    expect(writeRepo.create).not.toHaveBeenCalled();
   });
 
   it('deve rejeitar email duplicado', async () => {

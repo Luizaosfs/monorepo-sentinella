@@ -97,4 +97,20 @@ export class PrismaQuarteiraoWriteRepository implements QuarteiraoWriteRepositor
 
     return { copiadas };
   }
+
+  async upsertMestreIfMissing(
+    clienteId: string,
+    bairro: string | null | undefined,
+    codigo: string,
+  ): Promise<void> {
+    const exists = await this.prisma.client.quarteiroes.findFirst({
+      where: { cliente_id: clienteId, codigo, deleted_at: null },
+      select: { id: true },
+    });
+    if (!exists) {
+      await this.prisma.client.quarteiroes.create({
+        data: { cliente_id: clienteId, codigo, bairro: bairro ?? null, ativo: true },
+      });
+    }
+  }
 }

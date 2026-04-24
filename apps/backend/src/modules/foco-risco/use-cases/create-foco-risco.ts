@@ -7,6 +7,8 @@ import { FocoRisco } from '../entities/foco-risco';
 import { FocoRiscoWriteRepository } from '../repositories/foco-risco-write.repository';
 import { autoClassificarFoco } from './auto-criacao/auto-classificar-foco';
 import { CruzarFocoNovoComCasos } from './cruzar-foco-novo-com-casos';
+import { elevarPrioridadeRecorrencia } from './helpers/elevar-prioridade-recorrencia';
+import { NormalizarCicloFoco } from './normalizar-ciclo-foco';
 import { RecalcularScorePrioridadeFoco } from './recalcular-score-prioridade-foco';
 
 @Injectable()
@@ -18,20 +20,30 @@ export class CreateFocoRisco {
     private cruzarFocoNovoComCasos: CruzarFocoNovoComCasos,
     private recalcularScore: RecalcularScorePrioridadeFoco,
     private enfileirarScore: EnfileirarScoreImovel,
+    private normalizarCicloFoco: NormalizarCicloFoco,
     @Inject('REQUEST') private req: Request,
   ) {}
 
   async execute(input: CreateFocoRiscoBody) {
+    const clienteId = this.req['tenantId'] as string;
+    const ciclo = await this.normalizarCicloFoco.execute(clienteId);
+
+    // K.1 — fn_elevar_prioridade_recorrencia: recorrência eleva prioridade um nível
+    const prioridade = input.focoAnteriorId != null
+      ? elevarPrioridadeRecorrencia(input.prioridade)
+      : input.prioridade;
+
     const foco = new FocoRisco(
       {
-        clienteId: this.req['tenantId'],
+        clienteId,
         imovelId: input.imovelId,
         regiaoId: input.regiaoId,
         origemTipo: input.origemTipo,
         origemLevantamentoItemId: input.origemLevantamentoItemId,
         origemVistoriaId: input.origemVistoriaId,
+        ciclo,
         status: 'suspeita',
-        prioridade: input.prioridade,
+        prioridade,
         latitude: input.latitude,
         longitude: input.longitude,
         enderecoNormalizado: input.enderecoNormalizado,
@@ -88,7 +100,14 @@ export class CreateFocoRisco {
 
     // Fase F.1.B — enfileira recálculo do score territorial do imóvel (best-effort)
     if (created.imovelId) {
-      await this.enfileirarScore.enfileirarPorImovel(created.imovelId, created.clienteId);
+      try {
+        await this.enfileirarScore.enfileirarPorImovel(created.imovelId, created.clienteId);
+      } catch (err) {
+        this.logger.error(
+          `[CreateFocoRisco] Falha ao enfileirar score do imóvel ${created.imovelId}: ${(err as Error).message}`,
+          (err as Error).stack,
+        );
+      }
     }
 
     return { foco: created };

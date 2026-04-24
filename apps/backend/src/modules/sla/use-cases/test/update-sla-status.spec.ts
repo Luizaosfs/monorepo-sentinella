@@ -99,4 +99,31 @@ describe('UpdateSlaStatus', () => {
 
     expect(readRepo.findById).toHaveBeenCalledWith(sla.id, TENANT_ID);
   });
+
+  // K.2 — trg_sla_reset_escalonado_automatico
+  it('K.2 — transição para em_atendimento → escalonadoAutomatico resetado', async () => {
+    const sla = new SlaOperacionalBuilder()
+      .withStatus('pendente')
+      .withEscalonadoAutomatico(true)
+      .build();
+    readRepo.findById.mockResolvedValue(sla);
+    writeRepo.save.mockResolvedValue();
+
+    const result = await useCase.execute(sla.id!, { status: 'em_atendimento' }, TENANT_ID);
+
+    expect(result.sla.escalonadoAutomatico).toBe(false);
+  });
+
+  it('K.2 — transição para pendente → escalonadoAutomatico NÃO é resetado', async () => {
+    const sla = new SlaOperacionalBuilder()
+      .withStatus('em_atendimento')
+      .withEscalonadoAutomatico(true)
+      .build();
+    readRepo.findById.mockResolvedValue(sla);
+    writeRepo.save.mockResolvedValue();
+
+    const result = await useCase.execute(sla.id!, { status: 'pendente' }, TENANT_ID);
+
+    expect(result.sla.escalonadoAutomatico).toBe(true);
+  });
 });

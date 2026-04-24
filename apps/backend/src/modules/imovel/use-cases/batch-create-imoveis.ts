@@ -1,17 +1,21 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
 
 import { PrismaService } from 'src/shared/modules/database/prisma/prisma.service';
-
+import { QuarteiraoWriteRepository } from '../../quarteirao/repositories/quarteirao-write.repository';
 import { BatchCreateImoveisInput } from '../dtos/batch-create-imoveis.body';
+import { normalizarQuarteirao } from './normalizar-quarteirao';
 
 const CHUNK_SIZE = 500;
 
 @Injectable()
 export class BatchCreateImoveis {
+  private readonly logger = new Logger(BatchCreateImoveis.name);
+
   constructor(
     private prisma: PrismaService,
+    private quarteiraoWriteRepository: QuarteiraoWriteRepository,
     @Inject(REQUEST) private req: Request,
   ) {}
 
@@ -29,7 +33,7 @@ export class BatchCreateImoveis {
         numero:              r.numero ?? null,
         complemento:         r.complemento ?? null,
         bairro:              r.bairro ?? null,
-        quarteirao:          r.quarteirao ?? null,
+        quarteirao:          normalizarQuarteirao(r.quarteirao),
         latitude:            r.latitude ?? null,
         longitude:           r.longitude ?? null,
         ativo:               r.ativo ?? true,
@@ -49,6 +53,22 @@ export class BatchCreateImoveis {
         importados += result.count;
       } catch {
         falhas += chunk.length;
+      }
+    }
+
+    // K.5 — fn_sync_quarteirao_mestre: deduplica e sincroniza quarteirões (best-effort)
+    const codigosUnicos = new Set<string>();
+    for (const r of data.registros) {
+      const codigo = normalizarQuarteirao(r.quarteirao);
+      if (codigo) codigosUnicos.add(codigo);
+    }
+    for (const codigo of codigosUnicos) {
+      try {
+        await this.quarteiraoWriteRepository.upsertMestreIfMissing(clienteId, null, codigo);
+      } catch (err) {
+        this.logger.error(
+          `[BatchCreateImoveis] Falha ao sincronizar quarteirao mestre "${codigo}": ${(err as Error).message}`,
+        );
       }
     }
 

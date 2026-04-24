@@ -107,6 +107,9 @@ export class SlaOperacional extends BaseEntity<SlaOperacionalProps> {
   get escalonadoAutomatico() {
     return this.props.escalonadoAutomatico;
   }
+  set escalonadoAutomatico(v: boolean) {
+    this.props.escalonadoAutomatico = v;
+  }
   get focoRiscoId() {
     return this.props.focoRiscoId;
   }
