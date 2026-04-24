@@ -235,9 +235,14 @@ export class PrismaVistoriaReadRepository implements VistoriaReadRepository {
     return { vistoria, sintomas, riscos, depositos, calhas };
   }
 
-  async countSemAcessoPorImovel(imovelId: string): Promise<number> {
+  async countSemAcessoPorImovel(imovelId: string, desde?: Date): Promise<number> {
     return this.prisma.client.vistorias.count({
-      where: { imovel_id: imovelId, acesso_realizado: false },
+      where: {
+        imovel_id: imovelId,
+        acesso_realizado: false,
+        deleted_at: null,
+        ...(desde && { created_at: { gte: desde } }),
+      },
     });
   }
 }

@@ -4,6 +4,7 @@ import { SaveVistoriaBody } from '../dtos/save-vistoria.body';
 import { VistoriaException } from '../errors/vistoria.exception';
 import { VistoriaReadRepository } from '../repositories/vistoria-read.repository';
 import { VistoriaWriteRepository } from '../repositories/vistoria-write.repository';
+import { AtualizarPerfilImovel } from './atualizar-perfil-imovel';
 import { ConsolidarVistoria } from './consolidar-vistoria';
 
 @Injectable()
@@ -14,6 +15,7 @@ export class SaveVistoria {
     private readRepository: VistoriaReadRepository,
     private writeRepository: VistoriaWriteRepository,
     private consolidarVistoria: ConsolidarVistoria,
+    private atualizarPerfilImovel: AtualizarPerfilImovel,
   ) {}
 
   async execute(id: string, data: SaveVistoriaBody) {
@@ -132,6 +134,23 @@ export class SaveVistoria {
           `Hook ConsolidarVistoria falhou: vistoriaId=${id} erro=${
             err instanceof Error ? err.message : String(err)
           }`,
+        );
+      }
+    }
+
+    // K.4 — fn_atualizar_perfil_imovel: dispara em toda mudança de acessoRealizado
+    // Transição false→true pode fazer janela cair e precisar resetar prioridade_drone (branch 3)
+    if (vistoria.imovelId && antes.acessoRealizado !== vistoria.acessoRealizado) {
+      try {
+        await this.atualizarPerfilImovel.execute({
+          imovelId: vistoria.imovelId,
+          vistoriaId: id,
+          agenteId: vistoria.agenteId ?? null,
+          clienteId: vistoria.clienteId,
+        });
+      } catch (err) {
+        this.logger.error(
+          `[SaveVistoria] Hook AtualizarPerfilImovel falhou para imovel ${vistoria.imovelId}: ${(err as Error).message}`,
         );
       }
     }

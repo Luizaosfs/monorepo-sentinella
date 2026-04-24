@@ -9,6 +9,7 @@ export class VistoriaBuilder {
   private tipoAtividade = 'LI';
   private dataVisita = new Date('2024-06-01T10:00:00Z');
   private status = 'pendente';
+  private acessoRealizado = true;
 
   withId(id: string) {
     this.id = id;
@@ -35,6 +36,11 @@ export class VistoriaBuilder {
     return this;
   }
 
+  withAcessoRealizado(v: boolean) {
+    this.acessoRealizado = v;
+    return this;
+  }
+
   build(): Vistoria {
     return new Vistoria(
       {
@@ -48,7 +54,7 @@ export class VistoriaBuilder {
         gravidas: false,
         idosos: false,
         criancas7anos: false,
-        acessoRealizado: true,
+        acessoRealizado: this.acessoRealizado,
         pendenteAssinatura: false,
         pendenteFoto: false,
         origemOffline: false,

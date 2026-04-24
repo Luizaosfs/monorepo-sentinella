@@ -6,6 +6,7 @@ import { expectHttpException } from '@test/utils/expect-http-exception';
 import { VistoriaException } from '../../errors/vistoria.exception';
 import { VistoriaReadRepository } from '../../repositories/vistoria-read.repository';
 import { VistoriaWriteRepository } from '../../repositories/vistoria-write.repository';
+import { AtualizarPerfilImovel } from '../atualizar-perfil-imovel';
 import { ConsolidarVistoria } from '../consolidar-vistoria';
 import { SaveVistoria } from '../save-vistoria';
 import { VistoriaBuilder } from './builders/vistoria.builder';
@@ -15,15 +16,18 @@ describe('SaveVistoria', () => {
   const readRepo = mock<VistoriaReadRepository>();
   const writeRepo = mock<VistoriaWriteRepository>();
   const mockConsolidar = { execute: jest.fn().mockResolvedValue(undefined) };
+  const mockAtualizarPerfil = { execute: jest.fn().mockResolvedValue(undefined) };
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    mockAtualizarPerfil.execute.mockResolvedValue(undefined);
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SaveVistoria,
         { provide: VistoriaReadRepository, useValue: readRepo },
         { provide: VistoriaWriteRepository, useValue: writeRepo },
         { provide: ConsolidarVistoria, useValue: mockConsolidar },
+        { provide: AtualizarPerfilImovel, useValue: mockAtualizarPerfil },
       ],
     }).compile();
 
@@ -103,5 +107,69 @@ describe('SaveVistoria', () => {
     await useCase.execute(v.id!, { status: 'concluida', gravidas: true, idosos: true });
 
     expect(mockConsolidar.execute).toHaveBeenCalledTimes(1);
+  });
+
+  // K.4 — fn_atualizar_perfil_imovel
+  it('K.4 — transição acessoRealizado true→false → AtualizarPerfilImovel invocado', async () => {
+    const v = new VistoriaBuilder()
+      .withId('00000000-0000-4000-8000-0000000000d6')
+      .withImovelId('imovel-k4-sv-1')
+      .withAcessoRealizado(true)
+      .build();
+    readRepo.findById.mockResolvedValue(v);
+
+    await useCase.execute(v.id!, { acessoRealizado: false });
+
+    expect(mockAtualizarPerfil.execute).toHaveBeenCalledWith({
+      imovelId: 'imovel-k4-sv-1',
+      vistoriaId: v.id,
+      agenteId: expect.anything(),
+      clienteId: v.clienteId,
+    });
+  });
+
+  it('K.4 — transição false→true → AtualizarPerfilImovel É invocado (pode resetar branch 3)', async () => {
+    const v = new VistoriaBuilder()
+      .withId('00000000-0000-4000-8000-0000000000d7')
+      .withImovelId('imovel-k4-sv-2')
+      .withAcessoRealizado(false)
+      .build();
+    readRepo.findById.mockResolvedValue(v);
+
+    await useCase.execute(v.id!, { acessoRealizado: true });
+
+    expect(mockAtualizarPerfil.execute).toHaveBeenCalledWith({
+      imovelId: 'imovel-k4-sv-2',
+      vistoriaId: v.id,
+      agenteId: expect.anything(),
+      clienteId: v.clienteId,
+    });
+  });
+
+  it('K.4 — sem transição (acessoRealizado permanece igual) → AtualizarPerfilImovel NÃO invocado', async () => {
+    const v = new VistoriaBuilder()
+      .withId('00000000-0000-4000-8000-0000000000d8')
+      .withImovelId('imovel-k4-sv-3')
+      .withAcessoRealizado(true)
+      .build();
+    readRepo.findById.mockResolvedValue(v);
+
+    await useCase.execute(v.id!, { acessoRealizado: true });
+
+    expect(mockAtualizarPerfil.execute).not.toHaveBeenCalled();
+  });
+
+  it('K.4 — falha em AtualizarPerfilImovel NÃO quebra o save', async () => {
+    const v = new VistoriaBuilder()
+      .withId('00000000-0000-4000-8000-0000000000d9')
+      .withImovelId('imovel-k4-sv-4')
+      .withAcessoRealizado(true)
+      .build();
+    readRepo.findById.mockResolvedValue(v);
+    mockAtualizarPerfil.execute.mockRejectedValueOnce(new Error('db timeout'));
+
+    const result = await useCase.execute(v.id!, { acessoRealizado: false });
+
+    expect(result.vistoria).toBe(v);
   });
 });

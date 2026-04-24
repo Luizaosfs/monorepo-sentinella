@@ -86,6 +86,20 @@ describe('ConcluirSla', () => {
   });
 
   // K.2 — trg_sla_reset_escalonado_automatico
+  it('K.2 — SLA já concluído: flag NÃO resetada (paridade OLD.status <> NEW.status)', async () => {
+    const sla = new SlaOperacionalBuilder()
+      .withStatus('concluido')
+      .withPrazoFinal(new Date('2025-06-02T10:00:00Z'))
+      .withEscalonadoAutomatico(true)
+      .build();
+    readRepo.findById.mockResolvedValue(sla);
+    writeRepo.save.mockResolvedValue();
+
+    const result = await useCase.execute(sla.id!);
+
+    expect(result.sla.escalonadoAutomatico).toBe(true);
+  });
+
   it('K.2 — escalonadoAutomatico=true é resetado para false ao concluir', async () => {
     jest.setSystemTime(new Date('2025-06-01T10:00:00Z'));
 

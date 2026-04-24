@@ -1,5 +1,6 @@
 import { Imovel } from '@modules/imovel/entities/imovel';
 import {
+  AtualizarPerfilDroneData,
   ImovelWriteRepository,
   UpsertScoreData,
 } from '@modules/imovel/repositories/imovel-write.repository';
@@ -40,6 +41,16 @@ export class PrismaImovelWriteRepository implements ImovelWriteRepository {
       VALUES (${clienteId}::uuid)
       ON CONFLICT (cliente_id) DO NOTHING
     `;
+  }
+
+  async atualizarPerfilDrone(id: string, clienteId: string, data: AtualizarPerfilDroneData): Promise<void> {
+    await this.prisma.client.imoveis.updateMany({
+      where: { id, cliente_id: clienteId },
+      data: {
+        ...(data.historicoRecusa !== undefined && { historico_recusa: data.historicoRecusa }),
+        ...(data.prioridadeDrone !== undefined && { prioridade_drone: data.prioridadeDrone }),
+      },
+    });
   }
 
   async upsertScore(data: UpsertScoreData): Promise<void> {

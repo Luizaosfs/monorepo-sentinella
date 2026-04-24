@@ -74,5 +74,5 @@ export abstract class VistoriaReadRepository {
   ): Promise<VistoriaPaginated>;
   abstract count(filters: FilterVistoriaInput): Promise<number>;
   abstract findDadosParaConsolidacao(vistoriaId: string): Promise<DadosConsolidacao | null>;
-  abstract countSemAcessoPorImovel(imovelId: string): Promise<number>;
+  abstract countSemAcessoPorImovel(imovelId: string, desde?: Date): Promise<number>;
 }

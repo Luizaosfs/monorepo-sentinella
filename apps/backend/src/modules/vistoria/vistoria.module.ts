@@ -9,6 +9,7 @@ import { IniciarInspecao } from '../foco-risco/use-cases/iniciar-inspecao';
 import { JobModule } from '../job/job.module';
 import { BackfillConsolidacaoService } from './services/backfill-consolidacao.service';
 import { AddDeposito } from './use-cases/add-deposito';
+import { AtualizarPerfilImovel } from './use-cases/atualizar-perfil-imovel';
 import { ValidarCicloVistoria } from './use-cases/validar-ciclo-vistoria';
 import { ConsolidarVistoria } from './use-cases/consolidar-vistoria';
 import { AddRiscos } from './use-cases/add-riscos';
@@ -25,6 +26,7 @@ import { VistoriaController } from './vistoria.controller';
 
 @Module({
   providers: [
+    AtualizarPerfilImovel,
     ConsolidarVistoria,
     BackfillConsolidacaoService,
     AddDeposito,

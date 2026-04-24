@@ -15,10 +15,16 @@ export class ConcluirSla {
     const sla = await this.readRepository.findById(id, clienteId);
     if (!sla) throw SlaException.notFound();
 
+    const statusAnterior = sla.status;
     const agora = new Date();
     sla.status = 'concluido';
     sla.concluidoEm = agora;
-    sla.escalonadoAutomatico = false;
+
+    // K.2 — trg_sla_reset_escalonado_automatico: paridade OLD.status <> NEW.status
+    if (statusAnterior !== 'concluido') {
+      sla.escalonadoAutomatico = false;
+    }
+
     if (sla.prazoFinal < agora) {
       sla.violado = true;
     }

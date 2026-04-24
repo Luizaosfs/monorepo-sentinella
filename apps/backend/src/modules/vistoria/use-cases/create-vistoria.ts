@@ -11,6 +11,7 @@ import { ValidarCicloVistoria } from './validar-ciclo-vistoria';
 import { Vistoria } from '../entities/vistoria';
 import { VistoriaReadRepository } from '../repositories/vistoria-read.repository';
 import { VistoriaWriteRepository } from '../repositories/vistoria-write.repository';
+import { AtualizarPerfilImovel } from './atualizar-perfil-imovel';
 import { ConsolidarVistoria } from './consolidar-vistoria';
 
 @Injectable()
@@ -26,6 +27,7 @@ export class CreateVistoria {
     private verificarQuota: VerificarQuota,
     private validarCicloVistoria: ValidarCicloVistoria,
     private iniciarInspecao: IniciarInspecao,
+    private atualizarPerfilImovel: AtualizarPerfilImovel,
   ) {}
 
   async execute(data: CreateVistoriaBody) {
@@ -109,6 +111,22 @@ export class CreateVistoria {
       } catch (err) {
         this.logger.error(
           `[CreateVistoria] Hook IniciarInspecao falhou para foco ${created.focoRiscoId}: ${(err as Error).message}`,
+        );
+      }
+    }
+
+    // K.4 — fn_atualizar_perfil_imovel: dispara em TODO INSERT (trigger SQL não filtra por acessoRealizado)
+    if (created.imovelId) {
+      try {
+        await this.atualizarPerfilImovel.execute({
+          imovelId: created.imovelId,
+          vistoriaId: created.id!,
+          agenteId: created.agenteId ?? null,
+          clienteId,
+        });
+      } catch (err) {
+        this.logger.error(
+          `[CreateVistoria] Hook AtualizarPerfilImovel falhou para imovel ${created.imovelId}: ${(err as Error).message}`,
         );
       }
     }

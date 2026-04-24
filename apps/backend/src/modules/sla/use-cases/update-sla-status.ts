@@ -26,8 +26,11 @@ export class UpdateSlaStatus {
     if (data.status === 'concluido' && !sla.concluidoEm) {
       sla.concluidoEm = new Date();
     }
-    // K.2 — trg_sla_reset_escalonado_automatico
-    if (data.status === 'em_atendimento' || data.status === 'concluido') {
+    // K.2 — trg_sla_reset_escalonado_automatico: paridade OLD.status <> NEW.status
+    if (
+      (data.status === 'em_atendimento' || data.status === 'concluido') &&
+      statusAnterior !== data.status
+    ) {
       sla.escalonadoAutomatico = false;
     }
 

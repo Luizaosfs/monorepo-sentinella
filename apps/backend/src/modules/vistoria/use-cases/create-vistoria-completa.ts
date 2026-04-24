@@ -11,6 +11,7 @@ import { CreateVistoriaCompletaBody } from '../dtos/create-vistoria-completa.bod
 import { ValidarCicloVistoria } from './validar-ciclo-vistoria';
 import { Vistoria } from '../entities/vistoria';
 import { VistoriaWriteRepository } from '../repositories/vistoria-write.repository';
+import { AtualizarPerfilImovel } from './atualizar-perfil-imovel';
 import { ConsolidarVistoria } from './consolidar-vistoria';
 
 @Injectable()
@@ -25,6 +26,7 @@ export class CreateVistoriaCompleta {
     private enfileirarScore: EnfileirarScoreImovel,
     private verificarQuota: VerificarQuota,
     private validarCicloVistoria: ValidarCicloVistoria,
+    private atualizarPerfilImovel: AtualizarPerfilImovel,
   ) {}
 
   async execute(data: CreateVistoriaCompletaBody): Promise<{ id: string }> {
@@ -125,6 +127,22 @@ export class CreateVistoriaCompleta {
           err instanceof Error ? err.message : String(err)
         }`,
       );
+    }
+
+    // K.4 — fn_atualizar_perfil_imovel: dispara em TODO INSERT
+    if (data.imovelId) {
+      try {
+        await this.atualizarPerfilImovel.execute({
+          imovelId: data.imovelId,
+          vistoriaId: id,
+          agenteId: data.agenteId ?? null,
+          clienteId,
+        });
+      } catch (err) {
+        this.logger.error(
+          `[CreateVistoriaCompleta] Hook AtualizarPerfilImovel falhou para imovel ${data.imovelId}: ${(err as Error).message}`,
+        );
+      }
     }
 
     // Fase F.1.B — enfileira recálculo do score territorial do imóvel (best-effort)

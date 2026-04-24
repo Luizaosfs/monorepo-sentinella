@@ -114,6 +114,19 @@ describe('UpdateSlaStatus', () => {
     expect(result.sla.escalonadoAutomatico).toBe(false);
   });
 
+  it('K.2 — status já em_atendimento: flag NÃO resetada (paridade OLD.status <> NEW.status)', async () => {
+    const sla = new SlaOperacionalBuilder()
+      .withStatus('em_atendimento')
+      .withEscalonadoAutomatico(true)
+      .build();
+    readRepo.findById.mockResolvedValue(sla);
+    writeRepo.save.mockResolvedValue();
+
+    const result = await useCase.execute(sla.id!, { status: 'em_atendimento' }, TENANT_ID);
+
+    expect(result.sla.escalonadoAutomatico).toBe(true);
+  });
+
   it('K.2 — transição para pendente → escalonadoAutomatico NÃO é resetado', async () => {
     const sla = new SlaOperacionalBuilder()
       .withStatus('em_atendimento')

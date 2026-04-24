@@ -10,6 +10,11 @@ export interface UpsertScoreData {
   fatores: Record<string, unknown>;
 }
 
+export interface AtualizarPerfilDroneData {
+  historicoRecusa?: boolean;
+  prioridadeDrone?: boolean;
+}
+
 @Injectable()
 export abstract class ImovelWriteRepository {
   abstract create(imovel: Imovel): Promise<Imovel>;
@@ -17,4 +22,5 @@ export abstract class ImovelWriteRepository {
   abstract softDelete(id: string, deletedBy: string, clienteId: string): Promise<void>;
   abstract upsertScore(data: UpsertScoreData): Promise<void>;
   abstract seedScoreConfigIfMissing(clienteId: string): Promise<void>;
+  abstract atualizarPerfilDrone(id: string, clienteId: string, data: AtualizarPerfilDroneData): Promise<void>;
 }

@@ -11,6 +11,7 @@ import { mockRequest } from '@test/utils/user-helpers';
 import { CreateVistoriaCompletaBody } from '../../dtos/create-vistoria-completa.body';
 import { Vistoria } from '../../entities/vistoria';
 import { VistoriaWriteRepository } from '../../repositories/vistoria-write.repository';
+import { AtualizarPerfilImovel } from '../atualizar-perfil-imovel';
 import { ConsolidarVistoria } from '../consolidar-vistoria';
 import { CreateVistoriaCompleta } from '../create-vistoria-completa';
 import { ValidarCicloVistoria } from '../validar-ciclo-vistoria';
@@ -23,11 +24,13 @@ describe('CreateVistoriaCompleta', () => {
   const mockEnfileirar = { enfileirarPorImovel: jest.fn().mockResolvedValue(undefined) };
   const mockVerificarQuota = { execute: jest.fn().mockResolvedValue({ ok: true, usado: 0, limite: null }) };
   const mockValidarCiclo = { execute: jest.fn().mockResolvedValue(undefined) };
+  const mockAtualizarPerfil = { execute: jest.fn().mockResolvedValue(undefined) };
 
   beforeEach(async () => {
     jest.clearAllMocks();
     mockVerificarQuota.execute.mockResolvedValue({ ok: true, usado: 0, limite: null });
     mockValidarCiclo.execute.mockResolvedValue(undefined);
+    mockAtualizarPerfil.execute.mockResolvedValue(undefined);
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CreateVistoriaCompleta,
@@ -37,6 +40,7 @@ describe('CreateVistoriaCompleta', () => {
         { provide: EnfileirarScoreImovel, useValue: mockEnfileirar },
         { provide: VerificarQuota, useValue: mockVerificarQuota },
         { provide: ValidarCicloVistoria, useValue: mockValidarCiclo },
+        { provide: AtualizarPerfilImovel, useValue: mockAtualizarPerfil },
         {
           provide: REQUEST,
           useValue: mockRequest({
@@ -242,5 +246,34 @@ describe('CreateVistoriaCompleta', () => {
     const result = await useCase.execute({ ...baseInput(), imovelId: 'imovel-uuid-1', acessoRealizado: true } as any);
 
     expect(result).toEqual({ id });
+  });
+
+  // K.4 — fn_atualizar_perfil_imovel
+  it('K.4 — imovelId presente → AtualizarPerfilImovel invocado (sem guard de acessoRealizado)', async () => {
+    const id = '00000000-0000-4000-8000-0000000000be';
+    writeRepo.createCompleta.mockResolvedValue(id);
+
+    await useCase.execute({
+      ...baseInput(),
+      imovelId: 'imovel-k4-1',
+      acessoRealizado: true,
+      agenteId: 'agente-k4-1',
+    } as any);
+
+    expect(mockAtualizarPerfil.execute).toHaveBeenCalledWith({
+      imovelId: 'imovel-k4-1',
+      vistoriaId: id,
+      agenteId: 'agente-k4-1',
+      clienteId: '00000000-0000-4000-8000-000000000001',
+    });
+  });
+
+  it('K.4 — imovelId ausente → AtualizarPerfilImovel NÃO invocado', async () => {
+    const id = '00000000-0000-4000-8000-0000000000bf';
+    writeRepo.createCompleta.mockResolvedValue(id);
+
+    await useCase.execute({ ...baseInput() } as any);
+
+    expect(mockAtualizarPerfil.execute).not.toHaveBeenCalled();
   });
 });
