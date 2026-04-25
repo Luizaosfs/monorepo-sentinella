@@ -27,7 +27,7 @@ const emptyForm = {
 
 function formatDate(iso: string): string {
   if (!iso) return '—';
-  const [year, month, day] = iso.split('-');
+  const [year, month, day] = iso.slice(0, 10).split('-');
   return `${day}/${month}/${year}`;
 }
 

@@ -31,17 +31,17 @@ export class PluvioSchedulerService {
     for (const cliente of clientes) {
       const regioes = await this.prisma.client.regioes.findMany({
         where: { cliente_id: cliente.id, deleted_at: null },
-        select: { id: true, lat_centroid: true, lng_centroid: true },
+        select: { id: true, latitude: true, longitude: true },
       });
 
       for (const regiao of regioes) {
-        if (!regiao.lat_centroid || !regiao.lng_centroid) continue;
+        if (!regiao.latitude || !regiao.longitude) continue;
         totalRegioes++;
 
         try {
           const url =
             `https://api.open-meteo.com/v1/forecast` +
-            `?latitude=${regiao.lat_centroid}&longitude=${regiao.lng_centroid}` +
+            `?latitude=${regiao.latitude}&longitude=${regiao.longitude}` +
             `&daily=precipitation_sum,temperature_2m_max,wind_speed_10m_max` +
             `&past_days=7&forecast_days=3&timezone=America%2FSao_Paulo`;
 

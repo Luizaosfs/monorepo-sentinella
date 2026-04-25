@@ -169,7 +169,7 @@ export class DashboardController {
   async relatorioAnalitico(@Body() body: RelatorioAnaliticoBody) {
     const parsed = relatorioAnaliticoBodySchema.parse(body);
     const { relatorio } = await this.gerarRelatorioAnaliticoUc.execute(parsed);
-    return DashboardViewModel.relatorioToHttp(relatorio);
+    return relatorio.payload;
   }
 
   // ── Resumos / Relatórios ───────────────────────────────────────────────────

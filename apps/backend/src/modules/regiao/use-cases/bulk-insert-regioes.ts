@@ -18,7 +18,7 @@ export class BulkInsertRegioes {
       return this.prisma.client.$executeRaw(Prisma.sql`
         INSERT INTO regioes (
           cliente_id, nome, tipo, cor, geojson, area,
-          lat_centroid, lng_centroid, municipio, uf, ativo
+          latitude, longitude, municipio, uf, ativo
         )
         VALUES (
           ${clienteId}::uuid,
@@ -30,8 +30,8 @@ export class BulkInsertRegioes {
             THEN ST_GeomFromGeoJSON(${geojsonStr})
             ELSE NULL
           END,
-          ${r.latCentroid ?? null}::float8,
-          ${r.lngCentroid ?? null}::float8,
+          ${r.latitude ?? null}::float8,
+          ${r.longitude ?? null}::float8,
           ${r.municipio ?? null}::text,
           ${r.uf ?? null}::text,
           ${r.ativo ?? true}

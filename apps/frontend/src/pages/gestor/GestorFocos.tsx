@@ -137,6 +137,7 @@ export default function GestorFocos() {
     origem_tipo: filtroOrigem !== 'todos' ? filtroOrigem : undefined,
     page,
     pageSize: PAGE_SIZE,
+    orderBy: 'score_prioridade_desc' as const,
   }), [filtroStatus, filtroPrioridade, filtroOrigem, page]);
 
   const { data, isLoading } = useFocosRisco(clienteId, filtrosQuery);

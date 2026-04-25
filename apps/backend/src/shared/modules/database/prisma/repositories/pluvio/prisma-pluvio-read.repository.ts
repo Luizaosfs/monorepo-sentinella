@@ -65,12 +65,45 @@ export class PrismaPluvioReadRepository implements PluvioReadRepository {
     return raw ? PrismaPluvioRiscoMapper.toDomain(raw as any) : null;
   }
 
-  async findRiscoByRegiaoIds(regiaoIds: string[]): Promise<PluvioRisco[]> {
-    const rows = await this.prisma.client.pluvio_risco.findMany({
-      where: { regiao_id: { in: regiaoIds } },
-      orderBy: { dt_ref: 'desc' },
-    });
-    return rows.map((r) => PrismaPluvioRiscoMapper.toDomain(r as any));
+  async findRiscoByRegiaoIds(regiaoIds: string[]): Promise<unknown[]> {
+    if (!regiaoIds.length) return [];
+    const rows = await this.prisma.client.$queryRaw<unknown[]>(Prisma.sql`
+      SELECT
+        pr.id,
+        pr.regiao_id,
+        pr.cliente_id,
+        pr.dt_ref::text                                                   AS dt_ref,
+        pr.chuva_24h,
+        pr.chuva_72h,
+        pr.chuva_7d,
+        pr.dias_pos_chuva,
+        pr.janela_sem_chuva,
+        pr.persistencia_7d,
+        pr.tendencia,
+        pr.nivel_risco,
+        pr.situacao_ambiental,
+        pr.prob_label,
+        pr.prob_base_min,
+        pr.prob_base_max,
+        pr.prob_final_min,
+        pr.prob_final_max,
+        pr.classificacao_final,
+        pr.temp_c,
+        pr.vento_kmh,
+        pr.temp_med_c,
+        pr.vento_med_kmh,
+        pr.prev_d1_mm,
+        pr.prev_d2_mm,
+        pr.prev_d3_mm,
+        pr.created_at,
+        pr.updated_at,
+        json_build_object('id', r.id, 'regiao', r.regiao, 'nome', r.nome) AS regiao
+      FROM pluvio_risco pr
+      LEFT JOIN regioes r ON r.id = pr.regiao_id AND r.deleted_at IS NULL
+      WHERE pr.regiao_id = ANY(${regiaoIds}::uuid[])
+      ORDER BY pr.dt_ref DESC, r.regiao ASC
+    `);
+    return rows;
   }
 
   async findClienteIdByRegiaoId(regiaoId: string): Promise<string | null> {

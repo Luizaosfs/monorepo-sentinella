@@ -6,7 +6,18 @@ import { PrismaService } from '@shared/modules/database/prisma/prisma.service'
 export class GetRegionalKpi {
   constructor(private prisma: PrismaService) {}
 
-  execute(clienteId: string) {
+  async execute(clienteIds: string[] | null) {
+    if (clienteIds !== null && clienteIds.length === 0) {
+      return []
+    }
+
+    const filtroCliente =
+      clienteIds === null
+        ? Prisma.empty
+        : Prisma.sql`AND c.id = ANY(ARRAY[${Prisma.join(
+            clienteIds.map((id) => Prisma.sql`${id}::uuid`),
+          )}]::uuid[])`
+
     return this.prisma.client.$queryRaw(Prisma.sql`
       SELECT
         c.id AS cliente_id, c.nome AS municipio_nome, c.cidade, c.uf,
@@ -33,7 +44,8 @@ export class GetRegionalKpi {
         now() AS calculado_em
       FROM clientes c
       LEFT JOIN focos_risco f ON f.cliente_id = c.id AND f.deleted_at IS NULL
-      WHERE c.id = ${clienteId}::uuid AND c.ativo = true AND (c.deleted_at IS NULL OR c.deleted_at > now())
+      WHERE c.ativo = true AND (c.deleted_at IS NULL OR c.deleted_at > now())
+        ${filtroCliente}
       GROUP BY c.id, c.nome, c.cidade, c.uf
     `)
   }

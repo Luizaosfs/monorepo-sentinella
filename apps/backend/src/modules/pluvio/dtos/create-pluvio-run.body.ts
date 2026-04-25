@@ -6,10 +6,10 @@ export const createPluvioRunSchema = z.object({
     .string({ required_error: 'clienteId obrigatório' })
     .uuid('clienteId inválido')
     .describe('ID do cliente (tenant)'),
-  dataReferencia: z.coerce
+  dtRef: z.coerce
     .date({ required_error: 'Data de referência obrigatória' })
     .describe('Data de referência do run pluviométrico'),
-  total: z.coerce.number().optional().describe('Precipitação total acumulada (mm)'),
+  totalBairros: z.coerce.number().optional().default(0).describe('Total de bairros na run'),
   status: z
     .string()
     .optional()

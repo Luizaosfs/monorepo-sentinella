@@ -59,7 +59,7 @@ export class PrismaFocoRiscoReadRepository implements FocoRiscoReadRepository {
         where,
         skip: perPage * (currentPage - 1),
         take: perPage,
-        orderBy: { [orderKey]: orderValue },
+        orderBy: [{ [orderKey]: orderValue }, { created_at: 'asc' }],
       }),
       this.prisma.client.focos_risco.count({ where }),
     ]);

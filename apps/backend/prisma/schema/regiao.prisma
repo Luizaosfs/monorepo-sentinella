@@ -2,14 +2,15 @@ model regioes {
   id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   cliente_id    String    @db.Uuid
   nome          String    @default("")
+  regiao        String?
   tipo          String?
   cor           String?
   geojson       Json?
   ativo         Boolean   @default(true)
   created_at    DateTime  @default(now()) @db.Timestamptz
   updated_at    DateTime  @default(now()) @db.Timestamptz
-  lat_centroid  Float?
-  lng_centroid  Float?
+  latitude      Float?
+  longitude     Float?
   municipio     String?
   uf            String?
   area          Unsupported("geometry(Polygon,4326)")?

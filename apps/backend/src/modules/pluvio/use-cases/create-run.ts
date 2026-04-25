@@ -19,8 +19,8 @@ export class CreateRun {
     const run = new PluvioRun(
       {
         clienteId,
-        dataReferencia: input.dataReferencia,
-        total: input.total,
+        dataReferencia: input.dtRef,
+        total: input.totalBairros,
         status: input.status ?? 'pendente',
       },
       { createdBy: this.req['user']?.id },

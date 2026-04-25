@@ -6,6 +6,10 @@ import { Request } from 'express';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 
 import { Roles } from '@/decorators/roles.decorator';
+import {
+  getAccessScope,
+  getClienteIdsPermitidos,
+} from '@/shared/security/access-scope.helpers';
 import { GetRegionalKpi } from './use-cases/get-regional-kpi';
 import { GetRegionalSla } from './use-cases/get-regional-sla';
 import { GetRegionalUso } from './use-cases/get-regional-uso';
@@ -26,21 +30,24 @@ export class AnalyticsController {
   @Roles('admin', 'supervisor', 'analista_regional')
   @ApiOperation({ summary: 'KPI agregado por município' })
   kpi() {
-    return this.getRegionalKpi.execute(this.req['tenantId'] as string);
+    const scope = getAccessScope(this.req);
+    return this.getRegionalKpi.execute(getClienteIdsPermitidos(scope));
   }
 
   @Get('sla')
   @Roles('admin', 'supervisor', 'analista_regional')
   @ApiOperation({ summary: 'SLA por município' })
   sla() {
-    return this.getRegionalSla.execute(this.req['tenantId'] as string);
+    const scope = getAccessScope(this.req);
+    return this.getRegionalSla.execute(getClienteIdsPermitidos(scope));
   }
 
   @Get('uso')
   @Roles('admin', 'supervisor', 'analista_regional')
   @ApiOperation({ summary: 'Uso do sistema por município' })
   uso() {
-    return this.getRegionalUso.execute(this.req['tenantId'] as string);
+    const scope = getAccessScope(this.req);
+    return this.getRegionalUso.execute(getClienteIdsPermitidos(scope));
   }
 
   @Get('comparativo-municipios')

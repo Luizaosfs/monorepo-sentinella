@@ -27,17 +27,19 @@ export default function AdminReincidencia() {
 
   const [filtroPadrao, setFiltroPadrao] = useState<'todos' | 'cronico' | 'recorrente' | 'pontual'>('todos');
 
-  const { data: imoveisReinc = [], isLoading: loadingImoveis } = useImoveisReincidentes(
-    filtroPadrao !== 'todos' ? { padrao: filtroPadrao, limit: 50 } : { limit: 50 }
-  );
+  const { data: imoveisReincAll = [], isLoading: loadingImoveis } = useImoveisReincidentes({ limit: 50 });
+  const imoveisReinc = filtroPadrao === 'todos'
+    ? imoveisReincAll
+    : imoveisReincAll.filter(i => i.padrao === filtroPadrao);
+
   const { data: porDeposito = [], isLoading: loadingDeposito } = useReincidenciaPorDeposito();
   const bairrosAlerta = useBairrosEmAlertaSazonal(proximoCiclo);
 
-  // KPIs
-  const cronicos     = imoveisReinc.filter(i => i.padrao === 'cronico').length;
-  const recorrentes  = imoveisReinc.filter(i => i.padrao === 'recorrente').length;
-  const comFocoAtivo = imoveisReinc.filter(i => i.focos_ativos > 0).length;
-  const semLarvicida = imoveisReinc.filter(
+  // KPIs computed from full dataset (not filtered)
+  const cronicos     = imoveisReincAll.filter(i => i.padrao === 'cronico').length;
+  const recorrentes  = imoveisReincAll.filter(i => i.padrao === 'recorrente').length;
+  const comFocoAtivo = imoveisReincAll.filter(i => i.focos_ativos > 0).length;
+  const semLarvicida = imoveisReincAll.filter(
     i => !i.usou_larvicida_alguma_vez && i.total_focos_historico > 1
   ).length;
 

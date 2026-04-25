@@ -16,7 +16,7 @@ export class RegiaoGeocodeService {
       where: {
         cliente_id: clienteId,
         deleted_at: null,
-        lat_centroid: null,
+        latitude: null,
       },
       select: { id: true, nome: true, municipio: true, uf: true },
     });
@@ -43,8 +43,8 @@ export class RegiaoGeocodeService {
         await this.prisma.client.regioes.update({
           where: { id: regiao.id },
           data: {
-            lat_centroid: parseFloat(lat),
-            lng_centroid: parseFloat(lon),
+            latitude: parseFloat(lat),
+            longitude: parseFloat(lon),
             updated_at: new Date(),
           },
         });

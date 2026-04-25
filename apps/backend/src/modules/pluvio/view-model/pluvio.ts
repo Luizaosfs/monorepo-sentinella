@@ -4,14 +4,15 @@ import { PluvioItem, PluvioRisco, PluvioRun } from '../entities/pluvio';
 
 export class PluvioRunViewModel {
   static toHttp(run: PluvioRun) {
+    const dr = run.dataReferencia;
     return {
       id: run.id,
       clienteId: run.clienteId,
-      dataReferencia: run.dataReferencia,
-      total: run.total,
+      dtRef: dr instanceof Date ? dr.toISOString().split('T')[0] : String(dr ?? ''),
+      totalBairros: run.total ?? 0,
+      dtGerado: run.updatedAt,
       status: run.status,
       createdAt: run.createdAt,
-      updatedAt: run.updatedAt,
       ...baseAuditToHttp(run),
     };
   }

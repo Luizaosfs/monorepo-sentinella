@@ -80,21 +80,22 @@ export class PrismaDashboardReadRepository implements DashboardReadRepository {
 
     const [row] = await this.prisma.client.$queryRaw<Row[]>`
       SELECT
-        COUNT(DISTINCT v.id)                                             AS total_inspecionados,
-        COUNT(DISTINCT v.id) FILTER (WHERE v.acesso_realizado = true)   AS com_acesso,
-        COUNT(DISTINCT vd_pos.vistoria_id)                              AS total_positivos,
-        COUNT(vd.id)                                                     AS total_depositos,
-        COUNT(vd.id) FILTER (WHERE vd.qtd_com_focos > 0)               AS depositos_positivos
+        COUNT(DISTINCT v.imovel_id)    AS total_inspecionados,
+        COUNT(DISTINCT v.imovel_id)    AS com_acesso,
+        COUNT(DISTINCT CASE
+          WHEN EXISTS (
+            SELECT 1 FROM vistoria_depositos vd2
+            WHERE vd2.vistoria_id = v.id AND vd2.qtd_com_focos > 0 AND vd2.deleted_at IS NULL
+          ) THEN v.imovel_id
+        END)                           AS total_positivos,
+        COUNT(vd.id)                   AS total_depositos,
+        COALESCE(SUM(vd.qtd_com_focos), 0) AS depositos_positivos
       FROM vistorias v
-      LEFT JOIN vistoria_depositos vd     ON vd.vistoria_id = v.id
-      LEFT JOIN (
-        SELECT DISTINCT vistoria_id
-        FROM vistoria_depositos
-        WHERE qtd_com_focos > 0
-      ) vd_pos ON vd_pos.vistoria_id = v.id
+      LEFT JOIN vistoria_depositos vd ON vd.vistoria_id = v.id
       WHERE v.cliente_id = ${clienteId}::uuid
         AND v.acesso_realizado = true
         AND v.deleted_at IS NULL
+        AND v.imovel_id IS NOT NULL
         ${cicloFilter}
     `;
 
@@ -290,19 +291,19 @@ export class PrismaDashboardReadRepository implements DashboardReadRepository {
       regiao_id: string;
       regiao_nome: string;
       contrib_pluvio: number;
-      contrib_recorrencia: bigint;
-      contrib_casos_14d: bigint;
-      contrib_sla_vencido: bigint;
+      contrib_recorrencia: number;
+      contrib_casos_14d: number;
+      contrib_sla_vencido: number;
     };
 
     const rows = await this.prisma.client.$queryRaw<Row[]>(Prisma.sql`
       SELECT
         r.id   AS regiao_id,
         r.nome AS regiao_nome,
-        ROUND(LEAST(COALESCE(pr.chuva_7d, 0) / 50.0, 1) * 30)::int AS contrib_pluvio,
-        ROUND(LEAST(COALESCE(rec.total, 0)   / 10.0, 1) * 30)::int AS contrib_recorrencia,
-        ROUND(LEAST(COALESCE(cas.total, 0)   / 10.0, 1) * 25)::int AS contrib_casos_14d,
-        ROUND(LEAST(COALESCE(sla.total, 0)   / 5.0,  1) * 15)::int AS contrib_sla_vencido
+        LEAST(COALESCE(pr.chuva_7d, 0) / 50.0, 1) * 30  AS contrib_pluvio,
+        LEAST(COALESCE(rec.total, 0)   / 10.0, 1) * 30  AS contrib_recorrencia,
+        LEAST(COALESCE(cas.total, 0)   / 10.0, 1) * 25  AS contrib_casos_14d,
+        LEAST(COALESCE(sla.total, 0)   / 5.0,  1) * 15  AS contrib_sla_vencido
       FROM regioes r
       LEFT JOIN (
         SELECT DISTINCT ON (regiao_id) regiao_id, chuva_7d
@@ -334,10 +335,10 @@ export class PrismaDashboardReadRepository implements DashboardReadRepository {
       WHERE r.cliente_id = ${clienteId}::uuid
         AND r.deleted_at IS NULL
       ORDER BY (
-        COALESCE(ROUND(LEAST(COALESCE(pr.chuva_7d, 0) / 50.0, 1) * 30)::int, 0) +
-        COALESCE(ROUND(LEAST(COALESCE(rec.total, 0)   / 10.0, 1) * 30)::int, 0) +
-        COALESCE(ROUND(LEAST(COALESCE(cas.total, 0)   / 10.0, 1) * 25)::int, 0) +
-        COALESCE(ROUND(LEAST(COALESCE(sla.total, 0)   / 5.0,  1) * 15)::int, 0)
+        COALESCE(LEAST(COALESCE(pr.chuva_7d, 0) / 50.0, 1) * 30, 0) +
+        COALESCE(LEAST(COALESCE(rec.total, 0)   / 10.0, 1) * 30, 0) +
+        COALESCE(LEAST(COALESCE(cas.total, 0)   / 10.0, 1) * 25, 0) +
+        COALESCE(LEAST(COALESCE(sla.total, 0)   / 5.0,  1) * 15, 0)
       ) DESC
     `);
 
@@ -463,9 +464,8 @@ export class PrismaDashboardReadRepository implements DashboardReadRepository {
 
         (SELECT COUNT(*) FROM sla_operacional
          WHERE cliente_id = ${clienteId}::uuid
-           AND status IN ('pendente', 'em_atendimento')
-           AND deleted_at IS NULL
-           AND prazo_final < NOW())                                                  AS slas_vencidos,
+           AND status = 'vencido'
+           AND deleted_at IS NULL)                                                   AS slas_vencidos,
 
         (SELECT COUNT(*) FROM sla_operacional
          WHERE cliente_id = ${clienteId}::uuid
@@ -664,18 +664,19 @@ export class PrismaDashboardReadRepository implements DashboardReadRepository {
         v.ciclo,
         COALESCE(i.bairro, r.nome) AS bairro,
         i.quarteirao,
-        COUNT(DISTINCT v.id) FILTER (WHERE v.acesso_realizado = true)
+        COUNT(DISTINCT CASE WHEN v.acesso_realizado = true THEN v.imovel_id END)
           AS imoveis_inspecionados,
-        COUNT(DISTINCT v.id) FILTER (
-          WHERE v.acesso_realizado = true
+        COUNT(DISTINCT CASE
+          WHEN v.acesso_realizado = true
             AND EXISTS (
               SELECT 1 FROM vistoria_depositos vd2
               WHERE vd2.vistoria_id = v.id
                 AND vd2.qtd_com_focos > 0
                 AND vd2.deleted_at IS NULL
             )
-        ) AS imoveis_positivos,
-        COUNT(vd.id) FILTER (WHERE vd.qtd_com_focos > 0 AND vd.deleted_at IS NULL)
+          THEN v.imovel_id
+        END) AS imoveis_positivos,
+        COALESCE(SUM(vd.qtd_com_focos) FILTER (WHERE v.acesso_realizado = true AND vd.deleted_at IS NULL), 0)
           AS depositos_positivos,
         COALESCE(SUM(vd.qtd_com_focos) FILTER (WHERE vd.deleted_at IS NULL), 0)
           AS total_focos,
