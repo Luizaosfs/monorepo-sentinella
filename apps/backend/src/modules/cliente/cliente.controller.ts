@@ -156,7 +156,7 @@ export class ClienteController {
   }
 
   @Get('me')
-  @Roles('supervisor', 'agente', 'notificador', 'analista_regional')
+  @Roles('supervisor', 'agente', 'notificador')
   @ApiOperation({ summary: 'Retorna o cliente vinculado ao usuário autenticado' })
   async getMyCliente(@Req() req: Request) {
     const user = req['user'] as AuthenticatedUser;

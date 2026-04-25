@@ -6,10 +6,6 @@ import { Request } from 'express';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 
 import { Roles } from '@/decorators/roles.decorator';
-import {
-  getAccessScope,
-  getClienteIdsPermitidos,
-} from '@/shared/security/access-scope.helpers';
 import { GetAnaliticoBairros } from './use-cases/get-analitico-bairros';
 import { GetAnaliticoResumo } from './use-cases/get-analitico-resumo';
 import { GetAnaliticoRiscoTerritorial } from './use-cases/get-analitico-risco-territorial';
@@ -35,50 +31,49 @@ export class AnaliticoController {
   ) {}
 
   @Get('bairros')
-  @Roles('admin', 'supervisor', 'analista_regional')
+  @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Lista de bairros com vistorias registradas' })
   bairros() {
-    const scope = getAccessScope(this.req);
-    return this.getAnaliticoBairros.execute(getClienteIdsPermitidos(scope));
+    return this.getAnaliticoBairros.execute(this.req['tenantId'] as string);
   }
 
   @Get('resumo')
-  @Roles('admin', 'supervisor', 'analista_regional')
+  @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'KPIs macro de vistoria' })
   resumo() {
     return this.getAnaliticoResumo.execute(this.req['tenantId'] as string);
   }
 
   @Get('risco-territorial')
-  @Roles('admin', 'supervisor', 'analista_regional')
+  @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Risco por bairro' })
   riscoTerritorial() {
     return this.getAnaliticoRiscoTerritorial.execute(this.req['tenantId'] as string);
   }
 
   @Get('vulnerabilidade')
-  @Roles('admin', 'supervisor', 'analista_regional')
+  @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Vulnerabilidade domiciliar por bairro' })
   vulnerabilidade() {
     return this.getAnaliticoVulnerabilidade.execute(this.req['tenantId'] as string);
   }
 
   @Get('alerta-saude')
-  @Roles('admin', 'supervisor', 'analista_regional')
+  @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Distribuição de alerta de saúde' })
   alertaSaude() {
     return this.getAnaliticoAlertaSaude.execute(this.req['tenantId'] as string);
   }
 
   @Get('resultado-operacional')
-  @Roles('admin', 'supervisor', 'analista_regional')
+  @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Resultado operacional por bairro' })
   resultadoOperacional() {
     return this.getAnaliticoResultadoOperacional.execute(this.req['tenantId'] as string);
   }
 
   @Get('imoveis-criticos')
-  @Roles('admin', 'supervisor', 'analista_regional')
+  @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Imóveis P1/P2 críticos' })
   imoveisCriticos() {
     return this.getAnaliticoImoveisCriticos.execute(this.req['tenantId'] as string);

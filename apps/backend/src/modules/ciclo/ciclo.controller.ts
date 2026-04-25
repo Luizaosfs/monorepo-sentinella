@@ -52,7 +52,7 @@ export class CicloController {
   ) {}
 
   @Get('ativo')
-  @Roles('admin', 'supervisor', 'agente', 'notificador', 'analista_regional')
+  @Roles('admin', 'supervisor', 'agente', 'notificador')
   @ApiOperation({ summary: 'Retorna o ciclo ativo do cliente com campos calculados' })
   async ativo() {
     const clienteId = this.req['tenantId'] as string;
@@ -62,7 +62,7 @@ export class CicloController {
   }
 
   @Get('progresso')
-  @Roles('admin', 'supervisor', 'agente', 'analista_regional')
+  @Roles('admin', 'supervisor', 'agente')
   @ApiOperation({ summary: 'KPIs de progresso do ciclo ativo' })
   async progresso() {
     const clienteId = this.req['tenantId'] as string;

@@ -87,7 +87,7 @@ export class RiskEngineController {
   // ── Policy ────────────────────────────────────────────────────────────────
 
   @Get('policy')
-  @Roles('admin', 'supervisor', 'analista_regional')
+  @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Listar políticas de risco do cliente' })
   async getPolicy(@Query() filters: FilterRiskPolicyInput) {
     const parsed = filterRiskPolicySchema.parse(filters);
@@ -105,7 +105,7 @@ export class RiskEngineController {
   }
 
   @Get('policy/:id/full')
-  @Roles('admin', 'supervisor', 'analista_regional')
+  @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Carregar política com todas as sub-tabelas' })
   async getPolicyFull(@Param('id') id: string) {
     const { full } = await this.getPolicyFullUC.execute(id);
@@ -142,7 +142,7 @@ export class RiskEngineController {
   // ── Drone config ──────────────────────────────────────────────────────────
 
   @Get('drone-config')
-  @Roles('admin', 'supervisor', 'analista_regional')
+  @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Configuração de risco para drone/YOLO do cliente' })
   async getDroneConfig() {
     const { config } = await this.getDroneConfigUC.execute();
@@ -163,7 +163,7 @@ export class RiskEngineController {
   // ── YOLO classes ──────────────────────────────────────────────────────────
 
   @Get('yolo-classes')
-  @Roles('admin', 'supervisor', 'analista_regional')
+  @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Listar classes YOLO do cliente' })
   async filterYoloClasses() {
     const { classes } = await this.filterYoloClassesUC.execute();
@@ -182,7 +182,7 @@ export class RiskEngineController {
   // ── YOLO synonyms ─────────────────────────────────────────────────────────
 
   @Get('yolo-synonyms')
-  @Roles('admin', 'supervisor', 'analista_regional')
+  @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Listar sinônimos YOLO do cliente' })
   async filterYoloSynonyms() {
     const { synonyms } = await this.filterYoloSynonymsUC.execute();
@@ -210,7 +210,7 @@ export class RiskEngineController {
   // ── Score territorial ─────────────────────────────────────────────────────
 
   @Get('score')
-  @Roles('admin', 'supervisor', 'analista_regional')
+  @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Top imóveis críticos por score territorial' })
   async listTopCriticos(@Query('limit') limit?: string) {
     const clienteId = this.req['tenantId'] as string;
@@ -227,14 +227,14 @@ export class RiskEngineController {
   }
 
   @Get('score/bairros')
-  @Roles('admin', 'supervisor', 'analista_regional')
+  @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Score agregado por bairro' })
   listScoreBairros() {
     return this.getScoreBairro.execute(this.req['tenantId'] as string);
   }
 
   @Get('score/imovel/:imovelId')
-  @Roles('admin', 'supervisor', 'agente', 'analista_regional')
+  @Roles('admin', 'supervisor', 'agente')
   @ApiOperation({ summary: 'Score territorial de um imóvel' })
   async getScoreImovel(@Param('imovelId') imovelId: string) {
     const clienteId = this.req['tenantId'] as string;

@@ -314,7 +314,7 @@ export class FocoRiscoController {
   }
 
   @Get('by-imovel')
-  @Roles('admin', 'supervisor', 'agente', 'analista_regional')
+  @Roles('admin', 'supervisor', 'agente')
   @ApiOperation({ summary: 'Listar focos de um imóvel (histórico completo)' })
   async listByImovel(@Query('imovelId') imovelId: string) {
     const clienteId = this.req['tenantId'] as string;
@@ -324,7 +324,7 @@ export class FocoRiscoController {
   }
 
   @Get('analytics')
-  @Roles('admin', 'supervisor', 'analista_regional')
+  @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Contagem de focos por status e prioridade' })
   async analytics() {
     const clienteId = this.req['tenantId'] as string;

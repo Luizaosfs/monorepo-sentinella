@@ -19,7 +19,7 @@ export class EficaciaController {
   ) {}
 
   @Get('tratamento')
-  @Roles('admin', 'supervisor', 'analista_regional')
+  @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Eficácia de tratamentos: taxa de não-recorrência 90d' })
   tratamento() {
     return this.getEficaciaTratamento.execute(this.req['tenantId'] as string);

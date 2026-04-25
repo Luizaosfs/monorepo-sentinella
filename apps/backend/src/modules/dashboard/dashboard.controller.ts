@@ -91,7 +91,7 @@ export class DashboardController {
   // ── Central Operacional ────────────────────────────────────────────────────
 
   @Get('central-kpis')
-  @Roles('admin', 'supervisor', 'agente', 'analista_regional')
+  @Roles('admin', 'supervisor', 'agente')
   @ApiOperation({ summary: 'KPIs da central operacional (substitui v_central_operacional)' })
   async centralKpis() {
     const clienteId = this.req['tenantId'] as string;
@@ -114,7 +114,7 @@ export class DashboardController {
   // ── Analytics ─────────────────────────────────────────────────────────────
 
   @Get('liraa')
-  @Roles('admin', 'supervisor', 'analista_regional')
+  @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Calcula LIRAa (IIP e IBP) do ciclo' })
   async liraa(@Query() query: LiraaQuery) {
     const parsed = liraaQuerySchema.parse(query);
@@ -122,7 +122,7 @@ export class DashboardController {
   }
 
   @Get('comparativo-agentes')
-  @Roles('admin', 'supervisor', 'analista_regional')
+  @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Tabela comparativa de desempenho dos agentes' })
   async comparativoAgentes(@Query() query: ComparativoAgentesQuery) {
     const parsed = comparativoAgentesQuerySchema.parse(query);
@@ -130,7 +130,7 @@ export class DashboardController {
   }
 
   @Get('consumo-larvicida')
-  @Roles('admin', 'supervisor', 'analista_regional')
+  @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Consumo de larvicida por agente e tipo de depósito' })
   async consumoLarvicida(@Query() query: ConsumoLarvicidaQuery) {
     const parsed = consumoLarvicidaQuerySchema.parse(query);
@@ -138,7 +138,7 @@ export class DashboardController {
   }
 
   @Get('resumo-regional')
-  @Roles('admin', 'supervisor', 'analista_regional')
+  @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Resumo de métricas agregadas por região' })
   async resumoRegional(@Query() query: ResumoRegionalQuery) {
     const parsed = resumoRegionalQuerySchema.parse(query);
@@ -146,7 +146,7 @@ export class DashboardController {
   }
 
   @Get('score-surto')
-  @Roles('admin', 'supervisor', 'analista_regional')
+  @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Score de risco de surto por região (pluvio + focos)' })
   async scoreSurto(@Query() query: ScoreSurtoQuery) {
     const parsed = scoreSurtoQuerySchema.parse(query);
@@ -154,7 +154,7 @@ export class DashboardController {
   }
 
   @Get('resumo-agente')
-  @Roles('admin', 'supervisor', 'analista_regional')
+  @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Resumo de um agente no ciclo' })
   async resumoAgente(@Query() query: ResumoAgenteQuery) {
     const parsed = resumoAgenteQuerySchema.parse(query);
@@ -185,7 +185,7 @@ export class DashboardController {
   }
 
   @Get('resumos')
-  @Roles('admin', 'supervisor', 'analista_regional')
+  @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Listar resumos diários' })
   async listResumos(@Query('limit') limit?: string) {
     const clienteId = this.req['tenantId'] as string;
@@ -197,7 +197,7 @@ export class DashboardController {
   }
 
   @Get('relatorios')
-  @Roles('admin', 'supervisor', 'analista_regional')
+  @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Listar relatórios gerados' })
   async listRelatorios() {
     const clienteId = this.req['tenantId'] as string;
@@ -247,7 +247,7 @@ export class DashboardController {
   // ── LIRAa extras ──────────────────────────────────────────────────────────
 
   @Get('ciclos-disponiveis')
-  @Roles('admin', 'supervisor', 'analista_regional')
+  @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Listar ciclos disponíveis do cliente' })
   async ciclosDisponiveis() {
     const clienteId = this.req['tenantId'] as string;
@@ -257,7 +257,7 @@ export class DashboardController {
   @Get('liraa/export')
   @UseGuards(UserThrottlerGuard)
   @Throttle({ default: { limit: 3, ttl: 60_000 } })
-  @Roles('admin', 'supervisor', 'analista_regional')
+  @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Dados LIRAa estruturados para exportação (substitui exportarPdf)' })
   async liraaExportData(@Query() query: LiraaQuery) {
     const parsed = liraaQuerySchema.parse(query);
@@ -267,7 +267,7 @@ export class DashboardController {
   }
 
   @Get('liraa/quarteirao')
-  @Roles('admin', 'supervisor', 'analista_regional')
+  @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'LIRAa (IIP/IBP) agregado por quarteirão (substitui v_liraa_quarteirao)' })
   async liraaByQuarteirao(@Query() query: LiraaQuery) {
     const parsed = liraaQuerySchema.parse(query);

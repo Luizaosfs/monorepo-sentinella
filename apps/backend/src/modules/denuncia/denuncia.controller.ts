@@ -61,7 +61,7 @@ export class DenunciaController {
   }
 
   @Get('stats')
-  @Roles('admin', 'supervisor', 'analista_regional')
+  @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Estatísticas do canal cidadão (substitui v_canal_cidadao_stats)' })
   async stats() {
     const clienteId = this.req['tenantId'] as string;

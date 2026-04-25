@@ -26,28 +26,28 @@ export class ReincidenciaController {
   ) {}
 
   @Get('imoveis')
-  @Roles('admin', 'supervisor', 'analista_regional')
+  @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Imóveis com padrão de reincidência' })
   imoveis() {
     return this.getReincidenciaImoveis.execute(this.req['tenantId'] as string);
   }
 
   @Get('por-deposito')
-  @Roles('admin', 'supervisor', 'analista_regional')
+  @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Tipos de depósito que mais reincidem' })
   porDeposito() {
     return this.getReincidenciaPorDeposito.execute(this.req['tenantId'] as string);
   }
 
   @Get('sazonalidade')
-  @Roles('admin', 'supervisor', 'analista_regional')
+  @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Padrão sazonal de reincidência' })
   sazonalidade() {
     return this.getReincidenciaSazonalidade.execute(this.req['tenantId'] as string);
   }
 
   @Get('historico-ciclos')
-  @Roles('admin', 'supervisor', 'agente', 'analista_regional')
+  @Roles('admin', 'supervisor', 'agente')
   @ApiOperation({ summary: 'Histórico de focos por ciclo de um imóvel' })
   historicoCiclos(@Query('imovelId') imovelId: string) {
     const clienteId = this.req['tenantId'] as string;

@@ -22,7 +22,7 @@ export class PilotoController {
   constructor(private prisma: PrismaService) {}
 
   @Post('eventos')
-  @Roles('admin', 'supervisor', 'agente', 'analista_regional', 'notificador')
+  @Roles('admin', 'supervisor', 'agente', 'notificador')
   @ApiOperation({ summary: 'Registrar evento de piloto (fire-and-forget)' })
   async logEvento(@Body() body: unknown, @Req() req: Request) {
     const parsed = pilotoEventoSchema.parse(body);

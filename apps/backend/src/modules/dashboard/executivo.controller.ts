@@ -27,35 +27,35 @@ export class ExecutivoController {
   ) {}
 
   @Get('kpis')
-  @Roles('admin', 'supervisor', 'analista_regional')
+  @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'KPIs estratégicos da semana' })
   kpis() {
     return this.getExecutivoKpis.execute(this.req['tenantId'] as string);
   }
 
   @Get('tendencia')
-  @Roles('admin', 'supervisor', 'analista_regional')
+  @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Tendência últimas 8 semanas' })
   tendencia() {
     return this.getExecutivoTendencia.execute(this.req['tenantId'] as string);
   }
 
   @Get('cobertura')
-  @Roles('admin', 'supervisor', 'analista_regional')
+  @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Cobertura territorial por bairro' })
   cobertura() {
     return this.getExecutivoCobertura.execute(this.req['tenantId'] as string);
   }
 
   @Get('bairros-variacao')
-  @Roles('admin', 'supervisor', 'analista_regional')
+  @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Variação de focos por bairro' })
   bairrosVariacao() {
     return this.getExecutivoBairrosVariacao.execute(this.req['tenantId'] as string);
   }
 
   @Get('comparativo-ciclos')
-  @Roles('admin', 'supervisor', 'analista_regional')
+  @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Comparativo bimestral' })
   comparativoCiclos() {
     return this.getExecutivoComparativoCiclos.execute(this.req['tenantId'] as string);

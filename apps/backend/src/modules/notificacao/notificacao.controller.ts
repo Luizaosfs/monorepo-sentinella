@@ -146,7 +146,7 @@ export class NotificacaoController {
   // ── Casos Notificados ────────────────────────────────────────────────────
 
   @Get('casos/paginado')
-  @Roles('admin', 'supervisor', 'notificador', 'analista_regional')
+  @Roles('admin', 'supervisor', 'notificador')
   @ApiOperation({ summary: 'Listar casos paginado por cursor — retorna { data, nextCursor }' })
   async listCasosPaginado(@Query() query: ListCasosPaginadoQuery) {
     const clienteId = this.req['tenantId'] as string;
@@ -155,7 +155,7 @@ export class NotificacaoController {
   }
 
   @Get('casos/count-proximos')
-  @Roles('admin', 'supervisor', 'notificador', 'analista_regional')
+  @Roles('admin', 'supervisor', 'notificador')
   @ApiOperation({ summary: 'Contar casos notificados num raio de 300m de um item de levantamento' })
   async countProximosAoItem(@Query('itemId') itemId: string) {
     const clienteId = this.req['tenantId'] as string;
@@ -164,7 +164,7 @@ export class NotificacaoController {
   }
 
   @Get('casos/cruzamentos-do-item')
-  @Roles('admin', 'supervisor', 'notificador', 'analista_regional')
+  @Roles('admin', 'supervisor', 'notificador')
   @ApiOperation({ summary: 'Cruzamentos de casos notificados para um item de levantamento' })
   async cruzamentosDoItem(@Query('itemId') itemId: string) {
     const clienteId = this.req['tenantId'] as string;
@@ -172,7 +172,7 @@ export class NotificacaoController {
   }
 
   @Get('casos/cruzados-hoje/count')
-  @Roles('admin', 'supervisor', 'notificador', 'analista_regional')
+  @Roles('admin', 'supervisor', 'notificador')
   @ApiOperation({ summary: 'Contar casos distintos cruzados com focos hoje' })
   async countCruzadosHoje() {
     const clienteId = this.req['tenantId'] as string;
@@ -181,7 +181,7 @@ export class NotificacaoController {
   }
 
   @Post('cruzamentos/caso-ids')
-  @Roles('admin', 'supervisor', 'notificador', 'analista_regional')
+  @Roles('admin', 'supervisor', 'notificador')
   @ApiOperation({ summary: 'Filtrar quais casoIds possuem ao menos um cruzamento registrado' })
   async listCasoIdsComCruzamento(@Body() body: ListCasoIdsComCruzamentoBody) {
     const clienteId = this.req['tenantId'] as string;
@@ -199,7 +199,7 @@ export class NotificacaoController {
   }
 
   @Get('cruzamentos')
-  @Roles('admin', 'supervisor', 'notificador', 'analista_regional')
+  @Roles('admin', 'supervisor', 'notificador')
   @ApiOperation({ summary: 'Listar cruzamentos recentes (máx. 200) do cliente' })
   async listCruzamentos() {
     const clienteId = this.req['tenantId'] as string;
@@ -207,7 +207,7 @@ export class NotificacaoController {
   }
 
   @Get('casos/paginated')
-  @Roles('admin', 'supervisor', 'notificador', 'analista_regional')
+  @Roles('admin', 'supervisor', 'notificador')
   @ApiOperation({ summary: 'Listar casos notificados com paginação por cursor' })
   async listCasosPaginated(
     @Query('limit') limit?: string,
@@ -223,7 +223,7 @@ export class NotificacaoController {
   }
 
   @Get('casos/no-raio')
-  @Roles('admin', 'supervisor', 'notificador', 'analista_regional')
+  @Roles('admin', 'supervisor', 'notificador')
   @ApiOperation({ summary: 'Listar casos dentro de um raio geográfico' })
   async listCasosNoRaio(
     @Query('lat') lat: string,
@@ -241,7 +241,7 @@ export class NotificacaoController {
   }
 
   @Get('casos')
-  @Roles('admin', 'supervisor', 'notificador', 'analista_regional')
+  @Roles('admin', 'supervisor', 'notificador')
   @ApiOperation({ summary: 'Listar casos notificados' })
   async listCasos(
     @Query('status') status?: string,
@@ -253,7 +253,7 @@ export class NotificacaoController {
   }
 
   @Get('casos/:id/cruzamentos')
-  @Roles('admin', 'supervisor', 'notificador', 'analista_regional')
+  @Roles('admin', 'supervisor', 'notificador')
   @ApiOperation({ summary: 'Cruzamentos de focos de risco para um caso notificado' })
   async cruzamentosDocaso(@Param('id') id: string) {
     const clienteId = this.req['tenantId'] as string;
@@ -261,7 +261,7 @@ export class NotificacaoController {
   }
 
   @Get('casos/:id')
-  @Roles('admin', 'supervisor', 'notificador', 'analista_regional')
+  @Roles('admin', 'supervisor', 'notificador')
   @ApiOperation({ summary: 'Detalhar caso notificado' })
   async getCaso(@Param('id') id: string) {
     const { caso } = await this.casoGet.execute(id);

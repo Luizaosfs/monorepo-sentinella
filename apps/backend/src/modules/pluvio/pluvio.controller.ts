@@ -87,7 +87,7 @@ export class PluvioController {
   // ── Runs ─────────────────────────────────────────────────────────────────
 
   @Get('runs/latest')
-  @Roles('admin', 'supervisor', 'analista_regional')
+  @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Última run pluviométrica do cliente' })
   async latestRun() {
     const { run } = await this.latestRunUC.execute();
@@ -95,7 +95,7 @@ export class PluvioController {
   }
 
   @Get('runs')
-  @Roles('admin', 'supervisor', 'analista_regional')
+  @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Listar runs pluviométricas' })
   async filterRuns(@Query() filters: FilterPluvioRunInput) {
     const parsed = filterPluvioRunSchema.parse(filters);
@@ -142,7 +142,7 @@ export class PluvioController {
   // ── Items ─────────────────────────────────────────────────────────────────
 
   @Get('runs/:runId/items')
-  @Roles('admin', 'supervisor', 'analista_regional')
+  @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Listar itens de uma run' })
   async filterItems(@Param('runId') runId: string) {
     const { items } = await this.filterItemsUC.execute(runId);
@@ -177,7 +177,7 @@ export class PluvioController {
   // ── Risco ─────────────────────────────────────────────────────────────────
 
   @Get('risco/by-cliente')
-  @Roles('admin', 'supervisor', 'analista_regional', 'agente')
+  @Roles('admin', 'supervisor', 'agente')
   @ApiOperation({ summary: 'Risco pluviométrico de todas as regiões do cliente' })
   async riscoByCliente() {
     const clienteId = this.req['tenantId'] as string;
@@ -185,7 +185,7 @@ export class PluvioController {
   }
 
   @Get('risco')
-  @Roles('admin', 'supervisor', 'analista_regional', 'agente')
+  @Roles('admin', 'supervisor', 'agente')
   @ApiOperation({ summary: 'Listar riscos pluviométricos por região' })
   async filterRisco(@Query('regiaoId') regiaoIds: string | string[]) {
     const ids = Array.isArray(regiaoIds) ? regiaoIds : [regiaoIds];

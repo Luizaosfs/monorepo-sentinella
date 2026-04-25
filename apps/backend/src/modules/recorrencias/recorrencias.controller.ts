@@ -31,7 +31,7 @@ export class RecorrenciasController {
   ) {}
 
   @Get()
-  @Roles('admin', 'supervisor', 'analista_regional')
+  @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Listar recorrências ativas (≥2 focos em 30 dias por endereço)' })
   listAtivas() {
     const clienteId = this.req['tenantId'] as string;
@@ -39,7 +39,7 @@ export class RecorrenciasController {
   }
 
   @Get('count')
-  @Roles('admin', 'supervisor', 'analista_regional')
+  @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Contar recorrências ativas' })
   async countAtivas() {
     const clienteId = this.req['tenantId'] as string;
@@ -48,7 +48,7 @@ export class RecorrenciasController {
   }
 
   @Get(':id/itens')
-  @Roles('admin', 'supervisor', 'analista_regional')
+  @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Itens de uma recorrência (deprecated — retorna [])' })
   listItens(@Param('id') id: string) {
     return this.listItensUC.execute(id);

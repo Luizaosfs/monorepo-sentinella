@@ -107,7 +107,7 @@ export class SlaController {
   // ── Operacional ──────────────────────────────────────────────────────────
 
   @Get('iminentes')
-  @Roles('admin', 'supervisor', 'agente', 'analista_regional')
+  @Roles('admin', 'supervisor', 'agente')
   @ApiOperation({ summary: 'SLAs nos últimos 20% do prazo (iminentes)' })
   async iminentes() {
     const clienteId = this.req['tenantId'] as string;
@@ -335,21 +335,21 @@ export class SlaController {
   // ── SLA Inteligente ───────────────────────────────────────────────────────
 
   @Get('inteligente')
-  @Roles('admin', 'supervisor', 'analista_regional')
+  @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Focos com SLA Inteligente' })
   listInteligenteRoute() {
     return this.getFocosRiscoAtivos.executeAll(this.req['tenantId'] as string);
   }
 
   @Get('inteligente/criticos')
-  @Roles('admin', 'supervisor', 'analista_regional')
+  @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Focos com SLA Inteligente vencido' })
   listInteligenteCriticosRoute() {
     return this.getFocosRiscoAtivos.executeVencidos(this.req['tenantId'] as string);
   }
 
   @Get('inteligente/foco/:focoId')
-  @Roles('admin', 'supervisor', 'agente', 'analista_regional')
+  @Roles('admin', 'supervisor', 'agente')
   @ApiOperation({ summary: 'SLA Inteligente de um foco específico' })
   async getInteligenteByFocoRoute(@Param('focoId') focoId: string) {
     const rows = await this.getFocosRiscoAtivos.executeById(focoId, this.req['tenantId'] as string);

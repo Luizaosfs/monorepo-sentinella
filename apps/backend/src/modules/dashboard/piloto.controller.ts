@@ -23,21 +23,21 @@ export class PilotoController {
   ) {}
 
   @Get('funil-hoje')
-  @Roles('admin', 'supervisor', 'analista_regional')
+  @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Funil operacional do dia' })
   funilHoje() {
     return this.getPilotoFunilHoje.execute(this.req['tenantId'] as string);
   }
 
   @Get('despachos-supervisor')
-  @Roles('admin', 'supervisor', 'analista_regional')
+  @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Produtividade de despacho por supervisor' })
   despachosSupervisor() {
     return this.getPilotoDespachosSupervisor.execute(this.req['tenantId'] as string);
   }
 
   @Get('prod-agentes')
-  @Roles('admin', 'supervisor', 'analista_regional')
+  @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Produtividade dos agentes em campo' })
   prodAgentes() {
     return this.getPilotoProdAgentes.execute(this.req['tenantId'] as string);
