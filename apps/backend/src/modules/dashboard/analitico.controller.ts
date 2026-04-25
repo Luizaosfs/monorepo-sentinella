@@ -6,6 +6,10 @@ import { Request } from 'express';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 
 import { Roles } from '@/decorators/roles.decorator';
+import {
+  getAccessScope,
+  getClienteIdsPermitidos,
+} from '@/shared/security/access-scope.helpers';
 import { GetAnaliticoBairros } from './use-cases/get-analitico-bairros';
 import { GetAnaliticoResumo } from './use-cases/get-analitico-resumo';
 import { GetAnaliticoRiscoTerritorial } from './use-cases/get-analitico-risco-territorial';
@@ -34,7 +38,8 @@ export class AnaliticoController {
   @Roles('admin', 'supervisor', 'analista_regional')
   @ApiOperation({ summary: 'Lista de bairros com vistorias registradas' })
   bairros() {
-    return this.getAnaliticoBairros.execute(this.req['tenantId'] as string);
+    const scope = getAccessScope(this.req);
+    return this.getAnaliticoBairros.execute(getClienteIdsPermitidos(scope));
   }
 
   @Get('resumo')

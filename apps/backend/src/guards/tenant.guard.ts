@@ -5,24 +5,39 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 
 import { SKIP_TENANT_KEY } from '@/decorators/roles.decorator';
+import {
+  AccessScope,
+  MunicipalScope,
+  PlatformScope,
+  RegionalScope,
+} from '@/shared/security/access-scope';
+import { AuthenticatedUser } from './auth.guard';
 
 /**
- * TenantGuard garante que o usuário tem cliente_id vinculado.
- * Admins (sem cliente_id) podem acessar qualquer tenant via query param ?clienteId=xxx.
- * Supervisors/Agentes só acessam dados do próprio cliente_id do JWT.
+ * TenantGuard popula `req.accessScope` baseado no papel do usuário.
  *
- * Registrado como APP_GUARD global: toda rota autenticada é protegida por padrão.
- * Opt-outs explícitos:
- *   - @Public(): rotas sem autenticação (auth/login, health, denuncia cidadão, etc.)
- *   - @SkipTenant(): rotas autenticadas que não operam sobre tenant (auth/me, auth/logout, etc.)
+ * Variantes resultantes:
+ * - admin → PlatformScope (tenantId = ?clienteId | null; clienteIdsPermitidos = [tenantId] | null)
+ * - supervisor/agente/notificador → MunicipalScope (tenantId = user.clienteId)
+ * - analista_regional → RegionalScope (tenantId = null; lista de clientes do agrupamento)
+ *
+ * Mantém compatibilidade temporária populando também `req.tenantId` (removido em 1B/1C).
+ *
+ * Registrado como APP_GUARD global. Opt-outs:
+ *   - @Public(): sem auth
+ *   - @SkipTenant(): autenticado mas sem tenant (auth/me, logout)
  */
 @Injectable()
 export class TenantGuard implements CanActivate {
-  constructor(private reflector: Reflector) {}
+  constructor(
+    private reflector: Reflector,
+    private prisma: PrismaService,
+  ) {}
 
-  canActivate(context: ExecutionContext): boolean {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const isPublic = this.reflector.getAllAndOverride<boolean>('isPublic', [
       context.getHandler(),
       context.getClass(),
@@ -36,26 +51,78 @@ export class TenantGuard implements CanActivate {
     if (skipTenant) return true;
 
     const request = context.switchToHttp().getRequest();
-    const user = request['user'];
+    const user = request['user'] as AuthenticatedUser | undefined;
 
     if (!user) return false;
 
-    const isAdmin = user.isPlatformAdmin;
+    const scope = await this.buildAccessScope(user, request);
 
-    if (isAdmin) {
-      // Admin pode escolher tenant via query param APENAS.
-      // Body é ignorado para impedir sobrescrita acidental de tenant em PATCH/PUT/DELETE.
-      const clienteId = (request.query?.clienteId as string | undefined) ?? null;
-      request['tenantId'] = clienteId;
-      return true;
+    request['accessScope'] = scope;
+
+    // Compatibilidade temporária — fase 1B/1C migra os callers
+    request['tenantId'] = scope.tenantId;
+
+    return true;
+  }
+
+  private async buildAccessScope(
+    user: AuthenticatedUser,
+    request: any,
+  ): Promise<AccessScope> {
+    if (user.isPlatformAdmin) {
+      const clienteId =
+        (request.query?.clienteId as string | undefined) ?? null;
+      return {
+        kind: 'platform',
+        userId: user.id,
+        papeis: user.papeis,
+        isAdmin: true,
+        tenantId: clienteId,
+        clienteIdsPermitidos: clienteId ? [clienteId] : null,
+        agrupamentoId: null,
+      } satisfies PlatformScope;
     }
 
-    // Não-admin precisa ter cliente_id no JWT
+    if (user.papeis.includes('analista_regional')) {
+      if (!user.agrupamentoId) {
+        throw new ForbiddenException(
+          'Analista regional sem agrupamento vinculado',
+        );
+      }
+
+      const rows = await this.prisma.client.agrupamento_cliente.findMany({
+        where: { agrupamento_id: user.agrupamentoId },
+        select: { cliente_id: true },
+      });
+      const clienteIds = rows.map((r) => r.cliente_id);
+
+      if (clienteIds.length === 0) {
+        throw new ForbiddenException('Agrupamento sem clientes vinculados');
+      }
+
+      return {
+        kind: 'regional',
+        userId: user.id,
+        papeis: user.papeis,
+        isAdmin: false,
+        tenantId: null,
+        clienteIdsPermitidos: clienteIds,
+        agrupamentoId: user.agrupamentoId,
+      } satisfies RegionalScope;
+    }
+
     if (!user.clienteId) {
       throw new ForbiddenException('Usuário sem vínculo a município');
     }
 
-    request['tenantId'] = user.clienteId;
-    return true;
+    return {
+      kind: 'municipal',
+      userId: user.id,
+      papeis: user.papeis,
+      isAdmin: false,
+      tenantId: user.clienteId,
+      clienteIdsPermitidos: [user.clienteId],
+      agrupamentoId: null,
+    } satisfies MunicipalScope;
   }
 }
