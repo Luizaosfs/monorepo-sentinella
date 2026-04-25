@@ -5,7 +5,7 @@ import { PrismaService } from './prisma/prisma.service';
 import { RepositoryModule } from './repository.module';
 
 @Module({
-  imports: [RepositoryModule.forRoot()],
+  imports: [RepositoryModule],
   providers: [PrismaService, PrismaContext],
   exports: [PrismaService, PrismaContext, RepositoryModule],
 })
