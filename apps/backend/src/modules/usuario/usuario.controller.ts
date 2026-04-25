@@ -26,6 +26,10 @@ import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 import { Roles } from '@/decorators/roles.decorator';
 
 import {
+  AtribuirPapelBody,
+  atribuirPapelSchema,
+} from './dtos/atribuir-papel.body';
+import {
   CreateUsuarioBody,
   createUsuarioSchema,
 } from './dtos/create-usuario.body';
@@ -37,6 +41,7 @@ import {
   SaveUsuarioBody,
   saveUsuarioSchema,
 } from './dtos/save-usuario.body';
+import { AtribuirPapel } from './use-cases/atribuir-papel';
 import { CreateUsuario } from './use-cases/create-usuario';
 import { DeleteUsuario } from './use-cases/delete-usuario';
 import { FilterUsuario } from './use-cases/filter-usuario';
@@ -59,6 +64,7 @@ export class UsuarioController {
     private getUsuario: GetUsuario,
     private saveUsuario: SaveUsuario,
     private deleteUsuario: DeleteUsuario,
+    private atribuirPapelUc: AtribuirPapel,
     @Inject(REQUEST) private req: Request,
   ) {}
 
@@ -136,5 +142,17 @@ export class UsuarioController {
   @ApiOperation({ summary: 'Desativar usuário (soft delete)' })
   async remove(@Param('id') id: string) {
     await this.deleteUsuario.execute(id);
+  }
+
+  @Post(':userId/papeis')
+  @HttpCode(201)
+  @Roles('admin')
+  @ApiOperation({ summary: 'Atribuir papel a usuário (G.5 — fn_validar_admin_sem_cliente)' })
+  async atribuirPapel(
+    @Param('userId') userId: string,
+    @Body() body: AtribuirPapelBody,
+  ): Promise<void> {
+    const parsed = atribuirPapelSchema.parse(body);
+    await this.atribuirPapelUc.execute(userId, parsed.papel);
   }
 }

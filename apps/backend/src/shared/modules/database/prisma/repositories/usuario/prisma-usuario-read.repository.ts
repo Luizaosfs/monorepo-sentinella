@@ -5,6 +5,8 @@ import { Injectable } from '@nestjs/common';
 import { PaginationProps } from 'src/shared/dtos/pagination-body';
 import { Paginate } from 'src/utils/pagination';
 
+import { PapelApp } from '@/decorators/roles.decorator';
+
 import { PrismaRepository } from '@/decorators/prisma-repository.decorator';
 
 import { PrismaUsuarioMapper } from '../../mappers/prisma-usuario.mapper';
@@ -82,6 +84,23 @@ export class PrismaUsuarioReadRepository implements UsuarioReadRepository {
       select: { usuario_id: true, papel: true },
     });
     return rows.map((r) => ({ usuario_id: r.usuario_id, papel: r.papel }));
+  }
+
+  async findAuthIdAndClienteIdById(userId: string) {
+    const u = await this.prisma.client.usuarios.findUnique({
+      where: { id: userId },
+      select: { auth_id: true, cliente_id: true },
+    });
+    if (!u || !u.auth_id) return null;
+    return { authId: u.auth_id, clienteId: u.cliente_id ?? null };
+  }
+
+  async usuarioTemPapel(authId: string, papel: PapelApp): Promise<boolean> {
+    const found = await this.prisma.client.papeis_usuarios.findFirst({
+      where: { usuario_id: authId, papel },
+      select: { id: true },
+    });
+    return !!found;
   }
 
   private buildWhere(filters: FilterUsuarioInput) {

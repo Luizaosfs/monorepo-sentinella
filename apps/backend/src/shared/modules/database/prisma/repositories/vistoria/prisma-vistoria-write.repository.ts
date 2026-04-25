@@ -184,4 +184,11 @@ export class PrismaVistoriaWriteRepository implements VistoriaWriteRepository {
       });
     });
   }
+
+  async softDelete(id: string): Promise<void> {
+    await this.prisma.client.vistorias.update({
+      where: { id },
+      data: { deleted_at: new Date() },
+    });
+  }
 }

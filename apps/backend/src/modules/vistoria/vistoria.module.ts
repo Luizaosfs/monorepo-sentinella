@@ -4,6 +4,7 @@ import { DatabaseModule } from '@shared/modules/database/database.module';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 
 import { BillingModule } from '../billing/billing.module';
+import { CloudinaryModule } from '../cloudinary/cloudinary.module';
 import { FocoRiscoModule } from '../foco-risco/foco-risco.module';
 import { IniciarInspecao } from '../foco-risco/use-cases/iniciar-inspecao';
 import { JobModule } from '../job/job.module';
@@ -22,6 +23,7 @@ import { GetVistoria } from './use-cases/get-vistoria';
 import { ListVistoriasConsolidadas } from './use-cases/list-vistorias-consolidadas';
 import { PaginationVistoria } from './use-cases/pagination-vistoria';
 import { SaveVistoria } from './use-cases/save-vistoria';
+import { SoftDeleteVistoria } from './use-cases/soft-delete-vistoria';
 import { VistoriaController } from './vistoria.controller';
 
 @Module({
@@ -42,10 +44,11 @@ import { VistoriaController } from './vistoria.controller';
     SaveVistoria,
     ValidarCicloVistoria,
     IniciarInspecao,
+    SoftDeleteVistoria,
     JwtService,
     PrismaService,
   ],
   controllers: [VistoriaController],
-  imports: [DatabaseModule, FocoRiscoModule, JobModule, BillingModule],
+  imports: [DatabaseModule, FocoRiscoModule, JobModule, BillingModule, CloudinaryModule],
 })
 export class VistoriaModule {}

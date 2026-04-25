@@ -4,6 +4,8 @@ import { UsuarioWriteRepository } from '@modules/usuario/repositories/usuario-wr
 import { Injectable } from '@nestjs/common';
 import * as crypto from 'crypto';
 
+import { PapelApp } from '@/decorators/roles.decorator';
+
 import { PrismaRepository } from '@/decorators/prisma-repository.decorator';
 
 import { PrismaUsuarioMapper } from '../../mappers/prisma-usuario.mapper';
@@ -42,6 +44,12 @@ export class PrismaUsuarioWriteRepository implements UsuarioWriteRepository {
     }
 
     return this.readRepository.findById(created.id) as Promise<Usuario>;
+  }
+
+  async atribuirPapel(authId: string, papel: PapelApp): Promise<void> {
+    await this.prisma.client.papeis_usuarios.create({
+      data: { usuario_id: authId, papel },
+    });
   }
 
   async save(usuario: Usuario): Promise<void> {

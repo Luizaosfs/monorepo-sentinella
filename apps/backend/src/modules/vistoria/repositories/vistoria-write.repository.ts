@@ -70,4 +70,5 @@ export abstract class VistoriaWriteRepository {
     dados: ConsolidacaoDados,
     arquivar?: ArquivamentoAnterior,
   ): Promise<void>;
+  abstract softDelete(id: string): Promise<void>;
 }

@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { PaginationProps } from 'src/shared/dtos/pagination-body';
 
+import { PapelApp } from '@/decorators/roles.decorator';
+
 import { FilterUsuarioInput } from '../dtos/filter-usuario.input';
 import { Usuario, UsuarioPaginated } from '../entities/usuario';
 
@@ -15,4 +17,8 @@ export abstract class UsuarioReadRepository {
   ): Promise<UsuarioPaginated>;
   abstract findByClienteId(clienteId: string): Promise<Usuario[]>;
   abstract findPapeisCliente(clienteId: string | null): Promise<{ usuario_id: string; papel: string }[]>;
+  abstract findAuthIdAndClienteIdById(
+    userId: string,
+  ): Promise<{ authId: string; clienteId: string | null } | null>;
+  abstract usuarioTemPapel(authId: string, papel: PapelApp): Promise<boolean>;
 }

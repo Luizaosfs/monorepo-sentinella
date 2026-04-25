@@ -1,7 +1,9 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  HttpCode,
   Inject,
   Param,
   Post,
@@ -61,6 +63,7 @@ import { GetVistoria } from './use-cases/get-vistoria';
 import { ListVistoriasConsolidadas } from './use-cases/list-vistorias-consolidadas';
 import { PaginationVistoria } from './use-cases/pagination-vistoria';
 import { SaveVistoria } from './use-cases/save-vistoria';
+import { SoftDeleteVistoria } from './use-cases/soft-delete-vistoria';
 import { VistoriaViewModel } from './view-model/vistoria';
 
 @UseInterceptors(PrismaInterceptor)
@@ -80,6 +83,7 @@ export class VistoriaController {
     private addDepositoUc: AddDeposito,
     private addSintomasUc: AddSintomas,
     private addRiscosUc: AddRiscos,
+    private softDeleteVistoria: SoftDeleteVistoria,
     @Inject(REQUEST) private req: Request,
   ) {}
 
@@ -193,5 +197,13 @@ export class VistoriaController {
     const parsed = saveVistoriaSchema.parse(body);
     const { vistoria } = await this.saveVistoria.execute(id, parsed);
     return VistoriaViewModel.toHttp(vistoria);
+  }
+
+  @Delete(':id')
+  @HttpCode(204)
+  @Roles('admin', 'supervisor')
+  @ApiOperation({ summary: 'Soft delete de vistoria (K.7 — fn_orfaos_vistoria)' })
+  async softDelete(@Param('id') id: string): Promise<void> {
+    await this.softDeleteVistoria.execute(id);
   }
 }

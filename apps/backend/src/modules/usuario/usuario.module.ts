@@ -5,6 +5,7 @@ import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 
 import { BillingModule } from '../billing/billing.module';
 
+import { AtribuirPapel } from './use-cases/atribuir-papel';
 import { CreateUsuario } from './use-cases/create-usuario';
 import { DeleteUsuario } from './use-cases/delete-usuario';
 import { FilterUsuario } from './use-cases/filter-usuario';
@@ -16,6 +17,7 @@ import { UsuarioController } from './usuario.controller';
 
 @Module({
   providers: [
+    AtribuirPapel,
     CreateUsuario,
     FilterUsuario,
     PaginationUsuario,

@@ -245,4 +245,16 @@ export class PrismaVistoriaReadRepository implements VistoriaReadRepository {
       },
     });
   }
+
+  async findCalhasByVistoriaId(vistoriaId: string) {
+    const rows = await this.prisma.client.vistoria_calhas.findMany({
+      where: { vistoria_id: vistoriaId },
+      select: { id: true, foto_public_id: true, foto_url: true },
+    });
+    return rows.map((r) => ({
+      id: r.id,
+      fotoPublicId: r.foto_public_id ?? null,
+      fotoUrl: r.foto_url ?? null,
+    }));
+  }
 }
