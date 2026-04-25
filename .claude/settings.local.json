@@ -158,7 +158,8 @@
       "PowerShell($pluginDir = \"C:/Users/luiz/.claude/plugins/cache/context-mode/context-mode/1.0.89\"; node -e \"const db = new \\(require\\('$pluginDir/node_modules/better-sqlite3'\\)\\)\\(':memory:'\\); db.close\\(\\); console.log\\('sqlite3 OK'\\)\" 2>&1)",
       "PowerShell(cd \"D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend\"; $result = npx tsc --noEmit 2>&1; $result | Select-String \"error TS\" | Select-Object -First 30; Write-Host \"EXIT=$\\($LASTEXITCODE\\)\")",
       "PowerShell(cd \"D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend\"; $result = & cmd /c \"pnpm tsc --noEmit 2>&1\"; $result | Select-String \"error TS\" | Select-Object -First 30; Write-Host \"EXIT=$\\($LASTEXITCODE\\)\")",
-      "PowerShell(cd \"D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend\"; $result = & cmd /c \"pnpm test --passWithNoTests 2>&1\"; $summary = $result | Select-String \"Tests:|Test Suites:|passed|failed|PASS |FAIL \"; $summary | Select-Object -Last 20; Write-Host \"EXIT=$\\($LASTEXITCODE\\)\")"
+      "PowerShell(cd \"D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend\"; $result = & cmd /c \"pnpm test --passWithNoTests 2>&1\"; $summary = $result | Select-String \"Tests:|Test Suites:|passed|failed|PASS |FAIL \"; $summary | Select-Object -Last 20; Write-Host \"EXIT=$\\($LASTEXITCODE\\)\")",
+      "PowerShell(Set-ExecutionPolicy *)"
     ]
   }
 }

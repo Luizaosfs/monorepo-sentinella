@@ -85,6 +85,14 @@ describe('ConcluirSla', () => {
     await expectHttpException(() => useCase.execute('nao-existe'), SlaException.notFound());
   });
 
+  it('P2: SLA soft-deletado → findById retorna null → notFound sem chamar writeRepo', async () => {
+    // A impl Prisma filtra deleted_at: null; use-case recebe null e lança notFound
+    readRepo.findById.mockResolvedValue(null);
+
+    await expectHttpException(() => useCase.execute('sla-deletado'), SlaException.notFound());
+    expect(writeRepo.save).not.toHaveBeenCalled();
+  });
+
   // K.2 — trg_sla_reset_escalonado_automatico
   it('K.2 — SLA já concluído: flag NÃO resetada (paridade OLD.status <> NEW.status)', async () => {
     const sla = new SlaOperacionalBuilder()

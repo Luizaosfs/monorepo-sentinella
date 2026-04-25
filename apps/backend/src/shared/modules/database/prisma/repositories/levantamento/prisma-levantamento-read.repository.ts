@@ -34,15 +34,15 @@ export class PrismaLevantamentoReadRepository implements LevantamentoReadReposit
   constructor(private prisma: PrismaService) {}
 
   async findById(id: string): Promise<Levantamento | null> {
-    const raw = await this.prisma.client.levantamentos.findUnique({
-      where: { id },
+    const raw = await this.prisma.client.levantamentos.findFirst({
+      where: { id, deleted_at: null },
     });
     return raw ? PrismaLevantamentoMapper.toDomain(raw as any) : null;
   }
 
   async findByIdComItens(id: string): Promise<Levantamento | null> {
-    const raw = await this.prisma.client.levantamentos.findUnique({
-      where: { id },
+    const raw = await this.prisma.client.levantamentos.findFirst({
+      where: { id, deleted_at: null },
       include: INCLUDE_ITENS,
     });
     return raw ? PrismaLevantamentoMapper.toDomain(raw as any) : null;

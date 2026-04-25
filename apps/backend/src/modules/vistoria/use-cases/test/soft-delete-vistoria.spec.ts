@@ -37,7 +37,7 @@ beforeEach(() => {
 
 describe('SoftDeleteVistoria', () => {
   it('vistoria não encontrada → throw VistoriaException.notFound()', async () => {
-    readRepo.findById.mockResolvedValue(null);
+    readRepo.findByIdIncludingDeleted.mockResolvedValue(null);
     const useCase = makeUseCase(makeReq());
 
     await expect(useCase.execute('nao-existe')).rejects.toMatchObject({
@@ -47,7 +47,7 @@ describe('SoftDeleteVistoria', () => {
 
   it('tenant ownership inválido → throw ForbiddenException', async () => {
     const v = new VistoriaBuilder().build();
-    readRepo.findById.mockResolvedValue(v);
+    readRepo.findByIdIncludingDeleted.mockResolvedValue(v);
     const useCase = makeUseCase(makeReq({ tenantId: 'outro-tenant' }));
 
     await expect(useCase.execute(v.id!)).rejects.toBeInstanceOf(ForbiddenException);
@@ -56,7 +56,7 @@ describe('SoftDeleteVistoria', () => {
 
   it('agente comum tenta deletar → throw ForbiddenException', async () => {
     const v = new VistoriaBuilder().build();
-    readRepo.findById.mockResolvedValue(v);
+    readRepo.findByIdIncludingDeleted.mockResolvedValue(v);
     const useCase = makeUseCase(makeReq({ papeis: ['agente'] }));
 
     await expect(useCase.execute(v.id!)).rejects.toBeInstanceOf(ForbiddenException);
@@ -65,7 +65,7 @@ describe('SoftDeleteVistoria', () => {
 
   it('supervisor deleta → ok', async () => {
     const v = new VistoriaBuilder().build();
-    readRepo.findById.mockResolvedValue(v);
+    readRepo.findByIdIncludingDeleted.mockResolvedValue(v);
     const useCase = makeUseCase(makeReq({ papeis: ['supervisor'] }));
 
     await expect(useCase.execute(v.id!)).resolves.toBeUndefined();
@@ -74,17 +74,17 @@ describe('SoftDeleteVistoria', () => {
 
   it('admin (isPlatformAdmin) deleta → ok', async () => {
     const v = new VistoriaBuilder().build();
-    readRepo.findById.mockResolvedValue(v);
+    readRepo.findByIdIncludingDeleted.mockResolvedValue(v);
     const useCase = makeUseCase(makeReq({ papeis: ['admin'], isPlatformAdmin: true }));
 
     await expect(useCase.execute(v.id!)).resolves.toBeUndefined();
     expect(writeRepo.softDelete).toHaveBeenCalledWith(v.id);
   });
 
-  it('vistoria já deletada → noop sem chamar writeRepo nem cloudinary', async () => {
+  it('DELETE 2x → idempotência: 2ª chamada retorna sem chamar writeRepo nem cloudinary', async () => {
     const v = new VistoriaBuilder().build();
     v.deletedAt = new Date();
-    readRepo.findById.mockResolvedValue(v);
+    readRepo.findByIdIncludingDeleted.mockResolvedValue(v);
     const useCase = makeUseCase(makeReq());
 
     await expect(useCase.execute(v.id!)).resolves.toBeUndefined();
@@ -100,7 +100,7 @@ describe('SoftDeleteVistoria', () => {
     const v = new VistoriaBuilder().build();
     v.assinaturaPublicId = 'pub-assinatura';
     v.assinaturaResponsavelUrl = 'https://cdn/assinatura.png';
-    readRepo.findById.mockResolvedValue(v);
+    readRepo.findByIdIncludingDeleted.mockResolvedValue(v);
     const useCase = makeUseCase(makeReq());
 
     await useCase.execute(v.id!);
@@ -113,7 +113,7 @@ describe('SoftDeleteVistoria', () => {
     const v = new VistoriaBuilder().build();
     v.assinaturaPublicId = 'pub-assin-1';
     v.assinaturaResponsavelUrl = 'https://cdn/assin.png';
-    readRepo.findById.mockResolvedValue(v);
+    readRepo.findByIdIncludingDeleted.mockResolvedValue(v);
     const useCase = makeUseCase(makeReq());
 
     await useCase.execute(v.id!);
@@ -131,7 +131,7 @@ describe('SoftDeleteVistoria', () => {
     const v = new VistoriaBuilder().build();
     v.fotoExternaPublicId = 'pub-foto-ext';
     v.fotoExternaUrl = 'https://cdn/ext.jpg';
-    readRepo.findById.mockResolvedValue(v);
+    readRepo.findByIdIncludingDeleted.mockResolvedValue(v);
     const useCase = makeUseCase(makeReq());
 
     await useCase.execute(v.id!);
@@ -148,7 +148,7 @@ describe('SoftDeleteVistoria', () => {
 
   it('vistoria com 2 calhas com foto → registrarOrfao chamado 2x com vistoria_calhas', async () => {
     const v = new VistoriaBuilder().build();
-    readRepo.findById.mockResolvedValue(v);
+    readRepo.findByIdIncludingDeleted.mockResolvedValue(v);
     readRepo.findCalhasByVistoriaId.mockResolvedValue([
       { id: 'calha-1', fotoPublicId: 'pub-c1', fotoUrl: 'https://cdn/c1.jpg' },
       { id: 'calha-2', fotoPublicId: 'pub-c2', fotoUrl: 'https://cdn/c2.jpg' },
@@ -172,7 +172,7 @@ describe('SoftDeleteVistoria', () => {
     v.assinaturaResponsavelUrl = 'https://cdn/assin.png';
     v.fotoExternaPublicId = 'pub-ext';
     v.fotoExternaUrl = 'https://cdn/ext.jpg';
-    readRepo.findById.mockResolvedValue(v);
+    readRepo.findByIdIncludingDeleted.mockResolvedValue(v);
     cloudinary.registrarOrfao
       .mockRejectedValueOnce(new Error('cloudinary down'))
       .mockResolvedValueOnce(undefined as any);

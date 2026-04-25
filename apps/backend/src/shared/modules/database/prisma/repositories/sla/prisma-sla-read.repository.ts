@@ -31,7 +31,7 @@ export class PrismaSlaReadRepository implements SlaReadRepository {
   async findById(id: string, clienteId?: string | null): Promise<SlaOperacional | null> {
     const raw = await this.prisma.client.sla_operacional.findFirst({
       // MT-08: filtra por cliente_id quando informado (impede IDOR cross-tenant)
-      where: { id, ...(clienteId != null && { cliente_id: clienteId }) },
+      where: { id, deleted_at: null, ...(clienteId != null && { cliente_id: clienteId }) },
     });
     return raw ? PrismaSlaMapper.slaOperacionalToDomain(raw as any) : null;
   }

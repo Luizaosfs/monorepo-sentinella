@@ -89,4 +89,15 @@ describe('SaveLevantamento', () => {
       LevantamentoException.notFound(),
     );
   });
+
+  it('P2: levantamento soft-deletado → findById retorna null → notFound sem chamar writeRepo', async () => {
+    // A impl Prisma filtra deleted_at: null; use-case recebe null e lança notFound
+    readRepo.findById.mockResolvedValue(null);
+
+    await expectHttpException(
+      () => useCase.execute('lev-deletado', { titulo: 'x' }),
+      LevantamentoException.notFound(),
+    );
+    expect(writeRepo.save).not.toHaveBeenCalled();
+  });
 });

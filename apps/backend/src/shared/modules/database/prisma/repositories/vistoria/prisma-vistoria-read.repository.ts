@@ -35,6 +35,13 @@ export class PrismaVistoriaReadRepository implements VistoriaReadRepository {
   constructor(private prisma: PrismaService) {}
 
   async findById(id: string): Promise<Vistoria | null> {
+    const raw = await this.prisma.client.vistorias.findFirst({
+      where: { id, deleted_at: null },
+    });
+    return raw ? PrismaVistoriaMapper.toDomain(raw as any) : null;
+  }
+
+  async findByIdIncludingDeleted(id: string): Promise<Vistoria | null> {
     const raw = await this.prisma.client.vistorias.findUnique({
       where: { id },
     });
@@ -42,8 +49,8 @@ export class PrismaVistoriaReadRepository implements VistoriaReadRepository {
   }
 
   async findByIdComDetalhes(id: string): Promise<Vistoria | null> {
-    const raw = await this.prisma.client.vistorias.findUnique({
-      where: { id },
+    const raw = await this.prisma.client.vistorias.findFirst({
+      where: { id, deleted_at: null },
       include: INCLUDE_DETALHES,
     });
     return raw ? PrismaVistoriaMapper.toDomain(raw as any) : null;

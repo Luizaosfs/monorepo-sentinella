@@ -22,7 +22,7 @@ export class SoftDeleteVistoria {
   ) {}
 
   async execute(id: string): Promise<void> {
-    const vistoria = await this.readRepository.findById(id);
+    const vistoria = await this.readRepository.findByIdIncludingDeleted(id);
     if (!vistoria) throw VistoriaException.notFound();
 
     assertTenantOwnership(vistoria.clienteId, this.req);
