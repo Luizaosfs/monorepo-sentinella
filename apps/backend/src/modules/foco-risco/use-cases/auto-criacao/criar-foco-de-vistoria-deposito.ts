@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 
 import { CruzarFocoNovoComCasos } from '../cruzar-foco-novo-com-casos';
+import { gerarCodigoFoco } from '../helpers/gerar-codigo-foco';
 import { autoClassificarFoco } from './auto-classificar-foco';
 
 export interface CriarFocoDeVistoriaDepositoInput {
@@ -84,6 +85,7 @@ export class CriarFocoDeVistoriaDeposito {
     }
 
     const classificacaoInicial = autoClassificarFoco({ origemTipo: 'agente' });
+    const codigoFoco = await gerarCodigoFoco(this.prisma, vistoria.cliente_id);
 
     const foco = await this.prisma.client.focos_risco.create({
       data: {
@@ -98,6 +100,7 @@ export class CriarFocoDeVistoriaDeposito {
         latitude,
         longitude,
         endereco_normalizado: enderecoNormalizado,
+        codigo_foco: codigoFoco,
       },
     });
 

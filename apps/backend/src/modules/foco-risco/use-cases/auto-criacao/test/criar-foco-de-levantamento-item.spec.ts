@@ -45,7 +45,11 @@ describe('CriarFocoDeLevantamentoItem', () => {
     p = mkPrisma();
     c = mkCruzar();
     useCase = new CriarFocoDeLevantamentoItem(p.service, c);
-    p.queryRaw.mockResolvedValue([]);
+    // PostGIS usa $queryRaw(Prisma.sql`...`) → arg não é array; gerarCodigoFoco usa tagged template → arg é array
+    p.queryRaw.mockImplementation((...args: any[]) => {
+      if (Array.isArray(args[0])) return Promise.resolve([{ ultimo: BigInt(1) }]);
+      return Promise.resolve([]);
+    });
     p.create.mockResolvedValue({
       id: 'foco-1',
       cliente_id: 'cli-1',
@@ -106,7 +110,10 @@ describe('CriarFocoDeLevantamentoItem', () => {
 
   it('com coords e imóvel próximo → $queryRaw chamado e imovel_id preenchido', async () => {
     p.findUnique.mockResolvedValue({ cliente_id: 'cli-1', tipo_entrada: 'DRONE' });
-    p.queryRaw.mockResolvedValue([{ id: 'imo-7' }]);
+    p.queryRaw.mockImplementation((...args: any[]) => {
+      if (Array.isArray(args[0])) return Promise.resolve([{ ultimo: BigInt(1) }]);
+      return Promise.resolve([{ id: 'imo-7' }]);
+    });
     await useCase.execute(baseInput);
     expect(p.queryRaw).toHaveBeenCalled();
     expect(p.create).toHaveBeenCalledWith(
@@ -116,10 +123,11 @@ describe('CriarFocoDeLevantamentoItem', () => {
     );
   });
 
-  it('sem coords → NÃO chama $queryRaw, imovel_id fica null', async () => {
+  it('sem coords → NÃO chama PostGIS, imovel_id fica null', async () => {
     p.findUnique.mockResolvedValue({ cliente_id: 'cli-1', tipo_entrada: 'DRONE' });
     await useCase.execute({ ...baseInput, latitude: null, longitude: null });
-    expect(p.queryRaw).not.toHaveBeenCalled();
+    // 1 chamada: gerarCodigoFoco (tagged template). PostGIS não é chamado sem coords.
+    expect(p.queryRaw).toHaveBeenCalledTimes(1);
     expect(p.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({ imovel_id: null }),

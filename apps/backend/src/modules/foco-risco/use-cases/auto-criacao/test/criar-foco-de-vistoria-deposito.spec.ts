@@ -6,15 +6,18 @@ const mkPrisma = () => {
   const vistoriasFind: Mock = jest.fn();
   const imoveisFind: Mock = jest.fn();
   const focoCreate: Mock = jest.fn();
+  const queryRaw: Mock = jest.fn().mockResolvedValue([{ ultimo: BigInt(1) }]);
   return {
     vistoriasFind,
     imoveisFind,
     focoCreate,
+    queryRaw,
     service: {
       client: {
         vistorias: { findUnique: vistoriasFind },
         imoveis: { findUnique: imoveisFind },
         focos_risco: { create: focoCreate },
+        $queryRaw: queryRaw,
       },
     } as any,
   };

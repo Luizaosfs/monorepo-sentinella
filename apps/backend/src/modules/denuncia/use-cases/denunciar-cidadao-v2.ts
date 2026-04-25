@@ -3,6 +3,7 @@ import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 
 import { autoClassificarFoco } from '../../foco-risco/use-cases/auto-criacao/auto-classificar-foco';
+import { gerarCodigoFoco } from '../../foco-risco/use-cases/helpers/gerar-codigo-foco';
 import { DenunciaCidadaoBody } from '../dtos/denuncia-cidadao.body';
 import { EnfileirarNotifCanalCidadao } from './enfileirar-notif-canal-cidadao';
 
@@ -155,6 +156,7 @@ export class DenunciarCidadaoV2 {
       classificacaoInicial: 'suspeito',
     });
     const suspeitaEm = new Date();
+    const codigoFoco = await gerarCodigoFoco(this.prisma, clienteId, suspeitaEm);
     const foco = await this.prisma.client.focos_risco.create({
       data: {
         cliente_id: clienteId,
@@ -168,6 +170,7 @@ export class DenunciarCidadaoV2 {
         longitude: input.longitude ?? null,
         suspeita_em: suspeitaEm,
         observacao: input.descricao,
+        codigo_foco: codigoFoco,
         payload: {
           bairro_id: input.bairroId ?? null,
           confirmacoes: 1,

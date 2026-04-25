@@ -3,6 +3,7 @@ import {
   FocoRiscoHistorico,
 } from '@modules/foco-risco/entities/foco-risco';
 import { FocoRiscoWriteRepository } from '@modules/foco-risco/repositories/foco-risco-write.repository';
+import { gerarCodigoFoco } from '@modules/foco-risco/use-cases/helpers/gerar-codigo-foco';
 import { Injectable } from '@nestjs/common';
 
 import { PrismaRepository } from '@/decorators/prisma-repository.decorator';
@@ -21,6 +22,14 @@ export class PrismaFocoRiscoWriteRepository implements FocoRiscoWriteRepository 
 
   async create(foco: FocoRisco): Promise<FocoRisco> {
     const data = PrismaFocoRiscoMapper.toPrisma(foco);
+    // P5: gera codigo_foco se não veio preenchido (paridade com fn_set_codigo_foco)
+    if (!data.codigo_foco) {
+      data.codigo_foco = await gerarCodigoFoco(
+        this.prisma,
+        data.cliente_id as string,
+        (data.suspeita_em as Date | undefined) ?? new Date(),
+      );
+    }
     const created = await this.prisma.client.focos_risco.create({ data });
     return PrismaFocoRiscoMapper.toDomain(created);
   }

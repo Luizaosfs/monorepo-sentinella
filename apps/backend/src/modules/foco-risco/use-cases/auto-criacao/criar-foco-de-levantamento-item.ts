@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 
 import { CruzarFocoNovoComCasos } from '../cruzar-foco-novo-com-casos';
+import { gerarCodigoFoco } from '../helpers/gerar-codigo-foco';
 import { autoClassificarFoco } from './auto-classificar-foco';
 import { prioridadeParaP } from './prioridade-para-p';
 
@@ -99,6 +100,7 @@ export class CriarFocoDeLevantamentoItem {
 
     const prioridadeP = prioridadeParaP(input.prioridade);
     const classificacaoInicial = autoClassificarFoco({ origemTipo });
+    const codigoFoco = await gerarCodigoFoco(this.prisma, clienteId, input.createdAt);
 
     const foco = await this.prisma.client.focos_risco.create({
       data: {
@@ -113,6 +115,7 @@ export class CriarFocoDeLevantamentoItem {
         longitude: input.longitude ?? null,
         endereco_normalizado: input.enderecoCurto ?? null,
         suspeita_em: input.createdAt,
+        codigo_foco: codigoFoco,
       },
     });
 

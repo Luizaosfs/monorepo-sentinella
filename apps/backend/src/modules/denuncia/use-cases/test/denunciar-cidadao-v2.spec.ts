@@ -38,7 +38,8 @@ function makePrisma({
       $queryRaw: jest
         .fn()
         .mockResolvedValueOnce([{ contagem: rateLimitContagem }])
-        .mockResolvedValueOnce(dedupResult),
+        .mockResolvedValueOnce(dedupResult)
+        .mockResolvedValue([{ ultimo: BigInt(1) }]),
       $executeRaw: Object.assign(jest.fn().mockResolvedValue(1), {
         catch: jest.fn(),
       }),
@@ -96,7 +97,11 @@ describe('DenunciarCidadaoV2', () => {
 
   it('sem coordenadas — ignora dedup e cria foco normalmente', async () => {
     const prisma = makePrisma({ focoId: 'sem-coord-uuid-0000-0000-000000000000' });
-    prisma.client.$queryRaw = jest.fn().mockResolvedValue([{ contagem: 1 }]);
+    // Prisma.sql (rate limit) → not array; tagged template (gerarCodigoFoco) → array
+    prisma.client.$queryRaw = jest.fn().mockImplementation((...args: any[]) => {
+      if (Array.isArray(args[0])) return Promise.resolve([{ ultimo: BigInt(1) }]);
+      return Promise.resolve([{ contagem: 1 }]);
+    });
     const useCase = new DenunciarCidadaoV2(prisma, makeEnfileirar());
 
     const result = await useCase.execute(
@@ -105,7 +110,8 @@ describe('DenunciarCidadaoV2', () => {
     );
 
     expect(result.id).toBe('sem-coord-uuid-0000-0000-000000000000');
-    expect(prisma.client.$queryRaw).toHaveBeenCalledTimes(1);
+    // 2 chamadas: 1 rate limit + 1 gerarCodigoFoco (dedup ignorado sem coords)
+    expect(prisma.client.$queryRaw).toHaveBeenCalledTimes(2);
   });
 
   it('hook EnfileirarNotifCanalCidadao é chamado após criar foco com 7 campos corretos', async () => {
