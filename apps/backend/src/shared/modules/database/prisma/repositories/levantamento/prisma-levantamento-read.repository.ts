@@ -89,7 +89,7 @@ export class PrismaLevantamentoReadRepository implements LevantamentoReadReposit
     levantamentoId: string,
   ): Promise<LevantamentoItem[]> {
     const rows = await this.prisma.client.levantamento_itens.findMany({
-      where: { levantamento_id: levantamentoId },
+      where: { levantamento_id: levantamentoId, deleted_at: null },
       include: { detecoes: true, evidencias: true },
       orderBy: { created_at: 'asc' },
     });
@@ -155,6 +155,7 @@ export class PrismaLevantamentoReadRepository implements LevantamentoReadReposit
 
   private buildWhere(filters: FilterLevantamentoInput) {
     return {
+      deleted_at: null,
       ...(filters.clienteId != null && { cliente_id: filters.clienteId }),
       ...(filters.planejamentoId && { planejamento_id: filters.planejamentoId }),
       ...(filters.cicloId && { ciclo_id: filters.cicloId }),

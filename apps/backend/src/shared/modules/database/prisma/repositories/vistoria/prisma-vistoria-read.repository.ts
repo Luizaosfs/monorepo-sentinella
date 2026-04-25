@@ -23,11 +23,11 @@ import { PrismaVistoriaMapper } from '../../mappers/prisma-vistoria.mapper';
 import { PrismaService } from '../../prisma.service';
 
 const INCLUDE_DETALHES = {
-  depositos: true,
-  sintomas: true,
-  riscos: true,
-  calhas: true,
-} as const;
+  depositos: { where: { deleted_at: null } },
+  sintomas:  { where: { deleted_at: null } },
+  riscos:    { where: { deleted_at: null } },
+  calhas:    { where: { deleted_at: null } },
+};
 
 @PrismaRepository(VistoriaReadRepository)
 @Injectable()
@@ -87,6 +87,7 @@ export class PrismaVistoriaReadRepository implements VistoriaReadRepository {
 
   private buildWhere(filters: FilterVistoriaInput) {
     return {
+      deleted_at: null,
       ...(filters.clienteId != null && { cliente_id: filters.clienteId }),
       ...(filters.imovelId && { imovel_id: filters.imovelId }),
       ...(filters.agenteId && { agente_id: filters.agenteId }),

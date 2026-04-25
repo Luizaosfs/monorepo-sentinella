@@ -1,5 +1,7 @@
 import { PrismaVistoriaReadRepository } from './prisma-vistoria-read.repository';
 
+const DELETED_AT_NULL = { where: { deleted_at: null } };
+
 const makePrisma = (overrides: Record<string, any> = {}) => ({
   client: {
     vistorias: {
@@ -23,7 +25,7 @@ describe('PrismaVistoriaReadRepository — tenant isolation', () => {
 
     expect(findFirst).toHaveBeenCalledWith(
       expect.objectContaining({
-        include: expect.objectContaining({ depositos: true }),
+        include: expect.objectContaining({ depositos: DELETED_AT_NULL }),
       }),
     );
   });
@@ -37,7 +39,7 @@ describe('PrismaVistoriaReadRepository — tenant isolation', () => {
 
     expect(findFirst).toHaveBeenCalledWith(
       expect.objectContaining({
-        include: expect.objectContaining({ riscos: true }),
+        include: expect.objectContaining({ riscos: DELETED_AT_NULL }),
       }),
     );
   });
@@ -51,7 +53,7 @@ describe('PrismaVistoriaReadRepository — tenant isolation', () => {
 
     expect(findFirst).toHaveBeenCalledWith(
       expect.objectContaining({
-        include: expect.objectContaining({ sintomas: true }),
+        include: expect.objectContaining({ sintomas: DELETED_AT_NULL }),
       }),
     );
   });
@@ -65,7 +67,7 @@ describe('PrismaVistoriaReadRepository — tenant isolation', () => {
 
     expect(findFirst).toHaveBeenCalledWith(
       expect.objectContaining({
-        include: expect.objectContaining({ calhas: true }),
+        include: expect.objectContaining({ calhas: DELETED_AT_NULL }),
       }),
     );
   });
@@ -118,6 +120,37 @@ describe('PrismaVistoriaReadRepository — tenant isolation', () => {
     expect(findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({ cliente_id: 'tenant-uuid' }),
+      }),
+    );
+  });
+
+  it('P3: findAll filtra deleted_at: null via buildWhere', async () => {
+    const findMany = jest.fn().mockResolvedValue([]);
+    const prisma = makePrisma({ vistorias: { findMany, count: jest.fn() } as any });
+    const repo = new PrismaVistoriaReadRepository(prisma as any);
+
+    await repo.findAll({} as any);
+
+    expect(findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ deleted_at: null }),
+      }),
+    );
+  });
+
+  it('P3: findByIdComDetalhes inclui filhas com where deleted_at: null', async () => {
+    const findFirst = jest.fn().mockResolvedValue(null);
+    const prisma = makePrisma({ vistorias: { findFirst } as any });
+    const repo = new PrismaVistoriaReadRepository(prisma as any);
+
+    await repo.findByIdComDetalhes('vistoria-id');
+
+    expect(findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        include: expect.objectContaining({
+          calhas: DELETED_AT_NULL,
+          depositos: DELETED_AT_NULL,
+        }),
       }),
     );
   });
