@@ -1,6 +1,5 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { mock } from 'jest-mock-extended';
 import { ForbiddenException } from '@nestjs/common';
+import { mock } from 'jest-mock-extended';
 
 import { VerificarQuota } from '../../../billing/use-cases/verificar-quota';
 import { LevantamentoException } from '../../errors/levantamento.exception';
@@ -12,6 +11,8 @@ import { expectHttpException } from '@test/utils/expect-http-exception';
 import { CreateLevantamentoItem } from '../create-levantamento-item';
 import { LevantamentoBuilder } from './builders/levantamento.builder';
 
+const mockReq: any = {};
+
 describe('CreateLevantamentoItem', () => {
   let useCase: CreateLevantamentoItem;
   const readRepo = mock<LevantamentoReadRepository>();
@@ -19,20 +20,12 @@ describe('CreateLevantamentoItem', () => {
   const criarFoco = { execute: jest.fn().mockResolvedValue({ criado: false }) };
   const mockVerificarQuota = { execute: jest.fn().mockResolvedValue({ ok: true, usado: 0, limite: null }) };
 
-  beforeEach(async () => {
+  beforeEach(() => {
     jest.clearAllMocks();
     mockVerificarQuota.execute.mockResolvedValue({ ok: true, usado: 0, limite: null });
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        CreateLevantamentoItem,
-        { provide: LevantamentoReadRepository, useValue: readRepo },
-        { provide: LevantamentoWriteRepository, useValue: writeRepo },
-        { provide: CriarFocoDeLevantamentoItem, useValue: criarFoco },
-        { provide: VerificarQuota, useValue: mockVerificarQuota },
-      ],
-    }).compile();
-
-    useCase = module.get<CreateLevantamentoItem>(CreateLevantamentoItem);
+    mockReq.user = { isPlatformAdmin: true };
+    mockReq.tenantId = undefined;
+    useCase = new CreateLevantamentoItem(readRepo, writeRepo, criarFoco as any, mockVerificarQuota as any, mockReq as any);
   });
 
   it('deve criar item vinculado ao levantamento', async () => {
@@ -158,5 +151,15 @@ describe('CreateLevantamentoItem', () => {
 
     const r = await useCase.execute('lev-1', {});
     expect(r.item).toEqual({ id: 'item-err' });
+  });
+
+  it('tenant errado → throw ForbiddenException, item não criado', async () => {
+    const lev = new LevantamentoBuilder().withId('lev-t').withClienteId('cli-OWNER').build();
+    readRepo.findById.mockResolvedValue(lev);
+    const wrongTenantReq = { user: { isPlatformAdmin: false }, tenantId: 'cli-ERRADO' };
+    const uc = new CreateLevantamentoItem(readRepo, writeRepo, criarFoco as any, mockVerificarQuota as any, wrongTenantReq as any);
+
+    await expect(uc.execute('lev-t', {})).rejects.toBeInstanceOf(ForbiddenException);
+    expect(writeRepo.createItem).not.toHaveBeenCalled();
   });
 });

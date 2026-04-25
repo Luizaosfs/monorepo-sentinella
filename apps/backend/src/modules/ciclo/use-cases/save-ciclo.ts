@@ -1,20 +1,26 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, Scope } from '@nestjs/common';
+import { REQUEST } from '@nestjs/core';
+import { Request } from 'express';
+
+import { assertTenantOwnership } from 'src/shared/security/tenant-ownership.util';
 
 import { SaveCicloBody } from '../dtos/save-ciclo.body';
 import { CicloException } from '../errors/ciclo.exception';
 import { CicloReadRepository } from '../repositories/ciclo-read.repository';
 import { CicloWriteRepository } from '../repositories/ciclo-write.repository';
 
-@Injectable()
+@Injectable({ scope: Scope.REQUEST })
 export class SaveCiclo {
   constructor(
     private readRepository: CicloReadRepository,
     private writeRepository: CicloWriteRepository,
+    @Inject(REQUEST) private req: Request,
   ) {}
 
   async execute(id: string, input: SaveCicloBody) {
     const ciclo = await this.readRepository.findById(id);
     if (!ciclo) throw CicloException.notFound();
+    assertTenantOwnership(ciclo.clienteId, this.req);
 
     if (input.numero !== undefined) ciclo.numero = input.numero;
     if (input.ano !== undefined) ciclo.ano = input.ano;

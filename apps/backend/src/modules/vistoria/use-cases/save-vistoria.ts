@@ -1,4 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, Scope } from '@nestjs/common';
+import { REQUEST } from '@nestjs/core';
+import { Request } from 'express';
+
+import { assertTenantOwnership } from 'src/shared/security/tenant-ownership.util';
 
 import { SaveVistoriaBody } from '../dtos/save-vistoria.body';
 import { VistoriaException } from '../errors/vistoria.exception';
@@ -7,7 +11,7 @@ import { VistoriaWriteRepository } from '../repositories/vistoria-write.reposito
 import { AtualizarPerfilImovel } from './atualizar-perfil-imovel';
 import { ConsolidarVistoria } from './consolidar-vistoria';
 
-@Injectable()
+@Injectable({ scope: Scope.REQUEST })
 export class SaveVistoria {
   private readonly logger = new Logger(SaveVistoria.name);
 
@@ -16,11 +20,13 @@ export class SaveVistoria {
     private writeRepository: VistoriaWriteRepository,
     private consolidarVistoria: ConsolidarVistoria,
     private atualizarPerfilImovel: AtualizarPerfilImovel,
+    @Inject(REQUEST) private req: Request,
   ) {}
 
   async execute(id: string, data: SaveVistoriaBody) {
     const vistoria = await this.readRepository.findById(id);
     if (!vistoria) throw VistoriaException.notFound();
+    assertTenantOwnership(vistoria.clienteId, this.req);
 
     // Snapshot ANTES das mutações — paridade com OLD do trigger SQL
     const antes = {

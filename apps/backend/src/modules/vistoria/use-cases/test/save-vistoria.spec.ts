@@ -1,4 +1,4 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { ForbiddenException } from '@nestjs/common';
 import { mock } from 'jest-mock-extended';
 
 import { expectHttpException } from '@test/utils/expect-http-exception';
@@ -11,6 +11,8 @@ import { ConsolidarVistoria } from '../consolidar-vistoria';
 import { SaveVistoria } from '../save-vistoria';
 import { VistoriaBuilder } from './builders/vistoria.builder';
 
+const mockReq: any = {};
+
 describe('SaveVistoria', () => {
   let useCase: SaveVistoria;
   const readRepo = mock<VistoriaReadRepository>();
@@ -18,20 +20,12 @@ describe('SaveVistoria', () => {
   const mockConsolidar = { execute: jest.fn().mockResolvedValue(undefined) };
   const mockAtualizarPerfil = { execute: jest.fn().mockResolvedValue(undefined) };
 
-  beforeEach(async () => {
+  beforeEach(() => {
     jest.clearAllMocks();
     mockAtualizarPerfil.execute.mockResolvedValue(undefined);
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        SaveVistoria,
-        { provide: VistoriaReadRepository, useValue: readRepo },
-        { provide: VistoriaWriteRepository, useValue: writeRepo },
-        { provide: ConsolidarVistoria, useValue: mockConsolidar },
-        { provide: AtualizarPerfilImovel, useValue: mockAtualizarPerfil },
-      ],
-    }).compile();
-
-    useCase = module.get<SaveVistoria>(SaveVistoria);
+    mockReq.user = { isPlatformAdmin: true };
+    mockReq.tenantId = undefined;
+    useCase = new SaveVistoria(readRepo, writeRepo, mockConsolidar as any, mockAtualizarPerfil as any, mockReq as any);
   });
 
   it('deve lançar notFound quando vistoria não existe', async () => {
@@ -171,5 +165,15 @@ describe('SaveVistoria', () => {
     const result = await useCase.execute(v.id!, { acessoRealizado: false });
 
     expect(result.vistoria).toBe(v);
+  });
+
+  it('tenant errado → throw ForbiddenException, save não executado', async () => {
+    const v = new VistoriaBuilder().build();
+    readRepo.findById.mockResolvedValue(v);
+    const wrongTenantReq = { user: { isPlatformAdmin: false }, tenantId: 'cli-ERRADO' };
+    const uc = new SaveVistoria(readRepo, writeRepo, mockConsolidar as any, mockAtualizarPerfil as any, wrongTenantReq as any);
+
+    await expect(uc.execute(v.id!, {})).rejects.toBeInstanceOf(ForbiddenException);
+    expect(writeRepo.save).not.toHaveBeenCalled();
   });
 });

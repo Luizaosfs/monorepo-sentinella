@@ -1,4 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, Scope } from '@nestjs/common';
+import { REQUEST } from '@nestjs/core';
+import { Request } from 'express';
+
+import { assertTenantOwnership } from 'src/shared/security/tenant-ownership.util';
 
 import { CriarFocoDeLevantamentoItem } from '@/modules/foco-risco/use-cases/auto-criacao/criar-foco-de-levantamento-item';
 import { QuotaException } from '../../billing/errors/quota.exception';
@@ -9,7 +13,7 @@ import { LevantamentoException } from '../errors/levantamento.exception';
 import { LevantamentoReadRepository } from '../repositories/levantamento-read.repository';
 import { LevantamentoWriteRepository } from '../repositories/levantamento-write.repository';
 
-@Injectable()
+@Injectable({ scope: Scope.REQUEST })
 export class CreateLevantamentoItem {
   private readonly logger = new Logger(CreateLevantamentoItem.name);
 
@@ -18,11 +22,13 @@ export class CreateLevantamentoItem {
     private writeRepository: LevantamentoWriteRepository,
     private criarFocoDeLevantamentoItem: CriarFocoDeLevantamentoItem,
     private verificarQuota: VerificarQuota,
+    @Inject(REQUEST) private req: Request,
   ) {}
 
   async execute(levantamentoId: string, input: CreateLevantamentoItemBody) {
     const levantamento = await this.readRepository.findById(levantamentoId);
     if (!levantamento) throw LevantamentoException.notFound();
+    assertTenantOwnership(levantamento.clienteId, this.req);
 
     const { ok, usado, limite, motivo } = await this.verificarQuota.execute(
       levantamento.clienteId,

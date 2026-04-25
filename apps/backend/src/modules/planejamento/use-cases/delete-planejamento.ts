@@ -3,6 +3,8 @@ import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
 import { AuthenticatedUser } from 'src/guards/auth.guard';
 
+import { assertTenantOwnership } from 'src/shared/security/tenant-ownership.util';
+
 import { PlanejamentoException } from '../errors/planejamento.exception';
 import { PlanejamentoReadRepository } from '../repositories/planejamento-read.repository';
 import { PlanejamentoWriteRepository } from '../repositories/planejamento-write.repository';
@@ -18,6 +20,7 @@ export class DeletePlanejamento {
   async execute(id: string) {
     const planejamento = await this.readRepository.findById(id);
     if (!planejamento) throw PlanejamentoException.notFound();
+    assertTenantOwnership(planejamento.clienteId, this.req);
 
     const userId = (this.req['user'] as AuthenticatedUser).id;
     await this.writeRepository.softDelete(id, userId);

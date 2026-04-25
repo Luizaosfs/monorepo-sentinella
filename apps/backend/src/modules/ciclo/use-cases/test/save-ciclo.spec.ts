@@ -1,4 +1,4 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { ForbiddenException } from '@nestjs/common';
 import { mock } from 'jest-mock-extended';
 
 import { SaveCicloBody } from '../../dtos/save-ciclo.body';
@@ -10,21 +10,18 @@ import { expectHttpException } from '@test/utils/expect-http-exception';
 import { SaveCiclo } from '../save-ciclo';
 import { CicloBuilder } from './builders/ciclo.builder';
 
+const mockReq: any = {};
+
 describe('SaveCiclo', () => {
   let useCase: SaveCiclo;
   const readRepo = mock<CicloReadRepository>();
   const writeRepo = mock<CicloWriteRepository>();
 
-  beforeEach(async () => {
+  beforeEach(() => {
     jest.clearAllMocks();
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        SaveCiclo,
-        { provide: CicloReadRepository, useValue: readRepo },
-        { provide: CicloWriteRepository, useValue: writeRepo },
-      ],
-    }).compile();
-    useCase = module.get<SaveCiclo>(SaveCiclo);
+    mockReq.user = { isPlatformAdmin: true };
+    mockReq.tenantId = undefined;
+    useCase = new SaveCiclo(readRepo, writeRepo, mockReq as any);
   });
 
   it('deve atualizar campos parciais do ciclo (numero, ano, status, datas, observações)', async () => {
@@ -88,6 +85,16 @@ describe('SaveCiclo', () => {
       () => useCase.execute('x', { status: 'ativo' } as SaveCicloBody),
       CicloException.notFound(),
     );
+    expect(writeRepo.save).not.toHaveBeenCalled();
+  });
+
+  it('tenant errado → throw ForbiddenException, save não executado', async () => {
+    const ciclo = new CicloBuilder().build();
+    readRepo.findById.mockResolvedValue(ciclo);
+    const wrongTenantReq = { user: { isPlatformAdmin: false }, tenantId: 'cli-ERRADO' };
+    const uc = new SaveCiclo(readRepo, writeRepo, wrongTenantReq as any);
+
+    await expect(uc.execute(ciclo.id!, { status: 'ativo' } as SaveCicloBody)).rejects.toBeInstanceOf(ForbiddenException);
     expect(writeRepo.save).not.toHaveBeenCalled();
   });
 });
