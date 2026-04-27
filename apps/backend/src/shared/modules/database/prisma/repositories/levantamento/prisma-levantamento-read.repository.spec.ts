@@ -54,7 +54,7 @@ describe('PrismaLevantamentoReadRepository — soft-delete', () => {
     const prisma = makePrisma({ levantamento_itens: { findFirst } as any });
     const repo = new PrismaLevantamentoReadRepository(prisma as any);
 
-    await repo.findItemById('item-id');
+    await repo.findItemById('item-id', null);
 
     expect(findFirst).toHaveBeenCalledWith(
       expect.objectContaining({

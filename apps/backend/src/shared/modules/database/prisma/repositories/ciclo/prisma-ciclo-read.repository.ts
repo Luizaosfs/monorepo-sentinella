@@ -17,8 +17,10 @@ import { PrismaService } from '../../prisma.service';
 export class PrismaCicloReadRepository implements CicloReadRepository {
   constructor(private prisma: PrismaService) {}
 
-  async findById(id: string): Promise<Ciclo | null> {
-    const raw = await this.prisma.client.ciclos.findUnique({ where: { id } });
+  async findById(id: string, clienteId: string | null): Promise<Ciclo | null> {
+    const raw = await this.prisma.client.ciclos.findFirst({
+      where: { id, ...(clienteId != null && { cliente_id: clienteId }) },
+    });
     return raw ? PrismaCicloMapper.toDomain(raw) : null;
   }
 

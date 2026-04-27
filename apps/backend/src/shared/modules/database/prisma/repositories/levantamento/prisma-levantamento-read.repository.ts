@@ -33,16 +33,16 @@ const INCLUDE_ITENS = {
 export class PrismaLevantamentoReadRepository implements LevantamentoReadRepository {
   constructor(private prisma: PrismaService) {}
 
-  async findById(id: string): Promise<Levantamento | null> {
+  async findById(id: string, clienteId: string | null): Promise<Levantamento | null> {
     const raw = await this.prisma.client.levantamentos.findFirst({
-      where: { id, deleted_at: null },
+      where: { id, deleted_at: null, ...(clienteId != null && { cliente_id: clienteId }) },
     });
     return raw ? PrismaLevantamentoMapper.toDomain(raw as any) : null;
   }
 
-  async findByIdComItens(id: string): Promise<Levantamento | null> {
+  async findByIdComItens(id: string, clienteId: string | null): Promise<Levantamento | null> {
     const raw = await this.prisma.client.levantamentos.findFirst({
-      where: { id, deleted_at: null },
+      where: { id, deleted_at: null, ...(clienteId != null && { cliente_id: clienteId }) },
       include: INCLUDE_ITENS,
     });
     return raw ? PrismaLevantamentoMapper.toDomain(raw as any) : null;
@@ -77,9 +77,9 @@ export class PrismaLevantamentoReadRepository implements LevantamentoReadReposit
     };
   }
 
-  async findItemById(id: string): Promise<LevantamentoItem | null> {
+  async findItemById(id: string, clienteId: string | null): Promise<LevantamentoItem | null> {
     const raw = await this.prisma.client.levantamento_itens.findFirst({
-      where: { id, deleted_at: null },
+      where: { id, deleted_at: null, ...(clienteId != null && { cliente_id: clienteId }) },
       include: { detecoes: true, evidencias: true },
     });
     return raw ? PrismaLevantamentoMapper.itemToDomain(raw as any) : null;

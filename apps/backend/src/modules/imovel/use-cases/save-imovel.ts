@@ -17,8 +17,8 @@ export class SaveImovel {
     private quarteiraoWriteRepository: QuarteiraoWriteRepository,
   ) {}
 
-  async execute(id: string, input: SaveImovelBody) {
-    const imovel = await this.readRepository.findById(id);
+  async execute(id: string, input: SaveImovelBody, clienteId: string | null) {
+    const imovel = await this.readRepository.findById(id, clienteId);
     if (!imovel) throw ImovelException.notFound();
 
     if (input.regiaoId !== undefined) imovel.regiaoId = input.regiaoId;

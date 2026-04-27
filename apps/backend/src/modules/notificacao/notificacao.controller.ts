@@ -131,7 +131,7 @@ export class NotificacaoController {
   @ApiOperation({ summary: 'Atualizar unidade de saúde' })
   async saveUnidade(@Param('id') id: string, @Body() body: SaveUnidadeBody) {
     const parsed = saveUnidadeSchema.parse(body);
-    const { unidade } = await this.unidadeSave.execute(id, parsed);
+    const { unidade } = await this.unidadeSave.execute(id, parsed, (this.req['tenantId'] as string | undefined) ?? null);
     return NotificacaoViewModel.unidadeToHttp(unidade);
   }
 
@@ -264,7 +264,7 @@ export class NotificacaoController {
   @Roles('admin', 'supervisor', 'notificador')
   @ApiOperation({ summary: 'Detalhar caso notificado' })
   async getCaso(@Param('id') id: string) {
-    const { caso } = await this.casoGet.execute(id);
+    const { caso } = await this.casoGet.execute(id, (this.req['tenantId'] as string | undefined) ?? null);
     return NotificacaoViewModel.toHttp(caso);
   }
 
@@ -284,7 +284,7 @@ export class NotificacaoController {
   @ApiOperation({ summary: 'Atualizar caso notificado' })
   async saveCaso(@Param('id') id: string, @Body() body: SaveCasoBody) {
     const parsed = saveCasoSchema.parse(body);
-    const { caso } = await this.casoSave.execute(id, parsed);
+    const { caso } = await this.casoSave.execute(id, parsed, (this.req['tenantId'] as string | undefined) ?? null);
     return NotificacaoViewModel.toHttp(caso);
   }
 

@@ -281,7 +281,7 @@ export class FocoRiscoController {
     @Body() body: ClassificacaoInicialBody,
   ) {
     const parsed = classificacaoInicialSchema.parse(body);
-    const { foco } = await this.atualizarClassificacao.execute(id, parsed);
+    const { foco } = await this.atualizarClassificacao.execute(id, parsed, (this.req['tenantId'] as string | undefined) ?? null);
     return FocoRiscoViewModel.toHttp(foco);
   }
 

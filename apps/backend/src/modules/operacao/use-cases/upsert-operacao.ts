@@ -17,10 +17,10 @@ export class UpsertOperacao {
   ) {}
 
   async execute(data: UpsertOperacaoInput) {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = (this.req['tenantId'] as string | undefined) ?? null;
 
     if (data.id) {
-      const operacao = await this.readRepository.findById(data.id);
+      const operacao = await this.readRepository.findById(data.id, clienteId);
       if (!operacao) throw OperacaoException.notFound();
 
       const antigo = operacao.status;
@@ -41,7 +41,7 @@ export class UpsertOperacao {
 
     const operacao = new Operacao(
       {
-        clienteId,
+        clienteId: clienteId!,
         status: data.status,
         prioridade: data.prioridade ?? undefined,
         responsavelId: data.responsavelId ?? undefined,

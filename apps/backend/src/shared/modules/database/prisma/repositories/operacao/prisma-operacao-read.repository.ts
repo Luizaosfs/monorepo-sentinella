@@ -20,16 +20,16 @@ const INCLUDE_EVIDENCIAS = { evidencias: true } as const;
 export class PrismaOperacaoReadRepository implements OperacaoReadRepository {
   constructor(private prisma: PrismaService) {}
 
-  async findById(id: string): Promise<Operacao | null> {
-    const raw = await this.prisma.client.operacoes.findUnique({
-      where: { id, deleted_at: null },
+  async findById(id: string, clienteId: string | null): Promise<Operacao | null> {
+    const raw = await this.prisma.client.operacoes.findFirst({
+      where: { id, deleted_at: null, ...(clienteId != null && { cliente_id: clienteId }) },
     });
     return raw ? PrismaOperacaoMapper.toDomain(raw as any) : null;
   }
 
-  async findByIdComEvidencias(id: string): Promise<Operacao | null> {
-    const raw = await this.prisma.client.operacoes.findUnique({
-      where: { id, deleted_at: null },
+  async findByIdComEvidencias(id: string, clienteId: string | null): Promise<Operacao | null> {
+    const raw = await this.prisma.client.operacoes.findFirst({
+      where: { id, deleted_at: null, ...(clienteId != null && { cliente_id: clienteId }) },
       include: INCLUDE_EVIDENCIAS,
     });
     return raw ? PrismaOperacaoMapper.toDomain(raw as any) : null;

@@ -44,7 +44,7 @@ describe('GetFocoRisco', () => {
     const foco = new FocoRiscoBuilder().withId('foco-1').build();
     readRepo.findByIdComHistorico.mockResolvedValue(foco);
 
-    const result = await useCase.execute('foco-1');
+    const result = await useCase.execute('foco-1', 'cliente-test-uuid');
 
     expect(result.foco).toBe(foco);
     expect(result.sla).toMatchObject({
@@ -53,14 +53,14 @@ describe('GetFocoRisco', () => {
     });
     expect(result.consolidacao?.origem.fonte).toBe('indisponivel');
     expect(findManyVistorias).toHaveBeenCalled();
-    expect(readRepo.findByIdComHistorico).toHaveBeenCalledWith('foco-1', undefined);
+    expect(readRepo.findByIdComHistorico).toHaveBeenCalledWith('foco-1', 'cliente-test-uuid');
   });
 
   it('deve rejeitar foco não encontrado', async () => {
     readRepo.findByIdComHistorico.mockResolvedValue(null);
 
     await expectHttpException(
-      () => useCase.execute('nao-existe'),
+      () => useCase.execute('nao-existe', 'cliente-test-uuid'),
       FocoRiscoException.notFound(),
     );
   });

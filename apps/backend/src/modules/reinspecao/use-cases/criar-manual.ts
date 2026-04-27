@@ -1,6 +1,7 @@
 import { FocoRiscoReadRepository } from '@modules/foco-risco/repositories/foco-risco-read.repository';
 import { FocoRiscoWriteRepository } from '@modules/foco-risco/repositories/foco-risco-write.repository';
 import { Inject, Injectable } from '@nestjs/common';
+import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
 
 import { CreateReinspecaoBody } from '../dtos/create-reinspecao.body';
@@ -14,7 +15,7 @@ export class CriarManual {
     private repository: ReinspecaoWriteRepository,
     private focoReadRepository: FocoRiscoReadRepository,
     private focoWriteRepository: FocoRiscoWriteRepository,
-    @Inject('REQUEST') private req: Request,
+    @Inject(REQUEST) private req: Request,
   ) {}
 
   async execute(input: CreateReinspecaoBody) {
@@ -33,12 +34,9 @@ export class CriarManual {
       throw ReinspecaoException.forbiddenTenant();
     }
 
-    const foco = await this.focoReadRepository.findById(input.focoRiscoId);
+    const foco = await this.focoReadRepository.findById(input.focoRiscoId, clienteId as string | null);
     if (!foco) {
       throw ReinspecaoException.focoNaoEncontrado();
-    }
-    if (foco.clienteId !== clienteId) {
-      throw ReinspecaoException.forbiddenTenant();
     }
 
     const entity = new Reinspecao(

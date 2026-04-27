@@ -13,9 +13,9 @@ import { PrismaService } from '../../prisma.service';
 export class PrismaPlanejamentoReadRepository implements PlanejamentoReadRepository {
   constructor(private prisma: PrismaService) {}
 
-  async findById(id: string): Promise<Planejamento | null> {
-    const raw = await this.prisma.client.planejamento.findUnique({
-      where: { id, deleted_at: null },
+  async findById(id: string, clienteId: string | null): Promise<Planejamento | null> {
+    const raw = await this.prisma.client.planejamento.findFirst({
+      where: { id, deleted_at: null, ...(clienteId != null && { cliente_id: clienteId }) },
     });
     return raw ? PrismaPlanejamentoMapper.toDomain(raw as any) : null;
   }

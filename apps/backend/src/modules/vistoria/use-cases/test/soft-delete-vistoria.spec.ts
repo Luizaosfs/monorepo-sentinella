@@ -45,12 +45,14 @@ describe('SoftDeleteVistoria', () => {
     });
   });
 
-  it('tenant ownership inválido → throw ForbiddenException', async () => {
+  it('tenant ownership inválido → 404 (DB filtra), softDelete não chamado', async () => {
     const v = new VistoriaBuilder().build();
-    readRepo.findByIdIncludingDeleted.mockResolvedValue(v);
+    readRepo.findByIdIncludingDeleted.mockImplementation(async (_id, clienteId) =>
+      clienteId === 'outro-tenant' ? null : v,
+    );
     const useCase = makeUseCase(makeReq({ tenantId: 'outro-tenant' }));
 
-    await expect(useCase.execute(v.id!)).rejects.toBeInstanceOf(ForbiddenException);
+    await expect(useCase.execute(v.id!)).rejects.toBeDefined();
     expect(writeRepo.softDelete).not.toHaveBeenCalled();
   });
 

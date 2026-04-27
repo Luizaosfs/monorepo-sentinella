@@ -1,8 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
-import { assertTenantOwnership } from 'src/shared/security/tenant-ownership.util';
-
 import { RegiaoException } from '../errors/regiao.exception';
 import { RegiaoReadRepository } from '../repositories/regiao-read.repository';
 
@@ -14,9 +12,9 @@ export class GetRegiao {
   ) {}
 
   async execute(id: string) {
-    const regiao = await this.repository.findById(id);
+    const tenantId = (this.req['tenantId'] as string | undefined) ?? null;
+    const regiao = await this.repository.findById(id, tenantId);
     if (!regiao) throw RegiaoException.notFound();
-    assertTenantOwnership(regiao.clienteId, this.req);
     return { regiao };
   }
 }

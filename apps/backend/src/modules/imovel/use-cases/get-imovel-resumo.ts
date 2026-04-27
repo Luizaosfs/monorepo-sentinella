@@ -6,7 +6,7 @@ import { ImovelResumo, ImovelReadRepository } from '../repositories/imovel-read.
 export class GetImovelResumo {
   constructor(private imovelReadRepository: ImovelReadRepository) {}
 
-  async execute(id: string, clienteId?: string | null): Promise<{ resumo: ImovelResumo | null }> {
+  async execute(id: string, clienteId: string | null): Promise<{ resumo: ImovelResumo | null }> {
     const resumo = await this.imovelReadRepository.getResumoById(id, clienteId);
     return { resumo };
   }

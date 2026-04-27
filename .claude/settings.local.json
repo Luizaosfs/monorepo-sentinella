@@ -182,7 +182,11 @@
       "PowerShell($env:PGPASSWORD = \"147852369\"; & \"C:/Program Files/PostgreSQL/17/bin/psql.exe\" -U postgres -d sentinella -c \"INSERT INTO imoveis \\(id, cliente_id, quarteirao, logradouro, numero, complemento, bairro, latitude, longitude, tipo_imovel, ativo, regiao_id, created_at, deleted_at\\) VALUES \\('e60c3a48-73da-4998-8f81-8029fc4f56ad', '5eaa19f8-f2a9-4b7a-bce8-2691a707308f', '78', 'Rua Bartolomeu Gusmão', '85', NULL, NULL, -20.7844238333333, -51.72347975, 'residencial', true, NULL, '2026-04-25 18:50:17.029504+00', NULL\\) ON CONFLICT \\(id\\) DO NOTHING RETURNING id, quarteirao, logradouro;\")",
       "Bash(\"C:/Program Files/PostgreSQL/17/bin/psql\" -U postgres -d sentinella -c \"SELECT COUNT\\(*\\) as total FROM risco_pluviometrico;\")",
       "Bash(\"C:/Program Files/PostgreSQL/17/bin/psql\" -U postgres -d sentinella -c \"SELECT rp.regiao_id, r.nome, r.regiao, rp.data_registro::date, rp.chuva_24h, rp.chuva_7d, rp.classificacao, rp.tendencia FROM risco_pluviometrico rp LEFT JOIN regioes r ON r.id = rp.regiao_id LIMIT 5;\")",
-      "Bash(\"C:/Program Files/PostgreSQL/17/bin/psql\" -U postgres -d sentinella -c \"\\\\d vistorias\")"
+      "Bash(\"C:/Program Files/PostgreSQL/17/bin/psql\" -U postgres -d sentinella -c \"\\\\d vistorias\")",
+      "Bash(pnpm --filter @sentinella/backend exec tsc --noEmit)",
+      "Bash(grep -v \"^$\")",
+      "Bash(pnpm --filter @sentinella/backend exec jest src/modules/imovel/ --no-coverage)",
+      "PowerShell(cd \"D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend\"; npx tsc --noEmit 2>&1 | Where-Object { $_ -notmatch \"node_modules\" } | Select-Object -First 60)"
     ]
   }
 }

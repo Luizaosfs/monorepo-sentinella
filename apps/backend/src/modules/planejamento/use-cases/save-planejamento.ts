@@ -2,8 +2,6 @@ import { Inject, Injectable, Scope } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
 
-import { assertTenantOwnership } from 'src/shared/security/tenant-ownership.util';
-
 import { SavePlanejamentoBody } from '../dtos/save-planejamento.body';
 import { PlanejamentoException } from '../errors/planejamento.exception';
 import { PlanejamentoReadRepository } from '../repositories/planejamento-read.repository';
@@ -18,9 +16,9 @@ export class SavePlanejamento {
   ) {}
 
   async execute(id: string, data: SavePlanejamentoBody) {
-    const planejamento = await this.readRepository.findById(id);
+    const tenantId = (this.req['tenantId'] as string | undefined) ?? null;
+    const planejamento = await this.readRepository.findById(id, tenantId);
     if (!planejamento) throw PlanejamentoException.notFound();
-    assertTenantOwnership(planejamento.clienteId, this.req);
 
     if (data.descricao !== undefined) planejamento.descricao = data.descricao;
     if (data.dataPlanejamento !== undefined)

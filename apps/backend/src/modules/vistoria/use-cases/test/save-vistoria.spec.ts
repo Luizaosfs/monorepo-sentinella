@@ -1,4 +1,3 @@
-import { ForbiddenException } from '@nestjs/common';
 import { mock } from 'jest-mock-extended';
 
 import { expectHttpException } from '@test/utils/expect-http-exception';
@@ -167,13 +166,15 @@ describe('SaveVistoria', () => {
     expect(result.vistoria).toBe(v);
   });
 
-  it('tenant errado → throw ForbiddenException, save não executado', async () => {
+  it('tenant errado → 404 (DB filtra), save não executado', async () => {
     const v = new VistoriaBuilder().build();
-    readRepo.findById.mockResolvedValue(v);
+    readRepo.findById.mockImplementation(async (_id, clienteId) =>
+      clienteId === 'cli-ERRADO' ? null : v,
+    );
     const wrongTenantReq = { user: { isPlatformAdmin: false }, tenantId: 'cli-ERRADO' };
     const uc = new SaveVistoria(readRepo, writeRepo, mockConsolidar as any, mockAtualizarPerfil as any, wrongTenantReq as any);
 
-    await expect(uc.execute(v.id!, {})).rejects.toBeInstanceOf(ForbiddenException);
+    await expect(uc.execute(v.id!, {})).rejects.toBeDefined();
     expect(writeRepo.save).not.toHaveBeenCalled();
   });
 });

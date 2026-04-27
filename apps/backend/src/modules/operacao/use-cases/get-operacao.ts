@@ -1,8 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
-import { assertTenantOwnership } from 'src/shared/security/tenant-ownership.util';
-
 import { OperacaoException } from '../errors/operacao.exception';
 import { OperacaoReadRepository } from '../repositories/operacao-read.repository';
 
@@ -14,9 +12,9 @@ export class GetOperacao {
   ) {}
 
   async execute(id: string) {
-    const operacao = await this.repository.findByIdComEvidencias(id);
+    const tenantId = (this.req['tenantId'] as string | undefined) ?? null;
+    const operacao = await this.repository.findByIdComEvidencias(id, tenantId);
     if (!operacao) throw OperacaoException.notFound();
-    assertTenantOwnership(operacao.clienteId, this.req);
     return { operacao };
   }
 }

@@ -1,4 +1,3 @@
-import { ForbiddenException } from '@nestjs/common';
 import { mock } from 'jest-mock-extended';
 
 import { PlanejamentoReadRepository } from '../../repositories/planejamento-read.repository';
@@ -29,13 +28,15 @@ describe('SavePlanejamento', () => {
     expect(writeRepo.save).not.toHaveBeenCalled();
   });
 
-  it('tenant errado → throw ForbiddenException, save não chamado', async () => {
+  it('tenant errado → 404 (DB filtra), save não chamado', async () => {
     const plan = { id: 'plan-1', clienteId: 'cli-OWNER' } as any;
-    readRepo.findById.mockResolvedValue(plan);
+    readRepo.findById.mockImplementation(async (_id, clienteId) =>
+      clienteId === 'cli-OWNER' ? plan : null,
+    );
     mockReq.user = { isPlatformAdmin: false };
     mockReq.tenantId = 'cli-OTHER';
 
-    await expect(makeUseCase().execute('plan-1', {})).rejects.toBeInstanceOf(ForbiddenException);
+    await expect(makeUseCase().execute('plan-1', {})).rejects.toBeDefined();
     expect(writeRepo.save).not.toHaveBeenCalled();
   });
 

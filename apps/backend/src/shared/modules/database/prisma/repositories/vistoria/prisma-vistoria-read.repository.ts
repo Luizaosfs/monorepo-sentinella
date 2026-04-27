@@ -34,16 +34,16 @@ const INCLUDE_DETALHES = {
 export class PrismaVistoriaReadRepository implements VistoriaReadRepository {
   constructor(private prisma: PrismaService) {}
 
-  async findById(id: string): Promise<Vistoria | null> {
+  async findById(id: string, clienteId: string | null): Promise<Vistoria | null> {
     const raw = await this.prisma.client.vistorias.findFirst({
-      where: { id, deleted_at: null },
+      where: { id, deleted_at: null, ...(clienteId != null && { cliente_id: clienteId }) },
     });
     return raw ? PrismaVistoriaMapper.toDomain(raw as any) : null;
   }
 
-  async findByIdIncludingDeleted(id: string): Promise<Vistoria | null> {
-    const raw = await this.prisma.client.vistorias.findUnique({
-      where: { id },
+  async findByIdIncludingDeleted(id: string, clienteId: string | null): Promise<Vistoria | null> {
+    const raw = await this.prisma.client.vistorias.findFirst({
+      where: { id, ...(clienteId != null && { cliente_id: clienteId }) },
     });
     return raw ? PrismaVistoriaMapper.toDomain(raw as any) : null;
   }

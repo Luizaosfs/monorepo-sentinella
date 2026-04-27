@@ -98,7 +98,7 @@ export interface ImovelHistoricoAcesso {
 
 @Injectable()
 export abstract class ImovelReadRepository {
-  abstract findById(id: string, clienteId?: string | null): Promise<Imovel | null>;
+  abstract findById(id: string, clienteId: string | null): Promise<Imovel | null>;
   abstract findAll(filters: FilterImovelInput): Promise<Imovel[]>;
   abstract findPaginated(
     filters: FilterImovelInput,
@@ -107,6 +107,6 @@ export abstract class ImovelReadRepository {
   abstract findScoreInputs(imovelId: string, clienteId: string): Promise<ScoreInputs>;
   abstract findScoreConfig(clienteId: string): Promise<ScoreConfig | null>;
   abstract listResumo(clienteId: string, regiaoId?: string): Promise<ImovelResumo[]>;
-  abstract getResumoById(id: string, clienteId?: string | null): Promise<ImovelResumo | null>;
+  abstract getResumoById(id: string, clienteId: string | null): Promise<ImovelResumo | null>;
   abstract listProblematicos(clienteId: string): Promise<ImovelHistoricoAcesso[]>;
 }

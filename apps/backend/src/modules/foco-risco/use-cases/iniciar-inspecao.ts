@@ -1,9 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
 import type { AuthenticatedUser } from 'src/guards/auth.guard';
 
 import { IniciarInspecaoInput } from '../dtos/iniciar-inspecao.body';
-import { FocoRisco } from '../entities/foco-risco';
 import { FocoRiscoException } from '../errors/foco-risco.exception';
 import { FocoRiscoReadRepository } from '../repositories/foco-risco-read.repository';
 import { FocoRiscoWriteRepository } from '../repositories/foco-risco-write.repository';
@@ -13,7 +13,7 @@ export class IniciarInspecao {
   constructor(
     private readRepository: FocoRiscoReadRepository,
     private writeRepository: FocoRiscoWriteRepository,
-    @Inject('REQUEST') private req: Request,
+    @Inject(REQUEST) private req: Request,
   ) {}
 
   async execute(id: string, input: IniciarInspecaoInput) {
@@ -34,10 +34,9 @@ export class IniciarInspecao {
       throw FocoRiscoException.apenasAgenteInicia();
     }
 
-    const foco = await this.readRepository.findById(id);
+    const tenantId = (this.req['tenantId'] as string | undefined) ?? null;
+    const foco = await this.readRepository.findById(id, tenantId);
     if (!foco) throw FocoRiscoException.notFound();
-
-    this.assertFocoDoTenant(foco);
 
     // G4: idempotência — foco já em inspeção retorna ok sem alterar.
     if (foco.status === 'em_inspecao') {
@@ -71,12 +70,4 @@ export class IniciarInspecao {
     return { foco, jaEmInspecao: false };
   }
 
-  private assertFocoDoTenant(foco: FocoRisco) {
-    // Paridade fn_iniciar_inspecao_foco: só agente do tenant atual inicia.
-    // Admin não bypassa (já bloqueado em G3) — tenant check é estrito.
-    const tenantId = this.req['tenantId'] as string | undefined;
-    if (!tenantId || foco.clienteId !== tenantId) {
-      throw FocoRiscoException.notFound();
-    }
-  }
 }

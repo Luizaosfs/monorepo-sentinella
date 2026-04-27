@@ -99,9 +99,11 @@ describe('CriarManual', () => {
     );
   });
 
-  it('deve rejeitar foco de outro tenant', async () => {
+  it('deve rejeitar foco de outro tenant (DB filtra → focoNaoEncontrado)', async () => {
     const foco = new FocoRiscoBuilder().withClienteId('outro-tenant-id').build();
-    focoRead.findById.mockResolvedValue(foco);
+    focoRead.findById.mockImplementation(async (_id, clienteId) =>
+      clienteId === 'outro-tenant-id' ? foco : null,
+    );
 
     await expectHttpException(
       () =>
@@ -109,7 +111,7 @@ describe('CriarManual', () => {
           ...baseInput(),
           clienteId: 'test-cliente-id',
         }),
-      ReinspecaoException.forbiddenTenant(),
+      ReinspecaoException.focoNaoEncontrado(),
     );
   });
 

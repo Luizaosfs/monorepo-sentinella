@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { REQUEST } from '@nestjs/core';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 import { Request } from 'express';
-import type { AuthenticatedUser } from 'src/guards/auth.guard';
 
 import { EnfileirarScoreImovel } from '../../job/enfileirar-score-imovel';
 import { CancelarReinspecoesAoFecharFoco } from '../../reinspecao/use-cases/cancelar-reinspecoes-ao-fechar-foco';
@@ -44,14 +44,13 @@ export class TransicionarFocoRisco {
     private cancelarReinspecoes: CancelarReinspecoesAoFecharFoco,
     private recalcularScore: RecalcularScorePrioridadeFoco,
     private enfileirarScore: EnfileirarScoreImovel,
-    @Inject('REQUEST') private req: Request,
+    @Inject(REQUEST) private req: Request,
   ) {}
 
   async execute(id: string, input: TransicionarFocoRiscoBody) {
-    const foco = await this.readRepository.findById(id);
+    const tenantId = (this.req['tenantId'] as string | undefined) ?? null;
+    const foco = await this.readRepository.findById(id, tenantId);
     if (!foco) throw FocoRiscoException.notFound();
-
-    this.assertFocoDoTenant(foco);
 
     const novoStatus = input.statusPara as FocoRiscoStatus;
 
@@ -179,12 +178,4 @@ export class TransicionarFocoRisco {
     };
   }
 
-  private assertFocoDoTenant(foco: FocoRisco) {
-    const user = this.req['user'] as AuthenticatedUser | undefined;
-    const tenantId = this.req['tenantId'] as string | undefined;
-    if (user?.isPlatformAdmin) return;
-    if (!tenantId || foco.clienteId !== tenantId) {
-      throw FocoRiscoException.notFound();
-    }
-  }
 }

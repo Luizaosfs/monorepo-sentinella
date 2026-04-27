@@ -17,8 +17,8 @@ export class SaveCaso {
     private reverterPrioridade: ReverterPrioridadeCasoDescartado,
   ) {}
 
-  async execute(id: string, input: SaveCasoBody): Promise<{ caso: CasoNotificado }> {
-    const caso = await this.readRepository.findCasoById(id);
+  async execute(id: string, input: SaveCasoBody, clienteId: string | null): Promise<{ caso: CasoNotificado }> {
+    const caso = await this.readRepository.findCasoById(id, clienteId);
     if (!caso) throw NotificacaoException.casoNotFound();
 
     const statusAnterior = caso.status;

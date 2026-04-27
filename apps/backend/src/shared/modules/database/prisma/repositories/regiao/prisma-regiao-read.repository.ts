@@ -15,8 +15,10 @@ import { PrismaService } from '../../prisma.service';
 export class PrismaRegiaoReadRepository implements RegiaoReadRepository {
   constructor(private prisma: PrismaService) {}
 
-  async findById(id: string): Promise<Regiao | null> {
-    const raw = await this.prisma.client.regioes.findUnique({ where: { id } });
+  async findById(id: string, clienteId: string | null): Promise<Regiao | null> {
+    const raw = await this.prisma.client.regioes.findFirst({
+      where: { id, ...(clienteId != null && { cliente_id: clienteId }) },
+    });
     return raw ? PrismaRegiaoMapper.toDomain(raw as any) : null;
   }
 

@@ -77,7 +77,7 @@ describe('PrismaVistoriaReadRepository — tenant isolation', () => {
     const prisma = makePrisma({ vistorias: { findFirst } as any });
     const repo = new PrismaVistoriaReadRepository(prisma as any);
 
-    await repo.findById('vistoria-id');
+    await repo.findById('vistoria-id', null);
 
     expect(findFirst).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -100,14 +100,23 @@ describe('PrismaVistoriaReadRepository — tenant isolation', () => {
     );
   });
 
-  it('P2: findByIdIncludingDeleted usa findUnique sem filtro de deleted_at', async () => {
-    const findUnique = jest.fn().mockResolvedValue(null);
-    const prisma = makePrisma({ vistorias: { findUnique } as any });
+  it('P2: findByIdIncludingDeleted usa findFirst sem filtro de deleted_at', async () => {
+    const findFirst = jest.fn().mockResolvedValue(null);
+    const prisma = makePrisma({ vistorias: { findFirst } as any });
     const repo = new PrismaVistoriaReadRepository(prisma as any);
 
-    await repo.findByIdIncludingDeleted('vistoria-id');
+    await repo.findByIdIncludingDeleted('vistoria-id', null);
 
-    expect(findUnique).toHaveBeenCalledWith({ where: { id: 'vistoria-id' } });
+    expect(findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ id: 'vistoria-id' }),
+      }),
+    );
+    expect(findFirst).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ deleted_at: null }),
+      }),
+    );
   });
 
   it('findAll filtra por cliente_id quando fornecido', async () => {

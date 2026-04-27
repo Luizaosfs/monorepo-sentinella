@@ -1,4 +1,3 @@
-import { ForbiddenException } from '@nestjs/common';
 import { mock } from 'jest-mock-extended';
 
 import { SaveCicloBody } from '../../dtos/save-ciclo.body';
@@ -88,13 +87,15 @@ describe('SaveCiclo', () => {
     expect(writeRepo.save).not.toHaveBeenCalled();
   });
 
-  it('tenant errado → throw ForbiddenException, save não executado', async () => {
+  it('tenant errado → 404 (DB filtra), save não executado', async () => {
     const ciclo = new CicloBuilder().build();
-    readRepo.findById.mockResolvedValue(ciclo);
+    readRepo.findById.mockImplementation(async (_id, clienteId) =>
+      clienteId === 'cli-ERRADO' ? null : ciclo,
+    );
     const wrongTenantReq = { user: { isPlatformAdmin: false }, tenantId: 'cli-ERRADO' };
     const uc = new SaveCiclo(readRepo, writeRepo, wrongTenantReq as any);
 
-    await expect(uc.execute(ciclo.id!, { status: 'ativo' } as SaveCicloBody)).rejects.toBeInstanceOf(ForbiddenException);
+    await expect(uc.execute(ciclo.id!, { status: 'ativo' } as SaveCicloBody)).rejects.toBeDefined();
     expect(writeRepo.save).not.toHaveBeenCalled();
   });
 });

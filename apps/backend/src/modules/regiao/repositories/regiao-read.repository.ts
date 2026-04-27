@@ -6,7 +6,7 @@ import { Regiao, RegiaoPaginated } from '../entities/regiao';
 
 @Injectable()
 export abstract class RegiaoReadRepository {
-  abstract findById(id: string): Promise<Regiao | null>;
+  abstract findById(id: string, clienteId: string | null): Promise<Regiao | null>;
   abstract findAll(filters: FilterRegiaoInput): Promise<Regiao[]>;
   abstract findPaginated(
     filters: FilterRegiaoInput,

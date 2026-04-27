@@ -1,6 +1,7 @@
 import { FocoRiscoReadRepository } from '@modules/foco-risco/repositories/foco-risco-read.repository';
 import { FocoRiscoWriteRepository } from '@modules/foco-risco/repositories/foco-risco-write.repository';
 import { Inject, Injectable } from '@nestjs/common';
+import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
 import { assertTenantOwnership } from 'src/shared/security/tenant-ownership.util';
 
@@ -16,7 +17,7 @@ export class RegistrarResultadoReinspecao {
     private writeRepository: ReinspecaoWriteRepository,
     private focoReadRepository: FocoRiscoReadRepository,
     private focoWriteRepository: FocoRiscoWriteRepository,
-    @Inject('REQUEST') private req: Request,
+    @Inject(REQUEST) private req: Request,
   ) {}
 
   async execute(id: string, input: ResultadoReinspecaoBody) {
@@ -40,12 +41,9 @@ export class RegistrarResultadoReinspecao {
     await this.writeRepository.save(r);
     r.updatedAt = new Date();
 
-    const foco = await this.focoReadRepository.findById(r.focoRiscoId);
+    const foco = await this.focoReadRepository.findById(r.focoRiscoId, r.clienteId);
     if (!foco) {
       throw ReinspecaoException.focoNaoEncontrado();
-    }
-    if (foco.clienteId !== r.clienteId) {
-      throw ReinspecaoException.badRequest();
     }
 
     await this.focoWriteRepository.createHistorico({

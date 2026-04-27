@@ -4,7 +4,6 @@ import { Request } from 'express';
 
 import { AuthenticatedUser } from '@/guards/auth.guard';
 import { CloudinaryService } from '@/modules/cloudinary/cloudinary.service';
-import { assertTenantOwnership } from 'src/shared/security/tenant-ownership.util';
 
 import { VistoriaException } from '../errors/vistoria.exception';
 import { VistoriaReadRepository } from '../repositories/vistoria-read.repository';
@@ -22,10 +21,9 @@ export class SoftDeleteVistoria {
   ) {}
 
   async execute(id: string): Promise<void> {
-    const vistoria = await this.readRepository.findByIdIncludingDeleted(id);
+    const tenantId = (this.req['tenantId'] as string | undefined) ?? null;
+    const vistoria = await this.readRepository.findByIdIncludingDeleted(id, tenantId);
     if (!vistoria) throw VistoriaException.notFound();
-
-    assertTenantOwnership(vistoria.clienteId, this.req);
 
     const user = this.req['user'] as AuthenticatedUser | undefined;
     const isSupervisorOuAdmin =

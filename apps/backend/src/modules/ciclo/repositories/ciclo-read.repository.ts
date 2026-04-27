@@ -21,7 +21,7 @@ export interface CicloProgresso {
 
 @Injectable()
 export abstract class CicloReadRepository {
-  abstract findById(id: string): Promise<Ciclo | null>;
+  abstract findById(id: string, clienteId: string | null): Promise<Ciclo | null>;
   abstract findAll(filters: FilterCicloInput): Promise<Ciclo[]>;
   abstract findAtivoByClienteId(clienteId: string): Promise<Ciclo | null>;
   abstract findAtivo(clienteId: string): Promise<Ciclo | null>;

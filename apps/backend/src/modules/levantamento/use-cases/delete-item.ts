@@ -1,8 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
-import { assertTenantOwnership } from 'src/shared/security/tenant-ownership.util';
-
 import { CloudinaryService } from '../../cloudinary/cloudinary.service';
 import { LevantamentoException } from '../errors/levantamento.exception';
 import { LevantamentoReadRepository } from '../repositories/levantamento-read.repository';
@@ -20,9 +18,9 @@ export class DeleteItem {
   ) {}
 
   async execute(itemId: string) {
-    const item = await this.readRepository.findItemById(itemId);
+    const tenantId = (this.req['tenantId'] as string | undefined) ?? null;
+    const item = await this.readRepository.findItemById(itemId, tenantId);
     if (!item) throw LevantamentoException.itemNotFound();
-    assertTenantOwnership(item.clienteId, this.req);
     await this.writeRepository.deleteItem(itemId);
 
     // K.6 — fn_orfaos_levantamento_item: registra imagem para limpeza diferida (best-effort)

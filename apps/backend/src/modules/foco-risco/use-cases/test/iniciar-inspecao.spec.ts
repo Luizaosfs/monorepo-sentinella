@@ -244,7 +244,10 @@ describe('IniciarInspecao (paridade fn_iniciar_inspecao_foco hardening)', () => 
       .withClienteId('outro-cliente')
       .withStatus('aguarda_inspecao')
       .build();
-    readRepo.findById.mockResolvedValue(foco);
+    // Simula filtro de tenant do repositório: clienteId 'cliente-uuid-1' não encontra foco de 'outro-cliente'
+    readRepo.findById.mockImplementation(async (_id, clienteId) =>
+      clienteId === 'outro-cliente' ? foco : null,
+    );
 
     await expectHttpException(
       () => useCase.execute(foco.id!, {}),

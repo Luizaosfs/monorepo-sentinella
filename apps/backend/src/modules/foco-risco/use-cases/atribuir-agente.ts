@@ -1,9 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
-import type { AuthenticatedUser } from 'src/guards/auth.guard';
 
 import { AtribuirAgenteInput } from '../dtos/atribuir-agente.body';
-import { FocoRisco } from '../entities/foco-risco';
 import { FocoRiscoException } from '../errors/foco-risco.exception';
 import { FocoRiscoReadRepository } from '../repositories/foco-risco-read.repository';
 import { FocoRiscoWriteRepository } from '../repositories/foco-risco-write.repository';
@@ -13,14 +12,13 @@ export class AtribuirAgente {
   constructor(
     private readRepository: FocoRiscoReadRepository,
     private writeRepository: FocoRiscoWriteRepository,
-    @Inject('REQUEST') private req: Request,
+    @Inject(REQUEST) private req: Request,
   ) {}
 
   async execute(id: string, input: AtribuirAgenteInput) {
-    const foco = await this.readRepository.findById(id);
+    const tenantId = (this.req['tenantId'] as string | undefined) ?? null;
+    const foco = await this.readRepository.findById(id, tenantId);
     if (!foco) throw FocoRiscoException.notFound();
-
-    this.assertFocoDoTenant(foco);
 
     const responsavelAnterior = foco.responsavelId;
     foco.responsavelId = input.agenteId;
@@ -44,12 +42,4 @@ export class AtribuirAgente {
     return { foco };
   }
 
-  private assertFocoDoTenant(foco: FocoRisco) {
-    const user = this.req['user'] as AuthenticatedUser | undefined;
-    const tenantId = this.req['tenantId'] as string | undefined;
-    if (user?.isPlatformAdmin) return;
-    if (!tenantId || foco.clienteId !== tenantId) {
-      throw FocoRiscoException.notFound();
-    }
-  }
 }

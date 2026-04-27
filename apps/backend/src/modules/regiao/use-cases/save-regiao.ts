@@ -1,8 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
-import { assertTenantOwnership } from 'src/shared/security/tenant-ownership.util';
-
 import { SaveRegiaoBody } from '../dtos/save-regiao.body';
 import { RegiaoException } from '../errors/regiao.exception';
 import { RegiaoReadRepository } from '../repositories/regiao-read.repository';
@@ -17,9 +15,9 @@ export class SaveRegiao {
   ) {}
 
   async execute(id: string, input: SaveRegiaoBody) {
-    const regiao = await this.readRepository.findById(id);
+    const tenantId = (this.req['tenantId'] as string | undefined) ?? null;
+    const regiao = await this.readRepository.findById(id, tenantId);
     if (!regiao) throw RegiaoException.notFound();
-    assertTenantOwnership(regiao.clienteId, this.req);
 
     if (input.nome !== undefined) regiao.nome = input.nome;
     if (input.tipo !== undefined) regiao.tipo = input.tipo;

@@ -6,8 +6,8 @@ import { Operacao, OperacaoPaginated } from '../entities/operacao';
 
 @Injectable()
 export abstract class OperacaoReadRepository {
-  abstract findById(id: string): Promise<Operacao | null>;
-  abstract findByIdComEvidencias(id: string): Promise<Operacao | null>;
+  abstract findById(id: string, clienteId: string | null): Promise<Operacao | null>;
+  abstract findByIdComEvidencias(id: string, clienteId: string | null): Promise<Operacao | null>;
   abstract findAll(filters: FilterOperacaoInput): Promise<Operacao[]>;
   abstract findPaginated(
     filters: FilterOperacaoInput,

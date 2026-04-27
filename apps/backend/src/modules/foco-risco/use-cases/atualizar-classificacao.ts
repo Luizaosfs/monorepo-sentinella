@@ -12,8 +12,8 @@ export class AtualizarClassificacao {
     private writeRepository: FocoRiscoWriteRepository,
   ) {}
 
-  async execute(id: string, input: ClassificacaoInicialInput) {
-    const foco = await this.readRepository.findById(id);
+  async execute(id: string, input: ClassificacaoInicialInput, clienteId: string | null) {
+    const foco = await this.readRepository.findById(id, clienteId);
     if (!foco) throw FocoRiscoException.notFound();
 
     foco.classificacaoInicial = input.classificacao;

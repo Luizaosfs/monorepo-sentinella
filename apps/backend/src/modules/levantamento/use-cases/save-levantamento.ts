@@ -1,8 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
-import { assertTenantOwnership } from 'src/shared/security/tenant-ownership.util';
-
 import { SaveLevantamentoBody } from '../dtos/save-levantamento.body';
 import { LevantamentoException } from '../errors/levantamento.exception';
 import { LevantamentoReadRepository } from '../repositories/levantamento-read.repository';
@@ -17,9 +15,9 @@ export class SaveLevantamento {
   ) {}
 
   async execute(id: string, input: SaveLevantamentoBody) {
-    const levantamento = await this.readRepository.findById(id);
+    const tenantId = (this.req['tenantId'] as string | undefined) ?? null;
+    const levantamento = await this.readRepository.findById(id, tenantId);
     if (!levantamento) throw LevantamentoException.notFound();
-    assertTenantOwnership(levantamento.clienteId, this.req);
 
     if (input.planejamentoId !== undefined) levantamento.planejamentoId = input.planejamentoId;
     if (input.cicloId !== undefined) levantamento.cicloId = input.cicloId;

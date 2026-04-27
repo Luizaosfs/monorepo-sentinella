@@ -8,8 +8,8 @@ import { NotificacaoReadRepository } from '../repositories/notificacao-read.repo
 export class GetCaso {
   constructor(private repository: NotificacaoReadRepository) {}
 
-  async execute(id: string): Promise<{ caso: CasoNotificado }> {
-    const caso = await this.repository.findCasoById(id);
+  async execute(id: string, clienteId: string | null): Promise<{ caso: CasoNotificado }> {
+    const caso = await this.repository.findCasoById(id, clienteId);
     if (!caso) throw NotificacaoException.casoNotFound();
     return { caso };
   }

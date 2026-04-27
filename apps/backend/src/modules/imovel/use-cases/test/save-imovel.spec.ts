@@ -40,7 +40,7 @@ describe('SaveImovel — K.5 sync quarteirao mestre', () => {
   });
 
   it('K.5 — quarteirao no input → upsertMestreIfMissing chamado', async () => {
-    await useCase.execute('imovel-1', { quarteirao: 'Q03', bairro: 'Bairro X' } as any);
+    await useCase.execute('imovel-1', { quarteirao: 'Q03', bairro: 'Bairro X' } as any, TENANT);
 
     expect(quarteiraoWriteRepo.upsertMestreIfMissing).toHaveBeenCalledWith(
       TENANT,
@@ -50,7 +50,7 @@ describe('SaveImovel — K.5 sync quarteirao mestre', () => {
   });
 
   it('K.5 — quarteirao não presente no input → upsertMestreIfMissing NÃO chamado', async () => {
-    await useCase.execute('imovel-1', { bairro: 'Outro' } as any);
+    await useCase.execute('imovel-1', { bairro: 'Outro' } as any, TENANT);
 
     expect(quarteiraoWriteRepo.upsertMestreIfMissing).not.toHaveBeenCalled();
   });
@@ -58,7 +58,7 @@ describe('SaveImovel — K.5 sync quarteirao mestre', () => {
   it('K.5 — falha em upsertMestreIfMissing não quebra o save', async () => {
     quarteiraoWriteRepo.upsertMestreIfMissing.mockRejectedValueOnce(new Error('DB error'));
 
-    const result = await useCase.execute('imovel-1', { quarteirao: 'Q04' } as any);
+    const result = await useCase.execute('imovel-1', { quarteirao: 'Q04' } as any, TENANT);
 
     expect(result.imovel).toBeDefined();
   });
@@ -66,7 +66,22 @@ describe('SaveImovel — K.5 sync quarteirao mestre', () => {
   it('imóvel não encontrado → lança erro', async () => {
     readRepo.findById.mockResolvedValue(null);
 
-    await expect(useCase.execute('inexistente', {})).rejects.toBeDefined();
+    await expect(useCase.execute('inexistente', {}, TENANT)).rejects.toBeDefined();
+    expect(writeRepo.save).not.toHaveBeenCalled();
+  });
+
+  it('IDOR — cliente-B não consegue editar imóvel de cliente-A', async () => {
+    // Simula o comportamento do repositório: clienteId diferente → retorna null (filtro de tenant no WHERE)
+    readRepo.findById.mockImplementation(async (_id, clienteId) => {
+      return clienteId === TENANT ? { ...mockImovel } : null;
+    });
+
+    await expect(
+      useCase.execute('imovel-1', {}, 'cliente-uuid-2'),
+    ).rejects.toBeDefined();
+
+    // Garante que o clienteId do tenant B foi repassado ao repositório (não ignorado)
+    expect(readRepo.findById).toHaveBeenCalledWith('imovel-1', 'cliente-uuid-2');
     expect(writeRepo.save).not.toHaveBeenCalled();
   });
 });

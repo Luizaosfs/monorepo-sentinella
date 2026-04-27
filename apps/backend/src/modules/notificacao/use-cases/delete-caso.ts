@@ -1,7 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
-import { assertTenantOwnership } from 'src/shared/security/tenant-ownership.util';
 
 import { NotificacaoException } from '../errors/notificacao.exception';
 import { NotificacaoReadRepository } from '../repositories/notificacao-read.repository';
@@ -16,9 +15,9 @@ export class DeleteCaso {
   ) {}
 
   async execute(id: string): Promise<void> {
-    const caso = await this.readRepository.findCasoById(id);
+    const tenantId = (this.req['tenantId'] as string | undefined) ?? null;
+    const caso = await this.readRepository.findCasoById(id, tenantId);
     if (!caso) throw NotificacaoException.casoNotFound();
-    assertTenantOwnership(caso.clienteId, this.req);
     await this.writeRepository.deleteCaso(id);
   }
 }

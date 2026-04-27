@@ -30,8 +30,8 @@ export interface ItemEvidencia {
 
 @Injectable()
 export abstract class LevantamentoReadRepository {
-  abstract findById(id: string): Promise<Levantamento | null>;
-  abstract findByIdComItens(id: string): Promise<Levantamento | null>;
+  abstract findById(id: string, clienteId: string | null): Promise<Levantamento | null>;
+  abstract findByIdComItens(id: string, clienteId: string | null): Promise<Levantamento | null>;
   abstract findAll(filters: FilterLevantamentoInput): Promise<Levantamento[]>;
   abstract findPaginated(
     filters: FilterLevantamentoInput,
@@ -40,7 +40,7 @@ export abstract class LevantamentoReadRepository {
   abstract findItensByLevantamentoId(
     levantamentoId: string,
   ): Promise<LevantamentoItem[]>;
-  abstract findItemById(id: string): Promise<LevantamentoItem | null>;
+  abstract findItemById(id: string, clienteId: string | null): Promise<LevantamentoItem | null>;
   abstract findPlanejamento(id: string): Promise<PlanejamentoInfo | null>;
   abstract findByPlanejamentoDataTipo(
     clienteId: string,

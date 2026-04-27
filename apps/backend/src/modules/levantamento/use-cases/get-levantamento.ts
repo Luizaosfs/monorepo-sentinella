@@ -1,8 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
-import { assertTenantOwnership } from 'src/shared/security/tenant-ownership.util';
-
 import { LevantamentoException } from '../errors/levantamento.exception';
 import { LevantamentoReadRepository } from '../repositories/levantamento-read.repository';
 
@@ -14,9 +12,9 @@ export class GetLevantamento {
   ) {}
 
   async execute(id: string) {
-    const levantamento = await this.repository.findByIdComItens(id);
+    const tenantId = (this.req['tenantId'] as string | undefined) ?? null;
+    const levantamento = await this.repository.findByIdComItens(id, tenantId);
     if (!levantamento) throw LevantamentoException.notFound();
-    assertTenantOwnership(levantamento.clienteId, this.req);
     return { levantamento };
   }
 }

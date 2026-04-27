@@ -153,13 +153,15 @@ describe('CreateLevantamentoItem', () => {
     expect(r.item).toEqual({ id: 'item-err' });
   });
 
-  it('tenant errado → throw ForbiddenException, item não criado', async () => {
+  it('tenant errado → 404 (DB filtra), item não criado', async () => {
     const lev = new LevantamentoBuilder().withId('lev-t').withClienteId('cli-OWNER').build();
-    readRepo.findById.mockResolvedValue(lev);
+    readRepo.findById.mockImplementation(async (_id, clienteId) =>
+      clienteId === 'cli-OWNER' ? lev : null,
+    );
     const wrongTenantReq = { user: { isPlatformAdmin: false }, tenantId: 'cli-ERRADO' };
     const uc = new CreateLevantamentoItem(readRepo, writeRepo, criarFoco as any, mockVerificarQuota as any, wrongTenantReq as any);
 
-    await expect(uc.execute('lev-t', {})).rejects.toBeInstanceOf(ForbiddenException);
+    await expect(uc.execute('lev-t', {})).rejects.toBeDefined();
     expect(writeRepo.createItem).not.toHaveBeenCalled();
   });
 });

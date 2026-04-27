@@ -37,7 +37,7 @@ export class GetFocoRisco {
     private prisma: PrismaService,
   ) {}
 
-  async execute(id: string, clienteId?: string | null) {
+  async execute(id: string, clienteId: string | null) {
     const foco = await this.repository.findByIdComHistorico(id, clienteId);
     if (!foco) throw FocoRiscoException.notFound();
 

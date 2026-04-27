@@ -32,7 +32,7 @@ describe('GetOperacao', () => {
 
     const result = await useCase.execute('op-1');
 
-    expect(readRepo.findByIdComEvidencias).toHaveBeenCalledWith('op-1');
+    expect(readRepo.findByIdComEvidencias).toHaveBeenCalledWith('op-1', 'test-cliente-id');
     expect(result.operacao).toBe(op);
   });
 

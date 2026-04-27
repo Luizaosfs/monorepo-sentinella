@@ -27,8 +27,8 @@ export interface ContagemTriagemResult {
 
 @Injectable()
 export abstract class FocoRiscoReadRepository {
-  abstract findById(id: string, clienteId?: string | null): Promise<FocoRisco | null>;
-  abstract findByIdComHistorico(id: string, clienteId?: string | null): Promise<FocoRisco | null>;
+  abstract findById(id: string, clienteId: string | null): Promise<FocoRisco | null>;
+  abstract findByIdComHistorico(id: string, clienteId: string | null): Promise<FocoRisco | null>;
   abstract findAll(filters: FilterFocoRiscoInput): Promise<FocoRisco[]>;
   abstract findPaginated(
     filters: FilterFocoRiscoInput,

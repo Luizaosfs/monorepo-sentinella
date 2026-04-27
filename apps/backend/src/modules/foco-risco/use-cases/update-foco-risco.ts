@@ -21,7 +21,8 @@ export class UpdateFocoRisco {
   ) {}
 
   async execute(id: string, input: UpdateFocoRiscoInput): Promise<void> {
-    const foco = await this.readRepository.findById(id);
+    const tenantId = (this.req['tenantId'] as string | undefined) ?? null;
+    const foco = await this.readRepository.findById(id, tenantId);
     if (!foco) throw FocoRiscoException.notFound();
 
     if (input.responsavel_id !== undefined && input.responsavel_id !== foco.responsavelId) {

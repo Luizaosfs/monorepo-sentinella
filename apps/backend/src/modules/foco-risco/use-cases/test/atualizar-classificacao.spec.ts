@@ -32,7 +32,7 @@ describe('AtualizarClassificacao', () => {
     readRepo.findById.mockResolvedValue(foco);
     writeRepo.save.mockResolvedValue();
 
-    const result = await useCase.execute(foco.id!, { focoId: foco.id!, classificacao: 'foco' });
+    const result = await useCase.execute(foco.id!, { focoId: foco.id!, classificacao: 'foco' }, 'cliente-test-uuid');
 
     expect(result.foco.classificacaoInicial).toBe('foco');
     expect(writeRepo.save).toHaveBeenCalledTimes(1);
@@ -42,7 +42,7 @@ describe('AtualizarClassificacao', () => {
     readRepo.findById.mockResolvedValue(null);
 
     await expectHttpException(
-      () => useCase.execute('nao-existe', { focoId: 'nao-existe', classificacao: 'foco' }),
+      () => useCase.execute('nao-existe', { focoId: 'nao-existe', classificacao: 'foco' }, 'cliente-test-uuid'),
       FocoRiscoException.notFound(),
     );
   });

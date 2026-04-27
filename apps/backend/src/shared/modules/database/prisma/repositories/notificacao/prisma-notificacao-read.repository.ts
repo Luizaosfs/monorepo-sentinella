@@ -30,9 +30,9 @@ export class PrismaNotificacaoReadRepository implements NotificacaoReadRepositor
     return rows.map(PrismaNotificacaoMapper.unidadeToDomain);
   }
 
-  async findUnidadeById(id: string): Promise<UnidadeSaude | null> {
-    const row = await this.prisma.client.unidades_saude.findUnique({
-      where: { id },
+  async findUnidadeById(id: string, clienteId: string | null): Promise<UnidadeSaude | null> {
+    const row = await this.prisma.client.unidades_saude.findFirst({
+      where: { id, ...(clienteId != null && { cliente_id: clienteId }) },
     });
     return row ? PrismaNotificacaoMapper.unidadeToDomain(row) : null;
   }
@@ -53,9 +53,9 @@ export class PrismaNotificacaoReadRepository implements NotificacaoReadRepositor
     return rows.map(PrismaNotificacaoMapper.casoToDomain);
   }
 
-  async findCasoById(id: string): Promise<CasoNotificado | null> {
-    const row = await this.prisma.client.casos_notificados.findUnique({
-      where: { id },
+  async findCasoById(id: string, clienteId: string | null): Promise<CasoNotificado | null> {
+    const row = await this.prisma.client.casos_notificados.findFirst({
+      where: { id, ...(clienteId != null && { cliente_id: clienteId }) },
     });
     return row ? PrismaNotificacaoMapper.casoToDomain(row) : null;
   }
@@ -75,9 +75,9 @@ export class PrismaNotificacaoReadRepository implements NotificacaoReadRepositor
     return rows.map(PrismaNotificacaoMapper.esusToDomain);
   }
 
-  async findEsusById(id: string): Promise<ItemNotificacaoEsus | null> {
-    const row = await this.prisma.client.item_notificacoes_esus.findUnique({
-      where: { id },
+  async findEsusById(id: string, clienteId: string | null): Promise<ItemNotificacaoEsus | null> {
+    const row = await this.prisma.client.item_notificacoes_esus.findFirst({
+      where: { id, ...(clienteId != null && { cliente_id: clienteId }) },
     });
     return row ? PrismaNotificacaoMapper.esusToDomain(row) : null;
   }

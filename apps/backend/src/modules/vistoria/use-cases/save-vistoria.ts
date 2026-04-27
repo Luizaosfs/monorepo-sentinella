@@ -2,8 +2,6 @@ import { Inject, Injectable, Logger, Scope } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
 
-import { assertTenantOwnership } from 'src/shared/security/tenant-ownership.util';
-
 import { SaveVistoriaBody } from '../dtos/save-vistoria.body';
 import { VistoriaException } from '../errors/vistoria.exception';
 import { VistoriaReadRepository } from '../repositories/vistoria-read.repository';
@@ -24,9 +22,9 @@ export class SaveVistoria {
   ) {}
 
   async execute(id: string, data: SaveVistoriaBody) {
-    const vistoria = await this.readRepository.findById(id);
+    const tenantId = (this.req['tenantId'] as string | undefined) ?? null;
+    const vistoria = await this.readRepository.findById(id, tenantId);
     if (!vistoria) throw VistoriaException.notFound();
-    assertTenantOwnership(vistoria.clienteId, this.req);
 
     // Snapshot ANTES das mutações — paridade com OLD do trigger SQL
     const antes = {

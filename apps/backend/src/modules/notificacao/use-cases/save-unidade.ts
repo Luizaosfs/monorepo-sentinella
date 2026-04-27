@@ -13,8 +13,8 @@ export class SaveUnidade {
     private writeRepository: NotificacaoWriteRepository,
   ) {}
 
-  async execute(id: string, input: SaveUnidadeBody): Promise<{ unidade: UnidadeSaude }> {
-    const unidade = await this.readRepository.findUnidadeById(id);
+  async execute(id: string, input: SaveUnidadeBody, clienteId: string | null): Promise<{ unidade: UnidadeSaude }> {
+    const unidade = await this.readRepository.findUnidadeById(id, clienteId);
     if (!unidade) throw NotificacaoException.unidadeNotFound();
 
     if (input.nome !== undefined) unidade.nome = input.nome;

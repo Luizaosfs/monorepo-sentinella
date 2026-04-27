@@ -34,7 +34,7 @@ describe('GetLevantamento', () => {
     const result = await useCase.execute('lev-1');
 
     expect(result.levantamento).toBe(lev);
-    expect(readRepo.findByIdComItens).toHaveBeenCalledWith('lev-1');
+    expect(readRepo.findByIdComItens).toHaveBeenCalledWith('lev-1', 'test-cliente-id');
   });
 
   it('deve rejeitar não encontrado', async () => {

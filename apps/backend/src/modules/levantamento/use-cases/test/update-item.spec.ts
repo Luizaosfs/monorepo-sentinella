@@ -42,8 +42,10 @@ describe('UpdateItem', () => {
     expect(writeRepo.updateItem).not.toHaveBeenCalled();
   });
 
-  it('item de outro tenant → assertTenantOwnership throw', async () => {
-    readRepo.findItemById.mockResolvedValue({ id: 'item-1', clienteId: 'outro-tenant' } as any);
+  it('item de outro tenant → 404 (DB filtra), updateItem não chamado', async () => {
+    readRepo.findItemById.mockImplementation(async (_id, clienteId) =>
+      clienteId === TENANT ? null : ({ id: 'item-1', clienteId: 'outro-tenant' } as any),
+    );
 
     await expect(useCase.execute('item-1', {})).rejects.toBeDefined();
     expect(writeRepo.updateItem).not.toHaveBeenCalled();

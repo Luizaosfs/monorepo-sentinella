@@ -1,8 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
-import { assertTenantOwnership } from 'src/shared/security/tenant-ownership.util';
-
 import { UpdateItemBody } from '../dtos/update-item.body';
 import { LevantamentoException } from '../errors/levantamento.exception';
 import { UpdateItemImutavelException } from '../errors/update-item-imutavel.exception';
@@ -31,9 +29,9 @@ export class UpdateItem {
   ] as const;
 
   async execute(itemId: string, input: UpdateItemBody) {
-    const item = await this.readRepository.findItemById(itemId);
+    const tenantId = (this.req['tenantId'] as string | undefined) ?? null;
+    const item = await this.readRepository.findItemById(itemId, tenantId);
     if (!item) throw LevantamentoException.itemNotFound();
-    assertTenantOwnership(item.clienteId, this.req);
 
     // Guard G.1: campos técnicos imutáveis após criação (paridade SQL legado)
     const camposViolados = UpdateItem.CAMPOS_IMUTAVEIS.filter(
@@ -44,7 +42,7 @@ export class UpdateItem {
     }
 
     await this.writeRepository.updateItem(itemId, input);
-    const updated = await this.readRepository.findItemById(itemId);
+    const updated = await this.readRepository.findItemById(itemId, tenantId);
     return { item: updated! };
   }
 }

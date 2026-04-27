@@ -199,7 +199,7 @@ export class ImovelController {
   @ApiOperation({ summary: 'Atualizar imóvel' })
   async save(@Param('id') id: string, @Body() body: SaveImovelBody) {
     const parsed = saveImovelSchema.parse(body);
-    const { imovel } = await this.saveImovel.execute(id, parsed);
+    const { imovel } = await this.saveImovel.execute(id, parsed, (this.req['tenantId'] as string | undefined) ?? null);
     return ImovelViewModel.toHttp(imovel);
   }
 
