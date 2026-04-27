@@ -20,8 +20,8 @@ export class PrismaUsuarioReadRepository implements UsuarioReadRepository {
   constructor(private prisma: PrismaService) {}
 
   async findById(id: string): Promise<Usuario | null> {
-    const raw = await this.prisma.client.usuarios.findUnique({
-      where: { id },
+    const raw = await this.prisma.client.usuarios.findFirst({
+      where: { OR: [{ id }, { auth_id: id }] },
       include: INCLUDE_PAPEIS,
     });
     return raw ? PrismaUsuarioMapper.toDomain(raw as any) : null;

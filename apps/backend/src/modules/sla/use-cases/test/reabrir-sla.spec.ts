@@ -43,7 +43,7 @@ describe('ReabrirSla', () => {
     readRepo.findById.mockResolvedValue(sla);
     writeRepo.save.mockResolvedValue();
 
-    const result = await useCase.execute(sla.id!);
+    const result = await useCase.execute(sla.id!, null);
 
     expect(result.sla.status).toBe('pendente');
     expect(result.sla.concluidoEm).toBeUndefined();
@@ -54,6 +54,6 @@ describe('ReabrirSla', () => {
   it('deve rejeitar SLA não encontrado', async () => {
     readRepo.findById.mockResolvedValue(null);
 
-    await expectHttpException(() => useCase.execute('nao-existe'), SlaException.notFound());
+    await expectHttpException(() => useCase.execute('nao-existe', null), SlaException.notFound());
   });
 });

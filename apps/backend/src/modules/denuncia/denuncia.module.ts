@@ -6,7 +6,6 @@ import { CloudinaryModule } from '../cloudinary/cloudinary.module';
 
 import { DenunciaController } from './denuncia.controller';
 import { ConsultarDenuncia } from './use-cases/consultar-denuncia';
-import { DenunciarCidadao } from './use-cases/denunciar-cidadao';
 import { DenunciarCidadaoV2 } from './use-cases/denunciar-cidadao-v2';
 import { CanalCidadaoStats } from './use-cases/canal-cidadao-stats';
 import { EnfileirarNotifCanalCidadao } from './use-cases/enfileirar-notif-canal-cidadao';
@@ -15,6 +14,6 @@ import { UploadFotoDenuncia } from './use-cases/upload-foto-denuncia';
 @Module({
   imports: [DatabaseModule, CloudinaryModule],
   controllers: [DenunciaController],
-  providers: [DenunciarCidadao, DenunciarCidadaoV2, ConsultarDenuncia, CanalCidadaoStats, EnfileirarNotifCanalCidadao, UploadFotoDenuncia, JwtService, PrismaService],
+  providers: [DenunciarCidadaoV2, ConsultarDenuncia, CanalCidadaoStats, EnfileirarNotifCanalCidadao, UploadFotoDenuncia, JwtService, PrismaService],
 })
 export class DenunciaModule {}

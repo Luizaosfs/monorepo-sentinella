@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 const envSchema = z.object({
   DATABASE_URL: z.string({ required_error: 'DATABASE_URL é obrigatória' }),
-  SECRET_JWT: z.string({ required_error: 'SECRET_JWT é obrigatória' }),
+  SECRET_JWT: z.string({ required_error: 'SECRET_JWT é obrigatória' }).min(32, 'SECRET_JWT deve ter pelo menos 32 caracteres'),
   JWT_EXPIRES_IN: z.string().default('7d'),
   REFRESH_TOKEN_EXPIRES_IN: z.string().default('30d'),
   PORT: z.string().optional().default('3333'),
@@ -27,17 +27,21 @@ const envSchema = z.object({
   SMTP_PASS: z.string().optional(),
   SMTP_FROM: z.string().optional(),
   // === Canal Cidadão v2 ===
-  /** Salt para hash de IP no canal cidadão. Required em production. */
+  /** Salt para hash de IP no canal cidadão. Obrigatório em produção (não pode ser o valor de dev). */
   CANAL_CIDADAO_IP_SALT: z
     .string()
     .optional()
-    .default('sentinella-dev-salt'),
-  /** Liga use-case v2 TypeScript (desliga fallback SQL). Default false. */
+    .default('sentinella-dev-salt')
+    .refine(
+      (salt) => process.env.NODE_ENV !== 'production' || salt !== 'sentinella-dev-salt',
+      { message: 'CANAL_CIDADAO_IP_SALT deve ser definido explicitamente em produção' },
+    ),
+  /** Use-case v2 TypeScript (padrão). Default true. */
   CANAL_CIDADAO_V2_ENABLED: z
     .string()
     .optional()
     .transform((v) => v === 'true')
-    .default('false'),
+    .default('true'),
 });
 
 const getEnv = () => {

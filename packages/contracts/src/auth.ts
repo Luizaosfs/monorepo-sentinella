@@ -9,14 +9,23 @@ export const loginSchema = z.object({
 export type LoginBody = z.infer<typeof loginSchema>;
 
 export const loginResponseSchema = z.object({
-  access_token: z.string(),
-  refresh_token: z.string(),
+  accessToken: z.string(),
+  refreshToken: z.string(),
+  user: z.object({
+    id: z.string().uuid(),
+    authId: z.string().uuid(),
+    email: z.string().email(),
+    nome: z.string(),
+    clienteId: z.string().uuid().nullable(),
+    agrupamentoId: z.string().uuid().nullable(),
+    papeis: z.array(PapelAppEnum),
+  }),
 });
 export type LoginResponse = z.infer<typeof loginResponseSchema>;
 
 // ── Refresh ───────────────────────────────────────────
 export const refreshSchema = z.object({
-  refresh_token: z.string(),
+  refreshToken: z.string(),
 });
 export type RefreshBody = z.infer<typeof refreshSchema>;
 
@@ -27,6 +36,7 @@ export const authMeResponseSchema = z.object({
   email: z.string().email(),
   nome: z.string(),
   clienteId: z.string().uuid().nullable(),
+  agrupamentoId: z.string().uuid().nullable(),
   papeis: z.array(PapelAppEnum),
 });
 export type AuthMeResponse = z.infer<typeof authMeResponseSchema>;

@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
 
 import { ReinspecaoException } from '../errors/reinspecao.exception';
@@ -8,7 +9,7 @@ import { ReinspecaoReadRepository } from '../repositories/reinspecao-read.reposi
 export class GetReinspecao {
   constructor(
     private repository: ReinspecaoReadRepository,
-    @Inject('REQUEST') private req: Request,
+    @Inject(REQUEST) private req: Request,
   ) {}
 
   async execute(id: string) {

@@ -105,11 +105,13 @@ describe('CancelarReinspecao', () => {
       .withClienteId('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')
       .withStatus('pendente')
       .build();
-    readRepo.findById.mockResolvedValue(r);
+    readRepo.findById.mockImplementation(async (_id, clienteId) =>
+      clienteId === 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' ? r : null,
+    );
 
     await expectHttpException(
       () => uc.execute(r.id!, { motivoCancelamento: 'x' }),
-      ReinspecaoException.forbiddenTenant(),
+      ReinspecaoException.notFound(),
     );
   });
 });

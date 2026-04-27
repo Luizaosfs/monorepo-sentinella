@@ -14,7 +14,6 @@ import { env } from '@/lib/env/server';
 import { DenunciaCidadaoBody, denunciaCidadaoSchema } from './dtos/denuncia-cidadao.body';
 import { UploadFotoDenunciaBody, uploadFotoDenunciaSchema } from './dtos/upload-foto-denuncia.body';
 import { ConsultarDenuncia } from './use-cases/consultar-denuncia';
-import { DenunciarCidadao } from './use-cases/denunciar-cidadao';
 import { DenunciarCidadaoV2 } from './use-cases/denunciar-cidadao-v2';
 import { CanalCidadaoStats } from './use-cases/canal-cidadao-stats';
 import { UploadFotoDenuncia } from './use-cases/upload-foto-denuncia';
@@ -25,7 +24,6 @@ import { UploadFotoDenuncia } from './use-cases/upload-foto-denuncia';
 @Controller('denuncias')
 export class DenunciaController {
   constructor(
-    private denunciarCidadao: DenunciarCidadao,
     private denunciarCidadaoV2: DenunciarCidadaoV2,
     private consultarDenuncia: ConsultarDenuncia,
     private canalCidadaoStats: CanalCidadaoStats,
@@ -39,16 +37,11 @@ export class DenunciaController {
   @ApiOperation({ summary: 'Registrar denúncia de cidadão (público)' })
   async denunciar(@Body() body: DenunciaCidadaoBody, @Req() req: Request) {
     const parsed = denunciaCidadaoSchema.parse(body);
-
-    if (env.CANAL_CIDADAO_V2_ENABLED) {
-      const rawIp = req.ip ?? '';
-      const ipHash = rawIp
-        ? createHash('sha256').update(rawIp + env.CANAL_CIDADAO_IP_SALT).digest('hex')
-        : '';
-      return this.denunciarCidadaoV2.execute(parsed, ipHash);
-    }
-
-    return this.denunciarCidadao.execute(parsed);
+    const rawIp = req.ip ?? '';
+    const ipHash = rawIp
+      ? createHash('sha256').update(rawIp + env.CANAL_CIDADAO_IP_SALT).digest('hex')
+      : '';
+    return this.denunciarCidadaoV2.execute(parsed, ipHash);
   }
 
   @Public()

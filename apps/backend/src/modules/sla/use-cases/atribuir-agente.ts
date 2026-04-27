@@ -12,7 +12,7 @@ export class AtribuirAgente {
     private writeRepository: SlaWriteRepository,
   ) {}
 
-  async execute(id: string, data: AtribuirAgenteBody, clienteId?: string | null) {
+  async execute(id: string, data: AtribuirAgenteBody, clienteId: string | null) {
     const sla = await this.readRepository.findById(id, clienteId);
     if (!sla) throw SlaException.notFound();
 

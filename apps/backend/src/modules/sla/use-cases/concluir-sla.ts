@@ -11,7 +11,7 @@ export class ConcluirSla {
     private writeRepository: SlaWriteRepository,
   ) {}
 
-  async execute(id: string, clienteId?: string | null) {
+  async execute(id: string, clienteId: string | null) {
     const sla = await this.readRepository.findById(id, clienteId);
     if (!sla) throw SlaException.notFound();
 

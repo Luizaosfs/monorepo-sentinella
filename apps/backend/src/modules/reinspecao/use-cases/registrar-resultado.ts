@@ -3,8 +3,6 @@ import { FocoRiscoWriteRepository } from '@modules/foco-risco/repositories/foco-
 import { Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
-import { assertTenantOwnership } from 'src/shared/security/tenant-ownership.util';
-
 import { ResultadoReinspecaoBody } from '../dtos/resultado-reinspecao.body';
 import { ReinspecaoException } from '../errors/reinspecao.exception';
 import { ReinspecaoReadRepository } from '../repositories/reinspecao-read.repository';
@@ -21,14 +19,11 @@ export class RegistrarResultadoReinspecao {
   ) {}
 
   async execute(id: string, input: ResultadoReinspecaoBody) {
-    const r = await this.readRepository.findById(id);
+    const tenantId = (this.req['tenantId'] as string | undefined) ?? null;
+    const r = await this.readRepository.findById(id, tenantId);
     if (!r) {
       throw ReinspecaoException.notFound();
     }
-
-    assertTenantOwnership(r.clienteId, this.req, () =>
-      ReinspecaoException.forbiddenTenant(),
-    );
 
     if (r.status !== 'pendente') {
       throw ReinspecaoException.badRequest();

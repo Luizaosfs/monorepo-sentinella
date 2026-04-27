@@ -34,7 +34,7 @@ describe('AtribuirAgente', () => {
     const result = await useCase.execute(sla.id!, {
       agenteId: 'op-1',
       avancarStatus: false,
-    });
+    }, null);
 
     expect(result.sla.agenteId).toBe('op-1');
     expect(writeRepo.save).toHaveBeenCalledWith(sla);
@@ -48,7 +48,7 @@ describe('AtribuirAgente', () => {
     const result = await useCase.execute(sla.id!, {
       agenteId: 'op-1',
       avancarStatus: true,
-    });
+    }, null);
 
     expect(result.sla.status).toBe('em_atendimento');
   });
@@ -61,7 +61,7 @@ describe('AtribuirAgente', () => {
     const result = await useCase.execute(sla.id!, {
       agenteId: 'op-1',
       avancarStatus: false,
-    });
+    }, null);
 
     expect(result.sla.status).toBe('pendente');
   });
@@ -74,7 +74,7 @@ describe('AtribuirAgente', () => {
     const result = await useCase.execute(sla.id!, {
       agenteId: 'op-1',
       avancarStatus: true,
-    });
+    }, null);
 
     expect(result.sla.status).toBe('em_atendimento');
   });
@@ -83,7 +83,7 @@ describe('AtribuirAgente', () => {
     readRepo.findById.mockResolvedValue(null);
 
     await expectHttpException(
-      () => useCase.execute('nao-existe', { agenteId: 'op-1', avancarStatus: false }),
+      () => useCase.execute('nao-existe', { agenteId: 'op-1', avancarStatus: false }, null),
       SlaException.notFound(),
     );
   });

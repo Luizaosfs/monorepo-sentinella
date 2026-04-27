@@ -31,8 +31,9 @@ describe('CreateRun', () => {
 
     const explicit = {
       clienteId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
-      dataReferencia: new Date('2024-06-15'),
-      total: 10,
+      dtRef: new Date('2024-06-15'),
+      totalBairros: 10,
+      status: 'pendente',
     } as CreatePluvioRunInput;
     await useCase.execute(explicit);
 
@@ -42,8 +43,10 @@ describe('CreateRun', () => {
 
     writeRepo.createRun.mockResolvedValue(new PluvioRunBuilder().build());
     const fallbackInput = {
-      dataReferencia: new Date('2024-06-20'),
-      total: 20,
+      clienteId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      dtRef: new Date('2024-06-20'),
+      totalBairros: 20,
+      status: 'pendente',
     } as CreatePluvioRunInput;
 
     await useCase.execute(fallbackInput);
@@ -59,7 +62,9 @@ describe('CreateRun', () => {
 
     await useCase.execute({
       clienteId: 'test-cliente-id',
-      dataReferencia: new Date('2024-06-15'),
+      dtRef: new Date('2024-06-15'),
+      totalBairros: 0,
+      status: 'pendente',
     } as CreatePluvioRunInput);
 
     expect(writeRepo.createRun).toHaveBeenCalledWith(

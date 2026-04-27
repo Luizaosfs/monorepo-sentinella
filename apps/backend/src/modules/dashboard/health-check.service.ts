@@ -43,7 +43,6 @@ export class HealthCheckService {
 
   async migrationHealth(): Promise<{
     senha_hash: { total: number; pendentes: number; percentual_migrado: number };
-    supabase_bridge_ativa: boolean;
     canal_cidadao_v2_ativo: boolean;
   }> {
     const result = await this.prisma.client.$queryRaw<
@@ -62,7 +61,6 @@ export class HealthCheckService {
 
     return {
       senha_hash: { total, pendentes, percentual_migrado },
-      supabase_bridge_ativa: false, // Bridge removida na Fase 5 — campo mantido para compatibilidade de contrato com frontend antigo
       canal_cidadao_v2_ativo: env.CANAL_CIDADAO_V2_ENABLED,
     };
   }

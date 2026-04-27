@@ -17,7 +17,7 @@ export class UpdateSlaStatus {
     @Inject(REQUEST) private req: Request,
   ) {}
 
-  async execute(id: string, data: UpdateSlaStatusBody, clienteId?: string | null) {
+  async execute(id: string, data: UpdateSlaStatusBody, clienteId: string | null) {
     const sla = await this.readRepository.findById(id, clienteId);
     if (!sla) throw SlaException.notFound();
 

@@ -42,7 +42,7 @@ describe('ConcluirSla', () => {
     readRepo.findById.mockResolvedValue(sla);
     writeRepo.save.mockResolvedValue();
 
-    const result = await useCase.execute(sla.id!);
+    const result = await useCase.execute(sla.id!, null);
 
     expect(result.sla.status).toBe('concluido');
     expect(result.sla.concluidoEm?.getTime()).toBe(agora.getTime());
@@ -59,7 +59,7 @@ describe('ConcluirSla', () => {
     readRepo.findById.mockResolvedValue(sla);
     writeRepo.save.mockResolvedValue();
 
-    const result = await useCase.execute(sla.id!);
+    const result = await useCase.execute(sla.id!, null);
 
     expect(result.sla.violado).toBe(true);
   });
@@ -74,7 +74,7 @@ describe('ConcluirSla', () => {
     readRepo.findById.mockResolvedValue(sla);
     writeRepo.save.mockResolvedValue();
 
-    const result = await useCase.execute(sla.id!);
+    const result = await useCase.execute(sla.id!, null);
 
     expect(result.sla.violado).toBe(false);
   });
@@ -82,14 +82,14 @@ describe('ConcluirSla', () => {
   it('deve rejeitar SLA não encontrado', async () => {
     readRepo.findById.mockResolvedValue(null);
 
-    await expectHttpException(() => useCase.execute('nao-existe'), SlaException.notFound());
+    await expectHttpException(() => useCase.execute('nao-existe', null), SlaException.notFound());
   });
 
   it('P2: SLA soft-deletado → findById retorna null → notFound sem chamar writeRepo', async () => {
     // A impl Prisma filtra deleted_at: null; use-case recebe null e lança notFound
     readRepo.findById.mockResolvedValue(null);
 
-    await expectHttpException(() => useCase.execute('sla-deletado'), SlaException.notFound());
+    await expectHttpException(() => useCase.execute('sla-deletado', null), SlaException.notFound());
     expect(writeRepo.save).not.toHaveBeenCalled();
   });
 
@@ -103,7 +103,7 @@ describe('ConcluirSla', () => {
     readRepo.findById.mockResolvedValue(sla);
     writeRepo.save.mockResolvedValue();
 
-    const result = await useCase.execute(sla.id!);
+    const result = await useCase.execute(sla.id!, null);
 
     expect(result.sla.escalonadoAutomatico).toBe(true);
   });
@@ -118,7 +118,7 @@ describe('ConcluirSla', () => {
     readRepo.findById.mockResolvedValue(sla);
     writeRepo.save.mockResolvedValue();
 
-    const result = await useCase.execute(sla.id!);
+    const result = await useCase.execute(sla.id!, null);
 
     expect(result.sla.escalonadoAutomatico).toBe(false);
   });
