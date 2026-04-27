@@ -20,7 +20,50 @@ async function bootstrap() {
   // Permite que req.ip reflita o IP real atrás de proxy/load balancer
   app.getHttpAdapter().getInstance().set('trust proxy', true);
 
-  app.use(helmet());
+  //app.use(helmet());
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          connectSrc: [
+            "'self'",
+            "https://sentinellamap.com.br",
+            "https://www.sentinellamap.com.br",
+            "http://localhost:3333",
+            "http://localhost:8080",
+            "https://*.supabase.co",
+            "wss://*.supabase.co",
+            "https://maps.googleapis.com",
+            "https://*.sentry.io",
+            "https://o4511116110528512.ingest.us.sentry.io",
+            "https://api.open-meteo.com",
+          ],
+          imgSrc: [
+            "'self'",
+            "data:",
+            "blob:",
+            "https:",
+          ],
+          scriptSrc: [
+            "'self'",
+            "'unsafe-inline'",
+          ],
+          styleSrc: [
+            "'self'",
+            "'unsafe-inline'",
+            "https://fonts.googleapis.com",
+          ],
+          fontSrc: [
+            "'self'",
+            "data:",
+            "https://fonts.gstatic.com",
+          ],
+        },
+      },
+    }),
+  );
+
   app.useGlobalPipes(new MyZodValidationPipe());
   app.useGlobalFilters(new GlobalExceptionFilter());
 
