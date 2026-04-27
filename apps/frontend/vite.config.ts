@@ -1,23 +1,8 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
-import fs from "fs";
 import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
-
-// Copia .htaccess para dist (necessário para SPA na Hostinger/Apache)
-function copyHtaccess() {
-  return {
-    name: "copy-htaccess",
-    closeBundle() {
-      const src = path.resolve(__dirname, "public/.htaccess");
-      const dest = path.resolve(__dirname, "dist/.htaccess");
-      if (fs.existsSync(src)) {
-        fs.copyFileSync(src, dest);
-      }
-    },
-  };
-}
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -30,7 +15,6 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
-    copyHtaccess(),
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
@@ -40,9 +24,8 @@ export default defineConfig(({ mode }) => ({
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/~oauth/, /^\/supabase/, /^\/api/],
-        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024, // 3 MB (chunk principal > 2 MB)
+        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         runtimeCaching: [
-          // ── Fontes Google ─────────────────────────────────────────────
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
             handler: "CacheFirst",
@@ -61,9 +44,6 @@ export default defineConfig(({ mode }) => ({
               cacheableResponse: { statuses: [0, 200] },
             },
           },
-          // ── Supabase REST API (dados operacionais) ────────────────────
-          // NetworkFirst: tenta a rede e cai para cache em caso de falha.
-          // Operadores em campo continuam vendo dados recentes mesmo offline.
           {
             urlPattern: /^https:\/\/[^/]+\.supabase\.co\/rest\/.*/i,
             handler: "NetworkFirst",
@@ -72,13 +52,11 @@ export default defineConfig(({ mode }) => ({
               networkTimeoutSeconds: 5,
               expiration: {
                 maxEntries: 200,
-                maxAgeSeconds: 60 * 60 * 24, // 24 h
+                maxAgeSeconds: 60 * 60 * 24,
               },
               cacheableResponse: { statuses: [0, 200] },
             },
           },
-          // ── Imagens Cloudinary (evidências de campo) ──────────────────
-          // CacheFirst: imagens raramente mudam; serve do cache imediatamente.
           {
             urlPattern: /^https:\/\/res\.cloudinary\.com\/.*/i,
             handler: "CacheFirst",
@@ -86,12 +64,11 @@ export default defineConfig(({ mode }) => ({
               cacheName: "cloudinary-images-cache",
               expiration: {
                 maxEntries: 300,
-                maxAgeSeconds: 60 * 60 * 24 * 7, // 7 dias
+                maxAgeSeconds: 60 * 60 * 24 * 7,
               },
               cacheableResponse: { statuses: [0, 200] },
             },
           },
-          // ── Open-Meteo (previsão do tempo / alertas de tempestade) ────
           {
             urlPattern: /^https:\/\/api\.open-meteo\.com\/.*/i,
             handler: "NetworkFirst",
@@ -100,7 +77,7 @@ export default defineConfig(({ mode }) => ({
               networkTimeoutSeconds: 5,
               expiration: {
                 maxEntries: 20,
-                maxAgeSeconds: 60 * 60, // 1 h
+                maxAgeSeconds: 60 * 60,
               },
               cacheableResponse: { statuses: [0, 200] },
             },
@@ -142,13 +119,10 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks: {
-          // React core
           'vendor-react': [
             'react',
             'react-dom',
             'react-router-dom',
-
-            // Radix UI (evita ciclo entre vendor-react <-> vendor-radix)
             '@radix-ui/react-accordion',
             '@radix-ui/react-alert-dialog',
             '@radix-ui/react-aspect-ratio',
@@ -177,11 +151,7 @@ export default defineConfig(({ mode }) => ({
             '@radix-ui/react-toggle-group',
             '@radix-ui/react-tooltip',
           ],
-
-          // State & query
           'vendor-query': ['@tanstack/react-query'],
-
-          // Mapas e plugins
           'vendor-leaflet': [
             'leaflet',
             'react-leaflet',
@@ -190,14 +160,8 @@ export default defineConfig(({ mode }) => ({
             'leaflet-draw',
             'leaflet-kmz',
           ],
-
-          // Gráficos
           'vendor-charts': ['recharts'],
-
-          // PDF
           'vendor-pdf': ['jspdf', 'jspdf-autotable'],
-
-          // Utilitários de data
           'vendor-dates': ['date-fns'],
         },
       },
