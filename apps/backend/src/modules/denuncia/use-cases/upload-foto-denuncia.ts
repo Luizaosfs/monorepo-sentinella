@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { z } from 'zod';
 import { CloudinaryService } from '../../cloudinary/cloudinary.service';
 import { uploadFotoDenunciaSchema } from '../dtos/upload-foto-denuncia.body';
@@ -11,6 +11,8 @@ const MAX_DECODED_BYTES = 8 * 1024 * 1024;
 
 @Injectable()
 export class UploadFotoDenuncia {
+  private readonly logger = new Logger(UploadFotoDenuncia.name);
+
   constructor(private cloudinaryService: CloudinaryService) {}
 
   async execute(input: UploadFotoInput): Promise<{ secure_url: string; public_id: string }> {
@@ -29,7 +31,10 @@ export class UploadFotoDenuncia {
         input.contentType,
         input.folder,
       );
-    } catch {
+    } catch (err) {
+      this.logger.error(
+        `Cloudinary upload falhou: ${err instanceof Error ? err.message : String(err)}`,
+      );
       throw UploadFotoException.uploadFailed();
     }
   }

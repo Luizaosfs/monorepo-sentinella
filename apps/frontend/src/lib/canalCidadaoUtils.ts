@@ -36,8 +36,45 @@ export function extractErrorMessage(err: unknown): string {
   return 'Não foi possível registrar sua denúncia. Tente novamente em instantes.';
 }
 
+const MAX_DIM = 1280;
+const MAX_BYTES = 900_000; // 900KB — folga para o overhead base64 (~33%)
+
+function compressToJpeg(file: File): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let { width, height } = img;
+      if (width > MAX_DIM || height > MAX_DIM) {
+        if (width >= height) { height = Math.round(height * MAX_DIM / width); width = MAX_DIM; }
+        else { width = Math.round(width * MAX_DIM / height); height = MAX_DIM; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext('2d')!.drawImage(img, 0, 0, width, height);
+      const tryQuality = (q: number) => {
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) { reject(new Error('canvas.toBlob falhou')); return; }
+            if (blob.size <= MAX_BYTES || q <= 0.3) resolve(blob);
+            else tryQuality(Math.max(0.3, q - 0.15));
+          },
+          'image/jpeg',
+          q,
+        );
+      };
+      tryQuality(0.82);
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
 /**
  * Upload de foto de denúncia via base64 + JSON.
+ * Comprime para JPEG ≤ 900KB antes de enviar.
  * Endpoint público — não requer autenticação.
  * NÃO lança exceção; retorna null em caso de falha.
  */
@@ -45,15 +82,16 @@ export async function uploadDenunciaFoto(
   file: File,
 ): Promise<{ url: string; public_id: string } | null> {
   try {
+    const compressed = await compressToJpeg(file);
     const fileBase64 = await new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => { resolve((reader.result as string).split(',')[1]); };
       reader.onerror = reject;
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(compressed);
     });
     const result = await http.post('/denuncias/upload-foto', {
       fileBase64,
-      contentType: file.type,
+      contentType: 'image/jpeg',
       folder: 'denuncias',
     }) as { secure_url?: string; public_id?: string };
     return result.secure_url ? { url: result.secure_url, public_id: result.public_id ?? '' } : null;

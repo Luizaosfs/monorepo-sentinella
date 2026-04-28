@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
@@ -116,7 +117,11 @@ export default function GestorFocos() {
   const [page, setPage] = useState(1);
 
   // ── Lightbox ─────────────────────────────────────────────────────────────────
-  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  const [lightbox, setLightbox] = useState<{
+    url: string;
+    itemId: string | null;
+    prioridade: FocoRiscoPrioridade | null;
+  } | null>(null);
 
   // ── Seleção em lote ──────────────────────────────────────────────────────────
   const [selecionados, setSelecionados] = useState<Set<string>>(new Set());
@@ -128,6 +133,23 @@ export default function GestorFocos() {
   const [selectedFoco, setSelectedFoco] = useState<FocoRiscoAtivo | null>(null);
   const [transDialog, setTransDialog] = useState<{ foco: FocoRiscoAtivo; statusNovo: FocoRiscoStatus } | null>(null);
   const [motivo, setMotivo] = useState('');
+
+  // Pré-aquece o cache YOLO quando um foco é selecionado, para que o lightbox abra instantaneamente
+  useEffect(() => {
+    const itemId = selectedFoco?.origem_levantamento_item_id;
+    if (!itemId) return;
+    qc.prefetchQuery({
+      queryKey: ['item_yolo_overlay', itemId],
+      queryFn: async () => {
+        const item = await api.itens.getById(itemId) as Record<string, unknown>;
+        return {
+          detection_bbox: (item.detection_bbox ?? null),
+          detecoes: (item.detecoes ?? []),
+        };
+      },
+      staleTime: 30 * 60 * 1000,
+    });
+  }, [selectedFoco?.origem_levantamento_item_id, qc]);
 
   const atualizar = useAtualizarStatusFoco();
 
@@ -638,7 +660,7 @@ export default function GestorFocos() {
                   {foco.origem_image_url && (
                     <div
                       className="relative group cursor-zoom-in shrink-0"
-                      onClick={(e) => { e.stopPropagation(); setLightboxUrl(foco.origem_image_url); }}
+                      onClick={(e) => { e.stopPropagation(); setLightbox({ url: foco.origem_image_url!, itemId: foco.origem_levantamento_item_id ?? null, prioridade: foco.prioridade ?? null }); }}
                     >
                       <img
                         src={foco.origem_image_url}
@@ -726,7 +748,7 @@ export default function GestorFocos() {
                         {foco.origem_image_url ? (
                           <div
                             className="relative group cursor-zoom-in w-10 h-10"
-                            onClick={() => setLightboxUrl(foco.origem_image_url)}
+                            onClick={() => setLightbox({ url: foco.origem_image_url!, itemId: foco.origem_levantamento_item_id ?? null, prioridade: foco.prioridade ?? null })}
                           >
                             <img
                               src={foco.origem_image_url}
@@ -923,24 +945,27 @@ export default function GestorFocos() {
       )}
 
       {/* ── Lightbox ─────────────────────────────────────────────────────────── */}
-      {lightboxUrl && (
+      {lightbox && typeof document !== 'undefined' && createPortal(
         <div
-          className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4 cursor-zoom-out"
-          onClick={() => setLightboxUrl(null)}
+          className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4 cursor-zoom-out overflow-y-auto"
+          onClick={() => setLightbox(null)}
         >
           <button
-            className="absolute top-4 right-4 text-white/80 hover:text-white bg-black/40 rounded-full p-2"
-            onClick={() => setLightboxUrl(null)}
+            className="fixed top-4 right-4 text-white/80 hover:text-white bg-black/40 rounded-full p-2 z-10"
+            onClick={() => setLightbox(null)}
           >
             <X className="w-5 h-5" />
           </button>
-          <img
-            src={lightboxUrl}
-            alt="Imagem ampliada"
-            className="max-w-full max-h-[90vh] rounded-lg object-contain shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          />
-        </div>
+          <div className="max-w-4xl w-full my-auto" onClick={(e) => e.stopPropagation()}>
+            <TriagemFocoImagemComYolo
+              imageUrl={lightbox.url}
+              itemId={lightbox.itemId}
+              prioridade={lightbox.prioridade}
+              variant="dialog"
+            />
+          </div>
+        </div>,
+        document.body,
       )}
 
       {/* ── Sheet lateral ────────────────────────────────────────────────────── */}
@@ -954,7 +979,11 @@ export default function GestorFocos() {
               {selectedFoco.origem_image_url && (
                 <div
                   className="rounded-xl border border-border/60 bg-black/10 p-2 cursor-zoom-in"
-                  onClick={() => setLightboxUrl(selectedFoco.origem_image_url)}
+                  onClick={() => setLightbox({
+                    url: selectedFoco.origem_image_url!,
+                    itemId: selectedFoco.origem_levantamento_item_id ?? null,
+                    prioridade: selectedFoco.prioridade ?? null,
+                  })}
                 >
                   <TriagemFocoImagemComYolo
                     imageUrl={selectedFoco.origem_image_url}

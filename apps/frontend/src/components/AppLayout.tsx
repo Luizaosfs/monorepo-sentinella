@@ -447,7 +447,7 @@ const AppLayout = () => {
   }
 
   return (
-    <div className="isolate flex min-h-screen overflow-x-hidden">
+    <div className="isolate flex h-screen overflow-hidden overflow-x-hidden">
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
@@ -460,7 +460,7 @@ const AppLayout = () => {
       {/* Sidebar — max-lg:z-[100] garante drawer acima do backdrop (z-30) e de camadas do mapa (Leaflet) */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 max-lg:z-[100] flex w-64 flex-col gradient-login-panel border-r border-white/10 text-white/80 transition-transform lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 shadow-2xl",
+          "fixed inset-y-0 left-0 z-50 max-lg:z-[100] flex w-64 flex-col gradient-login-panel border-r border-white/10 text-white/80 transition-transform lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 shadow-2xl overflow-y-auto",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
@@ -543,7 +543,7 @@ const AppLayout = () => {
         )}
 
         {/* Nav — agente: portal próprio; demais: Início & Monitoramento + Contextos (Cadastros, Risco, Operação, etc.) */}
-        <nav className="flex-1 space-y-1 p-4 overflow-y-auto min-h-0 [&_a]:rounded-sm [&_button]:rounded-sm">
+        <nav className="flex-1 space-y-1 p-4 [&_a]:rounded-sm [&_button]:rounded-sm">
           {papel === 'admin' ? (
             /* Admin de plataforma: monitoramento + gestão da plataforma SaaS */
             <>
@@ -692,97 +692,70 @@ const AppLayout = () => {
           )}
         </nav>
 
-        {/* Footer — conta + atalhos (alinhamento com ícone fixo como o menu principal) */}
-        <div className="shrink-0 mt-auto border-t border-white/[0.12] bg-gradient-to-b from-black/5 to-black/20 backdrop-blur-[2px]">
-          <div className="space-y-2 p-2">
-            <div className="flex items-center gap-2 rounded-xl bg-white/[0.07] px-2 py-2 ring-1 ring-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-white/25 to-white/10 text-xs font-black text-white shadow-sm ring-1 ring-white/15">
-                {usuario?.nome?.charAt(0)?.toUpperCase() || 'U'}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-xs font-semibold leading-tight text-white">
-                  {usuario?.nome || 'Usuário'}
-                </p>
-                {papel && (
-                  <p
-                    className="mt-0.5 truncate text-[10px] font-medium leading-tight text-emerald-50/85"
-                    title={`Papel: ${PAPEL_LABEL[papel] ?? papel}`}
-                  >
-                    {PAPEL_LABEL[papel] ?? papel}
-                  </p>
-                )}
-              </div>
+        {/* Footer — linha 1: usuário · linha 2: ações */}
+        <div className="border-t border-white/[0.12] px-3 py-2.5 space-y-2">
+          {/* Linha 1: avatar + nome + papel */}
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/20 text-xs font-black text-white shadow-sm">
+              {usuario?.nome?.charAt(0)?.toUpperCase() || 'U'}
             </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-xs font-semibold leading-tight text-white">
+                {usuario?.nome || 'Usuário'}
+              </p>
+              {papel && (
+                <p className="truncate text-[10px] leading-tight text-white/55">
+                  {PAPEL_LABEL[papel] ?? papel}
+                </p>
+              )}
+            </div>
+          </div>
 
-            <div className="space-y-1">
+          {/* Linha 2: botões de ação */}
+          <div className="flex items-center gap-1">
+            {(isAdminOrSupervisor || papel === 'analista_regional') && (
               <button
                 type="button"
-                onClick={handleAbrirComoUsar}
-                className="group flex h-8 w-full items-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 text-[11px] font-semibold text-white/85 transition-all hover:border-white/20 hover:bg-white/12 hover:text-white"
-                title="Ver tour de boas-vindas novamente"
+                onClick={toggleModoAnalitico}
+                title={modoAnalitico ? 'Ocultar análise' : 'Ver análise'}
+                className={cn(
+                  'flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors',
+                  modoAnalitico
+                    ? 'bg-blue-500/25 text-blue-200 hover:bg-blue-500/40'
+                    : 'text-white/45 hover:bg-white/10 hover:text-white',
+                )}
               >
-                <BookOpen className="h-3.5 w-3.5 shrink-0 opacity-90 group-hover:opacity-100" aria-hidden />
-                <span className="min-w-0 truncate text-left">Como usar</span>
+                {modoAnalitico
+                  ? <EyeOff className="h-3.5 w-3.5" aria-hidden />
+                  : <Eye className="h-3.5 w-3.5" aria-hidden />}
               </button>
-
-              {(isAdminOrSupervisor || papel === 'analista_regional') && (
-                <div className="space-y-0.5">
-                  <button
-                    type="button"
-                    onClick={toggleModoAnalitico}
-                    className={cn(
-                      'group flex h-8 w-full items-center gap-2 rounded-lg border px-2.5 text-[11px] font-semibold transition-all',
-                      modoAnalitico
-                        ? 'border-blue-400/35 bg-blue-500/18 text-blue-100 hover:bg-blue-500/28'
-                        : 'border-white/10 bg-white/[0.04] text-white/85 hover:border-white/20 hover:bg-white/12 hover:text-white',
-                    )}
-                    title={
-                      modoAnalitico
-                        ? 'Ocultar dimensões de risco nas telas de detalhe'
-                        : 'Exibir resultado operacional e dimensões de risco em cada vistoria'
-                    }
-                  >
-                    {modoAnalitico ? (
-                      <EyeOff className="h-3.5 w-3.5 shrink-0 opacity-90" aria-hidden />
-                    ) : (
-                      <Eye className="h-3.5 w-3.5 shrink-0 opacity-90 group-hover:opacity-100" aria-hidden />
-                    )}
-                    <span className="min-w-0 truncate text-left">
-                      {modoAnalitico ? 'Ocultar análise' : 'Ver análise'}
-                    </span>
-                  </button>
-                  {modoAnalitico && (
-                    <p className="px-0.5 text-center text-[9px] leading-tight text-blue-200/75">
-                      Dimensões visíveis nas vistorias
-                    </p>
-                  )}
-                </div>
-              )}
-
-              <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                  className="group flex h-8 min-w-0 flex-1 items-center gap-2 rounded-md border border-transparent bg-transparent px-2 text-[10px] font-medium text-white/45 transition-colors hover:bg-white/[0.06] hover:text-white/70 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/25"
-                  title={theme === 'dark' ? 'Alternar para modo claro' : 'Alternar para modo escuro'}
-                >
-                  {theme === 'dark' ? (
-                    <Sun className="h-3 w-3 shrink-0 text-white/40 group-hover:text-white/65" aria-hidden />
-                  ) : (
-                    <Moon className="h-3 w-3 shrink-0 text-white/40 group-hover:text-white/65" aria-hidden />
-                  )}
-                  <span className="min-w-0 truncate text-left">{theme === 'dark' ? 'Modo claro' : 'Modo escuro'}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSignOut}
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-red-400/25 bg-red-500/12 text-red-300 transition-all hover:border-red-400/50 hover:bg-red-500 hover:text-white"
-                  title="Sair"
-                >
-                  <LogOut className="h-3.5 w-3.5" aria-hidden />
-                </button>
-              </div>
-            </div>
+            )}
+            <button
+              type="button"
+              onClick={handleAbrirComoUsar}
+              title="Como usar"
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-white/45 transition-colors hover:bg-white/10 hover:text-white"
+            >
+              <BookOpen className="h-3.5 w-3.5" aria-hidden />
+            </button>
+            <button
+              type="button"
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              title={theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-white/45 transition-colors hover:bg-white/10 hover:text-white"
+            >
+              {theme === 'dark'
+                ? <Sun className="h-3.5 w-3.5" aria-hidden />
+                : <Moon className="h-3.5 w-3.5" aria-hidden />}
+            </button>
+            <button
+              type="button"
+              onClick={handleSignOut}
+              title="Sair"
+              className="ml-auto flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-red-400/25 bg-red-500/10 text-red-300 transition-all hover:border-red-400/50 hover:bg-red-500 hover:text-white"
+            >
+              <LogOut className="h-3.5 w-3.5" aria-hidden />
+            </button>
           </div>
         </div>
       </aside>

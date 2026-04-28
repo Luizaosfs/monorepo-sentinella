@@ -65,10 +65,12 @@ export class IaService {
     }
   }
 
-  async insightsRegional(clienteId: string): Promise<{ insights: string[] }> {
+  async insightsRegional(clienteId: string | null): Promise<{ insights: string[] }> {
+    const focoWhere = clienteId ? { cliente_id: clienteId, deleted_at: null } : { deleted_at: null };
+    const vistoriaWhere = clienteId ? { cliente_id: clienteId } : {};
     const [totalFocos, totalVistorias] = await this.prisma.client.$transaction([
-      this.prisma.client.focos_risco.count({ where: { cliente_id: clienteId, deleted_at: null } }),
-      this.prisma.client.vistorias.count({ where: { cliente_id: clienteId } }),
+      this.prisma.client.focos_risco.count({ where: focoWhere }),
+      this.prisma.client.vistorias.count({ where: vistoriaWhere }),
     ]);
 
     const insights: string[] = [];
@@ -95,36 +97,128 @@ export class IaService {
       });
       if (resp.ok) {
         const d = (await resp.json()) as any;
-        const text: string = d.content?.[0]?.text ?? '';
+        const raw: string = d.content?.[0]?.text ?? '';
+        const text = raw.replace(/```(?:json)?\s*/g, '').replace(/```/g, '').trim();
         const parsed = JSON.parse(text);
         if (Array.isArray(parsed.insights)) return { insights: parsed.insights };
+      } else {
+        const errBody = await resp.text().catch(() => '');
+        this.logger.error(`[insightsRegional] Anthropic HTTP ${resp.status}: ${errBody.slice(0, 200)}`);
       }
-    } catch {
-      // usa insights padrão
+    } catch (err) {
+      this.logger.error(`[insightsRegional] ${err instanceof Error ? err.message : String(err)}`);
     }
 
     return { insights };
   }
 
-  async graficosRegionais(clienteId: string): Promise<{ labels: string[]; values: number[]; tipo: string }> {
+  async graficosRegionais(clienteIds: string[] | null): Promise<{
+    graficos: {
+      titulo: string;
+      tipo: string;
+      descricao?: string;
+      dados: { nome: string; valor: number; cor?: string }[];
+      cor_primaria?: string;
+    }[];
+    resumo: string;
+    gerado_em: string;
+  }> {
+    const focoFilter = clienteIds
+      ? { cliente_id: { in: clienteIds }, deleted_at: null as null }
+      : { deleted_at: null as null };
+
+    const graficos: {
+      titulo: string;
+      tipo: string;
+      descricao?: string;
+      dados: { nome: string; valor: number; cor?: string }[];
+      cor_primaria?: string;
+    }[] = [];
+
+    // Chart 1: Focos por status (pie)
+    const statusCounts = await this.prisma.client.focos_risco.groupBy({
+      by: ['status'],
+      where: focoFilter,
+      _count: { id: true },
+    });
+
+    const STATUS_COLORS: Record<string, string> = {
+      suspeita: '#f59e0b', em_triagem: '#3b82f6', aguarda_inspecao: '#8b5cf6',
+      em_inspecao: '#06b6d4', confirmado: '#ef4444', em_tratamento: '#f97316',
+      resolvido: '#22c55e', descartado: '#6b7280',
+    };
+    const STATUS_LABELS: Record<string, string> = {
+      suspeita: 'Suspeita', em_triagem: 'Em triagem', aguarda_inspecao: 'Ag. inspeção',
+      em_inspecao: 'Em inspeção', confirmado: 'Confirmado', em_tratamento: 'Em tratamento',
+      resolvido: 'Resolvido', descartado: 'Descartado',
+    };
+
+    const dadosStatus = statusCounts
+      .filter((r) => r._count.id > 0)
+      .map((r) => ({ nome: STATUS_LABELS[r.status] ?? r.status, valor: r._count.id, cor: STATUS_COLORS[r.status] }));
+
+    if (dadosStatus.length > 0) {
+      graficos.push({ titulo: 'Focos por Status', tipo: 'pie', descricao: 'Distribuição dos focos por status atual', dados: dadosStatus, cor_primaria: '#7c3aed' });
+    }
+
+    // Chart 2: Focos por região (bar_horizontal, top 10)
+    const regiaoFilter = clienteIds
+      ? { cliente_id: { in: clienteIds }, deleted_at: null as null }
+      : { deleted_at: null as null };
     const regioes = await this.prisma.client.regioes.findMany({
-      where: { cliente_id: clienteId, deleted_at: null },
+      where: regiaoFilter,
       select: { id: true, nome: true },
       take: 10,
     });
 
-    const counts = await Promise.all(
-      regioes.map((r) =>
-        this.prisma.client.focos_risco.count({
-          where: { cliente_id: clienteId, regiao_id: r.id, deleted_at: null },
-        }),
-      ),
-    );
+    if (regioes.length > 0) {
+      const regiaoCounts = await Promise.all(
+        regioes.map((r) => this.prisma.client.focos_risco.count({ where: { ...focoFilter, regiao_id: r.id } })),
+      );
+      const dadosRegiao = regioes
+        .map((r, i) => ({ nome: r.nome, valor: regiaoCounts[i] }))
+        .filter((d) => d.valor > 0)
+        .sort((a, b) => b.valor - a.valor);
+
+      if (dadosRegiao.length > 0) {
+        graficos.push({ titulo: 'Focos por Região', tipo: 'bar_horizontal', descricao: 'Focos de risco por região (top 10)', dados: dadosRegiao, cor_primaria: '#7c3aed' });
+      }
+    }
+
+    // Chart 3: Focos por município (quando há múltiplos clientes)
+    if (!clienteIds || clienteIds.length !== 1) {
+      const clientesFiltro = clienteIds ? { id: { in: clienteIds }, ativo: true } : { ativo: true };
+      const clientes = await this.prisma.client.clientes.findMany({
+        where: clientesFiltro,
+        select: { id: true, nome: true },
+        take: 10,
+        orderBy: { nome: 'asc' },
+      });
+
+      if (clientes.length > 1) {
+        const clienteCounts = await Promise.all(
+          clientes.map((c) => this.prisma.client.focos_risco.count({ where: { cliente_id: c.id, deleted_at: null } })),
+        );
+        const dadosCliente = clientes
+          .map((c, i) => ({ nome: c.nome, valor: clienteCounts[i] }))
+          .filter((d) => d.valor > 0)
+          .sort((a, b) => b.valor - a.valor);
+
+        if (dadosCliente.length > 0) {
+          graficos.push({ titulo: 'Focos por Município', tipo: 'bar', descricao: 'Total de focos por município', dados: dadosCliente, cor_primaria: '#7c3aed' });
+        }
+      }
+    }
+
+    const totalFocos = statusCounts.reduce((sum, r) => sum + r._count.id, 0);
+    const ativos = statusCounts
+      .filter((r) => !['resolvido', 'descartado'].includes(r.status))
+      .reduce((sum, r) => sum + r._count.id, 0);
 
     return {
-      tipo: 'focos_por_regiao',
-      labels: regioes.map((r) => r.nome),
-      values: counts,
+      graficos,
+      resumo: `${totalFocos} focos registrados, ${ativos} ativos.`,
+      gerado_em: new Date().toISOString(),
     };
   }
 

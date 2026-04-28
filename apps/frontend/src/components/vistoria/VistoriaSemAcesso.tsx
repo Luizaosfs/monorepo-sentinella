@@ -172,14 +172,14 @@ export function VistoriaSemAcesso({
         checkin_em: etapa1.checkin_em,
         acesso_realizado: false,
         motivo_sem_acesso: motivo,
-        proximo_horario_sugerido: horario ?? null,
-        observacao_acesso: observacao.trim() || null,
-        foto_externa_url: fotoUrlFinal,
+        proximo_horario_sugerido: horario ?? undefined,
+        observacao_acesso: observacao.trim() || undefined,
+        foto_externa_url: fotoUrlFinal ?? undefined,
         calhas: vistoriaCalha ? [{
           posicao: calhaPos,
           condicao: calhaCond,
           com_foco: calhaFoco,
-          observacao: null,
+          observacao: undefined,
         }] : [],
       });
     },

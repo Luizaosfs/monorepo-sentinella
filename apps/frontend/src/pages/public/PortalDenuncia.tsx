@@ -19,7 +19,7 @@ import {
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { cn } from '@/lib/utils';
-import { extractErrorMessage, uploadDenunciaFoto, type DenunciaResult } from '@/lib/canalCidadaoUtils';
+import { extractErrorMessage, uploadDenunciaFoto } from '@/lib/canalCidadaoUtils';
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
@@ -119,7 +119,7 @@ const PortalDenuncia: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [protocolo, setProtocolo] = useState<string | null>(null);
-  const [jaExistia, setJaExistia] = useState(false);
+  const [jaExistia] = useState(false);
   const [fotoFoiPerdida, setFotoFoiPerdida] = useState(false);
 
   // ── Geolocalização ────────────────────────────────────────────────────────
@@ -187,9 +187,18 @@ const PortalDenuncia: React.FC = () => {
   const resolverCliente = useCallback(async (lat: number, lng: number) => {
     setResolvendoCliente(true);
     try {
-      const resultado = await api.clientes.resolverPorCoordenada(lat, lng);
-      if (resultado) { setClienteResolvido(resultado); setEtapa('confirmando'); }
-      else setEtapa('nao_encontrado');
+      const resultado = await api.clientes.resolverPorCoordenadaPublico(lat, lng);
+      if (resultado) {
+        setClienteResolvido({
+          cliente_id: resultado.id,
+          cliente_nome: resultado.nome,
+          cidade: resultado.cidade,
+          uf: resultado.uf,
+          slug: resultado.slug,
+          metodo: resultado.metodo,
+        });
+        setEtapa('confirmando');
+      } else setEtapa('nao_encontrado');
     } catch { setEtapa('nao_encontrado'); }
     finally { setResolvendoCliente(false); }
   }, []);
@@ -204,11 +213,9 @@ const PortalDenuncia: React.FC = () => {
     if (!buscarManual.trim()) return;
     setResolvendoCliente(true);
     try {
-      const res = await http.get<{ id: string; nome: string; cidade?: string; uf?: string; slug?: string }[]>(
-        `/clientes?cidade=${encodeURIComponent(buscarManual.trim())}&ativo=true&limit=1`
+      const data = await http.get<{ id: string; nome: string; cidade?: string; uf?: string; slug?: string } | null>(
+        `/clientes/por-cidade?cidade=${encodeURIComponent(buscarManual.trim())}`
       );
-      const list = Array.isArray(res) ? res : ((res as { data?: unknown[] }).data ?? []);
-      const data = list[0] as { id: string; nome: string; cidade?: string; uf?: string; slug?: string } | undefined;
       if (data) {
         setClienteResolvido({
           cliente_id: data.id,
@@ -260,7 +267,7 @@ const PortalDenuncia: React.FC = () => {
     try {
       const fotoResult = await uploadFoto();
 
-      const result = await http.post<DenunciaResult>('/denuncias/cidadao', {
+      const result = await http.post<{ protocolo: string; id: string }>('/denuncias/cidadao', {
         slug: clienteResolvido.slug,
         bairroId: null,
         descricao: endereco.trim()
@@ -271,10 +278,8 @@ const PortalDenuncia: React.FC = () => {
         fotoUrl: fotoResult?.url ?? null,
         fotoPublicId: fotoResult?.public_id ?? null,
       });
-      if (!result.ok) { setSubmitError(result.error ?? 'Erro ao registrar. Tente novamente.'); return; }
-      setJaExistia(result.deduplicado === true);
       if (foto && !fotoResult) setFotoFoiPerdida(true);
-      setProtocolo(result.foco_id ? result.foco_id.slice(0, 8).toUpperCase() : 'N/A');
+      setProtocolo(result.protocolo?.toUpperCase() ?? 'N/A');
       setEtapa('sucesso');
     } catch (err) { setSubmitError(extractErrorMessage(err)); }
     finally { setSubmitting(false); }

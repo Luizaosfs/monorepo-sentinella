@@ -17,6 +17,10 @@ import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 import { z } from 'zod';
 
 import { Roles } from '@/decorators/roles.decorator';
+import {
+  getAccessScope,
+  getClienteIdsPermitidos,
+} from '@/shared/security/access-scope.helpers';
 
 import { IaService } from './ia.service';
 
@@ -81,7 +85,7 @@ export class IaController {
   @Roles('admin', 'supervisor', 'analista_regional')
   @ApiOperation({ summary: 'Gerar insights regionais via IA' })
   async insightsRegional() {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = (this.req['tenantId'] as string | undefined) ?? null;
     return this.iaService.insightsRegional(clienteId);
   }
 
@@ -89,8 +93,9 @@ export class IaController {
   @Roles('admin', 'supervisor', 'analista_regional')
   @ApiOperation({ summary: 'Gerar dados de gráficos regionais' })
   async graficosRegionais() {
-    const clienteId = this.req['tenantId'] as string;
-    return this.iaService.graficosRegionais(clienteId);
+    const scope = getAccessScope(this.req);
+    const clienteIds = getClienteIdsPermitidos(scope);
+    return this.iaService.graficosRegionais(clienteIds);
   }
 
   @Post('triagem-pos-voo')

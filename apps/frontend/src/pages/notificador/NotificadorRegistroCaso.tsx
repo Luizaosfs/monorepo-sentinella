@@ -1,9 +1,13 @@
 import { useState } from 'react';
-import { ArrowLeft, Save, Loader2, MapPin, Calendar, AlertCircle, CheckCircle2, GitMerge, Pencil } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, MapPin, Calendar as CalendarIcon, AlertCircle, CheckCircle2, GitMerge, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
+import { format, parseISO } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Select,
   SelectContent,
@@ -292,28 +296,59 @@ export default function NotificadorRegistroCaso() {
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-2">
             <Label className="text-sm font-semibold flex items-center gap-1">
-              <Calendar className="h-3.5 w-3.5" />
+              <CalendarIcon className="h-3.5 w-3.5" />
               Data do registro <span className="text-destructive">*</span>
             </Label>
-            <Input
-              type="date"
-              value={form.data_notificacao}
-              onChange={handleInputChange('data_notificacao')}
-              className="h-12 rounded-xl text-base"
-              required
-            />
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-12 w-full justify-start rounded-xl text-left font-normal text-base"
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+                  {form.data_notificacao
+                    ? format(parseISO(form.data_notificacao), 'dd/MM/yyyy', { locale: ptBR })
+                    : 'Selecionar data'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={form.data_notificacao ? parseISO(form.data_notificacao) : undefined}
+                  onSelect={(date) => set('data_notificacao')(date ? format(date, 'yyyy-MM-dd') : '')}
+                  locale={ptBR}
+                />
+              </PopoverContent>
+            </Popover>
           </div>
           <div className="space-y-2">
             <Label className="text-sm font-semibold flex items-center gap-1">
-              <Calendar className="h-3.5 w-3.5" />
+              <CalendarIcon className="h-3.5 w-3.5" />
               Início dos sintomas
             </Label>
-            <Input
-              type="date"
-              value={form.data_inicio_sintomas}
-              onChange={handleInputChange('data_inicio_sintomas')}
-              className="h-12 rounded-xl text-base"
-            />
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-12 w-full justify-start rounded-xl text-left font-normal text-base"
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+                  {form.data_inicio_sintomas
+                    ? format(parseISO(form.data_inicio_sintomas), 'dd/MM/yyyy', { locale: ptBR })
+                    : 'Selecionar data'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={form.data_inicio_sintomas ? parseISO(form.data_inicio_sintomas) : undefined}
+                  onSelect={(date) => set('data_inicio_sintomas')(date ? format(date, 'yyyy-MM-dd') : '')}
+                  locale={ptBR}
+                />
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
 

@@ -1,4 +1,4 @@
-import {
+﻿import {
   Body,
   Controller,
   Get,
@@ -23,7 +23,7 @@ import {
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 
-import { Roles } from '@/decorators/roles.decorator';
+import { Public, Roles } from '@/decorators/roles.decorator';
 
 import {
   CreateClienteBody,
@@ -34,6 +34,7 @@ import {
   filterClienteSchema,
 } from './dtos/filter-cliente.input';
 import { SaveClienteBody, saveClienteSchema } from './dtos/save-cliente.body';
+import { BuscarClientePorCidadePublico } from './use-cases/buscar-cliente-por-cidade-publico';
 import { CreateCliente } from './use-cases/create-cliente';
 import { FilterCliente } from './use-cases/filter-cliente';
 import { GetCliente } from './use-cases/get-cliente';
@@ -59,6 +60,7 @@ import { ClienteViewModel } from './view-model/cliente';
 @Controller('clientes')
 export class ClienteController {
   constructor(
+    private buscarClientePorCidadePublico: BuscarClientePorCidadePublico,
     private createCliente: CreateCliente,
     private filterCliente: FilterCliente,
     private getCliente: GetCliente,
@@ -75,7 +77,7 @@ export class ClienteController {
 
   @Get('resolver-coordenada')
   @Roles('admin', 'supervisor', 'agente')
-  @ApiOperation({ summary: 'Resolve cliente pelos bounds que contêm o ponto lat/lng' })
+  @ApiOperation({ summary: 'Resolve cliente pelos bounds que contÃªm o ponto lat/lng' })
   async resolverCoordenada(
     @Query('lat') lat: string,
     @Query('lng') lng: string,
@@ -87,7 +89,7 @@ export class ClienteController {
 
   @Get('integracoes/:id/api-key')
   @Roles('admin', 'supervisor')
-  @ApiOperation({ summary: 'Busca api_key de uma integração do cliente' })
+  @ApiOperation({ summary: 'Busca api_key de uma integraÃ§Ã£o do cliente' })
   async getApiKey(@Param('id') id: string) {
     const { integracao } = await this.getIntegracaoApiKey.execute(id);
     return integracao;
@@ -95,7 +97,7 @@ export class ClienteController {
 
   @Get('integracoes')
   @Roles('admin', 'supervisor')
-  @ApiOperation({ summary: 'Listar integrações do cliente (sem api_key)' })
+  @ApiOperation({ summary: 'Listar integraÃ§Ãµes do cliente (sem api_key)' })
   async getIntegracoes() {
     const clienteId = this.req['tenantId'] as string;
     return this.getIntegracoesUc.execute(clienteId);
@@ -103,7 +105,7 @@ export class ClienteController {
 
   @Post('integracoes')
   @Roles('admin', 'supervisor')
-  @ApiOperation({ summary: 'Criar ou atualizar integração do cliente (upsert por tipo)' })
+  @ApiOperation({ summary: 'Criar ou atualizar integraÃ§Ã£o do cliente (upsert por tipo)' })
   async upsertIntegracao(@Body() body: UpsertIntegracaoBody) {
     const clienteId = this.req['tenantId'] as string;
     const parsed = upsertIntegracaoSchema.parse(body);
@@ -112,7 +114,7 @@ export class ClienteController {
 
   @Put('integracoes/:id/meta')
   @Roles('admin', 'supervisor')
-  @ApiOperation({ summary: 'Atualizar metadados de uma integração (sem alterar api_key)' })
+  @ApiOperation({ summary: 'Atualizar metadados de uma integraÃ§Ã£o (sem alterar api_key)' })
   async updateIntegracaoMeta(@Param('id') id: string, @Body() body: UpdateIntegracaoMetaBody) {
     const clienteId = this.req['tenantId'] as string;
     const parsed = updateIntegracaoMetaSchema.parse(body);
@@ -121,10 +123,30 @@ export class ClienteController {
 
   @Post('integracoes/testar')
   @Roles('admin', 'supervisor')
-  @ApiOperation({ summary: 'Testar conectividade da integração ativa do cliente' })
+  @ApiOperation({ summary: 'Testar conectividade da integraÃ§Ã£o ativa do cliente' })
   async testarIntegracao() {
     const clienteId = this.req['tenantId'] as string;
     return this.testarIntegracaoUc.execute(clienteId);
+  }
+
+  @Get('por-cidade')
+  @Public()
+  @ApiOperation({ summary: 'Buscar cliente por cidade — portal cidadão (sem autenticação)' })
+  async porCidade(@Query('cidade') cidade: string) {
+    return this.buscarClientePorCidadePublico.execute(cidade ?? '');
+  }
+
+  @Get('resolver-coordenada-cidadao')
+  @Public()
+  @ApiOperation({ summary: 'Resolver cliente por coordenada — portal cidadão (sem autenticação)' })
+  async resolverCoordenadaCidadao(@Query('lat') lat: string, @Query('lng') lng: string) {
+    const parsed = z.object({ lat: z.coerce.number(), lng: z.coerce.number() }).parse({ lat, lng });
+    try {
+      const { cliente } = await this.resolverPorCoordenada.execute(parsed.lat, parsed.lng);
+      return { id: cliente.id, nome: cliente.nome, cidade: cliente.cidade, uf: cliente.uf, slug: cliente.slug, metodo: 'bounds' };
+    } catch {
+      return null;
+    }
   }
 
   @Get()
@@ -138,7 +160,7 @@ export class ClienteController {
 
   @Get('pagination')
   @Roles('admin')
-  @ApiOperation({ summary: 'Listar clientes com paginação' })
+  @ApiOperation({ summary: 'Listar clientes com paginaÃ§Ã£o' })
   async pagination(
     @Query() filters: FilterClienteInput,
     @Query() pagination: PaginationProps,
@@ -157,7 +179,7 @@ export class ClienteController {
 
   @Get('me')
   @Roles('supervisor', 'agente', 'notificador')
-  @ApiOperation({ summary: 'Retorna o cliente vinculado ao usuário autenticado' })
+  @ApiOperation({ summary: 'Retorna o cliente vinculado ao usuÃ¡rio autenticado' })
   async getMyCliente(@Req() req: Request) {
     const user = req['user'] as AuthenticatedUser;
     if (!user.clienteId) return null;
@@ -191,3 +213,4 @@ export class ClienteController {
     return ClienteViewModel.toHttp(cliente);
   }
 }
+

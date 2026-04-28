@@ -14,7 +14,7 @@ import { MapPin, Send, CheckCircle2, Loader2, AlertTriangle, Camera, X, Search, 
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { cn } from '@/lib/utils';
-import { extractErrorMessage, uploadDenunciaFoto, type DenunciaResult } from '@/lib/canalCidadaoUtils';
+import { extractErrorMessage, uploadDenunciaFoto } from '@/lib/canalCidadaoUtils';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -47,7 +47,7 @@ const DenunciaCidadao: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [protocolo, setProtocolo] = useState<string | null>(null);
-  const [jaExistia, setJaExistia] = useState(false);
+  const [jaExistia] = useState(false);
   const [fotoFoiPerdida, setFotoFoiPerdida] = useState(false);
 
   // ── Geolocalização ────────────────────────────────────────────────────────
@@ -163,7 +163,7 @@ const DenunciaCidadao: React.FC = () => {
       // Upload foto antes do RPC
       const fotoResult = await uploadFoto();
 
-      const result = await http.post<DenunciaResult>('/denuncias/cidadao', {
+      const result = await http.post<{ protocolo: string; id: string }>('/denuncias/cidadao', {
         slug,
         bairroId,
         descricao: endereco.trim()
@@ -175,14 +175,8 @@ const DenunciaCidadao: React.FC = () => {
         fotoPublicId: fotoResult?.public_id ?? null,
       });
 
-      if (!result.ok) {
-        setSubmitError(result.error ?? 'Erro ao registrar denúncia. Tente novamente.');
-        return;
-      }
-
-      setJaExistia(result.deduplicado === true);
       if (foto && !fotoResult) setFotoFoiPerdida(true);
-      setProtocolo(result.foco_id ? result.foco_id.slice(0, 8).toUpperCase() : 'N/A');
+      setProtocolo(result.protocolo?.toUpperCase() ?? 'N/A');
     } catch (err: unknown) {
       setSubmitError(extractErrorMessage(err));
     } finally {

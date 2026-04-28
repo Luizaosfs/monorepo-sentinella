@@ -186,7 +186,8 @@
       "Bash(pnpm --filter @sentinella/backend exec tsc --noEmit)",
       "Bash(grep -v \"^$\")",
       "Bash(pnpm --filter @sentinella/backend exec jest src/modules/imovel/ --no-coverage)",
-      "PowerShell(cd \"D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend\"; npx tsc --noEmit 2>&1 | Where-Object { $_ -notmatch \"node_modules\" } | Select-Object -First 60)"
+      "PowerShell(cd \"D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend\"; npx tsc --noEmit 2>&1 | Where-Object { $_ -notmatch \"node_modules\" } | Select-Object -First 60)",
+      "Bash(PGPASSWORD=Sentinella147852369 psql *)"
     ]
   }
 }

@@ -19,11 +19,11 @@ export function useLevantamentoItemYoloOverlay(
   return useQuery({
     queryKey: ['item_yolo_overlay', itemId],
     queryFn: async (): Promise<ItemYoloOverlayData> => {
-      const [detecoes, detection_bbox] = await Promise.all([
-        api.itens.listDetecoes(itemId!),
-        api.itens.getDetectionBbox(itemId!),
-      ]);
-      return { detecoes, detection_bbox };
+      const item = await api.itens.getById(itemId!) as Record<string, unknown>;
+      return {
+        detection_bbox: (item.detection_bbox ?? null) as ItemYoloOverlayData['detection_bbox'],
+        detecoes: (item.detecoes ?? []) as ItemYoloOverlayData['detecoes'],
+      };
     },
     enabled,
     staleTime: STALE.STATIC,

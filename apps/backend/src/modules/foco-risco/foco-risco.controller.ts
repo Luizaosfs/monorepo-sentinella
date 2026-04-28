@@ -212,6 +212,50 @@ export class FocoRiscoController {
     return this.getFocoTimelineUc.execute(id);
   }
 
+  @Get('by-levantamento-item')
+  @Roles('admin', 'supervisor', 'agente')
+  @ApiOperation({ summary: 'Buscar foco vinculado a um levantamento_item' })
+  async byLevantamentoItem(@Query('itemId') itemId: string) {
+    const clienteId = this.req['tenantId'] as string;
+    const rows = await this.prisma.client.focos_risco.findMany({
+      where: { origem_levantamento_item_id: itemId, cliente_id: clienteId, deleted_at: null },
+      orderBy: { created_at: 'desc' },
+      take: 1,
+    });
+    return rows[0] ?? null;
+  }
+
+  @Get('by-imovel')
+  @Roles('admin', 'supervisor', 'agente')
+  @ApiOperation({ summary: 'Listar focos de um imóvel (histórico completo)' })
+  async listByImovel(@Query('imovelId') imovelId: string) {
+    const clienteId = this.req['tenantId'] as string;
+    return this.prisma.client.focos_risco.findMany({
+      where: { imovel_id: imovelId, cliente_id: clienteId, deleted_at: null },
+      orderBy: { created_at: 'desc' },
+    });
+  }
+
+  @Get('analytics')
+  @Roles('admin', 'supervisor')
+  @ApiOperation({ summary: 'Contagem de focos por status e prioridade' })
+  async analytics() {
+    const clienteId = this.req['tenantId'] as string;
+    return this.prisma.client.$queryRaw(
+      Prisma.sql`
+        SELECT
+          status,
+          prioridade,
+          COUNT(*) AS total
+        FROM focos_risco
+        WHERE cliente_id = ${clienteId}::uuid
+          AND deleted_at IS NULL
+        GROUP BY status, prioridade
+        ORDER BY status, prioridade
+      `,
+    );
+  }
+
   @Get(':id')
   @Roles('admin', 'supervisor', 'agente')
   @ApiOperation({
@@ -300,46 +344,5 @@ export class FocoRiscoController {
   async atribuirAgenteLoteEndpoint(@Body() body: AtribuirAgenteLoteBody) {
     const parsed = atribuirAgenteLoteSchema.parse(body);
     return this.atribuirAgenteLote.execute(parsed);
-  }
-
-  @Get('by-levantamento-item')
-  @Roles('admin', 'supervisor', 'agente')
-  @ApiOperation({ summary: 'Buscar foco vinculado a um levantamento_item' })
-  async byLevantamentoItem(@Query('itemId') itemId: string) {
-    const clienteId = this.req['tenantId'] as string;
-    const rows = await this.prisma.client.$queryRaw(
-      Prisma.sql`SELECT * FROM focos_risco WHERE origem_levantamento_item_id = ${itemId}::uuid AND cliente_id = ${clienteId}::uuid AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 1`,
-    );
-    return Array.isArray(rows) ? rows[0] ?? null : null;
-  }
-
-  @Get('by-imovel')
-  @Roles('admin', 'supervisor', 'agente')
-  @ApiOperation({ summary: 'Listar focos de um imóvel (histórico completo)' })
-  async listByImovel(@Query('imovelId') imovelId: string) {
-    const clienteId = this.req['tenantId'] as string;
-    return this.prisma.client.$queryRaw(
-      Prisma.sql`SELECT * FROM focos_risco WHERE imovel_id = ${imovelId}::uuid AND cliente_id = ${clienteId}::uuid AND deleted_at IS NULL ORDER BY created_at DESC`,
-    );
-  }
-
-  @Get('analytics')
-  @Roles('admin', 'supervisor')
-  @ApiOperation({ summary: 'Contagem de focos por status e prioridade' })
-  async analytics() {
-    const clienteId = this.req['tenantId'] as string;
-    return this.prisma.client.$queryRaw(
-      Prisma.sql`
-        SELECT
-          status,
-          prioridade,
-          COUNT(*) AS total
-        FROM focos_risco
-        WHERE cliente_id = ${clienteId}::uuid
-          AND deleted_at IS NULL
-        GROUP BY status, prioridade
-        ORDER BY status, prioridade
-      `,
-    );
   }
 }

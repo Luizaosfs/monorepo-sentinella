@@ -65,9 +65,11 @@ export const ClienteAtivoProvider = forwardRef<HTMLDivElement, { children: React
           } else if (!selectedId && sorted.length > 0) {
             setSelectedId(sorted[0].id);
           }
-        } else {
+        } else if (usuario.clienteId) {
           const meu = await api.clientes.me() as Cliente | null;
           setClientes(meu ? [meu] : []);
+        } else {
+          setClientes([]);
         }
       } catch {
         setClientes([]);

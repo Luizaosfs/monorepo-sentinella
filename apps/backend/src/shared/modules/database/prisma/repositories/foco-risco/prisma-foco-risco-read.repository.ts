@@ -221,7 +221,7 @@ export class PrismaFocoRiscoReadRepository implements FocoRiscoReadRepository {
         WHERE fr.id = ${focoId}::uuid
         UNION ALL
         SELECT r.foco_risco_id, 'reinspecao'::text,
-          COALESCE(r.realizada_em, r.prazo_reinspecao, r.created_at),
+          COALESCE(r.data_realizada, r.data_prevista, r.created_at),
           CASE r.status WHEN 'pendente' THEN 'Reinspeção pendente' WHEN 'realizada' THEN 'Reinspeção realizada' WHEN 'cancelada' THEN 'Reinspeção cancelada' ELSE 'Reinspeção' END,
           CASE WHEN r.resultado IS NOT NULL THEN ('Resultado: ' || r.resultado::text) WHEN r.status = 'cancelada' THEN COALESCE(r.motivo_cancelamento,'Cancelada') ELSE NULL END,
           r.responsavel_id, r.id

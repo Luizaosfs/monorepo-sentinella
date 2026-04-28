@@ -35,9 +35,9 @@ export class GetRegionalKpi {
           THEN COUNT(f.id) FILTER (WHERE f.status = 'resolvido')::numeric
              / COUNT(f.id) FILTER (WHERE f.status NOT IN ('suspeita','descartado'))::numeric * 100
           ELSE 0
-        END, 1) AS taxa_resolucao_pct,
+        END, 1)::float8 AS taxa_resolucao_pct,
         ROUND(AVG(EXTRACT(EPOCH FROM (f.resolvido_em - f.confirmado_em)) / 3600.0)
-          FILTER (WHERE f.resolvido_em IS NOT NULL AND f.confirmado_em IS NOT NULL)::numeric, 1) AS tempo_medio_resolucao_horas,
+          FILTER (WHERE f.resolvido_em IS NOT NULL AND f.confirmado_em IS NOT NULL)::numeric, 1)::float8 AS tempo_medio_resolucao_horas,
         COUNT(f.id) FILTER (
           WHERE f.status IN ('confirmado','em_tratamento') AND f.confirmado_em IS NOT NULL AND f.confirmado_em < now() - INTERVAL '72 hours'
         ) AS sla_vencido_count,

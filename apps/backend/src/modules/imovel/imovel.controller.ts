@@ -186,7 +186,7 @@ export class ImovelController {
   }
 
   @Post()
-  @Roles('admin', 'supervisor')
+  @Roles('admin', 'supervisor', 'agente')
   @ApiOperation({ summary: 'Criar imóvel' })
   async create(@Body() body: CreateImovelBody) {
     const parsed = createImovelSchema.parse(body);

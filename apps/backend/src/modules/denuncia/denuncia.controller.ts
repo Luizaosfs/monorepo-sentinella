@@ -66,7 +66,8 @@ export class DenunciaController {
   @Get('consultar')
   @ApiOperation({ summary: 'Consultar denúncia por protocolo (público)' })
   async consultar(@Query('protocolo') protocolo: string) {
-    const parsed = z.string().min(1).max(64).regex(/^[a-zA-Z0-9_-]+$/).safeParse(protocolo);
+    // Protocolo = primeiros 8 hex do UUID sem hífens. Rejeitamos _ e - (wildcards LIKE).
+    const parsed = z.string().min(6).max(8).regex(/^[a-f0-9]+$/i).safeParse(protocolo);
     if (!parsed.success) return null;
     return this.consultarDenuncia.execute(parsed.data.toLowerCase());
   }

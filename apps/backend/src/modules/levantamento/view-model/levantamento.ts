@@ -35,6 +35,7 @@ export class LevantamentoViewModel {
       direcaoYawGraus: item.direcaoYawGraus,
       createdAt: item.createdAt,
       updatedAt: item.updatedAt,
+      detectionBbox: item.detectionBbox,
       detecoes: item.detecoes,
       evidencias: item.evidencias,
     };

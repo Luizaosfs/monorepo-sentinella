@@ -52,6 +52,11 @@ export const clientes = {
 
   resolverPorCoordenada: (lat: number, lng: number) =>
     http.get(`/clientes/resolver-coordenada${qs({ lat, lng })}`),
+
+  resolverPorCoordenadaPublico: (lat: number, lng: number) =>
+    http.get<{ id: string; nome: string; cidade: string; uf: string; slug: string; metodo: string } | null>(
+      `/clientes/resolver-coordenada-cidadao${qs({ lat, lng })}`
+    ),
 };
 
 export const regioes = {

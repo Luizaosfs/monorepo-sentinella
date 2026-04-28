@@ -240,43 +240,46 @@ export default function AgenteFocoDetalhe() {
       const logradouro = imovelForm.logradouro.trim();
       const numero = imovelForm.numero.trim();
 
-      // Verifica se já existe imóvel com mesmo logradouro+número antes de criar
-      let imovel = logradouro
-        ? await api.imoveis.findByEndereco(clienteId, logradouro, numero)
-        : null;
+      // Busca imóvel existente — falha silenciosa (prossegue para criação)
+      let imovel: { id: string } | null = null;
+      if (logradouro) {
+        try {
+          imovel = await api.imoveis.findByEndereco(clienteId, logradouro, numero) as { id: string } | null;
+        } catch (e) {
+          console.warn('[cadastrarImovel] findByEndereco falhou, prosseguindo para criar:', e);
+        }
+      }
 
       if (imovel) {
         toast.info('Imóvel já cadastrado neste endereço — vinculado ao foco.');
       } else {
         imovel = await api.imoveis.create({
-          cliente_id: clienteId,
-          regiao_id: foco.regiao_id ?? null,
+          regiao_id: foco.regiao_id ?? undefined,
           tipo_imovel: imovelForm.tipo_imovel,
-          logradouro: logradouro || null,
+          logradouro: logradouro || undefined,
           numero,
-          complemento: null,
-          bairro: foco.bairro ?? null,
-          quarteirao: imovelForm.quarteirao.trim() || null,
-          latitude: foco.latitude ?? null,
-          longitude: foco.longitude ?? null,
-          ativo: true,
+          bairro: foco.bairro ?? undefined,
+          quarteirao: imovelForm.quarteirao.trim() || undefined,
+          latitude: foco.latitude ?? undefined,
+          longitude: foco.longitude ?? undefined,
           proprietario_ausente: false,
-          tipo_ausencia: null,
-          contato_proprietario: null,
           tem_animal_agressivo: false,
           historico_recusa: false,
           tem_calha: false,
           calha_acessivel: true,
           prioridade_drone: false,
-          notificacao_formal_em: null,
-        });
+        }) as { id: string };
         toast.success('Imóvel cadastrado e vinculado ao foco.');
       }
 
       await api.focosRisco.vincularImovel(foco.id, imovel.id);
       await refetch();
-    } catch {
-      toast.error('Erro ao cadastrar imóvel. Tente novamente.');
+    } catch (err) {
+      console.error('[cadastrarImovel]', err);
+      const msg = (err as { status?: number; message?: string })?.status
+        ? `Erro ${(err as { status: number }).status}: ${(err as { message: string }).message}`
+        : 'Erro ao cadastrar imóvel. Tente novamente.';
+      toast.error(msg);
     } finally {
       setCadastrandoImovel(false);
     }

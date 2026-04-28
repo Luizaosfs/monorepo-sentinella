@@ -174,6 +174,8 @@ export class DenunciarCidadaoV2 {
         payload: {
           bairro_id: input.bairroId ?? null,
           confirmacoes: 1,
+          foto_url: input.fotoUrl ?? null,
+          foto_public_id: input.fotoPublicId ?? null,
         },
       },
       select: { id: true },

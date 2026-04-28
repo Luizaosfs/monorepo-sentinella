@@ -5,6 +5,7 @@ import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 
 import { ClienteController } from './cliente.controller';
 import { CreateCliente } from './use-cases/create-cliente';
+import { BuscarClientePorCidadePublico } from './use-cases/buscar-cliente-por-cidade-publico';
 import { FilterCliente } from './use-cases/filter-cliente';
 import { GetCliente } from './use-cases/get-cliente';
 import { GetIntegracaoApiKey } from './use-cases/get-integracao-api-key';
@@ -19,6 +20,7 @@ import { UpsertIntegracao } from './use-cases/upsert-integracao';
 
 @Module({
   providers: [
+    BuscarClientePorCidadePublico,
     CreateCliente,
     FilterCliente,
     GetCliente,

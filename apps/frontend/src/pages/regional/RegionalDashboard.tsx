@@ -592,8 +592,9 @@ export default function RegionalDashboard() {
     setInsightsLoading(true);
     setInsightsError(null);
     try {
-      const data = await http.post<{ insights?: string | null; gerado_em?: string | null }>('/ia/insights-regional', {});
-      setInsights(data?.insights ?? null);
+      const data = await http.post<{ insights?: string | string[] | null; gerado_em?: string | null }>('/ia/insights-regional', {});
+      const raw = data?.insights ?? null;
+      setInsights(Array.isArray(raw) ? raw.join('\n\n') : raw);
       setGeradoEm(data?.gerado_em ?? null);
     } catch (err) {
       setInsightsError('Não foi possível gerar a análise. Verifique sua conexão e tente novamente.');
