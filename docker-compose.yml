@@ -1,0 +1,60 @@
+
+  services:
+    postgres:
+      image: postgis/postgis:17-3.5
+      ports:
+        - "5432:5432"
+      container_name: sentinella-postgres
+      restart: unless-stopped
+      environment:
+        POSTGRES_DB: sentinella
+        POSTGRES_USER: luizAntonio
+        POSTGRES_PASSWORD: "Sentinella147852369"
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+      networks:
+        - sentinella-network
+
+    backend:
+      build:
+        context: .
+        dockerfile: apps/backend/Dockerfile
+      container_name: sentinella-api
+      restart: unless-stopped
+      depends_on:
+        - postgres
+      environment:
+        VAPID_PUBLIC_KEY: BLm_JDjfGlF2uynGyHBmCBSRchrolRdkiFXmeiPhZlTsaLu-YO97oyN9_iTLiYXcWsX_9nIJ1ni0lxSmrjNGvbc
+        VAPID_PRIVATE_KEY: OI45JTnbr9onkOyQuisH0BBaGQcoYLaeqbiBlpMTaVw
+        VAPID_SUBJECT: mailto:luizantonio@sentinellamap.com.br
+        CANAL_CIDADAO_IP_SALT: ccis9e0998c60eb7d08d832ef1964ae021faf6bb65321b0bf28e90f606d2fd8412fe
+        NODE_ENV: production
+        PORT: 3000
+        DATABASE_URL: "postgresql://luizAntonio:Sentinella147852369@postgres:5432/sentinella"
+        SECRET_JWT: 9e0998c60eb7d08d832ef1964ae021faf6bb65321b0bf28e90f606d2fd8412fe
+        CLIENT_URL: "http://177.7.37.14:8080"
+      ports:
+        - "3000:3000"
+      networks:
+        - sentinella-network
+
+    frontend:
+      build:
+        context: .
+        dockerfile: apps/frontend/Dockerfile
+        args:
+          VITE_API_URL: "http://177.7.37.14:3000"
+      container_name: sentinella-web
+      restart: unless-stopped
+      depends_on:
+        - backend
+      ports:
+        - "8080:80"
+      networks:
+        - sentinella-network
+
+  volumes:
+    postgres_data:
+
+  networks:
+    sentinella-network:
