@@ -32,6 +32,7 @@ model focos_risco {
   payload                         Json?     @default("{}")
   score_prioridade                Int       @default(0)
   codigo_foco                     String?
+  protocolo_publico               String?   @unique
 
   cliente       clientes   @relation(fields: [cliente_id], references: [id])
   imovel        imoveis?   @relation(fields: [imovel_id], references: [id])

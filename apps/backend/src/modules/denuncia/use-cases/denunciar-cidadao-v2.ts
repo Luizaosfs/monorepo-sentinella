@@ -1,3 +1,5 @@
+import { randomBytes } from 'node:crypto';
+
 import { HttpException, HttpStatus, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 import { Prisma } from '@prisma/client';
@@ -19,6 +21,12 @@ function getJanela30min(): Date {
 
 function calcCiclo(): number {
   return Math.ceil((new Date().getMonth() + 1) / 2);
+}
+
+function gerarProtocoloPublico(): string {
+  const ano = new Date().getFullYear();
+  const suffix = randomBytes(3).toString('hex').toUpperCase();
+  return `SENT-${ano}-${suffix}`;
 }
 
 @Injectable()
@@ -90,9 +98,9 @@ export class DenunciarCidadaoV2 {
 
     // 3. Deduplicação geoespacial — raio 30m, janela 24h
     if (input.latitude != null && input.longitude != null) {
-      const dedup = await this.prisma.client.$queryRaw<[{ id: string }?]>(
+      const dedup = await this.prisma.client.$queryRaw<Array<{ id: string; protocolo_publico: string | null }>>(
         Prisma.sql`
-          SELECT id FROM focos_risco
+          SELECT id, protocolo_publico FROM focos_risco
           WHERE cliente_id  = ${clienteId}::uuid
             AND origem_tipo = 'cidadao'
             AND status      NOT IN ('descartado')
@@ -134,7 +142,7 @@ export class DenunciarCidadaoV2 {
           .catch(() => null);
 
         return {
-          protocolo: focoExistente.id.replace(/-/g, '').substring(0, 8),
+          protocolo: focoExistente.protocolo_publico ?? gerarProtocoloPublico(),
           id: focoExistente.id,
         };
       }
@@ -157,6 +165,7 @@ export class DenunciarCidadaoV2 {
     });
     const suspeitaEm = new Date();
     const codigoFoco = await gerarCodigoFoco(this.prisma, clienteId, suspeitaEm);
+    const protocoloPublico = gerarProtocoloPublico();
     const foco = await this.prisma.client.focos_risco.create({
       data: {
         cliente_id: clienteId,
@@ -171,6 +180,7 @@ export class DenunciarCidadaoV2 {
         suspeita_em: suspeitaEm,
         observacao: input.descricao,
         codigo_foco: codigoFoco,
+        protocolo_publico: protocoloPublico,
         payload: {
           bairro_id: input.bairroId ?? null,
           confirmacoes: 1,
@@ -226,7 +236,6 @@ export class DenunciarCidadaoV2 {
       })
       .catch(() => null);
 
-    const protocolo = foco.id.replace(/-/g, '').substring(0, 8);
-    return { protocolo, id: foco.id };
+    return { protocolo: protocoloPublico, id: foco.id };
   }
 }
