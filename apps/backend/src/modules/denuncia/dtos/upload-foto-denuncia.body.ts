@@ -5,7 +5,7 @@ export const uploadFotoDenunciaSchema = z.object({
   fileBase64: z
     .string({ required_error: 'fileBase64 é obrigatório' })
     .min(100, 'Arquivo muito pequeno ou inválido')
-    .max(11_000_000, 'Arquivo maior que 8 MB'),
+    .max(4_000_000, 'Arquivo maior que 3 MB'),
   contentType: z.enum(['image/jpeg', 'image/png', 'image/webp'], {
     errorMap: () => ({
       message: 'Tipo de arquivo não permitido. Use: image/jpeg, image/png ou image/webp',

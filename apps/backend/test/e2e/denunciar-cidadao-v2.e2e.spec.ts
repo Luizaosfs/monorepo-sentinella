@@ -176,9 +176,8 @@ async function waitFor<T>(
         id: expect.any(String),
       });
 
-      // Contrato do protocolo: 8 chars hex == primeiros 8 chars do uuid sem hífens.
-      expect(res.body.protocolo).toMatch(/^[a-f0-9]{8}$/);
-      expect(res.body.id.replace(/-/g, '').slice(0, 8)).toBe(res.body.protocolo);
+      // Contrato do protocolo: formato SENT-YYYY-XXXXXX (CC-2).
+      expect(res.body.protocolo).toMatch(/^SENT-\d{4}-[A-F0-9]{6}$/);
 
       // Foco criado com os campos esperados do V2 (passo 5 + autoClassificarFoco).
       const foco = await prisma.focos_risco.findUnique({
@@ -403,7 +402,7 @@ async function waitFor<T>(
 
     // ─── Cenário 10 — contrato do protocolo (cenário dedicado) ─────────
 
-    it('contrato protocolo — 8 chars hex, == primeiros 8 do id.replace(/-/g,"")', async () => {
+    it('contrato protocolo — formato SENT-YYYY-XXXXXX independente do id (CC-2)', async () => {
       const res = await request(app.getHttpServer())
         .post('/denuncias/cidadao')
         .set('x-forwarded-for', uniqueIp())
@@ -416,9 +415,9 @@ async function waitFor<T>(
       expect(res.body.id).toMatch(
         /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
       );
-      expect(res.body.protocolo).toMatch(/^[a-f0-9]{8}$/);
-      expect(res.body.protocolo).toBe(
-        (res.body.id as string).replace(/-/g, '').slice(0, 8),
+      const anoAtual = new Date().getFullYear().toString();
+      expect(res.body.protocolo).toMatch(
+        new RegExp(`^SENT-${anoAtual}-[A-F0-9]{6}$`),
       );
     });
 

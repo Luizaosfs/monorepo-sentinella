@@ -7,7 +7,7 @@ import { UploadFotoException } from '../errors/upload-foto.exception';
 type UploadFotoInput = z.infer<typeof uploadFotoDenunciaSchema>;
 
 const ALLOWED_CONTENT_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
-const MAX_DECODED_BYTES = 8 * 1024 * 1024;
+const MAX_DECODED_BYTES = 2 * 1024 * 1024;
 
 @Injectable()
 export class UploadFotoDenuncia {
