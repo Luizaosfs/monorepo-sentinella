@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { PaginationProps } from '@shared/dtos/pagination-body';
 import { Request } from 'express';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 
 import { FilterVistoriaInput } from '../dtos/filter-vistoria.input';
 import { VistoriaReadRepository } from '../repositories/vistoria-read.repository';
@@ -15,7 +16,7 @@ export class PaginationVistoria {
 
   async execute(filters: FilterVistoriaInput, pagination: PaginationProps) {
     // MT-02: tenantId do guard sempre vence — nunca aceita clienteId do frontend
-    const clienteId = this.req['tenantId'];
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.repository.findPaginated({ ...filters, clienteId }, pagination);
   }
 }

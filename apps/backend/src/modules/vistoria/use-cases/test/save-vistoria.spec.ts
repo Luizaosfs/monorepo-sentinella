@@ -1,6 +1,7 @@
 import { mock } from 'jest-mock-extended';
 
 import { expectHttpException } from '@test/utils/expect-http-exception';
+import { mockRequest } from '@test/utils/user-helpers';
 
 import { VistoriaException } from '../../errors/vistoria.exception';
 import { VistoriaReadRepository } from '../../repositories/vistoria-read.repository';
@@ -22,8 +23,7 @@ describe('SaveVistoria', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockAtualizarPerfil.execute.mockResolvedValue(undefined);
-    mockReq.user = { isPlatformAdmin: true };
-    mockReq.tenantId = undefined;
+    Object.assign(mockReq, mockRequest());
     useCase = new SaveVistoria(readRepo, writeRepo, mockConsolidar as any, mockAtualizarPerfil as any, mockReq as any);
   });
 
@@ -171,7 +171,7 @@ describe('SaveVistoria', () => {
     readRepo.findById.mockImplementation(async (_id, clienteId) =>
       clienteId === 'cli-ERRADO' ? null : v,
     );
-    const wrongTenantReq = { user: { isPlatformAdmin: false }, tenantId: 'cli-ERRADO' };
+    const wrongTenantReq = mockRequest({ tenantId: 'cli-ERRADO' });
     const uc = new SaveVistoria(readRepo, writeRepo, mockConsolidar as any, mockAtualizarPerfil as any, wrongTenantReq as any);
 
     await expect(uc.execute(v.id!, {})).rejects.toBeDefined();

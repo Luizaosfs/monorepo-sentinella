@@ -3,6 +3,7 @@ import { REQUEST } from '@nestjs/core';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 import { Request } from 'express';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 
 import { FilterVistoriaConsolidadasInput } from '../dtos/filter-vistoria-consolidadas.input';
 
@@ -15,7 +16,7 @@ export class ListVistoriasConsolidadas {
 
   async execute(filters: FilterVistoriaConsolidadasInput) {
     // MT-02: tenantId do guard sempre vence
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
 
     const conditions: Prisma.Sql[] = [
       Prisma.sql`v.cliente_id = ${clienteId}::uuid`,

@@ -1,6 +1,7 @@
 import { ForbiddenException, Inject, Injectable, Logger, Scope } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 
 import { AuthenticatedUser } from '@/guards/auth.guard';
 import { CloudinaryService } from '@/modules/cloudinary/cloudinary.service';
@@ -21,7 +22,7 @@ export class SoftDeleteVistoria {
   ) {}
 
   async execute(id: string): Promise<void> {
-    const tenantId = (this.req['tenantId'] as string | undefined) ?? null;
+    const tenantId = requireTenantId(getAccessScope(this.req));
     const vistoria = await this.readRepository.findByIdIncludingDeleted(id, tenantId);
     if (!vistoria) throw VistoriaException.notFound();
 

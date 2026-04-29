@@ -1,6 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 
 import { QuotaException } from '../../billing/errors/quota.exception';
 import { VerificarQuota } from '../../billing/use-cases/verificar-quota';
@@ -32,7 +33,7 @@ export class CreateVistoria {
 
   async execute(data: CreateVistoriaBody) {
     // MT-02: tenantId do guard sempre vence — nunca aceita clienteId do frontend
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
 
     // G.6 — rejeita ciclo diferente do ativo
     await this.validarCicloVistoria.execute(clienteId, data.ciclo);

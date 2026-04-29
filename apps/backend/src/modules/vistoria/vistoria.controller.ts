@@ -21,6 +21,7 @@ import {
 } from '@shared/dtos/pagination-body';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 
 import { Roles } from '@/decorators/roles.decorator';
 
@@ -139,7 +140,7 @@ export class VistoriaController {
       'Buscar vistoria por ID (com depósitos, sintomas, riscos e calhas)',
   })
   async findById(@Param('id') id: string) {
-    const clienteId = (this.req['tenantId'] as string | undefined) ?? null;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const { vistoria } = await this.getVistoria.execute(id, clienteId);
     return VistoriaViewModel.toHttp(vistoria);
   }
@@ -169,7 +170,7 @@ export class VistoriaController {
   @ApiOperation({ summary: 'Adicionar depósito a uma vistoria' })
   async addDeposito(@Param('id') id: string, @Body() body: AddDepositoBody) {
     const parsed = addDepositoSchema.parse(body);
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.addDepositoUc.execute(id, clienteId, parsed);
   }
 
@@ -178,7 +179,7 @@ export class VistoriaController {
   @ApiOperation({ summary: 'Registrar sintomas de uma vistoria' })
   async addSintomas(@Body() body: AddSintomasBody) {
     const parsed = addSintomasSchema.parse(body);
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.addSintomasUc.execute(clienteId, parsed);
   }
 
@@ -187,7 +188,7 @@ export class VistoriaController {
   @ApiOperation({ summary: 'Registrar riscos de uma vistoria' })
   async addRiscos(@Body() body: AddRiscosBody) {
     const parsed = addRiscosSchema.parse(body);
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.addRiscosUc.execute(clienteId, parsed);
   }
 

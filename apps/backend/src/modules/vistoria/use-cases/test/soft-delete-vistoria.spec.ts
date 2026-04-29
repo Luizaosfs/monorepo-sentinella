@@ -11,12 +11,15 @@ import { VistoriaBuilder } from './builders/vistoria.builder';
 const CLIENTE_ID = '00000000-0000-4000-8000-000000000001';
 
 function makeReq(opts: { papeis?: string[]; isPlatformAdmin?: boolean; tenantId?: string } = {}) {
+  const tenantId = opts.tenantId ?? CLIENTE_ID;
+  const isPlatformAdmin = opts.isPlatformAdmin ?? false;
+  const papeis = opts.papeis ?? ['supervisor'];
   return {
-    user: {
-      papeis: opts.papeis ?? ['supervisor'],
-      isPlatformAdmin: opts.isPlatformAdmin ?? false,
-    },
-    tenantId: opts.tenantId ?? CLIENTE_ID,
+    user: { papeis, isPlatformAdmin },
+    tenantId,
+    accessScope: isPlatformAdmin
+      ? { kind: 'platform' as const, userId: 'test-user-id', papeis, isAdmin: true as const, tenantId, clienteIdsPermitidos: [tenantId], agrupamentoId: null }
+      : { kind: 'municipal' as const, userId: 'test-user-id', papeis, isAdmin: false as const, tenantId, clienteIdsPermitidos: [tenantId] as [string], agrupamentoId: null },
   };
 }
 

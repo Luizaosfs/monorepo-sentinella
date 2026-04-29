@@ -1,6 +1,7 @@
 import { REQUEST } from '@nestjs/core';
 import { Test } from '@nestjs/testing';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
+import { mockRequest } from '@test/utils/user-helpers';
 
 import { ListVistoriasConsolidadas } from '../list-vistorias-consolidadas';
 
@@ -41,7 +42,7 @@ describe('ListVistoriasConsolidadas', () => {
         },
         {
           provide: REQUEST,
-          useValue: { tenantId: CLIENTE_ID },
+          useValue: mockRequest({ tenantId: CLIENTE_ID }),
         },
       ],
     }).compile();
