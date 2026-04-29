@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
 
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 import { BulkInsertOperacoesInput } from '../dtos/bulk-insert-operacoes.body';
 import { Operacao } from '../entities/operacao';
 import { OperacaoReadRepository } from '../repositories/operacao-read.repository';
@@ -16,7 +17,7 @@ export class BulkInsertOperacoes {
   ) {}
 
   async execute(data: BulkInsertOperacoesInput) {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const created: Operacao[] = [];
     let skipped = 0;
 

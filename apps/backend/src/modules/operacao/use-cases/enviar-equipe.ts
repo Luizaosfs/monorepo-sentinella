@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
 
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 import { CreateOperacaoBody } from '../dtos/create-operacao.body';
 import { Operacao } from '../entities/operacao';
 import { OperacaoWriteRepository } from '../repositories/operacao-write.repository';
@@ -14,8 +15,7 @@ export class EnviarEquipe {
   ) {}
 
   async execute(data: CreateOperacaoBody) {
-    // MT-02: tenantId do guard sempre vence — nunca aceita clienteId do frontend
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
 
     const operacao = new Operacao(
       {
