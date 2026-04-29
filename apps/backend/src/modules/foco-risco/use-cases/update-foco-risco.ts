@@ -1,7 +1,7 @@
 import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
-import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
+import { getAccessScope } from '@shared/security/access-scope.helpers';
 
 import { FocoRiscoException } from '../errors/foco-risco.exception';
 import { FocoRiscoReadRepository } from '../repositories/foco-risco-read.repository';
@@ -22,7 +22,7 @@ export class UpdateFocoRisco {
   ) {}
 
   async execute(id: string, input: UpdateFocoRiscoInput): Promise<void> {
-    const tenantId = requireTenantId(getAccessScope(this.req));
+    const tenantId = getAccessScope(this.req).tenantId;
     const foco = await this.readRepository.findById(id, tenantId);
     if (!foco) throw FocoRiscoException.notFound();
 
