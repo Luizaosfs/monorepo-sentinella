@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
 
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 import { CriarParaItemBody } from '../dtos/criar-para-item.body';
 import { Operacao } from '../entities/operacao';
 import { OperacaoException } from '../errors/operacao.exception';
@@ -17,7 +18,7 @@ export class CriarParaItem {
   ) {}
 
   async execute(data: CriarParaItemBody) {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
 
     const existente = await this.readRepository.findAtivaParaItem(
       clienteId,

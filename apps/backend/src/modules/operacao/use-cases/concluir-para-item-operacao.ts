@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
 
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 import { ConcluirParaItemInput } from '../dtos/concluir-para-item-operacao.body';
 import { OperacaoException } from '../errors/operacao.exception';
 import { OperacaoReadRepository } from '../repositories/operacao-read.repository';
@@ -16,7 +17,7 @@ export class ConcluirParaItemOperacao {
   ) {}
 
   async execute(data: ConcluirParaItemInput) {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
 
     const operacao = await this.readRepository.findAtivaParaItem(
       clienteId,

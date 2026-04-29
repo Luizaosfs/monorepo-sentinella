@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
 
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 import { PrismaService } from 'src/shared/modules/database/prisma/prisma.service';
 
 import { EnsureEmAndamentoInput } from '../dtos/ensure-em-andamento.body';
@@ -17,7 +18,7 @@ export class EnsureEmAndamento {
   ) {}
 
   async execute(data: EnsureEmAndamentoInput) {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
 
     const existing = await this.prisma.client.operacoes.findFirst({
       where: {
