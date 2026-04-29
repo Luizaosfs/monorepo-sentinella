@@ -21,7 +21,7 @@ describe('PrismaVistoriaReadRepository — tenant isolation', () => {
     const prisma = makePrisma({ vistorias: { findFirst } as any });
     const repo = new PrismaVistoriaReadRepository(prisma as any);
 
-    await repo.findByIdComDetalhes('vistoria-id');
+    await repo.findByIdComDetalhes('vistoria-id', null);
 
     expect(findFirst).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -35,7 +35,7 @@ describe('PrismaVistoriaReadRepository — tenant isolation', () => {
     const prisma = makePrisma({ vistorias: { findFirst } as any });
     const repo = new PrismaVistoriaReadRepository(prisma as any);
 
-    await repo.findByIdComDetalhes('vistoria-id');
+    await repo.findByIdComDetalhes('vistoria-id', null);
 
     expect(findFirst).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -49,7 +49,7 @@ describe('PrismaVistoriaReadRepository — tenant isolation', () => {
     const prisma = makePrisma({ vistorias: { findFirst } as any });
     const repo = new PrismaVistoriaReadRepository(prisma as any);
 
-    await repo.findByIdComDetalhes('vistoria-id');
+    await repo.findByIdComDetalhes('vistoria-id', null);
 
     expect(findFirst).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -63,7 +63,7 @@ describe('PrismaVistoriaReadRepository — tenant isolation', () => {
     const prisma = makePrisma({ vistorias: { findFirst } as any });
     const repo = new PrismaVistoriaReadRepository(prisma as any);
 
-    await repo.findByIdComDetalhes('vistoria-id');
+    await repo.findByIdComDetalhes('vistoria-id', null);
 
     expect(findFirst).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -91,7 +91,7 @@ describe('PrismaVistoriaReadRepository — tenant isolation', () => {
     const prisma = makePrisma({ vistorias: { findFirst } as any });
     const repo = new PrismaVistoriaReadRepository(prisma as any);
 
-    await repo.findByIdComDetalhes('vistoria-id');
+    await repo.findByIdComDetalhes('vistoria-id', null);
 
     expect(findFirst).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -152,7 +152,7 @@ describe('PrismaVistoriaReadRepository — tenant isolation', () => {
     const prisma = makePrisma({ vistorias: { findFirst } as any });
     const repo = new PrismaVistoriaReadRepository(prisma as any);
 
-    await repo.findByIdComDetalhes('vistoria-id');
+    await repo.findByIdComDetalhes('vistoria-id', null);
 
     expect(findFirst).toHaveBeenCalledWith(
       expect.objectContaining({

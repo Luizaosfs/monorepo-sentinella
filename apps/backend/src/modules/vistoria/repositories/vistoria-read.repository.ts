@@ -67,7 +67,7 @@ export interface DadosConsolidacao {
 export abstract class VistoriaReadRepository {
   abstract findById(id: string, clienteId: string | null): Promise<Vistoria | null>;
   abstract findByIdIncludingDeleted(id: string, clienteId: string | null): Promise<Vistoria | null>;
-  abstract findByIdComDetalhes(id: string): Promise<Vistoria | null>;
+  abstract findByIdComDetalhes(id: string, clienteId: string | null): Promise<Vistoria | null>;
   abstract findAll(filters: FilterVistoriaInput): Promise<Vistoria[]>;
   abstract findPaginated(
     filters: FilterVistoriaInput,

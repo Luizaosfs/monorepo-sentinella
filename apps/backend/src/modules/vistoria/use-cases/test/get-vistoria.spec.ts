@@ -27,7 +27,7 @@ describe('GetVistoria', () => {
     const vistoria = new VistoriaBuilder().build();
     readRepo.findByIdComDetalhes.mockResolvedValue(vistoria);
 
-    const result = await useCase.execute(vistoria.id!);
+    const result = await useCase.execute(vistoria.id!, 'tenant-mock-id');
     expect(result.vistoria).toBe(vistoria);
   });
 
@@ -35,7 +35,7 @@ describe('GetVistoria', () => {
     readRepo.findByIdComDetalhes.mockResolvedValue(null);
 
     await expectHttpException(
-      () => useCase.execute('inexistente'),
+      () => useCase.execute('inexistente', 'tenant-mock-id'),
       VistoriaException.notFound(),
     );
   });

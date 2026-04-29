@@ -48,9 +48,9 @@ export class PrismaVistoriaReadRepository implements VistoriaReadRepository {
     return raw ? PrismaVistoriaMapper.toDomain(raw as any) : null;
   }
 
-  async findByIdComDetalhes(id: string): Promise<Vistoria | null> {
+  async findByIdComDetalhes(id: string, clienteId: string | null): Promise<Vistoria | null> {
     const raw = await this.prisma.client.vistorias.findFirst({
-      where: { id, deleted_at: null },
+      where: { id, deleted_at: null, ...(clienteId != null && { cliente_id: clienteId }) },
       include: INCLUDE_DETALHES,
     });
     return raw ? PrismaVistoriaMapper.toDomain(raw as any) : null;

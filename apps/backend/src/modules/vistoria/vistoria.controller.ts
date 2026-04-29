@@ -139,7 +139,8 @@ export class VistoriaController {
       'Buscar vistoria por ID (com depósitos, sintomas, riscos e calhas)',
   })
   async findById(@Param('id') id: string) {
-    const { vistoria } = await this.getVistoria.execute(id);
+    const clienteId = (this.req['tenantId'] as string | undefined) ?? null;
+    const { vistoria } = await this.getVistoria.execute(id, clienteId);
     return VistoriaViewModel.toHttp(vistoria);
   }
 

@@ -7,8 +7,8 @@ import { VistoriaReadRepository } from '../repositories/vistoria-read.repository
 export class GetVistoria {
   constructor(private repository: VistoriaReadRepository) {}
 
-  async execute(id: string) {
-    const vistoria = await this.repository.findByIdComDetalhes(id);
+  async execute(id: string, clienteId: string | null) {
+    const vistoria = await this.repository.findByIdComDetalhes(id, clienteId);
     if (!vistoria) throw VistoriaException.notFound();
     return { vistoria };
   }

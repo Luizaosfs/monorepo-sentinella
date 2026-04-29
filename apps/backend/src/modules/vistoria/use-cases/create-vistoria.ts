@@ -156,7 +156,7 @@ export class CreateVistoria {
       }
     }
 
-    const full = await this.readRepository.findByIdComDetalhes(created.id!);
+    const full = await this.readRepository.findByIdComDetalhes(created.id!, clienteId);
     return { vistoria: full! };
   }
 }
