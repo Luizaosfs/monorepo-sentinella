@@ -4,6 +4,7 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
 import { Request } from 'express';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 
 import { Roles } from '@/decorators/roles.decorator';
 import { GetPilotoFunilHoje } from './use-cases/get-piloto-funil-hoje';
@@ -26,20 +27,20 @@ export class PilotoController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Funil operacional do dia' })
   funilHoje() {
-    return this.getPilotoFunilHoje.execute(this.req['tenantId'] as string);
+    return this.getPilotoFunilHoje.execute(requireTenantId(getAccessScope(this.req)));
   }
 
   @Get('despachos-supervisor')
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Produtividade de despacho por supervisor' })
   despachosSupervisor() {
-    return this.getPilotoDespachosSupervisor.execute(this.req['tenantId'] as string);
+    return this.getPilotoDespachosSupervisor.execute(requireTenantId(getAccessScope(this.req)));
   }
 
   @Get('prod-agentes')
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Produtividade dos agentes em campo' })
   prodAgentes() {
-    return this.getPilotoProdAgentes.execute(this.req['tenantId'] as string);
+    return this.getPilotoProdAgentes.execute(requireTenantId(getAccessScope(this.req)));
   }
 }

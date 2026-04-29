@@ -4,6 +4,7 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
 import { Request } from 'express';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 
 import { Roles } from '@/decorators/roles.decorator';
 import { GetEficaciaTratamento } from './use-cases/get-eficacia-tratamento';
@@ -22,6 +23,6 @@ export class EficaciaController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Eficácia de tratamentos: taxa de não-recorrência 90d' })
   tratamento() {
-    return this.getEficaciaTratamento.execute(this.req['tenantId'] as string);
+    return this.getEficaciaTratamento.execute(requireTenantId(getAccessScope(this.req)));
   }
 }

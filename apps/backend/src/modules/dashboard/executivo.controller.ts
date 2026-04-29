@@ -4,6 +4,7 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
 import { Request } from 'express';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 
 import { Roles } from '@/decorators/roles.decorator';
 import { GetExecutivoKpis } from './use-cases/get-executivo-kpis';
@@ -30,34 +31,34 @@ export class ExecutivoController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'KPIs estratégicos da semana' })
   kpis() {
-    return this.getExecutivoKpis.execute(this.req['tenantId'] as string);
+    return this.getExecutivoKpis.execute(requireTenantId(getAccessScope(this.req)));
   }
 
   @Get('tendencia')
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Tendência últimas 8 semanas' })
   tendencia() {
-    return this.getExecutivoTendencia.execute(this.req['tenantId'] as string);
+    return this.getExecutivoTendencia.execute(requireTenantId(getAccessScope(this.req)));
   }
 
   @Get('cobertura')
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Cobertura territorial por bairro' })
   cobertura() {
-    return this.getExecutivoCobertura.execute(this.req['tenantId'] as string);
+    return this.getExecutivoCobertura.execute(requireTenantId(getAccessScope(this.req)));
   }
 
   @Get('bairros-variacao')
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Variação de focos por bairro' })
   bairrosVariacao() {
-    return this.getExecutivoBairrosVariacao.execute(this.req['tenantId'] as string);
+    return this.getExecutivoBairrosVariacao.execute(requireTenantId(getAccessScope(this.req)));
   }
 
   @Get('comparativo-ciclos')
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Comparativo bimestral' })
   comparativoCiclos() {
-    return this.getExecutivoComparativoCiclos.execute(this.req['tenantId'] as string);
+    return this.getExecutivoComparativoCiclos.execute(requireTenantId(getAccessScope(this.req)));
   }
 }
