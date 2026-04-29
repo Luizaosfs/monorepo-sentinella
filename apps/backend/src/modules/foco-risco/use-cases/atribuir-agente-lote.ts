@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Request } from 'express';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 
 import { AtribuirAgenteLoteInput } from '../dtos/atribuir-agente-lote.body';
 import { FocoRiscoReadRepository } from '../repositories/foco-risco-read.repository';
@@ -14,7 +15,7 @@ export class AtribuirAgenteLote {
   ) {}
 
   async execute(input: AtribuirAgenteLoteInput) {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const userId = this.req['user']?.id as string;
 
     const focos = await this.readRepository.findManyByIds(

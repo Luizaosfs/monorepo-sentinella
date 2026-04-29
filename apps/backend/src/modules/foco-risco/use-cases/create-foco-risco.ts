@@ -1,5 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Request } from 'express';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 
 import { EnfileirarScoreImovel } from '../../job/enfileirar-score-imovel';
 import { CreateFocoRiscoBody } from '../dtos/create-foco-risco.body';
@@ -25,7 +26,7 @@ export class CreateFocoRisco {
   ) {}
 
   async execute(input: CreateFocoRiscoBody) {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const ciclo = await this.normalizarCicloFoco.execute(clienteId);
 
     // K.1 — fn_elevar_prioridade_recorrencia: recorrência eleva prioridade um nível

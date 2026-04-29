@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 import type { AuthenticatedUser } from 'src/guards/auth.guard';
 
 import { IniciarInspecaoInput } from '../dtos/iniciar-inspecao.body';
@@ -34,7 +35,7 @@ export class IniciarInspecao {
       throw FocoRiscoException.apenasAgenteInicia();
     }
 
-    const tenantId = (this.req['tenantId'] as string | undefined) ?? null;
+    const tenantId = requireTenantId(getAccessScope(this.req));
     const foco = await this.readRepository.findById(id, tenantId);
     if (!foco) throw FocoRiscoException.notFound();
 

@@ -20,6 +20,7 @@ import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interc
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import { Request } from 'express';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 
 import { Roles } from '@/decorators/roles.decorator';
@@ -106,7 +107,7 @@ export class FocoRiscoController {
   async filter(@Query() filters: FilterFocoRiscoInput) {
     const parsed = filterFocoRiscoSchema.parse(filters);
     // MT-02: clienteId SEMPRE vem do TenantGuard, nunca da query diretamente
-    parsed.clienteId = this.req['tenantId'] as string | undefined;
+    parsed.clienteId = requireTenantId(getAccessScope(this.req));
 
     // Se o frontend enviou page/pageSize, retorna resposta paginada
     if (parsed.page != null || parsed.pageSize != null) {
@@ -150,7 +151,7 @@ export class FocoRiscoController {
   ) {
     const parsedFilters = filterFocoRiscoSchema.parse(filters);
     // MT-02: clienteId SEMPRE vem do TenantGuard, nunca da query diretamente
-    parsedFilters.clienteId = this.req['tenantId'] as string | undefined;
+    parsedFilters.clienteId = requireTenantId(getAccessScope(this.req));
     const parsedPagination = paginationSchema.parse(pagination);
     const result = await this.paginationFocoRisco.execute(
       parsedFilters,
@@ -168,7 +169,7 @@ export class FocoRiscoController {
   async contagemTriagem(@Query() filters: FilterFocoRiscoInput) {
     const parsed = filterFocoRiscoSchema.parse(filters);
     // MT-02: clienteId SEMPRE vem do TenantGuard, nunca da query diretamente
-    parsed.clienteId = this.req['tenantId'] as string | undefined;
+    parsed.clienteId = requireTenantId(getAccessScope(this.req));
     return this.contagemTriagemFilaUc.execute(parsed);
   }
 
@@ -177,7 +178,7 @@ export class FocoRiscoController {
   @ApiOperation({ summary: 'Contagem de focos agrupados por status' })
   async contagemPorStatus() {
     // MT-03: clienteId vem do TenantGuard, não de query param
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.contagemPorStatusUc.execute(clienteId);
   }
 
@@ -185,7 +186,7 @@ export class FocoRiscoController {
   @Roles('admin', 'supervisor', 'agente')
   @ApiOperation({ summary: 'Buscar múltiplos focos por IDs' })
   async byIds(@Query('ids') ids: string | string[]) {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const idsArr = Array.isArray(ids) ? ids : ids ? [ids] : [];
     const { focos } = await this.listFocosByIdsUc.execute(idsArr, clienteId);
     return focos;
@@ -195,14 +196,14 @@ export class FocoRiscoController {
   @Roles('admin', 'supervisor', 'agente')
   @ApiOperation({ summary: 'Buscar foco ativo por ID (retorna null se terminal)' })
   async getAtivo(@Param('id') id: string) {
-    return this.getFocoAtivoByIdUc.execute(id, this.req['tenantId'] as string | null);
+    return this.getFocoAtivoByIdUc.execute(id, requireTenantId(getAccessScope(this.req)));
   }
 
   @Get(':id/historico')
   @Roles('admin', 'supervisor', 'agente')
   @ApiOperation({ summary: 'Histórico de transições do foco' })
   async getHistorico(@Param('id') id: string) {
-    return this.getFocoHistoricoUc.execute(id, this.req['tenantId'] as string | null);
+    return this.getFocoHistoricoUc.execute(id, requireTenantId(getAccessScope(this.req)));
   }
 
   @Get(':id/timeline')
@@ -216,7 +217,7 @@ export class FocoRiscoController {
   @Roles('admin', 'supervisor', 'agente')
   @ApiOperation({ summary: 'Buscar foco vinculado a um levantamento_item' })
   async byLevantamentoItem(@Query('itemId') itemId: string) {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const rows = await this.prisma.client.focos_risco.findMany({
       where: { origem_levantamento_item_id: itemId, cliente_id: clienteId, deleted_at: null },
       orderBy: { created_at: 'desc' },
@@ -229,7 +230,7 @@ export class FocoRiscoController {
   @Roles('admin', 'supervisor', 'agente')
   @ApiOperation({ summary: 'Listar focos de um imóvel (histórico completo)' })
   async listByImovel(@Query('imovelId') imovelId: string) {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.prisma.client.focos_risco.findMany({
       where: { imovel_id: imovelId, cliente_id: clienteId, deleted_at: null },
       orderBy: { created_at: 'desc' },
@@ -240,7 +241,7 @@ export class FocoRiscoController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Contagem de focos por status e prioridade' })
   async analytics() {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.prisma.client.$queryRaw(
       Prisma.sql`
         SELECT
@@ -263,7 +264,7 @@ export class FocoRiscoController {
       'Buscar foco de risco por ID (histórico + resumo SLA: fase, prazo da fase, sla_operacional)',
   })
   async findById(@Param('id') id: string) {
-    const { foco, sla, consolidacao } = await this.getFocoRisco.execute(id, this.req['tenantId'] as string | null);
+    const { foco, sla, consolidacao } = await this.getFocoRisco.execute(id, requireTenantId(getAccessScope(this.req)));
     return FocoRiscoViewModel.toHttp(foco, sla, consolidacao);
   }
 
@@ -325,7 +326,7 @@ export class FocoRiscoController {
     @Body() body: ClassificacaoInicialBody,
   ) {
     const parsed = classificacaoInicialSchema.parse(body);
-    const { foco } = await this.atualizarClassificacao.execute(id, parsed, (this.req['tenantId'] as string | undefined) ?? null);
+    const { foco } = await this.atualizarClassificacao.execute(id, parsed, requireTenantId(getAccessScope(this.req)));
     return FocoRiscoViewModel.toHttp(foco);
   }
 

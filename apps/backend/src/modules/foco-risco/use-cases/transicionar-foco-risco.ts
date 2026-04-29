@@ -2,6 +2,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 import { Request } from 'express';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 
 import { EnfileirarScoreImovel } from '../../job/enfileirar-score-imovel';
 import { CancelarReinspecoesAoFecharFoco } from '../../reinspecao/use-cases/cancelar-reinspecoes-ao-fechar-foco';
@@ -48,7 +49,7 @@ export class TransicionarFocoRisco {
   ) {}
 
   async execute(id: string, input: TransicionarFocoRiscoBody) {
-    const tenantId = (this.req['tenantId'] as string | undefined) ?? null;
+    const tenantId = requireTenantId(getAccessScope(this.req));
     const foco = await this.readRepository.findById(id, tenantId);
     if (!foco) throw FocoRiscoException.notFound();
 
