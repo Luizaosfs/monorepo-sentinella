@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 
 import { ResumoRegionalQuery } from '../dtos/dashboard-analytics.input';
 import {
@@ -17,7 +18,7 @@ export class ResumoRegional {
 
   async execute(query: ResumoRegionalQuery): Promise<ResumoRegionalRow[]> {
     // MT-02: tenantId do guard sempre vence — nunca aceita clienteId do frontend
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.readRepository.resumoRegional(
       clienteId,
       query.ciclo,

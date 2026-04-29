@@ -17,6 +17,7 @@ import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interc
 import { Request } from 'express';
 import { AuthenticatedUser } from 'src/guards/auth.guard';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 
 import { Throttle } from '@nestjs/throttler';
 import { UserThrottlerGuard } from 'src/shared/guards/user-throttler.guard';
@@ -94,7 +95,7 @@ export class DashboardController {
   @Roles('admin', 'supervisor', 'agente')
   @ApiOperation({ summary: 'KPIs da central operacional (substitui v_central_operacional)' })
   async centralKpis() {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const { kpis } = await this.getCentralKpisUc.execute(clienteId);
     return kpis;
   }
@@ -103,7 +104,7 @@ export class DashboardController {
   @Roles('admin', 'supervisor', 'agente')
   @ApiOperation({ summary: 'Imóveis prioritários para vistoria hoje (substitui v_imoveis_para_hoje)' })
   async imoveisParaHoje(@Query('limit') limit?: string) {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const { items } = await this.listImoveisParaHojeUc.execute(
       clienteId,
       limit ? parseInt(limit, 10) : 30,
@@ -180,7 +181,7 @@ export class DashboardController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Gerar resumo diário do cliente' })
   async gerarResumoDiario() {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.gerarResumoDiarioUc.execute(clienteId);
   }
 
@@ -188,7 +189,7 @@ export class DashboardController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Listar resumos diários' })
   async listResumos(@Query('limit') limit?: string) {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const { items } = await this.resumosFilter.execute(
       clienteId,
       limit ? parseInt(limit) : 30,
@@ -200,7 +201,7 @@ export class DashboardController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Listar relatórios gerados' })
   async listRelatorios() {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const { items } = await this.relatoriosFilter.execute(clienteId);
     return items.map(DashboardViewModel.relatorioToHttp);
   }
@@ -212,7 +213,7 @@ export class DashboardController {
   @ApiOperation({ summary: 'Gerar relatório' })
   async createRelatorio(@Body() body: CreateRelatorioBody) {
     const parsed = createRelatorioSchema.parse(body);
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const userId = (this.req['user'] as AuthenticatedUser).id;
     const { relatorio } = await this.relatorioCreate.execute(clienteId, userId, parsed);
     return DashboardViewModel.relatorioToHttp(relatorio);
@@ -250,7 +251,7 @@ export class DashboardController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Listar ciclos disponíveis do cliente' })
   async ciclosDisponiveis() {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.dashboardRead.listCiclosDisponiveis(clienteId);
   }
 
@@ -261,7 +262,7 @@ export class DashboardController {
   @ApiOperation({ summary: 'Dados LIRAa estruturados para exportação (substitui exportarPdf)' })
   async liraaExportData(@Query() query: LiraaQuery) {
     const parsed = liraaQuerySchema.parse(query);
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const result = await this.dashboardRead.calcularLiraa(clienteId, parsed.ciclo);
     return result;
   }
@@ -271,7 +272,7 @@ export class DashboardController {
   @ApiOperation({ summary: 'LIRAa (IIP/IBP) agregado por quarteirão (substitui v_liraa_quarteirao)' })
   async liraaByQuarteirao(@Query() query: LiraaQuery) {
     const parsed = liraaQuerySchema.parse(query);
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.dashboardRead.listLiraaByQuarteirao(clienteId, parsed.ciclo);
   }
 }

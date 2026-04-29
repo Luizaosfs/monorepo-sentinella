@@ -221,7 +221,8 @@
       "PowerShell(cmd /c \"cd /d D:\\\\sentinella\\\\monorepo-sentinella && rm diff-commit1.txt diff-commit2.txt\")",
       "PowerShell(cmd /c \"cd /d D:\\\\sentinella\\\\monorepo-sentinella && git add PENDENCIAS_HARDENING.md && git commit -m \"\"docs: registra 5 pendências de hardening pós-fix IDOR\"\" 2>&1\")",
       "Bash(cmd /c \"pnpm jest --testPathIgnorePatterns \\\\\"test/e2e\\\\\" 2>&1 | tail -30\")",
-      "PowerShell(Set-Location \"D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend\"; $result = cmd /c \"pnpm jest --testPathIgnorePatterns \"\"test/e2e\"\" 2>&1\"; $lines = $result -split \"`n\"; $lines | Select-Object -Last 30 | ForEach-Object { Write-Output $_ })"
+      "PowerShell(Set-Location \"D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend\"; $result = cmd /c \"pnpm jest --testPathIgnorePatterns \"\"test/e2e\"\" 2>&1\"; $lines = $result -split \"`n\"; $lines | Select-Object -Last 30 | ForEach-Object { Write-Output $_ })",
+      "PowerShell(cd D:\\\\sentinella\\\\monorepo-sentinella; git diff --stat -- apps/backend/src/modules/dashboard/analitico.controller.ts)"
     ]
   }
 }

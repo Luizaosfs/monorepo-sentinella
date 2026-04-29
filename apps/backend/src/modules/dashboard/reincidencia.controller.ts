@@ -6,6 +6,7 @@ import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import { Request } from 'express';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 
 import { Roles } from '@/decorators/roles.decorator';
 import { GetReincidenciaImoveis } from './use-cases/get-reincidencia-imoveis';
@@ -29,28 +30,28 @@ export class ReincidenciaController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Imóveis com padrão de reincidência' })
   imoveis() {
-    return this.getReincidenciaImoveis.execute(this.req['tenantId'] as string);
+    return this.getReincidenciaImoveis.execute(requireTenantId(getAccessScope(this.req)));
   }
 
   @Get('por-deposito')
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Tipos de depósito que mais reincidem' })
   porDeposito() {
-    return this.getReincidenciaPorDeposito.execute(this.req['tenantId'] as string);
+    return this.getReincidenciaPorDeposito.execute(requireTenantId(getAccessScope(this.req)));
   }
 
   @Get('sazonalidade')
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Padrão sazonal de reincidência' })
   sazonalidade() {
-    return this.getReincidenciaSazonalidade.execute(this.req['tenantId'] as string);
+    return this.getReincidenciaSazonalidade.execute(requireTenantId(getAccessScope(this.req)));
   }
 
   @Get('historico-ciclos')
   @Roles('admin', 'supervisor', 'agente')
   @ApiOperation({ summary: 'Histórico de focos por ciclo de um imóvel' })
   historicoCiclos(@Query('imovelId') imovelId: string) {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.prisma.client.$queryRaw(Prisma.sql`
       SELECT
         ciclo,
