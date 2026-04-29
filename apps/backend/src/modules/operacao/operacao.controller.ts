@@ -20,6 +20,7 @@ import {
   paginationSchema,
 } from '@shared/dtos/pagination-body';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 
 import { Roles } from '@/decorators/roles.decorator';
@@ -166,7 +167,7 @@ export class OperacaoController {
   @ApiOperation({ summary: 'Resolver foco de risco vinculado a um item de levantamento' })
   async resolverStatusItem(@Body() body: ResolverStatusItemBody) {
     const parsed = resolverStatusItemSchema.parse(body);
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const userId = (this.req['user'] as AuthenticatedUser | undefined)?.id;
     await this.resolverStatusItemUc.execute(parsed.itemId, clienteId, userId);
     return { ok: true };
@@ -177,7 +178,7 @@ export class OperacaoController {
   @ApiOperation({ summary: 'Listar IDs de itens que já possuem operação pendente/em_andamento' })
   async listExistingItemIds(@Body() body: ListExistingItemIdsBody) {
     const parsed = listExistingItemIdsSchema.parse(body);
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.listExistingItemIdsUc.execute(clienteId, parsed.itemIds);
   }
 
