@@ -15,6 +15,7 @@ import {
 import { REQUEST } from '@nestjs/core';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 import {
   PaginationProps,
   paginationSchema,
@@ -110,7 +111,7 @@ export class SlaController {
   @Roles('admin', 'supervisor', 'agente')
   @ApiOperation({ summary: 'SLAs nos últimos 20% do prazo (iminentes)' })
   async iminentes() {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const { iminentes } = await this.listSlaIminentes.execute(clienteId);
     return iminentes;
   }
@@ -166,7 +167,7 @@ export class SlaController {
     @Body() body: UpdateSlaStatusBody,
   ) {
     const parsed = updateSlaStatusSchema.parse(body);
-    const { sla } = await this.updateSlaStatus.execute(id, parsed, this.req['tenantId'] as string | null);
+    const { sla } = await this.updateSlaStatus.execute(id, parsed, getAccessScope(this.req).tenantId);
     return SlaOperacionalViewModel.toHttp(sla);
   }
 
@@ -175,7 +176,7 @@ export class SlaController {
   @ApiOperation({ summary: 'Escalar prioridade do SLA' })
   async escalar(@Param('id') id: string, @Body() body: EscalarSlaBody) {
     escalarSlaSchema.parse(body);
-    const tenantId = this.req['tenantId'] as string | null;
+    const tenantId = requireTenantId(getAccessScope(this.req));
     const userId = (this.req['user'] as { id: string } | undefined)?.id ?? null;
     return this.escalarSla.execute(id, { tenantId, userId });
   }
@@ -184,7 +185,7 @@ export class SlaController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Reabrir SLA concluído' })
   async reabrir(@Param('id') id: string) {
-    const { sla } = await this.reabrirSla.execute(id, this.req['tenantId'] as string | null);
+    const { sla } = await this.reabrirSla.execute(id, getAccessScope(this.req).tenantId);
     return SlaOperacionalViewModel.toHttp(sla);
   }
 
@@ -192,7 +193,7 @@ export class SlaController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Concluir SLA manualmente' })
   async concluir(@Param('id') id: string) {
-    const { sla } = await this.concluirSla.execute(id, this.req['tenantId'] as string | null);
+    const { sla } = await this.concluirSla.execute(id, getAccessScope(this.req).tenantId);
     return SlaOperacionalViewModel.toHttp(sla);
   }
 
@@ -201,7 +202,7 @@ export class SlaController {
   @ApiOperation({ summary: 'Atribuir agente ao SLA' })
   async atribuir(@Param('id') id: string, @Body() body: AtribuirAgenteBody) {
     const parsed = atribuirAgenteSchema.parse(body);
-    const { sla } = await this.atribuirAgente.execute(id, parsed, this.req['tenantId'] as string | null);
+    const { sla } = await this.atribuirAgente.execute(id, parsed, getAccessScope(this.req).tenantId);
     return SlaOperacionalViewModel.toHttp(sla);
   }
 
@@ -300,7 +301,7 @@ export class SlaController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Seed feriados nacionais brasileiros para o cliente' })
   async seedFeriadosNacionais() {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     await this.prisma.client.$executeRaw(
       Prisma.sql`SELECT seed_sla_feriados_nacionais(${clienteId}::uuid)`,
     );
@@ -313,7 +314,7 @@ export class SlaController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Remover configuração de SLA de uma região' })
   async deleteConfigRegiaoRoute(@Param('regiaoId') regiaoId: string) {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     await this.prisma.client.$executeRaw(
       Prisma.sql`DELETE FROM sla_config_regiao WHERE regiao_id = ${regiaoId}::uuid AND cliente_id = ${clienteId}::uuid`,
     );
@@ -326,7 +327,7 @@ export class SlaController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Configuração de prazos SLA por fase (sla_foco_config)' })
   async listConfigAuditRoute() {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.prisma.client.$queryRaw(
       Prisma.sql`SELECT * FROM sla_foco_config WHERE cliente_id = ${clienteId}::uuid AND ativo = true ORDER BY fase`,
     );
@@ -338,21 +339,21 @@ export class SlaController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Focos com SLA Inteligente' })
   listInteligenteRoute() {
-    return this.getFocosRiscoAtivos.executeAll(this.req['tenantId'] as string);
+    return this.getFocosRiscoAtivos.executeAll(requireTenantId(getAccessScope(this.req)));
   }
 
   @Get('inteligente/criticos')
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Focos com SLA Inteligente vencido' })
   listInteligenteCriticosRoute() {
-    return this.getFocosRiscoAtivos.executeVencidos(this.req['tenantId'] as string);
+    return this.getFocosRiscoAtivos.executeVencidos(requireTenantId(getAccessScope(this.req)));
   }
 
   @Get('inteligente/foco/:focoId')
   @Roles('admin', 'supervisor', 'agente')
   @ApiOperation({ summary: 'SLA Inteligente de um foco específico' })
   async getInteligenteByFocoRoute(@Param('focoId') focoId: string) {
-    const rows = await this.getFocosRiscoAtivos.executeById(focoId, this.req['tenantId'] as string);
+    const rows = await this.getFocosRiscoAtivos.executeById(focoId, requireTenantId(getAccessScope(this.req)));
     return rows[0] ?? null;
   }
 }
