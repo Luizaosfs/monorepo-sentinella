@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
+import { getAccessScope } from '@shared/security/access-scope.helpers';
 import { UpdateItemBody } from '../dtos/update-item.body';
 import { LevantamentoException } from '../errors/levantamento.exception';
 import { UpdateItemImutavelException } from '../errors/update-item-imutavel.exception';
@@ -29,7 +30,7 @@ export class UpdateItem {
   ] as const;
 
   async execute(itemId: string, input: UpdateItemBody) {
-    const tenantId = (this.req['tenantId'] as string | undefined) ?? null;
+    const tenantId = getAccessScope(this.req).tenantId;
     const item = await this.readRepository.findItemById(itemId, tenantId);
     if (!item) throw LevantamentoException.itemNotFound();
 

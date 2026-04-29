@@ -3,6 +3,7 @@ import { FocoRiscoWriteRepository } from '@modules/foco-risco/repositories/foco-
 import { Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
+import { getAccessScope } from '@shared/security/access-scope.helpers';
 import { ResultadoReinspecaoBody } from '../dtos/resultado-reinspecao.body';
 import { ReinspecaoException } from '../errors/reinspecao.exception';
 import { ReinspecaoReadRepository } from '../repositories/reinspecao-read.repository';
@@ -19,7 +20,7 @@ export class RegistrarResultadoReinspecao {
   ) {}
 
   async execute(id: string, input: ResultadoReinspecaoBody) {
-    const tenantId = (this.req['tenantId'] as string | undefined) ?? null;
+    const tenantId = getAccessScope(this.req).tenantId;
     const r = await this.readRepository.findById(id, tenantId);
     if (!r) {
       throw ReinspecaoException.notFound();

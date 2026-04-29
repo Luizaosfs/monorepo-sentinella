@@ -1,6 +1,7 @@
 import { Inject, Injectable, Logger, Scope } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
+import { getAccessScope } from '@shared/security/access-scope.helpers';
 
 import { CriarFocoDeLevantamentoItem } from '@/modules/foco-risco/use-cases/auto-criacao/criar-foco-de-levantamento-item';
 import { QuotaException } from '../../billing/errors/quota.exception';
@@ -24,7 +25,7 @@ export class CreateLevantamentoItem {
   ) {}
 
   async execute(levantamentoId: string, input: CreateLevantamentoItemBody) {
-    const tenantId = (this.req['tenantId'] as string | undefined) ?? null;
+    const tenantId = getAccessScope(this.req).tenantId;
     const levantamento = await this.readRepository.findById(levantamentoId, tenantId);
     if (!levantamento) throw LevantamentoException.notFound();
 

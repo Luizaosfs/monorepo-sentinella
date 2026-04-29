@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Request } from 'express';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 
 import { VerificarQuota } from '../../billing/use-cases/verificar-quota';
 import { QuotaException } from '../../billing/errors/quota.exception';
@@ -16,7 +17,7 @@ export class CreateLevantamento {
   ) {}
 
   async execute(input: CreateLevantamentoBody) {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
 
     const { ok, usado, limite, motivo } = await this.verificarQuota.execute(clienteId, { metrica: 'levantamentos_mes' });
     if (!ok) throw QuotaException.excedida({ metrica: 'levantamentos_mes', usado, limite, motivo });

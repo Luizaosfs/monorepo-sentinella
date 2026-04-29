@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
+import { getAccessScope } from '@shared/security/access-scope.helpers';
 import { SaveLevantamentoBody } from '../dtos/save-levantamento.body';
 import { LevantamentoException } from '../errors/levantamento.exception';
 import { LevantamentoReadRepository } from '../repositories/levantamento-read.repository';
@@ -15,7 +16,7 @@ export class SaveLevantamento {
   ) {}
 
   async execute(id: string, input: SaveLevantamentoBody) {
-    const tenantId = (this.req['tenantId'] as string | undefined) ?? null;
+    const tenantId = getAccessScope(this.req).tenantId;
     const levantamento = await this.readRepository.findById(id, tenantId);
     if (!levantamento) throw LevantamentoException.notFound();
 

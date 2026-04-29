@@ -21,6 +21,7 @@ import {
 } from '@shared/dtos/pagination-body';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 
 import { Roles } from '@/decorators/roles.decorator';
 
@@ -140,7 +141,7 @@ export class LevantamentoController {
   @Roles('admin', 'supervisor', 'agente')
   @ApiOperation({ summary: 'Listar itens com coordenadas para exibição no mapa (máx. 500)' })
   async listItensMapaRoute() {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.listItensMapa.execute(clienteId);
   }
 
@@ -152,7 +153,7 @@ export class LevantamentoController {
     @Query('lng') lng: string,
     @Query('tolerance') tolerance?: string,
   ) {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.listHistoricoPorLocalizacao.execute(
       clienteId,
       parseFloat(lat),
@@ -165,7 +166,7 @@ export class LevantamentoController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Listar histórico de atendimento do cliente (máx. 1000)' })
   async listHistoricoPorClienteRoute() {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.listHistoricoPorCliente.execute(clienteId);
   }
 
@@ -173,7 +174,7 @@ export class LevantamentoController {
   @Roles('admin', 'supervisor', 'agente')
   @ApiOperation({ summary: 'Dados completos do mapa (itens, planejamentos, regiões, pluvio)' })
   async fullMapData(@Query('clienteId') clienteId?: string) {
-    const tenantId = this.req['tenantId'] as string | null;
+    const tenantId = getAccessScope(this.req).tenantId;
     const effectiveClienteId = tenantId ?? clienteId ?? null;
     return this.fullMapDataUc.execute(effectiveClienteId as string);
   }
@@ -182,7 +183,7 @@ export class LevantamentoController {
   @Roles('admin', 'supervisor', 'agente')
   @ApiOperation({ summary: 'Mapa de status dos itens de levantamento por cliente' })
   async itemStatuses(@Query('clienteId') clienteId?: string) {
-    const tenantId = this.req['tenantId'] as string | null;
+    const tenantId = getAccessScope(this.req).tenantId;
     const effectiveClienteId = tenantId ?? clienteId ?? null;
     return this.itemStatusesByClienteUc.execute(effectiveClienteId as string);
   }

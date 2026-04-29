@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
+import { getAccessScope } from '@shared/security/access-scope.helpers';
 
 import { AddItemEvidenciaBody } from '../dtos/add-item-evidencia.body';
 import { LevantamentoException } from '../errors/levantamento.exception';
@@ -19,7 +20,7 @@ export class AddItemEvidencia {
   ) {}
 
   async execute(itemId: string, input: AddItemEvidenciaBody) {
-    const tenantId = (this.req['tenantId'] as string | undefined) ?? null;
+    const tenantId = getAccessScope(this.req).tenantId;
     const item = await this.readRepository.findItemById(itemId, tenantId);
     if (!item) throw LevantamentoException.itemNotFound();
     const evidencia = await this.writeRepository.addItemEvidencia(itemId, input);

@@ -3,6 +3,7 @@ import { FocoRiscoWriteRepository } from '@modules/foco-risco/repositories/foco-
 import { Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
+import { getAccessScope } from '@shared/security/access-scope.helpers';
 
 import { CreateReinspecaoBody } from '../dtos/create-reinspecao.body';
 import { Reinspecao } from '../entities/reinspecao';
@@ -20,7 +21,7 @@ export class CriarManual {
 
   async execute(input: CreateReinspecaoBody) {
     // MT-02: tenantId do guard sempre vence — nunca aceita clienteId do frontend
-    const clienteId = this.req['tenantId'];
+    const clienteId = getAccessScope(this.req).tenantId;
     if (!clienteId) {
       throw ReinspecaoException.payloadInvalido();
     }
@@ -29,7 +30,7 @@ export class CriarManual {
     if (
       input.clienteId &&
       !isAdmin &&
-      input.clienteId !== this.req['tenantId']
+      input.clienteId !== getAccessScope(this.req).tenantId
     ) {
       throw ReinspecaoException.forbiddenTenant();
     }

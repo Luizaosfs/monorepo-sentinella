@@ -1,5 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Request } from 'express';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 
 import { CriarFocoDeLevantamentoItem } from '@/modules/foco-risco/use-cases/auto-criacao/criar-foco-de-levantamento-item';
 import { QuotaException } from '../../billing/errors/quota.exception';
@@ -23,7 +24,7 @@ export class CriarItemManual {
   ) {}
 
   async execute(input: CriarItemManualBody) {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const usuarioId = this.req['user']?.id as string;
 
     // 1. Valida planejamento

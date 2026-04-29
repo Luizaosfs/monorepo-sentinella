@@ -15,6 +15,7 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 
 import { Roles } from '@/decorators/roles.decorator';
 
@@ -79,7 +80,7 @@ export class ReinspecaoController {
   async filter(@Query() filters: FilterReinspecaoInput) {
     const parsed = filterReinspecaoSchema.parse(filters);
     // MT-02: clienteId SEMPRE vem do TenantGuard, nunca da query diretamente
-    parsed.clienteId = this.req['tenantId'] as string | undefined;
+    parsed.clienteId = getAccessScope(this.req).tenantId ?? undefined;
     const { reinspecoes } = await this.filterReinspecoes.execute(parsed);
     return reinspecoes.map(ReinspecaoViewModel.toHttp);
   }
@@ -98,7 +99,7 @@ export class ReinspecaoController {
   @ApiOperation({ summary: 'Contar reinspeções pendentes/vencidas (do agente ou do cliente)' })
   async count(@Query('agenteId') agenteId?: string) {
     // MT-03: clienteId vem do TenantGuard, não de query param
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.countPendentes.execute(clienteId, agenteId);
   }
 

@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
+import { getAccessScope } from '@shared/security/access-scope.helpers';
 
 import { ReagendarReinspecaoBody } from '../dtos/reagendar-reinspecao.body';
 import { ReinspecaoException } from '../errors/reinspecao.exception';
@@ -16,7 +17,7 @@ export class ReagendarReinspecao {
   ) {}
 
   async execute(id: string, input: ReagendarReinspecaoBody) {
-    const tenantId = (this.req['tenantId'] as string | undefined) ?? null;
+    const tenantId = getAccessScope(this.req).tenantId;
     const r = await this.readRepository.findById(id, tenantId);
     if (!r) {
       throw ReinspecaoException.notFound();
