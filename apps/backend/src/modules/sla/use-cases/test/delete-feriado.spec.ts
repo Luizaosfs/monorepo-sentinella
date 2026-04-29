@@ -2,6 +2,7 @@ import { ForbiddenException } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import { mock } from 'jest-mock-extended';
+import { mockRequest } from '@test/utils/user-helpers';
 
 import { expectHttpException } from '@test/utils/expect-http-exception';
 
@@ -14,12 +15,29 @@ describe('DeleteFeriado', () => {
   let useCase: DeleteFeriado;
   const readRepo = mock<SlaReadRepository>();
   const writeRepo = mock<SlaWriteRepository>();
-  const req: any = { user: { isPlatformAdmin: true }, tenantId: null };
+  const req = mockRequest({
+    accessScope: {
+      kind: 'platform' as const,
+      userId: 'admin-id',
+      papeis: ['admin'] as any,
+      isAdmin: true,
+      tenantId: null,
+      clienteIdsPermitidos: null,
+      agrupamentoId: null,
+    },
+  });
 
   beforeEach(async () => {
     jest.clearAllMocks();
-    req.user = { isPlatformAdmin: true };
-    req.tenantId = null;
+    req['accessScope'] = {
+      kind: 'platform' as const,
+      userId: 'admin-id',
+      papeis: ['admin'] as any,
+      isAdmin: true,
+      tenantId: null,
+      clienteIdsPermitidos: null,
+      agrupamentoId: null,
+    };
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         DeleteFeriado,
@@ -45,8 +63,15 @@ describe('DeleteFeriado', () => {
   it('deve rejeitar supervisor tentando deletar feriado de outro cliente (IDOR)', async () => {
     readRepo.findFeriadoById.mockResolvedValue({ id: 'f-1', clienteId: 'cliente-A' });
 
-    req.user = { isPlatformAdmin: false };
-    req.tenantId = 'cliente-B';
+    req['accessScope'] = {
+      kind: 'municipal' as const,
+      userId: 'user-id',
+      papeis: ['supervisor'] as any,
+      isAdmin: false,
+      tenantId: 'cliente-B',
+      clienteIdsPermitidos: ['cliente-B'] as [string],
+      agrupamentoId: null,
+    };
 
     await expect(useCase.execute('f-1')).rejects.toBeInstanceOf(ForbiddenException);
     expect(writeRepo.deleteFeriado).not.toHaveBeenCalled();
@@ -56,8 +81,15 @@ describe('DeleteFeriado', () => {
     readRepo.findFeriadoById.mockResolvedValue({ id: 'f-1', clienteId: 'cliente-A' });
     writeRepo.deleteFeriado.mockResolvedValue();
 
-    req.user = { isPlatformAdmin: false };
-    req.tenantId = 'cliente-A';
+    req['accessScope'] = {
+      kind: 'municipal' as const,
+      userId: 'user-id',
+      papeis: ['supervisor'] as any,
+      isAdmin: false,
+      tenantId: 'cliente-A',
+      clienteIdsPermitidos: ['cliente-A'] as [string],
+      agrupamentoId: null,
+    };
 
     const result = await useCase.execute('f-1');
     expect(result).toEqual({ deleted: true });

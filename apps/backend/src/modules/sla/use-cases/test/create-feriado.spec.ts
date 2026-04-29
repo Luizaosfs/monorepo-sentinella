@@ -1,3 +1,4 @@
+import { ForbiddenException } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import { mock } from 'jest-mock-extended';
@@ -63,5 +64,41 @@ describe('CreateFeriado', () => {
         nacional: false,
       }),
     );
+  });
+
+  describe('com platform scope (admin sem tenant)', () => {
+    let ucAdmin: CreateFeriado;
+
+    beforeEach(async () => {
+      jest.clearAllMocks();
+      const module: TestingModule = await Test.createTestingModule({
+        providers: [
+          CreateFeriado,
+          { provide: SlaWriteRepository, useValue: writeRepo },
+          {
+            provide: REQUEST,
+            useValue: mockRequest({
+              accessScope: {
+                kind: 'platform' as const,
+                userId: 'admin-id',
+                papeis: ['admin'] as any,
+                isAdmin: true,
+                tenantId: null,
+                clienteIdsPermitidos: null,
+                agrupamentoId: null,
+              },
+            }),
+          },
+        ],
+      }).compile();
+      ucAdmin = module.get<CreateFeriado>(CreateFeriado);
+    });
+
+    it('deve lançar ForbiddenException quando admin sem tenant', async () => {
+      await expect(
+        ucAdmin.execute({ data: new Date('2025-12-25'), descricao: 'Natal', nacional: true }),
+      ).rejects.toThrow(ForbiddenException);
+      expect(writeRepo.createFeriado).not.toHaveBeenCalled();
+    });
   });
 });

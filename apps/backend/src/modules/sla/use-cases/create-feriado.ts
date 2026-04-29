@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 
 import { CreateFeriadoBody } from '../dtos/create-feriado.body';
 import { SlaWriteRepository } from '../repositories/sla-write.repository';
@@ -13,7 +14,7 @@ export class CreateFeriado {
   ) {}
 
   async execute(data: CreateFeriadoBody) {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const feriado = await this.repository.createFeriado({
       clienteId,
       data: data.data,
