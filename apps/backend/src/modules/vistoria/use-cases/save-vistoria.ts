@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger, Scope } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
-import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
+import { getAccessScope } from '@shared/security/access-scope.helpers';
 
 import { SaveVistoriaBody } from '../dtos/save-vistoria.body';
 import { VistoriaException } from '../errors/vistoria.exception';
@@ -23,7 +23,7 @@ export class SaveVistoria {
   ) {}
 
   async execute(id: string, data: SaveVistoriaBody) {
-    const tenantId = requireTenantId(getAccessScope(this.req));
+    const tenantId = getAccessScope(this.req).tenantId;
     const vistoria = await this.readRepository.findById(id, tenantId);
     if (!vistoria) throw VistoriaException.notFound();
 
