@@ -31,8 +31,9 @@ export class PrismaDroneReadRepository implements DroneReadRepository {
     return row ? PrismaDroneMapper.toDomain(row as any) : null;
   }
 
-  async findVoos(_clienteId: string): Promise<Voo[]> {
+  async findVoos(clienteId: string): Promise<Voo[]> {
     const rows = await this.prisma.client.voos.findMany({
+      where: { planejamento: { cliente_id: clienteId } },
       orderBy: { created_at: 'desc' },
     });
     return rows.map((r) => PrismaDroneMapper.vooToDomain(r as any));
