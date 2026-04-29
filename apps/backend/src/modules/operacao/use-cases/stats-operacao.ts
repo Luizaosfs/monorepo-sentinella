@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
+import { getAccessScope, getClienteIdsPermitidos } from '@shared/security/access-scope.helpers';
 import { Request } from 'express';
 
 import { OperacaoReadRepository } from '../repositories/operacao-read.repository';
@@ -12,7 +13,8 @@ export class StatsOperacao {
   ) {}
 
   async execute() {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteIds = getClienteIdsPermitidos(getAccessScope(this.req));
+    const clienteId = clienteIds !== null ? (clienteIds[0] ?? null) : null;
     const byStatus = await this.repository.countByStatus(clienteId);
     return { byStatus };
   }

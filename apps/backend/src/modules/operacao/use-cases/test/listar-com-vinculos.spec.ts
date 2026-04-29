@@ -49,4 +49,24 @@ describe('ListarComVinculos', () => {
 
     expect(mockPrisma.client.$queryRaw).toHaveBeenCalledTimes(1);
   });
+
+  it('deve chamar $queryRaw sem filtro de clienteId quando platform scope (admin)', async () => {
+    const platformReq = mockRequest({
+      accessScope: {
+        kind: 'platform' as const,
+        userId: 'admin-id',
+        papeis: ['admin'] as any,
+        isAdmin: true,
+        tenantId: null,
+        clienteIdsPermitidos: null,
+        agrupamentoId: null,
+      },
+    });
+    const ucPlatform = new ListarComVinculos(mockPrisma as any, platformReq as any);
+    mockPrisma.client.$queryRaw.mockResolvedValue([]);
+
+    await ucPlatform.execute({});
+
+    expect(mockPrisma.client.$queryRaw).toHaveBeenCalledTimes(1);
+  });
 });

@@ -64,4 +64,45 @@ describe('FilterOperacao', () => {
 
     expect(result.operacoes).toEqual([]);
   });
+
+  describe('com platform scope (admin sem tenant)', () => {
+    let ucAdmin: FilterOperacao;
+
+    beforeEach(async () => {
+      jest.clearAllMocks();
+      const module: TestingModule = await Test.createTestingModule({
+        providers: [
+          FilterOperacao,
+          { provide: OperacaoReadRepository, useValue: readRepo },
+          {
+            provide: REQUEST,
+            useValue: mockRequest({
+              accessScope: {
+                kind: 'platform' as const,
+                userId: 'admin-id',
+                papeis: ['admin'] as any,
+                isAdmin: true,
+                tenantId: null,
+                clienteIdsPermitidos: null,
+                agrupamentoId: null,
+              },
+            }),
+          },
+        ],
+      }).compile();
+
+      ucAdmin = module.get<FilterOperacao>(FilterOperacao);
+    });
+
+    it('deve chamar findAll sem clienteId quando admin sem tenant', async () => {
+      readRepo.findAll.mockResolvedValue([]);
+
+      await ucAdmin.execute({ status: 'pendente' });
+
+      expect(readRepo.findAll).toHaveBeenCalledWith({
+        status: 'pendente',
+        clienteId: undefined,
+      });
+    });
+  });
 });

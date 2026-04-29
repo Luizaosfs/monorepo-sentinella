@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Prisma } from '@prisma/client';
+import { getAccessScope, getClienteIdsPermitidos } from '@shared/security/access-scope.helpers';
 import { Request } from 'express';
 
 import { PrismaService } from 'src/shared/modules/database/prisma/prisma.service';
@@ -20,13 +21,16 @@ export class ListarComVinculos {
   ) {}
 
   async execute(filters: ListarComVinculosFilter = {}) {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteIds = getClienteIdsPermitidos(getAccessScope(this.req));
+    const clienteId: string | null = clienteIds !== null ? (clienteIds[0] ?? null) : null;
     const limit = filters.limit ?? 100;
 
     const conditions: Prisma.Sql[] = [
-      Prisma.sql`o.cliente_id = ${clienteId}::uuid`,
       Prisma.sql`o.deleted_at IS NULL`,
     ];
+    if (clienteId !== null) {
+      conditions.push(Prisma.sql`o.cliente_id = ${clienteId}::uuid`);
+    }
 
     if (filters.status) {
       conditions.push(Prisma.sql`o.status = ${filters.status}`);

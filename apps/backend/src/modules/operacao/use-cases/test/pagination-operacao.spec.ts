@@ -71,4 +71,48 @@ describe('PaginationOperacao', () => {
       pagination,
     );
   });
+
+  describe('com platform scope (admin sem tenant)', () => {
+    let ucAdmin: PaginationOperacao;
+
+    beforeEach(async () => {
+      jest.clearAllMocks();
+      const module: TestingModule = await Test.createTestingModule({
+        providers: [
+          PaginationOperacao,
+          { provide: OperacaoReadRepository, useValue: readRepo },
+          {
+            provide: REQUEST,
+            useValue: mockRequest({
+              accessScope: {
+                kind: 'platform' as const,
+                userId: 'admin-id',
+                papeis: ['admin'] as any,
+                isAdmin: true,
+                tenantId: null,
+                clienteIdsPermitidos: null,
+                agrupamentoId: null,
+              },
+            }),
+          },
+        ],
+      }).compile();
+
+      ucAdmin = module.get<PaginationOperacao>(PaginationOperacao);
+    });
+
+    it('deve chamar findPaginated sem clienteId quando admin sem tenant', async () => {
+      readRepo.findPaginated.mockResolvedValue({
+        items: [],
+        pagination: { perPage: 15, currentPage: 1, count: 0, pagesCount: 0 },
+      } as OperacaoPaginated);
+
+      await ucAdmin.execute({ status: 'em_andamento' }, pagination);
+
+      expect(readRepo.findPaginated).toHaveBeenCalledWith(
+        { status: 'em_andamento', clienteId: undefined },
+        pagination,
+      );
+    });
+  });
 });

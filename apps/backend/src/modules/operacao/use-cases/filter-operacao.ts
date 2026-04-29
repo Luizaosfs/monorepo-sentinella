@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
 
+import { getAccessScope, getClienteIdsPermitidos } from '@shared/security/access-scope.helpers';
 import { FilterOperacaoInput } from '../dtos/filter-operacao.input';
 import { OperacaoReadRepository } from '../repositories/operacao-read.repository';
 
@@ -13,8 +14,8 @@ export class FilterOperacao {
   ) {}
 
   async execute(filters: FilterOperacaoInput) {
-    // MT-02: tenantId do guard sempre vence — nunca aceita clienteId do frontend
-    const clienteId = this.req['tenantId'];
+    const clienteIds = getClienteIdsPermitidos(getAccessScope(this.req));
+    const clienteId = clienteIds !== null ? clienteIds[0] : undefined;
     const operacoes = await this.repository.findAll({ ...filters, clienteId });
     return { operacoes };
   }

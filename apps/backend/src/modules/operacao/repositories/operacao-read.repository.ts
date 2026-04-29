@@ -17,5 +17,5 @@ export abstract class OperacaoReadRepository {
     clienteId: string,
     itemLevantamentoId: string,
   ): Promise<Operacao | null>;
-  abstract countByStatus(clienteId: string): Promise<Record<string, number>>;
+  abstract countByStatus(clienteId: string | null): Promise<Record<string, number>>;
 }

@@ -79,10 +79,10 @@ export class PrismaOperacaoReadRepository implements OperacaoReadRepository {
     return raw ? PrismaOperacaoMapper.toDomain(raw as any) : null;
   }
 
-  async countByStatus(clienteId: string): Promise<Record<string, number>> {
+  async countByStatus(clienteId: string | null): Promise<Record<string, number>> {
     const groups = await this.prisma.client.operacoes.groupBy({
       by: ['status'],
-      where: { cliente_id: clienteId, deleted_at: null },
+      where: { ...(clienteId !== null && { cliente_id: clienteId }), deleted_at: null },
       _count: { status: true },
     });
     return Object.fromEntries(groups.map((g) => [g.status, g._count.status]));
