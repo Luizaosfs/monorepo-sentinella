@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
 
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 import { UpsertOperacaoInput } from '../dtos/upsert-operacao.body';
 import { Operacao } from '../entities/operacao';
 import { OperacaoException } from '../errors/operacao.exception';
@@ -17,7 +18,7 @@ export class UpsertOperacao {
   ) {}
 
   async execute(data: UpsertOperacaoInput) {
-    const clienteId = (this.req['tenantId'] as string | undefined) ?? null;
+    const clienteId = requireTenantId(getAccessScope(this.req));
 
     if (data.id) {
       const operacao = await this.readRepository.findById(data.id, clienteId);
@@ -41,7 +42,7 @@ export class UpsertOperacao {
 
     const operacao = new Operacao(
       {
-        clienteId: clienteId!,
+        clienteId,
         status: data.status,
         prioridade: data.prioridade ?? undefined,
         responsavelId: data.responsavelId ?? undefined,

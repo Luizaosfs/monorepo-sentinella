@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 import { AddEvidenciaBody } from '../dtos/add-evidencia.body';
 import { OperacaoException } from '../errors/operacao.exception';
 import { OperacaoReadRepository } from '../repositories/operacao-read.repository';
@@ -15,8 +16,8 @@ export class AddEvidencia {
   ) {}
 
   async execute(operacaoId: string, data: AddEvidenciaBody) {
-    const tenantId = (this.req['tenantId'] as string | undefined) ?? null;
-    const operacao = await this.readRepository.findById(operacaoId, tenantId);
+    const clienteId = requireTenantId(getAccessScope(this.req));
+    const operacao = await this.readRepository.findById(operacaoId, clienteId);
     if (!operacao) throw OperacaoException.notFound();
 
     const evidencia = await this.writeRepository.addEvidencia({
