@@ -81,10 +81,10 @@ export class PrismaSlaReadRepository implements SlaReadRepository {
     return rows.map((r) => PrismaSlaMapper.slaOperacionalToDomain(r as any));
   }
 
-  async countPendentes(clienteId: string): Promise<{ total: number }> {
+  async countPendentes(clienteId: string | null): Promise<{ total: number }> {
     const total = await this.prisma.client.sla_operacional.count({
       where: {
-        cliente_id: clienteId,
+        ...(clienteId !== null && { cliente_id: clienteId }),
         status: { in: ['pendente', 'em_atendimento'] },
         deleted_at: null,
       },

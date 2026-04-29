@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
+import { getAccessScope, getClienteIdsPermitidos } from '@shared/security/access-scope.helpers';
 
 import { SlaReadRepository } from '../repositories/sla-read.repository';
 
@@ -12,7 +13,8 @@ export class CountPendentes {
   ) {}
 
   async execute() {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteIds = getClienteIdsPermitidos(getAccessScope(this.req));
+    const clienteId = clienteIds !== null ? (clienteIds[0] ?? null) : null;
     return this.repository.countPendentes(clienteId);
   }
 }

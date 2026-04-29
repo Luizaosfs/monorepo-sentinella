@@ -21,7 +21,7 @@ export abstract class SlaReadRepository {
     clienteId: string,
     agenteId?: string,
   ): Promise<SlaOperacional[]>;
-  abstract countPendentes(clienteId: string): Promise<{ total: number }>;
+  abstract countPendentes(clienteId: string | null): Promise<{ total: number }>;
   abstract findConfig(clienteId: string): Promise<SlaConfig | null>;
   abstract findConfigByRegiao(
     clienteId: string,
