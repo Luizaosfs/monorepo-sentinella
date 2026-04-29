@@ -25,6 +25,7 @@ describe('CreateLevantamentoItem', () => {
     mockVerificarQuota.execute.mockResolvedValue({ ok: true, usado: 0, limite: null });
     mockReq.user = { isPlatformAdmin: true };
     mockReq.tenantId = undefined;
+    mockReq['accessScope'] = { kind: 'platform', tenantId: null };
     useCase = new CreateLevantamentoItem(readRepo, writeRepo, criarFoco as any, mockVerificarQuota as any, mockReq as any);
   });
 
@@ -158,7 +159,7 @@ describe('CreateLevantamentoItem', () => {
     readRepo.findById.mockImplementation(async (_id, clienteId) =>
       clienteId === 'cli-OWNER' ? lev : null,
     );
-    const wrongTenantReq = { user: { isPlatformAdmin: false }, tenantId: 'cli-ERRADO' };
+    const wrongTenantReq = { user: { isPlatformAdmin: false }, tenantId: 'cli-ERRADO', accessScope: { kind: 'municipal', tenantId: 'cli-ERRADO' } };
     const uc = new CreateLevantamentoItem(readRepo, writeRepo, criarFoco as any, mockVerificarQuota as any, wrongTenantReq as any);
 
     await expect(uc.execute('lev-t', {})).rejects.toBeDefined();
