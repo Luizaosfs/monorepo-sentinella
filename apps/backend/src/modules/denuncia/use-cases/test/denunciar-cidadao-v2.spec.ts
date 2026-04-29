@@ -61,7 +61,7 @@ describe('DenunciarCidadaoV2', () => {
     const result = await useCase.execute(makeInput(), 'ip-hash-abc');
 
     expect(result.id).toBe('aabbccdd-0000-0000-0000-000000000000');
-    expect(result.protocolo).toBe('aabbccdd');
+    expect(result.protocolo).toMatch(/^SENT-\d{4}-[A-F0-9]{6}$/);
     expect(prisma.client.focos_risco.create).toHaveBeenCalledTimes(1);
   });
 

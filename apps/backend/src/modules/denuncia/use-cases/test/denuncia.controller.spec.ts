@@ -42,8 +42,8 @@ describe('DenunciaController', () => {
   });
 
   it('GET /consultar delega ao use-case', async () => {
-    const result = await controller.consultar('ABC12345');
-    expect(mockConsultar).toHaveBeenCalledWith('abc12345');
+    const result = await controller.consultar('sent-2026-abc123');
+    expect(mockConsultar).toHaveBeenCalledWith('SENT-2026-ABC123');
     expect(result).toEqual({ protocolo: 'abc12345' });
   });
 });
