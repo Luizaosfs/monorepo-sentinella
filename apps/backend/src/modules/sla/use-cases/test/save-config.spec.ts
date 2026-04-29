@@ -1,3 +1,4 @@
+import { ForbiddenException } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import { mock } from 'jest-mock-extended';
@@ -81,5 +82,40 @@ describe('SaveConfig', () => {
     expect(writeRepo.createConfigAudit).toHaveBeenCalledWith(
       expect.objectContaining({ changedBy: 'auditor-user-id' }),
     );
+  });
+
+  describe('com platform scope (admin sem tenant)', () => {
+    let ucAdmin: SaveConfig;
+
+    beforeEach(async () => {
+      jest.clearAllMocks();
+      const module: TestingModule = await Test.createTestingModule({
+        providers: [
+          SaveConfig,
+          { provide: SlaReadRepository, useValue: readRepo },
+          { provide: SlaWriteRepository, useValue: writeRepo },
+          {
+            provide: REQUEST,
+            useValue: mockRequest({
+              accessScope: {
+                kind: 'platform' as const,
+                userId: 'admin-id',
+                papeis: ['admin'] as any,
+                isAdmin: true,
+                tenantId: null,
+                clienteIdsPermitidos: null,
+                agrupamentoId: null,
+              },
+            }),
+          },
+        ],
+      }).compile();
+      ucAdmin = module.get<SaveConfig>(SaveConfig);
+    });
+
+    it('deve lançar ForbiddenException quando admin sem tenant', async () => {
+      await expect(ucAdmin.execute({ config: { prazoP1: 4 } })).rejects.toThrow(ForbiddenException);
+      expect(writeRepo.upsertConfig).not.toHaveBeenCalled();
+    });
   });
 });

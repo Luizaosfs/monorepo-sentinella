@@ -2,54 +2,45 @@ import { ForbiddenException } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import { mock } from 'jest-mock-extended';
-
-import { SlaFocoConfig } from '../../entities/sla-config';
-import { SlaWriteRepository } from '../../repositories/sla-write.repository';
 import { mockRequest } from '@test/utils/user-helpers';
 
-import { SaveFocoConfig } from '../save-foco-config';
+import { SlaWriteRepository } from '../../repositories/sla-write.repository';
+import { UpsertConfigRegiao } from '../upsert-config-regiao';
 
-describe('SaveFocoConfig', () => {
-  let useCase: SaveFocoConfig;
+describe('UpsertConfigRegiao', () => {
+  let useCase: UpsertConfigRegiao;
   const writeRepo = mock<SlaWriteRepository>();
 
   beforeEach(async () => {
     jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        SaveFocoConfig,
+        UpsertConfigRegiao,
         { provide: SlaWriteRepository, useValue: writeRepo },
-        {
-          provide: REQUEST,
-          useValue: mockRequest({ tenantId: 'test-cliente-id' }),
-        },
+        { provide: REQUEST, useValue: mockRequest({ tenantId: 'tenant-regiao-1' }) },
       ],
     }).compile();
-    useCase = module.get<SaveFocoConfig>(SaveFocoConfig);
+    useCase = module.get<UpsertConfigRegiao>(UpsertConfigRegiao);
   });
 
-  it('deve fazer upsert de foco configs com clienteId do tenant', async () => {
-    const configs = [
-      { fase: 'triagem' as const, prazoMinutos: 60, ativo: true },
-      { fase: 'inspecao' as const, prazoMinutos: 120, ativo: false },
-    ];
-    const retorno: SlaFocoConfig[] = [];
-    writeRepo.upsertFocoConfig.mockResolvedValue(retorno);
+  it('deve chamar upsertConfigRegiao com clienteId do tenant', async () => {
+    writeRepo.upsertConfigRegiao.mockResolvedValue();
 
-    const result = await useCase.execute({ configs });
+    const config = { prazoP1: 4 };
+    const result = await useCase.execute('regiao-uuid-1', { config });
 
-    expect(writeRepo.upsertFocoConfig).toHaveBeenCalledWith('test-cliente-id', configs);
-    expect(result.configs).toBe(retorno);
+    expect(writeRepo.upsertConfigRegiao).toHaveBeenCalledWith('tenant-regiao-1', 'regiao-uuid-1', config);
+    expect(result).toEqual({ updated: true });
   });
 
   describe('com platform scope (admin sem tenant)', () => {
-    let ucAdmin: SaveFocoConfig;
+    let ucAdmin: UpsertConfigRegiao;
 
     beforeEach(async () => {
       jest.clearAllMocks();
       const module: TestingModule = await Test.createTestingModule({
         providers: [
-          SaveFocoConfig,
+          UpsertConfigRegiao,
           { provide: SlaWriteRepository, useValue: writeRepo },
           {
             provide: REQUEST,
@@ -67,14 +58,12 @@ describe('SaveFocoConfig', () => {
           },
         ],
       }).compile();
-      ucAdmin = module.get<SaveFocoConfig>(SaveFocoConfig);
+      ucAdmin = module.get<UpsertConfigRegiao>(UpsertConfigRegiao);
     });
 
     it('deve lançar ForbiddenException quando admin sem tenant', async () => {
-      await expect(
-        ucAdmin.execute({ configs: [{ fase: 'triagem' as const, prazoMinutos: 60, ativo: true }] }),
-      ).rejects.toThrow(ForbiddenException);
-      expect(writeRepo.upsertFocoConfig).not.toHaveBeenCalled();
+      await expect(ucAdmin.execute('regiao-uuid-1', { config: { prazoP1: 4 } })).rejects.toThrow(ForbiddenException);
+      expect(writeRepo.upsertConfigRegiao).not.toHaveBeenCalled();
     });
   });
 });
