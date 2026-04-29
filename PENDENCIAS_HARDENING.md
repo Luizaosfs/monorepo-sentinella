@@ -51,7 +51,35 @@ Após auditoria B-04 e fechamento de 2 IDORs cross-tenant
   tenant não-nulo.
 - Prioridade: Baixa.
 
+### 6. Validação cross-tenant em IDs de body de operacao
+- Sintoma: 7 campos (focoRiscoId, responsavelId, itemLevantamentoId,
+  itemOperacionalId, regiaoId, id, itemId) recebidos em body de
+  endpoints de operacao não são validados contra o tenant do usuário.
+- Risco: usuário com ?clienteId X pode passar agenteId/focoId/regiaoId
+  de cliente Y; chave estrangeira aceita; INSERT/UPDATE pode ocorrer
+  com IDs cross-tenant.
+- Ação: adicionar requireClientePermitido(scope, entity.cliente_id)
+  após findById de cada entidade referenciada por ID de body.
+- Prioridade: Alta — é o padrão B-02 da auditoria original.
+
+### 7. Padrão clienteIds[0] do operacao não é portável para módulos com analista_regional
+- Sintoma: 4 use-cases do operacao (filter, pagination, stats,
+  listar-com-vinculos) usam `clienteIds !== null ? clienteIds[0] : undefined`
+  em vez de `{ in: clienteIds }`.
+- Por que funciona em operacao: nenhum endpoint inclui analista_regional;
+  clienteIdsPermitidos é sempre null ou [único].
+- Risco: ao copiar esse padrão para módulos com analista_regional
+  (clienteIdsPermitidos pode ter >1 elemento), clienteIds[0] descarta
+  todos os clientes do agrupamento exceto o primeiro — bug silencioso.
+- Ação imediata: nos próximos módulos (sla, dashboard, levantamento,
+  vistoria...), verificar PRIMEIRO se algum endpoint inclui
+  analista_regional. Se sim, usar `{ in: clienteIds }` (Prisma) ou
+  `ANY(...)` (raw SQL), não clienteIds[0].
+- Ação futura (módulo operacao): se algum dia operacao receber
+  analista_regional, refatorar os 4 use-cases para o padrão `{ in: ... }`.
+- Prioridade: Alta — risco de regressão silenciosa em módulos futuros.
+
 ## Próxima rodada
-Migração de `req['tenantId']` → AccessScope (Prompt C). Começa pelo
-módulo `operacao` (18 arquivos). Não bloqueada por nenhuma pendência
-acima.
+Migração de `req['tenantId']` → AccessScope (Prompt C). Módulo `operacao`
+concluído (commits ae7259c–ec80b89, 29/04/2026, baseline 1072 testes).
+Próximo: módulo `sla` (15 arquivos com req['tenantId']).
