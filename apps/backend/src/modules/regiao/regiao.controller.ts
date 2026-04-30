@@ -12,6 +12,7 @@ import {
   UseInterceptors,
   UsePipes,
 } from '@nestjs/common';
+
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -24,7 +25,7 @@ import { getAccessScope, requireTenantId } from '@shared/security/access-scope.h
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 import { z } from 'zod';
 
-import { Roles } from '@/decorators/roles.decorator';
+import { Public, Roles } from '@/decorators/roles.decorator';
 
 import {
   CreateRegiaoBody,
@@ -42,6 +43,7 @@ import { DeleteRegiao } from './use-cases/delete-regiao';
 import { FilterRegiao } from './use-cases/filter-regiao';
 import { GetRegiao } from './use-cases/get-regiao';
 import { PaginationRegiao } from './use-cases/pagination-regiao';
+import { ResolverRegiaoPorCoordenada } from './use-cases/resolver-regiao-por-coordenada';
 import { SaveRegiao } from './use-cases/save-regiao';
 import { RegiaoViewModel } from './view-model/regiao';
 import {
@@ -68,6 +70,7 @@ export class RegiaoController {
     private saveRegiao: SaveRegiao,
     private regiaoGeocodeService: RegiaoGeocodeService,
     private bulkInsertRegioesUc: BulkInsertRegioes,
+    private resolverRegiaoPorCoordenada: ResolverRegiaoPorCoordenada,
     @Inject(REQUEST) private req: Request,
   ) {}
 
@@ -97,6 +100,18 @@ export class RegiaoController {
       items: result.items.map(RegiaoViewModel.toHttp),
       pagination: result.pagination,
     };
+  }
+
+  @Public()
+  @Get('por-coordenada')
+  @ApiOperation({ summary: 'Resolver bairro/região por coordenada (público — canal cidadão)' })
+  async porCoordenada(@Query() query: unknown) {
+    const { lat, lng, clienteId } = z.object({
+      lat: z.coerce.number(),
+      lng: z.coerce.number(),
+      clienteId: z.string().uuid(),
+    }).parse(query);
+    return this.resolverRegiaoPorCoordenada.execute(clienteId, lat, lng);
   }
 
   @Get(':id')

@@ -80,4 +80,6 @@ export const regioes = {
     http.delete(`/regioes/${id}`),
   bulkInsert: (rows: Record<string, unknown>[]): Promise<{ count: number }> =>
     http.post('/regioes/bulk-insert', { rows }),
+  porCoordenada: (clienteId: string, lat: number, lng: number): Promise<{ bairroId: string | null }> =>
+    http.get(`/regioes/por-coordenada${qs({ clienteId, lat, lng })}`),
 };

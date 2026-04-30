@@ -12,4 +12,5 @@ export abstract class RegiaoReadRepository {
     filters: FilterRegiaoInput,
     pagination: PaginationProps,
   ): Promise<RegiaoPaginated>;
+  abstract findPorCoordenada(clienteId: string, lat: number, lng: number): Promise<string | null>;
 }

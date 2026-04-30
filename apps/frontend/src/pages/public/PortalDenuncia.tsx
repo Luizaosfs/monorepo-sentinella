@@ -106,6 +106,7 @@ const PortalDenuncia: React.FC = () => {
 
   // Resolução do cliente
   const [clienteResolvido, setClienteResolvido] = useState<ClienteResolvido | null>(null);
+  const [bairroIdResolvido, setBairroIdResolvido] = useState<string | null>(null);
   const [resolvendoCliente, setResolvendoCliente] = useState(false);
   const [buscarManual, setBuscarManual] = useState('');
 
@@ -197,6 +198,11 @@ const PortalDenuncia: React.FC = () => {
           slug: resultado.slug,
           metodo: resultado.metodo,
         });
+        // Tenta resolver o bairro silenciosamente — falha não bloqueia o fluxo
+        try {
+          const { bairroId } = await api.regioes.porCoordenada(resultado.id, lat, lng);
+          setBairroIdResolvido(bairroId);
+        } catch { setBairroIdResolvido(null); }
         setEtapa('confirmando');
       } else setEtapa('nao_encontrado');
     } catch { setEtapa('nao_encontrado'); }
@@ -269,7 +275,7 @@ const PortalDenuncia: React.FC = () => {
 
       const result = await http.post<{ protocolo: string; id: string }>('/denuncias/cidadao', {
         slug: clienteResolvido.slug,
-        bairroId: null,
+        bairroId: bairroIdResolvido,
         descricao: endereco.trim()
           ? `${descricao.trim()} — Endereço: ${endereco.trim()}`
           : descricao.trim(),
@@ -475,7 +481,7 @@ const PortalDenuncia: React.FC = () => {
                 </Button>
                 <Button
                   variant="ghost" className="w-full h-10 rounded-xl text-muted-foreground text-sm"
-                  onClick={() => { setClienteResolvido(null); setCoords(null); setBuscarManual(''); setEtapa('localizando'); }}
+                  onClick={() => { setClienteResolvido(null); setBairroIdResolvido(null); setCoords(null); setBuscarManual(''); setEtapa('localizando'); }}
                 >
                   Não, corrigir localização
                 </Button>
@@ -510,7 +516,7 @@ const PortalDenuncia: React.FC = () => {
             {clienteResolvido && (
               <button
                 type="button"
-                onClick={() => { setClienteResolvido(null); setCoords(null); setEtapa('localizando'); }}
+                onClick={() => { setClienteResolvido(null); setBairroIdResolvido(null); setCoords(null); setEtapa('localizando'); }}
                 className="w-full flex items-center gap-2 rounded-xl bg-primary/5 border border-primary/20 px-3 py-2.5 hover:bg-primary/10 transition-colors group"
               >
                 <Building2 className="w-4 h-4 text-primary shrink-0" />
@@ -706,7 +712,7 @@ const PortalDenuncia: React.FC = () => {
 
         <button
           type="button"
-          onClick={() => { setEtapa('localizando'); setDescricao(''); setEndereco(''); setFoto(null); setFotoPreview(null); setProtocolo(null); setCoords(null); setFotoFoiPerdida(false); }}
+          onClick={() => { setEtapa('localizando'); setDescricao(''); setEndereco(''); setFoto(null); setFotoPreview(null); setProtocolo(null); setCoords(null); setBairroIdResolvido(null); setFotoFoiPerdida(false); }}
           className="text-xs text-muted-foreground hover:text-foreground transition-colors"
         >
           Registrar outra denúncia

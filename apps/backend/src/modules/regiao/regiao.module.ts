@@ -12,6 +12,7 @@ import { GetRegiao } from './use-cases/get-regiao';
 import { PaginationRegiao } from './use-cases/pagination-regiao';
 import { SaveRegiao } from './use-cases/save-regiao';
 import { BulkInsertRegioes } from './use-cases/bulk-insert-regioes';
+import { ResolverRegiaoPorCoordenada } from './use-cases/resolver-regiao-por-coordenada';
 
 @Module({
   providers: [
@@ -22,6 +23,7 @@ import { BulkInsertRegioes } from './use-cases/bulk-insert-regioes';
     PaginationRegiao,
     SaveRegiao,
     BulkInsertRegioes,
+    ResolverRegiaoPorCoordenada,
     RegiaoGeocodeService,
     JwtService,
     PrismaService,

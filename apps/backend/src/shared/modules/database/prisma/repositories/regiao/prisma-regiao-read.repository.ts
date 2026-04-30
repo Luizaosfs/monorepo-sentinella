@@ -2,6 +2,7 @@ import { FilterRegiaoInput } from '@modules/regiao/dtos/filter-regiao.input';
 import { Regiao, RegiaoPaginated } from '@modules/regiao/entities/regiao';
 import { RegiaoReadRepository } from '@modules/regiao/repositories/regiao-read.repository';
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PaginationProps } from 'src/shared/dtos/pagination-body';
 import { Paginate } from 'src/utils/pagination';
 
@@ -50,6 +51,20 @@ export class PrismaRegiaoReadRepository implements RegiaoReadRepository {
       items: items.map((r) => PrismaRegiaoMapper.toDomain(r as any)),
       pagination,
     };
+  }
+
+  async findPorCoordenada(clienteId: string, lat: number, lng: number): Promise<string | null> {
+    const rows = await this.prisma.client.$queryRaw<{ id: string }[]>(
+      Prisma.sql`
+        SELECT id FROM regioes
+        WHERE cliente_id = ${clienteId}::uuid
+          AND deleted_at IS NULL
+          AND area IS NOT NULL
+          AND ST_Contains(area, ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326))
+        LIMIT 1
+      `,
+    );
+    return rows.length ? rows[0].id : null;
   }
 
   private buildWhere(filters: FilterRegiaoInput) {
