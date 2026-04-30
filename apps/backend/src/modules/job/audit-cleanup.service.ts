@@ -36,9 +36,8 @@ export class AuditCleanupService {
   }
 
   /**
-   * Equivalente LGPD ao pg_cron `retencao-logs-redact` do Supabase legado
-   * (função `fn_redact_sensitive_log_fields`). Nullifica campos sensíveis
-   * após prazos — NÃO deleta registros (preserva rastreabilidade).
+   * LGPD: nullifica campos sensíveis após prazos — NÃO deleta registros
+   * (preserva rastreabilidade).
    */
   async redactSensitiveFields(): Promise<{
     esusRespostaApi: number;

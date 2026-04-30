@@ -3,8 +3,6 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ReinspecaoWriteRepository } from '../repositories/reinspecao-write.repository';
 
 /**
- * Porte de `fn_cancelar_reinspecoes_ao_fechar_foco` do Supabase legado.
- *
  * Quando o foco transita para `resolvido` ou `descartado`, cancela TODAS
  * as reinspeções ainda pendentes desse foco em lote. Motivo fixo conforme
  * trigger original: "Foco fechado automaticamente".

@@ -1,8 +1,8 @@
 /**
- * Consolidação analítica do foco: no banco Supabase as colunas canônicas
+ * Consolidação analítica do foco: as colunas canônicas
  * (prioridade_final, dimensao_dominante, consolidacao_json, dimensões de risco, etc.)
  * vivem em `vistorias`, não em `focos_risco`. O foco mantém `prioridade` + `score_prioridade`
- * (operacional) e `payload` (JSON legado / extensões).
+ * (operacional) e `payload` (JSON / extensões).
  *
  * Este módulo apenas **estrutura e expõe** dados já persistidos — sem novo algoritmo de cálculo.
  */

@@ -25,8 +25,7 @@ import { RecalcularScorePrioridadeFoco } from './recalcular-score-prioridade-foc
 
 /**
  * Status terminais que fecham SLAs remanescentes do foco. Alinhado com o
- * trigger `fn_fechar_sla_ao_resolver_foco` do Supabase legado — `descartado`
- * também fecha (é o branch `confirmado: false`).
+ * `descartado` também fecha SLAs remanescentes (é o branch `confirmado: false`).
  */
 const STATUS_FECHAMENTO: FocoRiscoStatus[] = ['resolvido', 'descartado'];
 

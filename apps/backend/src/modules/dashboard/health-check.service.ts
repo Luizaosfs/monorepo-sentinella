@@ -65,10 +65,7 @@ export class HealthCheckService {
     };
   }
 
-  /**
-   * Equivalente ao pg_cron `health-check-job` do Supabase legado.
-   * Ping de sanidade a cada 5 minutos.
-   */
+  /** Ping de sanidade a cada 5 minutos. */
   @Cron('*/5 * * * *')
   async healthCheckCron() {
     try {

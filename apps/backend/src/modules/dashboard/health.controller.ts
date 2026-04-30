@@ -31,7 +31,7 @@ export class HealthController {
 
   @Roles('admin')
   @Get('admin/migration-health')
-  @ApiOperation({ summary: 'Estado operacional da migração Supabase → NestJS (admin)' })
+  @ApiOperation({ summary: 'Estado operacional do backend (admin)' })
   async migrationHealth() {
     return this.healthCheckService.migrationHealth();
   }

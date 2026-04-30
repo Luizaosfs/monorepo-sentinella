@@ -13,8 +13,7 @@ import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
  *      b. Zera `prioridade_original_antes_caso`.
  *      c. Remove o `caso_id` de `casos_ids`.
  *
- * Paridade fiel com o legado Supabase (`fn_reverter_prioridade_caso_descartado`,
- * D-02). O filtro `status NOT IN ('resolvido','descartado')` evita mexer em
+ * O filtro `status NOT IN ('resolvido','descartado')` evita mexer em
  * focos já em estado terminal — a reversão só atinge focos operacionalmente
  * ativos.
  *

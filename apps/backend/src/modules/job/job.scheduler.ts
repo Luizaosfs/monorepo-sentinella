@@ -167,7 +167,6 @@ export class JobScheduler {
   }
 
   /**
-   * Equivalente ao pg_cron `score-recalculo-diario` do Supabase legado.
    * Enfileira um job `recalcular_score_lote` por cliente ativo.
    * Workers (ScoreWorkerService) consomem via processQueue (EVERY_MINUTE).
    */
@@ -199,10 +198,7 @@ export class JobScheduler {
     this.logger.log(`[JobScheduler.scoreDiario] Enfileirados: ${count}/${clientes.length}`);
   }
 
-  /**
-   * Equivalente ao pg_cron `retencao-logs-redact` do Supabase legado.
-   * LGPD: nullifica campos sensíveis em logs após prazo legal.
-   */
+  /** LGPD: nullifica campos sensíveis em logs após prazo legal. */
   @Cron('0 2 * * *') // 02h UTC diariamente
   async redactSensitiveLogs() {
     this.logger.log('[JobScheduler.redactSensitiveLogs] Redação LGPD de campos sensíveis');

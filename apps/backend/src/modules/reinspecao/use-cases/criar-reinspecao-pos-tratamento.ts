@@ -14,8 +14,6 @@ export interface CriarReinspecaoResult {
 }
 
 /**
- * Porte de `fn_criar_reinspecao_pos_tratamento` do Supabase legado.
- *
  * Cria uma reinspeção PENDENTE do tipo `eficacia_pos_tratamento` quando o foco
  * transita para `em_tratamento`. Invocado dentro do `$transaction(callback)`
  * do `TransicionarFocoRisco`.

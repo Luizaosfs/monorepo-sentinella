@@ -55,9 +55,7 @@ export class CreateCliente {
     );
 
     // Cliente novo + 7 seeds em transação atômica.
-    // Falha em qualquer seed faz rollback do INSERT do cliente — paridade fiel
-    // com os 7 triggers AFTER INSERT do Supabase legado, mas com rollback
-    // explícito (no legado, falha em trigger também derrubava o INSERT).
+    // Falha em qualquer seed faz rollback do INSERT do cliente.
     let created!: Cliente;
     let seedResult!: SeedClienteNovoResult;
     await this.prisma.client.$transaction(async (tx) => {
