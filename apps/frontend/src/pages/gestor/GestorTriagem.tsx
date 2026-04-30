@@ -1,12 +1,12 @@
 import { useState, useMemo, useEffect } from 'react';
-import { formatDistanceToNow } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Filter, ChevronRight, ChevronLeft, Loader2, Bot, User, MapPin, Building2,
   CheckSquare, Square, X, Users, AlertTriangle, Eye, ClipboardList, PlayCircle,
-  Radio, MessageSquare, CloudRain, Edit2, Camera,
+  Radio, MessageSquare, CloudRain, Edit2, Camera, Calendar as CalendarIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -17,6 +17,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useClienteAtivo } from '@/hooks/useClienteAtivo';
 import { useFocosRisco, useAtualizarStatusFoco, useFocoRiscoTimeline, useAtualizarClassificacaoFoco } from '@/hooks/queries/useFocosRisco';
@@ -52,6 +55,73 @@ const BORDER_PRIORIDADE: Record<string, string> = {
   P4: 'border-l-[3px] border-l-blue-400',
   P5: 'border-l-[3px] border-l-slate-400',
 };
+
+/** yyyy-MM-dd armazenado no estado → Date em fuso local (evita desvio ao exibir no calendário). */
+function ymdToLocalDate(s: string): Date | undefined {
+  if (!s || !/^\d{4}-\d{2}-\d{2}$/.test(s)) return undefined;
+  const [y, m, d] = s.split('-').map(Number);
+  const dt = new Date(y, m - 1, d);
+  return Number.isNaN(dt.getTime()) ? undefined : dt;
+}
+
+function startLocalDayFromYmd(s: string): Date {
+  const [y, m, d] = s.split('-').map(Number);
+  const dt = new Date(y, (m ?? 1) - 1, d ?? 1);
+  dt.setHours(0, 0, 0, 0);
+  return dt;
+}
+
+function endLocalDayFromYmd(s: string): Date {
+  const [y, m, d] = s.split('-').map(Number);
+  const dt = new Date(y, (m ?? 1) - 1, d ?? 1);
+  dt.setHours(23, 59, 59, 999);
+  return dt;
+}
+
+function TriagemFiltroDataButton({
+  placeholderLabel,
+  valueYmd,
+  onChangeYmd,
+}: {
+  placeholderLabel: string;
+  valueYmd: string;
+  onChangeYmd: (ymd: string) => void;
+}) {
+  const selected = ymdToLocalDate(valueYmd);
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          className={cn(
+            'h-8 min-w-0 flex-1 justify-start px-2 text-left font-normal text-xs',
+            !valueYmd && 'text-muted-foreground',
+          )}
+        >
+          <CalendarIcon className="mr-1 h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden />
+          <span className="truncate">{selected ? format(selected, 'dd/MM/yyyy', { locale: ptBR }) : placeholderLabel}</span>
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0" align="start">
+        <Calendar
+          mode="single"
+          selected={selected}
+          onSelect={(d) => onChangeYmd(d ? format(d, 'yyyy-MM-dd') : '')}
+          locale={ptBR}
+          initialFocus
+        />
+        {valueYmd ? (
+          <div className="border-t border-border p-1.5">
+            <Button type="button" variant="ghost" size="sm" className="h-8 w-full text-xs" onClick={() => onChangeYmd('')}>
+              Limpar
+            </Button>
+          </div>
+        ) : null}
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 // ── Sheet lateral de detalhe de triagem ──────────────────────────────────────
 
@@ -376,8 +446,8 @@ export default function GestorTriagem() {
       regiao_id: filtroRegiao !== 'todos' ? filtroRegiao : undefined,
       responsavel_id: filtroResponsavel !== 'todos' && filtroResponsavel !== '__sem__' ? filtroResponsavel : undefined,
       semResponsavel: filtroResponsavel === '__sem__' ? true : undefined,
-      de: filtroDataDe ? new Date(filtroDataDe) : undefined,
-      ate: filtroDataAte ? new Date(filtroDataAte + 'T23:59:59') : undefined,
+      de: filtroDataDe ? startLocalDayFromYmd(filtroDataDe) : undefined,
+      ate: filtroDataAte ? endLocalDayFromYmd(filtroDataAte) : undefined,
       orderBy: ordenacao,
       page,
       pageSize: PAGE_SIZE,
@@ -413,8 +483,8 @@ export default function GestorTriagem() {
         regiao_id: filtroRegiao !== 'todos' ? filtroRegiao : undefined,
         responsavel_id: filtroResponsavel !== 'todos' && filtroResponsavel !== '__sem__' ? filtroResponsavel : undefined,
         semResponsavel: filtroResponsavel === '__sem__' ? true : undefined,
-        de: filtroDataDe ? new Date(filtroDataDe) : undefined,
-        ate: filtroDataAte ? new Date(filtroDataAte + 'T23:59:59') : undefined,
+        de: filtroDataDe ? startLocalDayFromYmd(filtroDataDe) : undefined,
+        ate: filtroDataAte ? endLocalDayFromYmd(filtroDataAte) : undefined,
       }),
     enabled: !!clienteId,
     staleTime: STALE.SHORT,
@@ -893,22 +963,10 @@ export default function GestorTriagem() {
 
           <div className="space-y-1.5">
             <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Entrada</p>
-            <div className="flex items-center gap-1.5">
-              <Input
-                type="date"
-                className="h-8 text-xs"
-                value={filtroDataDe}
-                onChange={(e) => setFiltroDataDe(e.target.value)}
-                placeholder="De"
-              />
+            <div className="flex items-center gap-1.5 min-w-0">
+              <TriagemFiltroDataButton placeholderLabel="De" valueYmd={filtroDataDe} onChangeYmd={setFiltroDataDe} />
               <span className="text-xs text-muted-foreground shrink-0">até</span>
-              <Input
-                type="date"
-                className="h-8 text-xs"
-                value={filtroDataAte}
-                onChange={(e) => setFiltroDataAte(e.target.value)}
-                placeholder="Até"
-              />
+              <TriagemFiltroDataButton placeholderLabel="Até" valueYmd={filtroDataAte} onChangeYmd={setFiltroDataAte} />
             </div>
           </div>
         </div>

@@ -289,7 +289,11 @@ export class PrismaFocoRiscoReadRepository implements FocoRiscoReadRepository {
           ? filters.status[0]
           : { in: filters.status },
       }),
-      ...(filters.prioridade && { prioridade: filters.prioridade }),
+      ...(filters.prioridade?.length && {
+        prioridade: filters.prioridade.length === 1
+          ? filters.prioridade[0]
+          : { in: filters.prioridade },
+      }),
       ...(filters.regiaoId && { regiao_id: filters.regiaoId }),
       ...(filters.responsavelId && { responsavel_id: filters.responsavelId }),
       ...(filters.origemTipo && { origem_tipo: filters.origemTipo }),

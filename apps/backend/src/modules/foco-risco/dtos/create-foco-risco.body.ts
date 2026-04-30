@@ -18,7 +18,7 @@ export const createFocoRiscoSchema = z.object({
     .describe('ID da vistoria de origem')
     .optional(),
   prioridade: z
-    .enum(['baixa', 'media', 'alta', 'critica'])
+    .enum(['P1', 'P2', 'P3', 'P4', 'P5'])
     .describe('Prioridade do foco')
     .optional(),
   latitude: z.number().describe('Latitude GPS').optional(),

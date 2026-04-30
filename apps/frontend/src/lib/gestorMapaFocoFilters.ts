@@ -68,6 +68,9 @@ export function filterFocosForGestorMapa(
     }
     if (f.origem.length > 0 && !f.origem.includes(x.origem_tipo)) return false;
     if (f.slaStatus.length > 0 && !f.slaStatus.includes(x.sla_status)) return false;
+    if (f.scoreClassificacao.length > 0) {
+      if (!x.score_classificacao || !f.scoreClassificacao.includes(x.score_classificacao)) return false;
+    }
     return true;
   });
 }

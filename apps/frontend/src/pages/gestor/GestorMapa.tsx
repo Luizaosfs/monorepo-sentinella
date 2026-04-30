@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { MapContainer, TileLayer } from 'react-leaflet';
 import { Loader2, Layers, Crosshair, ScanSearch, Filter, MapPinned, Stethoscope } from 'lucide-react';
@@ -24,6 +24,7 @@ import {
   computeGestorMapaFocoStats,
   countGestorMapaFilterSelections,
   type GestorMapaFocoFilterState,
+  type ScoreClassificacaoFiltro,
 } from '@/lib/gestorMapaFocoFilters';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -36,6 +37,7 @@ import ItemDetailPanel from '@/components/levantamentos/ItemDetailPanel';
 
 export default function GestorMapa() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { clienteId, clienteAtivo, loading: clienteLoading } = useClienteAtivo();
   const isMobile = useIsMobile();
   const { focos, isLoading } = useMapaFocosRealtime(clienteId);
@@ -46,7 +48,11 @@ export default function GestorMapa() {
   const [activeTab, setActiveTab] = useState<'foco' | 'evidencia'>('foco');
   const [filtersPanelVisible, setFiltersPanelVisible] = useState(false);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
-  const [mapFilters, setMapFilters] = useState<GestorMapaFocoFilterState>(DEFAULT_GESTOR_MAPA_FILTERS);
+  const [mapFilters, setMapFilters] = useState<GestorMapaFocoFilterState>(() => {
+    const classificacao = searchParams.get('classificacao') as ScoreClassificacaoFiltro | null;
+    if (classificacao) return { ...DEFAULT_GESTOR_MAPA_FILTERS, scoreClassificacao: [classificacao] };
+    return DEFAULT_GESTOR_MAPA_FILTERS;
+  });
   const [mostrarCasos, setMostrarCasos] = useState(false);
 
   const { data: casos = [] } = useCasosNotificados(mostrarCasos ? clienteId : null);

@@ -662,7 +662,7 @@ export class PrismaDashboardReadRepository implements DashboardReadRepository {
     const rows = await this.prisma.client.$queryRaw<Row[]>`
       SELECT
         v.ciclo,
-        COALESCE(i.bairro, r.nome) AS bairro,
+        COALESCE(i.bairro, r.nome, q.bairro, '(sem bairro)') AS bairro,
         i.quarteirao,
         COUNT(DISTINCT CASE WHEN v.acesso_realizado = true THEN v.imovel_id END)
           AS imoveis_inspecionados,
@@ -691,14 +691,21 @@ export class PrismaDashboardReadRepository implements DashboardReadRepository {
           AS larvicida_total_g
       FROM vistorias v
       JOIN imoveis i ON i.id = v.imovel_id
-      LEFT JOIN regioes r ON r.id = i.regiao_id
+      LEFT JOIN regioes r ON r.deleted_at IS NULL AND r.cliente_id = v.cliente_id
+        AND (r.id = i.regiao_id
+             OR (i.regiao_id IS NULL AND r.area IS NOT NULL
+                 AND i.latitude IS NOT NULL AND i.longitude IS NOT NULL
+                 AND ST_Contains(r.area, ST_SetSRID(ST_MakePoint(i.longitude, i.latitude), 4326))))
+      LEFT JOIN quarteiroes q ON q.deleted_at IS NULL
+        AND q.cliente_id = v.cliente_id
+        AND q.codigo = i.quarteirao
       LEFT JOIN vistoria_depositos vd ON vd.vistoria_id = v.id
       WHERE v.cliente_id = ${clienteId}::uuid
         AND v.deleted_at IS NULL
         AND i.quarteirao IS NOT NULL
         ${cicloFilter}
-      GROUP BY v.ciclo, COALESCE(i.bairro, r.nome), i.quarteirao
-      ORDER BY COALESCE(i.bairro, r.nome) ASC NULLS LAST, i.quarteirao ASC
+      GROUP BY v.ciclo, COALESCE(i.bairro, r.nome, q.bairro, '(sem bairro)'), i.quarteirao
+      ORDER BY COALESCE(i.bairro, r.nome, q.bairro, '(sem bairro)') ASC, i.quarteirao ASC
     `;
 
     return rows.map((r) => {

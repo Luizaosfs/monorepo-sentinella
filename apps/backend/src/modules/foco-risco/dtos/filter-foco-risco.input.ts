@@ -21,10 +21,13 @@ export const filterFocoRiscoSchema = z.object({
       z.array(z.enum(FOCO_STATUS)).optional(),
     )
     .describe('Filtrar por status (múltiplos permitidos)'),
+  /** Aceita único valor ou array repetido (?prioridade=P1&prioridade=P2). */
   prioridade: z
-    .enum(['baixa', 'media', 'alta', 'critica'])
-    .describe('Filtrar por prioridade')
-    .optional(),
+    .preprocess(
+      (val) => (Array.isArray(val) ? val : val != null ? [val] : undefined),
+      z.array(z.enum(['P1', 'P2', 'P3', 'P4', 'P5'])).optional(),
+    )
+    .describe('Filtrar por prioridade (múltiplos permitidos)'),
   regiaoId: z.string().uuid().describe('Filtrar por região').optional(),
   responsavelId: z
     .string()
