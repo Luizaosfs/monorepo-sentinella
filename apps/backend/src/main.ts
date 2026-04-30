@@ -4,6 +4,7 @@ import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { apiReference } from '@scalar/nestjs-api-reference';
+import * as cookieParser from 'cookie-parser';
 import * as express from 'express';
 import helmet from 'helmet';
 import { patchNestJsSwagger } from 'nestjs-zod';
@@ -20,6 +21,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bodyParser: false });
   app.use(express.json({ limit: '15mb' }));
   app.use(express.urlencoded({ extended: true, limit: '15mb' }));
+  app.use(cookieParser());
 
   // Permite que req.ip reflita o IP real atrás de proxy/load balancer
   app.getHttpAdapter().getInstance().set('trust proxy', true);

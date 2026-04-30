@@ -1,47 +1,41 @@
-const ACCESS_KEY = 'sentinella:access_token';
-const REFRESH_KEY = 'sentinella:refresh_token';
+/**
+ * token-store — armazena access_token em memória (variável JS).
+ *
+ * SEGURANÇA:
+ * - access_token vive apenas enquanto a aba está aberta.
+ *   Não persiste em localStorage → não é acessível a scripts injetados (XSS).
+ * - refresh_token é gerenciado exclusivamente pelo backend como cookie
+ *   httpOnly, Secure, SameSite=Strict — JS nunca o lê ou escreve.
+ *
+ * CONSEQUÊNCIA (page refresh):
+ * - Ao recarregar a página o access_token é perdido.
+ *   useAuth.loadMe tenta silent refresh via cookie httpOnly antes de
+ *   considerar o usuário deslogado.
+ */
+
+let _accessToken: string | null = null;
 
 export const tokenStore = {
   getAccessToken(): string | null {
-    try {
-      return localStorage.getItem(ACCESS_KEY);
-    } catch {
-      return null;
-    }
+    return _accessToken;
   },
 
-  getRefreshToken(): string | null {
-    try {
-      return localStorage.getItem(REFRESH_KEY);
-    } catch {
-      return null;
-    }
+  /** Armazena o novo access_token em memória. Aceita apenas 1 argumento —
+   *  o refresh_token trafega exclusivamente no cookie httpOnly do backend. */
+  setTokens(access: string): void {
+    _accessToken = access;
   },
 
-  setTokens(access: string, refresh: string): void {
-    try {
-      localStorage.setItem(ACCESS_KEY, access);
-      localStorage.setItem(REFRESH_KEY, refresh);
-    } catch {
-      // ignorar (ex: modo privado Safari sem localStorage)
-    }
-  },
-
+  /** Limpa o access_token da memória (logout ou sessão expirada). */
   clear(): void {
-    try {
-      localStorage.removeItem(ACCESS_KEY);
-      localStorage.removeItem(REFRESH_KEY);
-    } catch {
-      // ignorar
-    }
+    _accessToken = null;
   },
 
   /** Decodifica payload do JWT sem verificar assinatura (uso client-side apenas). */
   decodePayload<T = Record<string, unknown>>(): T | null {
-    const token = this.getAccessToken();
-    if (!token) return null;
+    if (!_accessToken) return null;
     try {
-      const [, payloadB64] = token.split('.');
+      const [, payloadB64] = _accessToken.split('.');
       const json = atob(payloadB64.replace(/-/g, '+').replace(/_/g, '/'));
       return JSON.parse(json) as T;
     } catch {
@@ -49,8 +43,9 @@ export const tokenStore = {
     }
   },
 
+  /** Retorna true se o access_token existe e está próximo de expirar (margem 30s). */
   isExpired(): boolean {
-    if (!this.getAccessToken()) return false; // sem token — não expirado, apenas não autenticado
+    if (!_accessToken) return false; // sem token — não expirado, apenas não autenticado
     const payload = this.decodePayload<{ exp?: number }>();
     if (!payload?.exp) return true; // token malformado — tratar como expirado
     return Date.now() / 1000 >= payload.exp - 30; // 30s de margem

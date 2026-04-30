@@ -73,8 +73,22 @@ export const AuthProvider = forwardRef<HTMLDivElement, { children: ReactNode }>(
 
   const loadMe = async () => {
     if (!tokenStore.getAccessToken()) {
-      setUsuario(null);
-      setPapel(null);
+      // Sem access_token em memória (page refresh normal) — tenta renovar
+      // silenciosamente via cookie httpOnly antes de considerar deslogado.
+      try {
+        const refreshed = await http.post<{ accessToken: string; user: AuthMeResult }>(
+          '/auth/refresh',
+          undefined,
+          { skipAuth: true },
+        );
+        tokenStore.setTokens(refreshed.accessToken);
+        setUsuario(refreshed.user);
+        setPapel(resolvePapel(refreshed.user.papeis));
+      } catch {
+        // Cookie ausente, inválido ou revogado — usuário não autenticado.
+        setUsuario(null);
+        setPapel(null);
+      }
       return;
     }
     try {
@@ -119,12 +133,12 @@ export const AuthProvider = forwardRef<HTMLDivElement, { children: ReactNode }>(
 
   const signIn = async (email: string, password: string): Promise<{ error: unknown }> => {
     try {
-      const data = await http.post<{ accessToken: string; refreshToken: string; user: AuthMeResult }>(
+      const data = await http.post<{ accessToken: string; user: AuthMeResult }>(
         '/auth/login',
         { email: email.trim().toLowerCase(), password },
         { skipAuth: true },
       );
-      tokenStore.setTokens(data.accessToken, data.refreshToken);
+      tokenStore.setTokens(data.accessToken);
       setUsuario(data.user);
       setPapel(resolvePapel(data.user.papeis));
       return { error: null };
@@ -134,13 +148,10 @@ export const AuthProvider = forwardRef<HTMLDivElement, { children: ReactNode }>(
   };
 
   const signOut = async () => {
-    const refreshToken = tokenStore.getRefreshToken();
-    if (refreshToken) {
-      try {
-        await http.post('/auth/logout', { refreshToken });
-      } catch {
-        // best-effort: se falhar (rede/token expirado), limpa local de qualquer forma
-      }
+    try {
+      await http.post('/auth/logout');
+    } catch {
+      // best-effort: se falhar (rede), limpa memória de qualquer forma
     }
     tokenStore.clear();
     setUsuario(null);

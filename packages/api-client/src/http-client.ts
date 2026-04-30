@@ -2,6 +2,7 @@
  * http-client — wrapper de fetch para o backend NestJS.
  *
  * - Injeta Authorization: Bearer <access_token> automaticamente
+ * - Envia credentials: 'include' em todos os requests (cookie httpOnly do refresh_token)
  * - Faz refresh proativo (pré-request via isExpired) e reativo (retry em 401)
  * - Lança erros tipados (HttpClientError)
  */
@@ -33,19 +34,16 @@ let inflightRefresh: Promise<boolean> | null = null;
 async function refreshTokens(): Promise<boolean> {
   if (inflightRefresh) return inflightRefresh;
 
-  const refresh = tokenStore.getRefreshToken();
-  if (!refresh) return false;
-
   inflightRefresh = (async () => {
     try {
+      // Sem body — o refresh_token viaja no cookie httpOnly automaticamente.
       const res = await fetch(`${baseUrl}/auth/refresh`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refreshToken: refresh }),
+        credentials: 'include',
       });
       if (!res.ok) return false;
-      const data = (await res.json()) as { accessToken: string; refreshToken: string };
-      tokenStore.setTokens(data.accessToken, data.refreshToken);
+      const data = (await res.json()) as { accessToken: string };
+      tokenStore.setTokens(data.accessToken);
       return true;
     } catch {
       return false;
@@ -89,7 +87,13 @@ export async function httpRequest<T>(
     if (token) headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const res = await fetch(`${baseUrl}${path}`, { ...fetchOptions, headers });
+  // credentials: 'include' envia o cookie httpOnly do refresh_token em requests
+  // para /auth/refresh e /auth/logout. Em outros endpoints é inofensivo.
+  const res = await fetch(`${baseUrl}${path}`, {
+    ...fetchOptions,
+    headers,
+    credentials: 'include',
+  });
 
   if (!res.ok) {
     let body: unknown;
@@ -99,13 +103,14 @@ export async function httpRequest<T>(
         ? String((body as { message: string }).message)
         : `HTTP ${res.status}`;
 
-    // Refresh reativo: retry único em 401 (defesa contra race condition token expirado)
+    // Refresh reativo: retry único em 401 (defesa contra race condition token expirado).
+    // O cookie httpOnly é enviado automaticamente — não é necessário verificar se
+    // há refreshToken em memória.
     if (
       res.status === 401 &&
       !skipAuth &&
       !_alreadyRetried &&
-      path !== '/auth/refresh' &&
-      tokenStore.getRefreshToken()
+      path !== '/auth/refresh'
     ) {
       const ok = await refreshTokens();
       if (ok) return httpRequest<T>(path, options, true);

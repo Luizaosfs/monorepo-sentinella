@@ -28,6 +28,7 @@ export async function invokeUploadEvidencia(
       Authorization: `Bearer ${accessToken}`,
     },
     body: JSON.stringify(body),
+    credentials: 'include',
   });
 
   const text = await res.text();
