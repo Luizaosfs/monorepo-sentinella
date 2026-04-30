@@ -47,7 +47,7 @@ export class GetFocoRisco {
 
     const [slaOpRaw, cfg] = await Promise.all([
       this.prisma.client.sla_operacional.findFirst({
-        where: { foco_risco_id: id, deleted_at: null },
+        where: { foco_risco_id: id, cliente_id: foco.clienteId, deleted_at: null },
         orderBy: { created_at: 'desc' },
         select: {
           id: true,

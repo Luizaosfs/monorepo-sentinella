@@ -6,6 +6,7 @@ import { gerarCodigoFoco } from '../helpers/gerar-codigo-foco';
 import { autoClassificarFoco } from './auto-classificar-foco';
 
 export interface CriarFocoDeVistoriaDepositoInput {
+  clienteId: string;
   vistoriaId: string;
   qtdComFocos: number | null | undefined;
 }
@@ -35,8 +36,8 @@ export class CriarFocoDeVistoriaDeposito {
       return { criado: false, motivo: 'deposito_sem_foco' };
     }
 
-    const vistoria = await this.prisma.client.vistorias.findUnique({
-      where: { id: input.vistoriaId },
+    const vistoria = await this.prisma.client.vistorias.findFirst({
+      where: { id: input.vistoriaId, cliente_id: input.clienteId },
       select: {
         cliente_id: true,
         imovel_id: true,
@@ -59,8 +60,8 @@ export class CriarFocoDeVistoriaDeposito {
     let enderecoNormalizado: string | null = null;
 
     if (vistoria.imovel_id) {
-      const imovel = await this.prisma.client.imoveis.findUnique({
-        where: { id: vistoria.imovel_id },
+      const imovel = await this.prisma.client.imoveis.findFirst({
+        where: { id: vistoria.imovel_id, cliente_id: input.clienteId },
         select: {
           regiao_id: true,
           latitude: true,

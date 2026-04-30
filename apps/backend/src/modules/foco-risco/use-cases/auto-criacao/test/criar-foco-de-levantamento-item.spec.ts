@@ -3,16 +3,16 @@ import { CriarFocoDeLevantamentoItem } from '../criar-foco-de-levantamento-item'
 type Mock = jest.Mock;
 
 const mkPrisma = () => {
-  const findUnique: Mock = jest.fn();
+  const findFirst: Mock = jest.fn();
   const queryRaw: Mock = jest.fn();
   const create: Mock = jest.fn();
   return {
-    findUnique,
+    findFirst,
     queryRaw,
     create,
     service: {
       client: {
-        levantamentos: { findUnique },
+        levantamentos: { findFirst },
         focos_risco: { create },
         $queryRaw: queryRaw,
       },
@@ -25,6 +25,7 @@ const mkCruzar = () => ({
 } as any);
 
 const baseInput = {
+  clienteId: 'cli-1',
   itemId: 'it-1',
   levantamentoId: 'lev-1',
   latitude: -23.5,
@@ -60,14 +61,21 @@ describe('CriarFocoDeLevantamentoItem', () => {
   });
 
   it('retorna levantamento_nao_encontrado quando levantamento inexistente', async () => {
-    p.findUnique.mockResolvedValue(null);
+    p.findFirst.mockResolvedValue(null);
     const r = await useCase.execute(baseInput);
     expect(r).toEqual({ criado: false, motivo: 'levantamento_nao_encontrado' });
     expect(p.create).not.toHaveBeenCalled();
   });
 
+  it('clienteId errado → findFirst retorna null → levantamento_nao_encontrado (IDOR guard)', async () => {
+    p.findFirst.mockResolvedValue(null);
+    const r = await useCase.execute({ ...baseInput, clienteId: 'outro-cli' });
+    expect(r).toEqual({ criado: false, motivo: 'levantamento_nao_encontrado' });
+    expect(p.create).not.toHaveBeenCalled();
+  });
+
   it('cidadão com prioridade P5 e risco baixo SEMPRE cria foco com origem cidadao', async () => {
-    p.findUnique.mockResolvedValue({ cliente_id: 'cli-1', tipo_entrada: 'MANUAL' });
+    p.findFirst.mockResolvedValue({ cliente_id: 'cli-1', tipo_entrada: 'MANUAL' });
     await useCase.execute({
       ...baseInput,
       prioridade: 'P5',
@@ -82,7 +90,7 @@ describe('CriarFocoDeLevantamentoItem', () => {
   });
 
   it('item não-cidadão com P4 e risco baixo → filtro_nao_atendido', async () => {
-    p.findUnique.mockResolvedValue({ cliente_id: 'cli-1', tipo_entrada: 'DRONE' });
+    p.findFirst.mockResolvedValue({ cliente_id: 'cli-1', tipo_entrada: 'DRONE' });
     const r = await useCase.execute({
       ...baseInput,
       prioridade: 'P4',
@@ -93,13 +101,13 @@ describe('CriarFocoDeLevantamentoItem', () => {
   });
 
   it('item não-cidadão com P2 → passa filtro', async () => {
-    p.findUnique.mockResolvedValue({ cliente_id: 'cli-1', tipo_entrada: 'DRONE' });
+    p.findFirst.mockResolvedValue({ cliente_id: 'cli-1', tipo_entrada: 'DRONE' });
     const r = await useCase.execute({ ...baseInput, prioridade: 'P2', risco: 'baixo' });
     expect(r.criado).toBe(true);
   });
 
   it('item não-cidadão com P5 mas risco Crítico → passa filtro', async () => {
-    p.findUnique.mockResolvedValue({ cliente_id: 'cli-1', tipo_entrada: 'DRONE' });
+    p.findFirst.mockResolvedValue({ cliente_id: 'cli-1', tipo_entrada: 'DRONE' });
     const r = await useCase.execute({
       ...baseInput,
       prioridade: 'P5',
@@ -109,7 +117,7 @@ describe('CriarFocoDeLevantamentoItem', () => {
   });
 
   it('com coords e imóvel próximo → $queryRaw chamado e imovel_id preenchido', async () => {
-    p.findUnique.mockResolvedValue({ cliente_id: 'cli-1', tipo_entrada: 'DRONE' });
+    p.findFirst.mockResolvedValue({ cliente_id: 'cli-1', tipo_entrada: 'DRONE' });
     p.queryRaw.mockImplementation((...args: any[]) => {
       if (Array.isArray(args[0])) return Promise.resolve([{ ultimo: BigInt(1) }]);
       return Promise.resolve([{ id: 'imo-7' }]);
@@ -124,7 +132,7 @@ describe('CriarFocoDeLevantamentoItem', () => {
   });
 
   it('sem coords → NÃO chama PostGIS, imovel_id fica null', async () => {
-    p.findUnique.mockResolvedValue({ cliente_id: 'cli-1', tipo_entrada: 'DRONE' });
+    p.findFirst.mockResolvedValue({ cliente_id: 'cli-1', tipo_entrada: 'DRONE' });
     await useCase.execute({ ...baseInput, latitude: null, longitude: null });
     // 1 chamada: gerarCodigoFoco (tagged template). PostGIS não é chamado sem coords.
     expect(p.queryRaw).toHaveBeenCalledTimes(1);
@@ -136,7 +144,7 @@ describe('CriarFocoDeLevantamentoItem', () => {
   });
 
   it('levantamento DRONE não-cidadão → origem_tipo=drone', async () => {
-    p.findUnique.mockResolvedValue({ cliente_id: 'cli-1', tipo_entrada: 'DRONE' });
+    p.findFirst.mockResolvedValue({ cliente_id: 'cli-1', tipo_entrada: 'DRONE' });
     await useCase.execute(baseInput);
     expect(p.create).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -146,7 +154,7 @@ describe('CriarFocoDeLevantamentoItem', () => {
   });
 
   it('levantamento MANUAL não-cidadão → origem_tipo=agente', async () => {
-    p.findUnique.mockResolvedValue({ cliente_id: 'cli-1', tipo_entrada: 'manual' });
+    p.findFirst.mockResolvedValue({ cliente_id: 'cli-1', tipo_entrada: 'manual' });
     await useCase.execute(baseInput);
     expect(p.create).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -156,7 +164,7 @@ describe('CriarFocoDeLevantamentoItem', () => {
   });
 
   it('prioridade Crítica é normalizada para P1', async () => {
-    p.findUnique.mockResolvedValue({ cliente_id: 'cli-1', tipo_entrada: 'DRONE' });
+    p.findFirst.mockResolvedValue({ cliente_id: 'cli-1', tipo_entrada: 'DRONE' });
     await useCase.execute({ ...baseInput, prioridade: 'Crítica', risco: 'alto' });
     expect(p.create).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -166,7 +174,7 @@ describe('CriarFocoDeLevantamentoItem', () => {
   });
 
   it('status nasce em_triagem', async () => {
-    p.findUnique.mockResolvedValue({ cliente_id: 'cli-1', tipo_entrada: 'DRONE' });
+    p.findFirst.mockResolvedValue({ cliente_id: 'cli-1', tipo_entrada: 'DRONE' });
     await useCase.execute(baseInput);
     expect(p.create).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -176,7 +184,7 @@ describe('CriarFocoDeLevantamentoItem', () => {
   });
 
   it('origem_levantamento_item_id preenchido com o item', async () => {
-    p.findUnique.mockResolvedValue({ cliente_id: 'cli-1', tipo_entrada: 'DRONE' });
+    p.findFirst.mockResolvedValue({ cliente_id: 'cli-1', tipo_entrada: 'DRONE' });
     await useCase.execute(baseInput);
     expect(p.create).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -186,7 +194,7 @@ describe('CriarFocoDeLevantamentoItem', () => {
   });
 
   it('chama CruzarFocoNovoComCasos após criar foco', async () => {
-    p.findUnique.mockResolvedValue({ cliente_id: 'cli-1', tipo_entrada: 'DRONE' });
+    p.findFirst.mockResolvedValue({ cliente_id: 'cli-1', tipo_entrada: 'DRONE' });
     await useCase.execute(baseInput);
     expect(c.execute).toHaveBeenCalledWith({
       focoId: 'foco-1',
@@ -198,7 +206,7 @@ describe('CriarFocoDeLevantamentoItem', () => {
   });
 
   it('autoClassificarFoco: levantamento DRONE → classificacao_inicial=foco', async () => {
-    p.findUnique.mockResolvedValue({ cliente_id: 'cli-1', tipo_entrada: 'DRONE' });
+    p.findFirst.mockResolvedValue({ cliente_id: 'cli-1', tipo_entrada: 'DRONE' });
     await useCase.execute(baseInput);
     expect(p.create).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -208,7 +216,7 @@ describe('CriarFocoDeLevantamentoItem', () => {
   });
 
   it('autoClassificarFoco: levantamento manual cidadão → classificacao_inicial=suspeito', async () => {
-    p.findUnique.mockResolvedValue({ cliente_id: 'cli-1', tipo_entrada: 'MANUAL' });
+    p.findFirst.mockResolvedValue({ cliente_id: 'cli-1', tipo_entrada: 'MANUAL' });
     await useCase.execute({ ...baseInput, payload: { fonte: 'cidadao' } });
     expect(p.create).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -218,7 +226,7 @@ describe('CriarFocoDeLevantamentoItem', () => {
   });
 
   it('falha no CruzarFocoNovoComCasos não reverte criação do foco', async () => {
-    p.findUnique.mockResolvedValue({ cliente_id: 'cli-1', tipo_entrada: 'DRONE' });
+    p.findFirst.mockResolvedValue({ cliente_id: 'cli-1', tipo_entrada: 'DRONE' });
     c.execute.mockRejectedValue(new Error('boom'));
     const r = await useCase.execute(baseInput);
     expect(r).toEqual({ criado: true, focoId: 'foco-1' });

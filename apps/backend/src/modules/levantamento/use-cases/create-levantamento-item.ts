@@ -59,6 +59,7 @@ export class CreateLevantamentoItem {
     if (item.id) {
       try {
         await this.criarFocoDeLevantamentoItem.execute({
+          clienteId: levantamento.clienteId,
           itemId: item.id,
           levantamentoId,
           latitude: item.latitude ?? null,

@@ -14,8 +14,8 @@ const mkPrisma = () => {
     queryRaw,
     service: {
       client: {
-        vistorias: { findUnique: vistoriasFind },
-        imoveis: { findUnique: imoveisFind },
+        vistorias: { findFirst: vistoriasFind },
+        imoveis: { findFirst: imoveisFind },
         focos_risco: { create: focoCreate },
         $queryRaw: queryRaw,
       },
@@ -46,19 +46,19 @@ describe('CriarFocoDeVistoriaDeposito', () => {
   });
 
   it('qtdComFocos = 0 → deposito_sem_foco', async () => {
-    const r = await useCase.execute({ vistoriaId: 'v-1', qtdComFocos: 0 });
+    const r = await useCase.execute({ clienteId: 'cli-1', vistoriaId: 'v-1', qtdComFocos: 0 });
     expect(r).toEqual({ criado: false, motivo: 'deposito_sem_foco' });
     expect(p.vistoriasFind).not.toHaveBeenCalled();
   });
 
   it('qtdComFocos = null → deposito_sem_foco', async () => {
-    const r = await useCase.execute({ vistoriaId: 'v-1', qtdComFocos: null });
+    const r = await useCase.execute({ clienteId: 'cli-1', vistoriaId: 'v-1', qtdComFocos: null });
     expect(r).toEqual({ criado: false, motivo: 'deposito_sem_foco' });
   });
 
   it('vistoria não encontrada → vistoria_nao_encontrada', async () => {
     p.vistoriasFind.mockResolvedValue(null);
-    const r = await useCase.execute({ vistoriaId: 'v-x', qtdComFocos: 1 });
+    const r = await useCase.execute({ clienteId: 'cli-1', vistoriaId: 'v-x', qtdComFocos: 1 });
     expect(r).toEqual({ criado: false, motivo: 'vistoria_nao_encontrada' });
   });
 
@@ -69,7 +69,7 @@ describe('CriarFocoDeVistoriaDeposito', () => {
       ciclo: 1,
       foco_risco_id: 'foco-existente',
     });
-    const r = await useCase.execute({ vistoriaId: 'v-1', qtdComFocos: 1 });
+    const r = await useCase.execute({ clienteId: 'cli-1', vistoriaId: 'v-1', qtdComFocos: 1 });
     expect(r).toEqual({ criado: false, motivo: 'vistoria_ja_vinculada' });
     expect(p.focoCreate).not.toHaveBeenCalled();
   });
@@ -81,7 +81,7 @@ describe('CriarFocoDeVistoriaDeposito', () => {
       ciclo: 2,
       foco_risco_id: null,
     });
-    const r = await useCase.execute({ vistoriaId: 'v-1', qtdComFocos: 1 });
+    const r = await useCase.execute({ clienteId: 'cli-1', vistoriaId: 'v-1', qtdComFocos: 1 });
     expect(p.imoveisFind).not.toHaveBeenCalled();
     expect(p.focoCreate).toHaveBeenCalledWith({
       data: expect.objectContaining({
@@ -114,7 +114,7 @@ describe('CriarFocoDeVistoriaDeposito', () => {
       logradouro: 'Rua A',
       numero: '10',
     });
-    await useCase.execute({ vistoriaId: 'v-1', qtdComFocos: 2 });
+    await useCase.execute({ clienteId: 'cli-1', vistoriaId: 'v-1', qtdComFocos: 2 });
     expect(p.focoCreate).toHaveBeenCalledWith({
       data: expect.objectContaining({
         imovel_id: 'imo-1',
@@ -144,7 +144,7 @@ describe('CriarFocoDeVistoriaDeposito', () => {
       logradouro: 'Rua A',
       numero: null,
     });
-    await useCase.execute({ vistoriaId: 'v-1', qtdComFocos: 1 });
+    await useCase.execute({ clienteId: 'cli-1', vistoriaId: 'v-1', qtdComFocos: 1 });
     expect(p.focoCreate).toHaveBeenCalledWith({
       data: expect.objectContaining({ endereco_normalizado: 'Rua A, S/N' }),
     });
@@ -164,7 +164,7 @@ describe('CriarFocoDeVistoriaDeposito', () => {
       logradouro: null,
       numero: null,
     });
-    await useCase.execute({ vistoriaId: 'v-1', qtdComFocos: 1 });
+    await useCase.execute({ clienteId: 'cli-1', vistoriaId: 'v-1', qtdComFocos: 1 });
     expect(p.focoCreate).toHaveBeenCalledWith({
       data: expect.objectContaining({ endereco_normalizado: null }),
     });
@@ -177,7 +177,7 @@ describe('CriarFocoDeVistoriaDeposito', () => {
       ciclo: 1,
       foco_risco_id: null,
     });
-    await useCase.execute({ vistoriaId: 'v-1', qtdComFocos: 1 });
+    await useCase.execute({ clienteId: 'cli-1', vistoriaId: 'v-1', qtdComFocos: 1 });
     expect(p.focoCreate).toHaveBeenCalledWith({
       data: expect.objectContaining({ origem_tipo: 'agente' }),
     });
@@ -190,7 +190,7 @@ describe('CriarFocoDeVistoriaDeposito', () => {
       ciclo: 1,
       foco_risco_id: null,
     });
-    await useCase.execute({ vistoriaId: 'v-1', qtdComFocos: 1 });
+    await useCase.execute({ clienteId: 'cli-1', vistoriaId: 'v-1', qtdComFocos: 1 });
     expect(c.execute).toHaveBeenCalled();
   });
 
@@ -201,7 +201,7 @@ describe('CriarFocoDeVistoriaDeposito', () => {
       ciclo: 1,
       foco_risco_id: null,
     });
-    await useCase.execute({ vistoriaId: 'v-1', qtdComFocos: 1 });
+    await useCase.execute({ clienteId: 'cli-1', vistoriaId: 'v-1', qtdComFocos: 1 });
     expect(p.focoCreate).toHaveBeenCalledWith({
       data: expect.objectContaining({ classificacao_inicial: 'suspeito' }),
     });
@@ -215,7 +215,14 @@ describe('CriarFocoDeVistoriaDeposito', () => {
       foco_risco_id: null,
     });
     c.execute.mockRejectedValue(new Error('x'));
-    const r = await useCase.execute({ vistoriaId: 'v-1', qtdComFocos: 1 });
+    const r = await useCase.execute({ clienteId: 'cli-1', vistoriaId: 'v-1', qtdComFocos: 1 });
     expect(r).toEqual({ criado: true, focoId: 'foco-1' });
+  });
+
+  it('clienteId errado → findFirst retorna null → vistoria_nao_encontrada (IDOR guard)', async () => {
+    p.vistoriasFind.mockResolvedValue(null);
+    const r = await useCase.execute({ clienteId: 'outro-cli', vistoriaId: 'v-1', qtdComFocos: 1 });
+    expect(r).toEqual({ criado: false, motivo: 'vistoria_nao_encontrada' });
+    expect(p.focoCreate).not.toHaveBeenCalled();
   });
 });

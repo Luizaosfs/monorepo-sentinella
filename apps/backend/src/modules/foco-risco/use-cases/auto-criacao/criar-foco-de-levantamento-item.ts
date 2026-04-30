@@ -8,6 +8,7 @@ import { autoClassificarFoco } from './auto-classificar-foco';
 import { prioridadeParaP } from './prioridade-para-p';
 
 export interface CriarFocoDeLevantamentoItemInput {
+  clienteId: string;
   itemId: string;
   levantamentoId: string;
   latitude: number | null | undefined;
@@ -37,16 +38,16 @@ export class CriarFocoDeLevantamentoItem {
   async execute(
     input: CriarFocoDeLevantamentoItemInput,
   ): Promise<CriarFocoDeLevantamentoItemResult> {
-    const levantamento = await this.prisma.client.levantamentos.findUnique({
-      where: { id: input.levantamentoId },
-      select: { cliente_id: true, tipo_entrada: true },
+    const levantamento = await this.prisma.client.levantamentos.findFirst({
+      where: { id: input.levantamentoId, cliente_id: input.clienteId },
+      select: { tipo_entrada: true },
     });
 
-    if (!levantamento?.cliente_id) {
+    if (!levantamento) {
       return { criado: false, motivo: 'levantamento_nao_encontrado' };
     }
 
-    const clienteId = levantamento.cliente_id;
+    const clienteId = input.clienteId;
 
     const isCidadao =
       typeof input.payload === 'object' &&

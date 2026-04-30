@@ -44,6 +44,7 @@ export class AddDeposito {
 
     try {
       await this.criarFocoDeVistoriaDeposito.execute({
+        clienteId,
         vistoriaId,
         qtdComFocos: data.qtdComFocos,
       });

@@ -101,6 +101,7 @@ export class CreateVistoriaCompleta {
       if (dep.comLarva) {
         try {
           await this.criarFocoDeVistoriaDeposito.execute({
+            clienteId,
             vistoriaId: id,
             qtdComFocos: 1,
           });

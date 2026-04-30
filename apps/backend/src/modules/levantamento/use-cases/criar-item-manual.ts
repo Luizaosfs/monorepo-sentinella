@@ -111,6 +111,7 @@ export class CriarItemManual {
     // Hook C.3: auto-criar foco se o item qualifica (best-effort)
     try {
       await this.criarFocoDeLevantamentoItem.execute({
+        clienteId,
         itemId: levantamentoItem.id,
         levantamentoId,
         latitude: levantamentoItem.latitude ?? null,
