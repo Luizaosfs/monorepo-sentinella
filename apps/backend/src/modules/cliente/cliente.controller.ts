@@ -21,6 +21,7 @@ import {
   paginationSchema,
 } from '@shared/dtos/pagination-body';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 
 import { Public, Roles } from '@/decorators/roles.decorator';
@@ -99,7 +100,7 @@ export class ClienteController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Listar integraÃ§Ãµes do cliente (sem api_key)' })
   async getIntegracoes() {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.getIntegracoesUc.execute(clienteId);
   }
 
@@ -107,7 +108,7 @@ export class ClienteController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Criar ou atualizar integraÃ§Ã£o do cliente (upsert por tipo)' })
   async upsertIntegracao(@Body() body: UpsertIntegracaoBody) {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const parsed = upsertIntegracaoSchema.parse(body);
     return this.upsertIntegracaoUc.execute(clienteId, parsed);
   }
@@ -116,7 +117,7 @@ export class ClienteController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Atualizar metadados de uma integraÃ§Ã£o (sem alterar api_key)' })
   async updateIntegracaoMeta(@Param('id') id: string, @Body() body: UpdateIntegracaoMetaBody) {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const parsed = updateIntegracaoMetaSchema.parse(body);
     return this.updateIntegracaoMetaUc.execute(id, clienteId, parsed);
   }
@@ -125,7 +126,7 @@ export class ClienteController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Testar conectividade da integraÃ§Ã£o ativa do cliente' })
   async testarIntegracao() {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.testarIntegracaoUc.execute(clienteId);
   }
 

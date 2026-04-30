@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Request } from 'express';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 
 import { RiskEngineException } from '../errors/risk-engine.exception';
 import { RiskEngineReadRepository } from '../repositories/risk-engine-read.repository';
@@ -13,7 +14,7 @@ export class GetDroneConfig {
 
   async execute() {
     // MT-02: tenantId do guard sempre vence — nunca aceita clienteId do frontend
-    const id = this.req['tenantId'] as string;
+    const id = requireTenantId(getAccessScope(this.req));
 
     const config = await this.repository.getDroneConfig(id);
     if (!config) throw RiskEngineException.droneConfigNotFound();

@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { Request } from 'express';
+import { getAccessScope } from '@shared/security/access-scope.helpers';
 
 import { CreateDistribuicaoBody } from '../dtos/create-distribuicao.body';
 import { QuarteiraoException } from '../errors/quarteirao.exception';
@@ -16,7 +17,7 @@ export class CreateDistribuicao {
 
   async execute(input: CreateDistribuicaoBody) {
     // MT-02: tenantId do guard sempre vence — nunca aceita clienteId do frontend
-    const clienteId = this.req['tenantId'];
+    const clienteId = getAccessScope(this.req).tenantId;
     if (!clienteId) {
       throw QuarteiraoException.badRequest();
     }
@@ -25,7 +26,7 @@ export class CreateDistribuicao {
     if (
       input.clienteId &&
       !isAdmin &&
-      input.clienteId !== this.req['tenantId']
+      input.clienteId !== getAccessScope(this.req).tenantId
     ) {
       throw QuarteiraoException.forbiddenTenant();
     }

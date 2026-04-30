@@ -1,9 +1,10 @@
 import { FocoRiscoReadRepository } from '@modules/foco-risco/repositories/foco-risco-read.repository';
 import { FocoRiscoWriteRepository } from '@modules/foco-risco/repositories/foco-risco-write.repository';
-import { Inject, Injectable } from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
 import { getAccessScope } from '@shared/security/access-scope.helpers';
+import { PrismaService } from 'src/shared/modules/database/prisma/prisma.service';
 
 import { CreateReinspecaoBody } from '../dtos/create-reinspecao.body';
 import { Reinspecao } from '../entities/reinspecao';
@@ -16,6 +17,7 @@ export class CriarManual {
     private repository: ReinspecaoWriteRepository,
     private focoReadRepository: FocoRiscoReadRepository,
     private focoWriteRepository: FocoRiscoWriteRepository,
+    private prisma: PrismaService,
     @Inject(REQUEST) private req: Request,
   ) {}
 
@@ -38,6 +40,13 @@ export class CriarManual {
     const foco = await this.focoReadRepository.findById(input.focoRiscoId, clienteId as string | null);
     if (!foco) {
       throw ReinspecaoException.focoNaoEncontrado();
+    }
+
+    if (input.responsavelId) {
+      const count = await this.prisma.client.usuarios.count({
+        where: { id: input.responsavelId, cliente_id: clienteId },
+      });
+      if (count === 0) throw new ForbiddenException('responsavelId não pertence a este cliente');
     }
 
     const entity = new Reinspecao(

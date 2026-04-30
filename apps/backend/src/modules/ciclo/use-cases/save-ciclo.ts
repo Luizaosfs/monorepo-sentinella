@@ -1,6 +1,7 @@
 import { Inject, Injectable, Scope } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
+import { getAccessScope } from '@shared/security/access-scope.helpers';
 
 import { SaveCicloBody } from '../dtos/save-ciclo.body';
 import { CicloException } from '../errors/ciclo.exception';
@@ -16,7 +17,7 @@ export class SaveCiclo {
   ) {}
 
   async execute(id: string, input: SaveCicloBody) {
-    const tenantId = (this.req['tenantId'] as string | undefined) ?? null;
+    const tenantId = getAccessScope(this.req).tenantId;
     const ciclo = await this.readRepository.findById(id, tenantId);
     if (!ciclo) throw CicloException.notFound();
 

@@ -1,6 +1,7 @@
 import { Inject, Injectable, Scope } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
+import { getAccessScope } from '@shared/security/access-scope.helpers';
 
 import { SavePlanejamentoBody } from '../dtos/save-planejamento.body';
 import { PlanejamentoException } from '../errors/planejamento.exception';
@@ -16,7 +17,7 @@ export class SavePlanejamento {
   ) {}
 
   async execute(id: string, data: SavePlanejamentoBody) {
-    const tenantId = (this.req['tenantId'] as string | undefined) ?? null;
+    const tenantId = getAccessScope(this.req).tenantId;
     const planejamento = await this.readRepository.findById(id, tenantId);
     if (!planejamento) throw PlanejamentoException.notFound();
 

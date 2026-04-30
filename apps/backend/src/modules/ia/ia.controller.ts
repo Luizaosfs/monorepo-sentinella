@@ -20,6 +20,7 @@ import { Roles } from '@/decorators/roles.decorator';
 import {
   getAccessScope,
   getClienteIdsPermitidos,
+  requireTenantId,
 } from '@/shared/security/access-scope.helpers';
 
 import { IaService } from './ia.service';
@@ -59,7 +60,7 @@ export class IaController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Buscar análise IA de um levantamento' })
   async getAnalise(@Param('levantamentoId') levantamentoId: string) {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.iaService.getAnaliseByLevantamento(levantamentoId, clienteId);
   }
 
@@ -67,7 +68,7 @@ export class IaController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Buscar insights regionais em cache (valido_ate > now)' })
   async getInsights(@Query('tipo') tipo?: string) {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.iaService.getInsights(clienteId, tipo);
   }
 
@@ -77,7 +78,7 @@ export class IaController {
   async identifyLarva(@Body() body: unknown) {
     const parsed = identifyLarvaSchema.parse(body);
     // MT-02: tenantId do guard sempre vence — nunca aceita clienteId do frontend
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.iaService.identifyLarva({ ...parsed, clienteId });
   }
 
@@ -85,7 +86,7 @@ export class IaController {
   @Roles('admin', 'supervisor', 'analista_regional')
   @ApiOperation({ summary: 'Gerar insights regionais via IA' })
   async insightsRegional() {
-    const clienteId = (this.req['tenantId'] as string | undefined) ?? null;
+    const clienteId = getAccessScope(this.req).tenantId;
     return this.iaService.insightsRegional(clienteId);
   }
 
@@ -104,7 +105,7 @@ export class IaController {
   async triagemPosVoo(@Body() body: unknown) {
     const parsed = triagemSchema.parse(body);
     // MT-02: tenantId do guard sempre vence — nunca aceita clienteId do frontend
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.iaService.triagemPosVoo(parsed.levantamentoId, clienteId);
   }
 }

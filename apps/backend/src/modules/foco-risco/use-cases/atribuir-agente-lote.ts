@@ -1,22 +1,31 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
 import { Request } from 'express';
 import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 
 import { AtribuirAgenteLoteInput } from '../dtos/atribuir-agente-lote.body';
 import { FocoRiscoReadRepository } from '../repositories/foco-risco-read.repository';
 import { FocoRiscoWriteRepository } from '../repositories/foco-risco-write.repository';
+import { PrismaService } from 'src/shared/modules/database/prisma/prisma.service';
 
 @Injectable()
 export class AtribuirAgenteLote {
   constructor(
     private readRepository: FocoRiscoReadRepository,
     private writeRepository: FocoRiscoWriteRepository,
+    private prisma: PrismaService,
     @Inject('REQUEST') private req: Request,
   ) {}
 
   async execute(input: AtribuirAgenteLoteInput) {
     const clienteId = requireTenantId(getAccessScope(this.req));
     const userId = this.req['user']?.id as string;
+
+    if (input.agenteId) {
+      const count = await this.prisma.client.usuarios.count({
+        where: { id: input.agenteId, cliente_id: clienteId },
+      });
+      if (count === 0) throw new ForbiddenException('agenteId não pertence a este cliente');
+    }
 
     const focos = await this.readRepository.findManyByIds(
       input.focoIds,

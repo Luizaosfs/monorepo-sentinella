@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
+import { getAccessScope } from '@shared/security/access-scope.helpers';
 
 import { SavePlanoAcaoBody } from '../dtos/save-plano-acao.body';
 import { PlanoAcaoException } from '../errors/plano-acao.exception';
@@ -16,7 +17,7 @@ export class SavePlanoAcao {
   ) {}
 
   async execute(id: string, data: SavePlanoAcaoBody) {
-    const tenantId = this.req['tenantId'] as string | undefined;
+    const tenantId = getAccessScope(this.req).tenantId;
     if (!tenantId) {
       throw PlanoAcaoException.tenantRequired();
     }

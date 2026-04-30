@@ -16,6 +16,7 @@ import { REQUEST } from '@nestjs/core';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 
 import { Roles } from '@/decorators/roles.decorator';
@@ -180,7 +181,7 @@ export class PluvioController {
   @Roles('admin', 'supervisor', 'agente')
   @ApiOperation({ summary: 'Risco pluviométrico de todas as regiões do cliente' })
   async riscoByCliente() {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.riscoByClienteUC.execute(clienteId);
   }
 

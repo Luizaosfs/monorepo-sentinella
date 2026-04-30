@@ -1,11 +1,13 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable, Logger } from '@nestjs/common';
 import { Request } from 'express';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 
 import { QuarteiraoWriteRepository } from '../../quarteirao/repositories/quarteirao-write.repository';
 import { CreateImovelBody } from '../dtos/create-imovel.body';
 import { Imovel } from '../entities/imovel';
 import { ImovelWriteRepository } from '../repositories/imovel-write.repository';
 import { normalizarQuarteirao } from './normalizar-quarteirao';
+import { PrismaService } from 'src/shared/modules/database/prisma/prisma.service';
 
 @Injectable()
 export class CreateImovel {
@@ -14,13 +16,23 @@ export class CreateImovel {
   constructor(
     private writeRepository: ImovelWriteRepository,
     private quarteiraoWriteRepository: QuarteiraoWriteRepository,
+    private prisma: PrismaService,
     @Inject('REQUEST') private req: Request,
   ) {}
 
   async execute(input: CreateImovelBody) {
+    const clienteId = requireTenantId(getAccessScope(this.req));
+
+    if (input.regiaoId) {
+      const count = await this.prisma.client.regioes.count({
+        where: { id: input.regiaoId, cliente_id: clienteId },
+      });
+      if (count === 0) throw new ForbiddenException('regiaoId inválido para este cliente');
+    }
+
     const imovel = new Imovel(
       {
-        clienteId: this.req['tenantId'],
+        clienteId,
         regiaoId: input.regiaoId,
         tipoImovel: input.tipoImovel ?? 'residencial',
         logradouro: input.logradouro,
@@ -51,7 +63,7 @@ export class CreateImovel {
     if (quarteirao) {
       try {
         await this.quarteiraoWriteRepository.upsertMestreIfMissing(
-          this.req['tenantId'] as string,
+          clienteId,
           input.bairro,
           quarteirao,
         );

@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Request } from 'express';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 
 import { CreateCicloBody } from '../dtos/create-ciclo.body';
 import { Ciclo } from '../entities/ciclo';
@@ -15,7 +16,7 @@ export class CreateCiclo {
   async execute(input: CreateCicloBody) {
     const ciclo = new Ciclo(
       {
-        clienteId: this.req['tenantId'],
+        clienteId: requireTenantId(getAccessScope(this.req)),
         numero: input.numero,
         ano: input.ano,
         status: input.status ?? 'planejamento',

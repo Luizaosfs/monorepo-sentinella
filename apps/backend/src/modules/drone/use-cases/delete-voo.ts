@@ -1,6 +1,7 @@
 import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 import { AuthenticatedUser } from 'src/guards/auth.guard';
 
 import { DroneException } from '../errors/drone.exception';
@@ -21,7 +22,7 @@ export class DeleteVoo {
 
     const user = this.req['user'] as AuthenticatedUser | undefined;
     if (!user?.isPlatformAdmin) {
-      const tenantId = this.req['tenantId'] as string;
+      const tenantId = requireTenantId(getAccessScope(this.req));
       const voos = await this.readRepository.findVoos(tenantId);
       if (!voos.some(v => v.id === id)) {
         throw new ForbiddenException('Acesso negado: recurso pertence a outro tenant');

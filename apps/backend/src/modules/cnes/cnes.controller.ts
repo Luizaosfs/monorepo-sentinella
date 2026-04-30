@@ -10,6 +10,7 @@ import {
 import { REQUEST } from '@nestjs/core';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 import { Request } from 'express';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 
@@ -37,7 +38,7 @@ export class CnesController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Disparar sincronização manual CNES para o cliente' })
   async sincronizarManual() {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.sincronizar.execute(clienteId);
   }
 
@@ -45,7 +46,7 @@ export class CnesController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Listar registros de controle de sincronização CNES' })
   async controle() {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.listarControle.execute(clienteId);
   }
 
@@ -53,7 +54,7 @@ export class CnesController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Listar logs de sincronização CNES' })
   async log(@Query('controleId') controleId?: string) {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.listarLog.execute(clienteId, controleId);
   }
 
@@ -61,7 +62,7 @@ export class CnesController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Verifica se há sincronização CNES em andamento para o cliente' })
   async verificarEmAndamento() {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.emAndamento.execute(clienteId);
   }
 }

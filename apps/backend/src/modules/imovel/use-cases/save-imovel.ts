@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { ForbiddenException, Injectable, Logger } from '@nestjs/common';
 
 import { QuarteiraoWriteRepository } from '../../quarteirao/repositories/quarteirao-write.repository';
 import { SaveImovelBody } from '../dtos/save-imovel.body';
@@ -6,6 +6,7 @@ import { ImovelException } from '../errors/imovel.exception';
 import { ImovelReadRepository } from '../repositories/imovel-read.repository';
 import { ImovelWriteRepository } from '../repositories/imovel-write.repository';
 import { normalizarQuarteirao } from './normalizar-quarteirao';
+import { PrismaService } from 'src/shared/modules/database/prisma/prisma.service';
 
 @Injectable()
 export class SaveImovel {
@@ -15,13 +16,22 @@ export class SaveImovel {
     private readRepository: ImovelReadRepository,
     private writeRepository: ImovelWriteRepository,
     private quarteiraoWriteRepository: QuarteiraoWriteRepository,
+    private prisma: PrismaService,
   ) {}
 
   async execute(id: string, input: SaveImovelBody, clienteId: string | null) {
     const imovel = await this.readRepository.findById(id, clienteId);
     if (!imovel) throw ImovelException.notFound();
 
-    if (input.regiaoId !== undefined) imovel.regiaoId = input.regiaoId;
+    if (input.regiaoId !== undefined) {
+      if (input.regiaoId && clienteId) {
+        const count = await this.prisma.client.regioes.count({
+          where: { id: input.regiaoId, cliente_id: clienteId },
+        });
+        if (count === 0) throw new ForbiddenException('regiaoId inválido para este cliente');
+      }
+      imovel.regiaoId = input.regiaoId;
+    }
     if (input.tipoImovel !== undefined) imovel.tipoImovel = input.tipoImovel;
     if (input.logradouro !== undefined) imovel.logradouro = input.logradouro;
     if (input.numero !== undefined) imovel.numero = input.numero;

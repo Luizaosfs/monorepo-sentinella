@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Request } from 'express';
+import { getAccessScope } from '@shared/security/access-scope.helpers';
 
 import { FilterDistribuicaoInput } from '../dtos/filter-distribuicao.input';
 import { QuarteiraoException } from '../errors/quarteirao.exception';
@@ -17,13 +18,13 @@ export class FilterDistribuicoes {
     if (
       filters.clienteId &&
       !isAdmin &&
-      filters.clienteId !== this.req['tenantId']
+      filters.clienteId !== getAccessScope(this.req).tenantId
     ) {
       throw QuarteiraoException.forbiddenTenant();
     }
 
     // MT-02: tenantId do guard sempre vence — nunca aceita clienteId do frontend
-    const clienteId = this.req['tenantId'];
+    const clienteId = getAccessScope(this.req).tenantId;
     const merged: FilterDistribuicaoInput = {
       ...filters,
       ...(clienteId != null && { clienteId }),

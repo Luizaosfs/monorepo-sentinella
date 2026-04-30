@@ -14,6 +14,7 @@ import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 
 import { Roles } from '@/decorators/roles.decorator';
@@ -91,7 +92,7 @@ export class QuarteiraoController {
     @Query('agenteId') agenteId: string,
     @Query('ciclo') ciclo: string,
   ) {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.listByAgenteUc.execute(clienteId, agenteId, parseInt(ciclo, 10));
   }
 
@@ -99,7 +100,7 @@ export class QuarteiraoController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Batch upsert de distribuições de quarteirões (ON CONFLICT DO UPDATE)' })
   async upsertDistribuicoes(@Body() body: UpsertDistribuicoesBody) {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const parsed = upsertDistribuicoesSchema.parse(body);
     await this.upsertDistribuicoesUc.execute(clienteId, parsed);
     return { ok: true };
@@ -109,7 +110,7 @@ export class QuarteiraoController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Remover distribuições por ciclo e lista de quarteirões' })
   async deletarDistribuicoes(@Body() body: DeletarDistribuicoesBody) {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const parsed = deletarDistribuicoesSchema.parse(body);
     return this.deletarDistribuicoesUc.execute(clienteId, parsed);
   }

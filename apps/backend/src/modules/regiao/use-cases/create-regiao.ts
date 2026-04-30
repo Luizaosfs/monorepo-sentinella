@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Request } from 'express';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 
 import { CreateRegiaoBody } from '../dtos/create-regiao.body';
 import { Regiao } from '../entities/regiao';
@@ -15,7 +16,7 @@ export class CreateRegiao {
   async execute(input: CreateRegiaoBody) {
     const regiao = new Regiao(
       {
-        clienteId: this.req['tenantId'],
+        clienteId: requireTenantId(getAccessScope(this.req)),
         nome: input.nome,
         tipo: input.tipo,
         cor: input.cor,

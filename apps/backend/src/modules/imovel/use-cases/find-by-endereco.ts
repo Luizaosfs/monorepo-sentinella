@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 
 import { PrismaService } from 'src/shared/modules/database/prisma/prisma.service';
 
@@ -14,7 +15,7 @@ export class FindByEndereco {
   ) {}
 
   async execute(logradouro: string, numero: string) {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
 
     const raw = await this.prisma.client.imoveis.findFirst({
       where: {

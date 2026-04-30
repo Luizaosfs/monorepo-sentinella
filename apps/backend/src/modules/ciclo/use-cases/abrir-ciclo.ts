@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Request } from 'express';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 
 import { Ciclo } from '../entities/ciclo';
 import { AbrirCicloInput } from '../dtos/abrir-ciclo.body';
@@ -16,7 +17,7 @@ export class AbrirCiclo {
   ) {}
 
   async execute(input: AbrirCicloInput) {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const userId = (this.req['user'] as { id: string }).id;
     const ano = input.ano ?? new Date().getFullYear();
 

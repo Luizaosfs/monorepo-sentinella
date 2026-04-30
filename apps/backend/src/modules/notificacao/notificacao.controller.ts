@@ -16,6 +16,7 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
 import { Request } from 'express';
 import { AuthenticatedUser } from 'src/guards/auth.guard';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 
 import { Roles } from '@/decorators/roles.decorator';
@@ -111,7 +112,7 @@ export class NotificacaoController {
   @Roles('admin', 'supervisor', 'notificador')
   @ApiOperation({ summary: 'Listar unidades de saúde' })
   async listUnidades() {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const { items } = await this.unidadeFilter.execute(clienteId);
     return items.map(NotificacaoViewModel.unidadeToHttp);
   }
@@ -121,7 +122,7 @@ export class NotificacaoController {
   @ApiOperation({ summary: 'Cadastrar unidade de saúde' })
   async createUnidade(@Body() body: CreateUnidadeBody) {
     const parsed = createUnidadeSchema.parse(body);
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const { unidade } = await this.unidadeCreate.execute(clienteId, parsed);
     return NotificacaoViewModel.unidadeToHttp(unidade);
   }
@@ -131,7 +132,7 @@ export class NotificacaoController {
   @ApiOperation({ summary: 'Atualizar unidade de saúde' })
   async saveUnidade(@Param('id') id: string, @Body() body: SaveUnidadeBody) {
     const parsed = saveUnidadeSchema.parse(body);
-    const { unidade } = await this.unidadeSave.execute(id, parsed, (this.req['tenantId'] as string | undefined) ?? null);
+    const { unidade } = await this.unidadeSave.execute(id, parsed, getAccessScope(this.req).tenantId);
     return NotificacaoViewModel.unidadeToHttp(unidade);
   }
 
@@ -149,7 +150,7 @@ export class NotificacaoController {
   @Roles('admin', 'supervisor', 'notificador')
   @ApiOperation({ summary: 'Listar casos paginado por cursor — retorna { data, nextCursor }' })
   async listCasosPaginado(@Query() query: ListCasosPaginadoQuery) {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const parsed = listCasosPaginadoSchema.parse(query);
     return this.casosPaginadoUc.execute(clienteId, parsed);
   }
@@ -158,7 +159,7 @@ export class NotificacaoController {
   @Roles('admin', 'supervisor', 'notificador')
   @ApiOperation({ summary: 'Contar casos notificados num raio de 300m de um item de levantamento' })
   async countProximosAoItem(@Query('itemId') itemId: string) {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const total = await this.countProximosUc.execute(itemId, clienteId);
     return { total };
   }
@@ -167,7 +168,7 @@ export class NotificacaoController {
   @Roles('admin', 'supervisor', 'notificador')
   @ApiOperation({ summary: 'Cruzamentos de casos notificados para um item de levantamento' })
   async cruzamentosDoItem(@Query('itemId') itemId: string) {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.cruzamentosDoItemUc.execute(itemId, clienteId);
   }
 
@@ -175,7 +176,7 @@ export class NotificacaoController {
   @Roles('admin', 'supervisor', 'notificador')
   @ApiOperation({ summary: 'Contar casos distintos cruzados com focos hoje' })
   async countCruzadosHoje() {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const total = await this.countCruzadosHojeUc.execute(clienteId);
     return { total };
   }
@@ -184,7 +185,7 @@ export class NotificacaoController {
   @Roles('admin', 'supervisor', 'notificador')
   @ApiOperation({ summary: 'Filtrar quais casoIds possuem ao menos um cruzamento registrado' })
   async listCasoIdsComCruzamento(@Body() body: ListCasoIdsComCruzamentoBody) {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const parsed = listCasoIdsComCruzamentoSchema.parse(body);
     return this.listCasoIdsUc.execute(parsed.casoIds, clienteId);
   }
@@ -193,7 +194,7 @@ export class NotificacaoController {
   @Roles('admin', 'supervisor', 'agente')
   @ApiOperation({ summary: 'Count de itens de levantamento com cruzamento ativo (widget dashboard)' })
   async getCruzamentoCount() {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const count = await this.getCruzamentoCountUc.execute(clienteId);
     return { count };
   }
@@ -202,7 +203,7 @@ export class NotificacaoController {
   @Roles('admin', 'supervisor', 'notificador')
   @ApiOperation({ summary: 'Listar cruzamentos recentes (máx. 200) do cliente' })
   async listCruzamentos() {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.listCruzamentosUc.execute(clienteId);
   }
 
@@ -213,7 +214,7 @@ export class NotificacaoController {
     @Query('limit') limit?: string,
     @Query('cursor') cursor?: string,
   ) {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const parsedLimit = limit ? Math.min(parseInt(limit, 10), 100) : 20;
     const result = await this.casosPagination.execute(clienteId, parsedLimit, cursor);
     return {
@@ -230,7 +231,7 @@ export class NotificacaoController {
     @Query('lng') lng: string,
     @Query('raio') raio?: string,
   ) {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const { items } = await this.casosRaio.execute(
       parseFloat(lat),
       parseFloat(lng),
@@ -247,7 +248,7 @@ export class NotificacaoController {
     @Query('status') status?: string,
     @Query('regiaoId') regiaoId?: string,
   ) {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const { items } = await this.casoFilter.execute(clienteId, { status, regiaoId });
     return items.map(NotificacaoViewModel.toHttp);
   }
@@ -256,7 +257,7 @@ export class NotificacaoController {
   @Roles('admin', 'supervisor', 'notificador')
   @ApiOperation({ summary: 'Cruzamentos de focos de risco para um caso notificado' })
   async cruzamentosDocaso(@Param('id') id: string) {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.cruzamentosDocasoUc.execute(id, clienteId);
   }
 
@@ -264,7 +265,7 @@ export class NotificacaoController {
   @Roles('admin', 'supervisor', 'notificador')
   @ApiOperation({ summary: 'Detalhar caso notificado' })
   async getCaso(@Param('id') id: string) {
-    const { caso } = await this.casoGet.execute(id, (this.req['tenantId'] as string | undefined) ?? null);
+    const { caso } = await this.casoGet.execute(id, getAccessScope(this.req).tenantId);
     return NotificacaoViewModel.toHttp(caso);
   }
 
@@ -273,7 +274,7 @@ export class NotificacaoController {
   @ApiOperation({ summary: 'Registrar caso notificado' })
   async createCaso(@Body() body: CreateCasoBody) {
     const parsed = createCasoSchema.parse(body);
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const userId = (this.req['user'] as AuthenticatedUser).id;
     const { caso } = await this.casoCreate.execute(clienteId, userId, parsed);
     return NotificacaoViewModel.toHttp(caso);
@@ -284,7 +285,7 @@ export class NotificacaoController {
   @ApiOperation({ summary: 'Atualizar caso notificado' })
   async saveCaso(@Param('id') id: string, @Body() body: SaveCasoBody) {
     const parsed = saveCasoSchema.parse(body);
-    const { caso } = await this.casoSave.execute(id, parsed, (this.req['tenantId'] as string | undefined) ?? null);
+    const { caso } = await this.casoSave.execute(id, parsed, getAccessScope(this.req).tenantId);
     return NotificacaoViewModel.toHttp(caso);
   }
 
@@ -303,7 +304,7 @@ export class NotificacaoController {
   @ApiOperation({ summary: 'Registrar push subscription' })
   async createPush(@Body() body: CreatePushBody) {
     const parsed = createPushSchema.parse(body);
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const userId = (this.req['user'] as AuthenticatedUser).id;
     const { push } = await this.pushCreate.execute(clienteId, userId, parsed);
     return NotificacaoViewModel.pushToHttp(push);
@@ -323,7 +324,7 @@ export class NotificacaoController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Listar notificações e-SUS' })
   async listEsus() {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const { items } = await this.esusFilter.execute(clienteId);
     return items.map(NotificacaoViewModel.esusToHttp);
   }
@@ -333,7 +334,7 @@ export class NotificacaoController {
   @ApiOperation({ summary: 'Criar notificação e-SUS' })
   async createEsus(@Body() body: CreateEsusBody) {
     const parsed = createEsusSchema.parse(body);
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const userId = (this.req['user'] as AuthenticatedUser).id;
     const { esus } = await this.esusCreate.execute(clienteId, userId, parsed);
     return NotificacaoViewModel.esusToHttp(esus);
@@ -344,7 +345,7 @@ export class NotificacaoController {
   @ApiOperation({ summary: 'Enviar notificação ao e-SUS Notifica (POST direto à API do Ministério da Saúde)' })
   async enviarEsus(@Body() body: EnviarEsusBody) {
     const parsed = enviarEsusSchema.parse(body);
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const userId = (this.req['user'] as { id?: string } | undefined)?.id;
     return this.esusEnviar.execute(clienteId, parsed, userId);
   }
@@ -353,7 +354,7 @@ export class NotificacaoController {
   @Roles('admin', 'supervisor', 'notificador')
   @ApiOperation({ summary: 'Reenviar notificação e-SUS com status=erro' })
   async reenviarEsus(@Param('id') id: string) {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.esusReenviar.execute(id, clienteId);
   }
 
@@ -363,7 +364,7 @@ export class NotificacaoController {
   @Roles('admin', 'supervisor', 'notificador')
   @ApiOperation({ summary: 'Gerar próximo número de protocolo' })
   async proximoProtocolo() {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.proximoProtocoloUc.execute(clienteId);
   }
 }

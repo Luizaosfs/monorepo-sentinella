@@ -12,6 +12,7 @@ import {
 import { REQUEST } from '@nestjs/core';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 import { Request } from 'express';
 import { AuthenticatedUser } from 'src/guards/auth.guard';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
@@ -77,7 +78,7 @@ export class CloudinaryController {
     if (!safeId.success) throw new ForbiddenException('publicId inválido');
 
     const user = this.req['user'] as AuthenticatedUser | undefined;
-    const tenantId = this.req['tenantId'] as string | undefined;
+    const tenantId = getAccessScope(this.req).tenantId ?? undefined;
     if (!user?.isPlatformAdmin && tenantId) {
       if (!safeId.data.startsWith(`sentinella/${tenantId}/`)) {
         throw new ForbiddenException('Acesso negado: imagem pertence a outro tenant');
@@ -93,7 +94,7 @@ export class CloudinaryController {
   @ApiOperation({ summary: 'Upload de evidência vinculada a módulo' })
   async uploadEvidencia(@Body() body: unknown) {
     const parsed = uploadEvidenciaSchema.parse(body);
-    const tenantId = this.req['tenantId'] as string;
+    const tenantId = requireTenantId(getAccessScope(this.req));
     return this.cloudinaryService.uploadEvidencia(parsed.fileBase64, tenantId, parsed.modulo);
   }
 }

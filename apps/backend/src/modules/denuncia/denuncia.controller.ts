@@ -4,6 +4,7 @@ import { REQUEST } from '@nestjs/core';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 import { Request } from 'express';
 import { z } from 'zod';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
@@ -57,7 +58,7 @@ export class DenunciaController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Estatísticas do canal cidadão (substitui v_canal_cidadao_stats)' })
   async stats() {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.canalCidadaoStats.execute(clienteId);
   }
 

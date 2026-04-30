@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Request } from 'express';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 
 import { SaveYoloSynonymInput } from '../dtos/save-risk-policy.body';
 import { YoloSynonym } from '../entities/risk-engine';
@@ -14,7 +15,7 @@ export class SaveYoloSynonym {
 
   async execute(input: SaveYoloSynonymInput) {
     // MT-02: tenantId do guard sempre vence — nunca aceita clienteId do frontend
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
 
     const synonym = new YoloSynonym(
       {

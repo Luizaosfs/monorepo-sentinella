@@ -11,6 +11,7 @@ import {
 import { REQUEST } from '@nestjs/core';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 import { Request } from 'express';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 import { z } from 'zod';
@@ -36,7 +37,7 @@ export class AlertaRetornoController {
   @ApiOperation({ summary: 'Listar alertas de retorno do agente' })
   async listByAgente(@Query('agenteId') agenteId: string) {
     const parsedAgenteId = z.string().uuid().parse(agenteId);
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.listByAgenteUC.execute(clienteId, parsedAgenteId);
   }
 
@@ -44,7 +45,7 @@ export class AlertaRetornoController {
   @Roles('admin', 'supervisor', 'agente')
   @ApiOperation({ summary: 'Marcar alerta de retorno como resolvido' })
   async resolver(@Param('id') id: string) {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.resolverUC.execute(id, clienteId);
   }
 }

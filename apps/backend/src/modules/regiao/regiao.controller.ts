@@ -20,6 +20,7 @@ import {
   paginationSchema,
 } from '@shared/dtos/pagination-body';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 import { z } from 'zod';
 
@@ -118,7 +119,7 @@ export class RegiaoController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Inserir múltiplas regiões em lote (skipDuplicates)' })
   async bulkInsert(@Body() body: BulkInsertRegioesBody) {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const parsed = bulkInsertRegioesSchema.parse(body);
     return this.bulkInsertRegioesUc.execute(clienteId, parsed);
   }

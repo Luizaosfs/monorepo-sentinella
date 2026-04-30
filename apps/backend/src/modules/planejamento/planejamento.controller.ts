@@ -15,6 +15,7 @@ import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
+import { getAccessScope } from '@shared/security/access-scope.helpers';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 
 import { Roles } from '@/decorators/roles.decorator';
@@ -64,7 +65,7 @@ export class PlanejamentoController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Listar planejamentos com join de cliente (para admin)' })
   async listWithCliente(@Query('clienteId') clienteId?: string) {
-    const tenantId = this.req['tenantId'] as string | null;
+    const tenantId = getAccessScope(this.req).tenantId;
     const effectiveClienteId = tenantId ?? clienteId ?? null;
     return this.listWithClienteUc.execute(effectiveClienteId);
   }
@@ -100,7 +101,7 @@ export class PlanejamentoController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Listar voos de um planejamento' })
   async voosByPlanejamento(@Param('id') id: string) {
-    const tenantId = this.req['tenantId'] as string | null;
+    const tenantId = getAccessScope(this.req).tenantId;
     return this.voosByPlanejamentoUc.execute(id, tenantId);
   }
 

@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
+import { getAccessScope } from '@shared/security/access-scope.helpers';
 
 import { FilterPlanoAcaoInput } from '../dtos/filter-plano-acao.input';
 import { PlanoAcaoReadRepository } from '../repositories/plano-acao-read.repository';
@@ -14,7 +15,7 @@ export class FilterPlanoAcao {
 
   async execute(filters: FilterPlanoAcaoInput) {
     // MT-02: tenantId do guard sempre vence — nunca aceita clienteId do frontend
-    const clienteId = this.req['tenantId'] as string | undefined;
+    const clienteId = getAccessScope(this.req).tenantId ?? undefined;
     const planosAcao = await this.repository.findAllActive({
       ...filters,
       clienteId,

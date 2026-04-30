@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
 
@@ -20,6 +20,25 @@ export class EnsureAndConcluir {
   async execute(data: EnsureAndConcluirInput) {
     const clienteId = requireTenantId(getAccessScope(this.req));
     const now = new Date();
+
+    if (data.focoRiscoId) {
+      const count = await this.prisma.client.focos_risco.count({
+        where: { id: data.focoRiscoId, cliente_id: clienteId },
+      });
+      if (count === 0) throw new ForbiddenException('focoRiscoId inválido para este cliente');
+    }
+    if (data.itemLevantamentoId) {
+      const count = await this.prisma.client.levantamento_itens.count({
+        where: { id: data.itemLevantamentoId, cliente_id: clienteId },
+      });
+      if (count === 0) throw new ForbiddenException('itemLevantamentoId inválido para este cliente');
+    }
+    if (data.responsavelId) {
+      const count = await this.prisma.client.usuarios.count({
+        where: { id: data.responsavelId, cliente_id: clienteId },
+      });
+      if (count === 0) throw new ForbiddenException('responsavelId não pertence a este cliente');
+    }
 
     const existing = await this.prisma.client.operacoes.findFirst({
       where: {

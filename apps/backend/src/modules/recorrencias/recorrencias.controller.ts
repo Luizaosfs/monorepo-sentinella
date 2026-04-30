@@ -9,6 +9,7 @@ import {
 import { REQUEST } from '@nestjs/core';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 import { Request } from 'express';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 
@@ -34,7 +35,7 @@ export class RecorrenciasController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Listar recorrências ativas (≥2 focos em 30 dias por endereço)' })
   listAtivas() {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.listAtivasUC.execute(clienteId);
   }
 
@@ -42,7 +43,7 @@ export class RecorrenciasController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Contar recorrências ativas' })
   async countAtivas() {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const total = await this.countAtivasUC.execute(clienteId);
     return { total };
   }

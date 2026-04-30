@@ -19,6 +19,7 @@ import {
   paginationSchema,
 } from '@shared/dtos/pagination-body';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 
 import { Roles } from '@/decorators/roles.decorator';
@@ -85,7 +86,7 @@ export class ImovelController {
   async filter(@Query() filters: FilterImovelInput) {
     const parsed = filterImovelSchema.parse(filters);
     // MT-02: clienteId SEMPRE vem do TenantGuard, nunca da query diretamente
-    parsed.clienteId = this.req['tenantId'] as string | undefined;
+    parsed.clienteId = getAccessScope(this.req).tenantId ?? undefined;
     const { imoveis } = await this.filterImovel.execute(parsed);
     return imoveis.map(ImovelViewModel.toHttp);
   }
@@ -99,7 +100,7 @@ export class ImovelController {
   ) {
     const parsedFilters = filterImovelSchema.parse(filters);
     // MT-02: clienteId SEMPRE vem do TenantGuard, nunca da query diretamente
-    parsedFilters.clienteId = this.req['tenantId'] as string | undefined;
+    parsedFilters.clienteId = getAccessScope(this.req).tenantId ?? undefined;
     const parsedPagination = paginationSchema.parse(pagination);
     const result = await this.paginationImovel.execute(
       parsedFilters,
@@ -115,7 +116,7 @@ export class ImovelController {
   @Roles('admin', 'supervisor', 'agente')
   @ApiOperation({ summary: 'Lista resumo agregado dos imóveis (substitui v_imovel_resumo)' })
   async listResumo(@Query('regiaoId') regiaoId?: string) {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const { items } = await this.listImovelResumoUc.execute(clienteId, regiaoId);
     return items;
   }
@@ -124,7 +125,7 @@ export class ImovelController {
   @Roles('admin', 'supervisor', 'agente')
   @ApiOperation({ summary: 'Lista imóveis problemáticos (substitui v_imovel_historico_acesso)' })
   async listProblematicos() {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const { items } = await this.listImovelProblematicosUc.execute(clienteId);
     return items;
   }
@@ -157,7 +158,7 @@ export class ImovelController {
   @ApiOperation({ summary: 'Calcula e grava score de risco do imóvel' })
   async score(@Param('id') id: string) {
     // MT-03: clienteId vem do TenantGuard, não de query param
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.calcularScore.execute(id, clienteId);
   }
 
@@ -165,7 +166,7 @@ export class ImovelController {
   @Roles('admin', 'supervisor', 'agente')
   @ApiOperation({ summary: 'Resumo agregado de um imóvel por ID (substitui v_imovel_resumo)' })
   async getResumo(@Param('id') id: string) {
-    const { resumo } = await this.getImovelResumoUc.execute(id, this.req['tenantId'] as string | null);
+    const { resumo } = await this.getImovelResumoUc.execute(id, getAccessScope(this.req).tenantId);
     return resumo;
   }
 
@@ -173,7 +174,7 @@ export class ImovelController {
   @Roles('admin', 'supervisor', 'agente')
   @ApiOperation({ summary: 'Buscar imóvel por ID' })
   async findById(@Param('id') id: string) {
-    const { imovel } = await this.getImovel.execute(id, this.req['tenantId'] as string | null);
+    const { imovel } = await this.getImovel.execute(id, getAccessScope(this.req).tenantId);
     return ImovelViewModel.toHttp(imovel);
   }
 
@@ -199,7 +200,7 @@ export class ImovelController {
   @ApiOperation({ summary: 'Atualizar imóvel' })
   async save(@Param('id') id: string, @Body() body: SaveImovelBody) {
     const parsed = saveImovelSchema.parse(body);
-    const { imovel } = await this.saveImovel.execute(id, parsed, (this.req['tenantId'] as string | undefined) ?? null);
+    const { imovel } = await this.saveImovel.execute(id, parsed, getAccessScope(this.req).tenantId);
     return ImovelViewModel.toHttp(imovel);
   }
 

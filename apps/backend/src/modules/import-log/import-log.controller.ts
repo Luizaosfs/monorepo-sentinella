@@ -13,6 +13,7 @@ import {
 import { REQUEST } from '@nestjs/core';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 import { Request } from 'express';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 
@@ -81,7 +82,7 @@ export class ImportLogController {
   @Roles('admin', 'supervisor', 'agente')
   @ApiOperation({ summary: 'Finalizar log de importação com totais e status' })
   async finalizar(@Param('id') id: string, @Body() body: FinalizarImportBody) {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const parsed = finalizarImportSchema.parse(body);
     return this.finalizarImportUc.execute(id, clienteId, parsed);
   }

@@ -21,6 +21,7 @@ import {
   paginationSchema,
 } from '@shared/dtos/pagination-body';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 
 import { Roles } from '@/decorators/roles.decorator';
@@ -74,7 +75,7 @@ export class UsuarioController {
   async filter(@Query() filters: FilterUsuarioInput) {
     const parsed = filterUsuarioSchema.parse(filters);
     // MT-02: clienteId SEMPRE vem do TenantGuard, nunca da query diretamente
-    parsed.clienteId = this.req['tenantId'] as string | undefined;
+    parsed.clienteId = getAccessScope(this.req).tenantId ?? undefined;
     const { usuarios } = await this.filterUsuario.execute(parsed);
     return usuarios.map(UsuarioViewModel.toHttp);
   }
@@ -88,7 +89,7 @@ export class UsuarioController {
   ) {
     const parsedFilters = filterUsuarioSchema.parse(filters);
     // MT-02: clienteId SEMPRE vem do TenantGuard, nunca da query diretamente
-    parsedFilters.clienteId = this.req['tenantId'] as string | undefined;
+    parsedFilters.clienteId = getAccessScope(this.req).tenantId ?? undefined;
     const parsedPagination = paginationSchema.parse(pagination);
     const result = await this.paginationUsuario.execute(
       parsedFilters,
@@ -105,7 +106,7 @@ export class UsuarioController {
   @ApiOperation({ summary: 'Lista papéis dos usuários de um cliente' })
   async getPapeis() {
     // MT-03: clienteId vem do TenantGuard, não de query param
-    const clienteId = this.req['tenantId'] as string | null;
+    const clienteId = getAccessScope(this.req).tenantId;
     const { papeis } = await this.getPapeisCliente.execute(clienteId);
     return papeis;
   }

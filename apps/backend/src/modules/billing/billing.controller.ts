@@ -14,6 +14,7 @@ import { REQUEST } from '@nestjs/core';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
 import { Request } from 'express';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 
 import { Roles } from '@/decorators/roles.decorator';
@@ -90,7 +91,7 @@ export class BillingController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Último snapshot de uso do cliente' })
   async getUltimoSnapshot() {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.getUltimoSnapshotUc.execute(clienteId);
   }
 
@@ -98,7 +99,7 @@ export class BillingController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Histórico de snapshots de uso do cliente (últimos 12)' })
   async listSnapshots() {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.listSnapshotsUc.execute(clienteId);
   }
 
@@ -106,7 +107,7 @@ export class BillingController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Gerar snapshot de billing imediato para o cliente' })
   async triggerSnapshot() {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.triggerSnapshotUc.execute(clienteId);
   }
 
@@ -118,7 +119,7 @@ export class BillingController {
     summary: 'Uso do mês corrente do cliente logado vs limites de quotas',
   })
   async getMeuUsoMensal() {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.meuUsoMensal.execute(clienteId);
   }
 
@@ -136,7 +137,7 @@ export class BillingController {
       'Verifica se uma métrica específica está dentro do limite — { ok, usado, limite }',
   })
   async getVerificarQuota(@Query() query: VerificarQuotaQuery) {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const parsed = verificarQuotaSchema.parse(query);
     return this.verificarQuota.execute(clienteId, parsed);
   }
@@ -175,7 +176,7 @@ export class BillingController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Obter plano do cliente atual' })
   async getClientePlano() {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const { clientePlano } = await this.clientePlanoGet.execute(clienteId);
     return BillingViewModel.clientePlanoToHttp(clientePlano);
   }
@@ -195,7 +196,7 @@ export class BillingController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Listar ciclos de billing do cliente' })
   async listCiclos() {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const { items } = await this.cicloFilter.execute(clienteId);
     return items.map(BillingViewModel.cicloToHttp);
   }
@@ -215,7 +216,7 @@ export class BillingController {
   @Roles('admin', 'supervisor', 'agente')
   @ApiOperation({ summary: 'Obter quotas do cliente' })
   async getQuotas() {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const { quotas } = await this.quotasGet.execute(clienteId);
     if (!quotas) return null;
     return BillingViewModel.quotasToHttp(quotas);
@@ -226,7 +227,7 @@ export class BillingController {
   @ApiOperation({ summary: 'Atualizar quotas do cliente' })
   async upsertQuotas(@Body() body: UpsertQuotasBody) {
     const parsed = upsertQuotasSchema.parse(body);
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const { quotas } = await this.quotasUpsert.execute(clienteId, parsed);
     return BillingViewModel.quotasToHttp(quotas);
   }

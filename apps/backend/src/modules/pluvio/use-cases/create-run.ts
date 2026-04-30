@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Request } from 'express';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 
 import { CreatePluvioRunInput } from '../dtos/create-pluvio-run.body';
 import { PluvioRun } from '../entities/pluvio';
@@ -14,7 +15,7 @@ export class CreateRun {
 
   async execute(input: CreatePluvioRunInput) {
     // MT-02: tenantId do guard sempre vence — nunca aceita clienteId do frontend
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
 
     const run = new PluvioRun(
       {

@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Request } from 'express';
+import { getAccessScope } from '@shared/security/access-scope.helpers';
 import { assertTenantOwnership } from 'src/shared/security/tenant-ownership.util';
 
 import { CopiarDistribuicaoBody } from '../dtos/create-distribuicao.body';
@@ -15,7 +16,7 @@ export class CopiarDistribuicao {
 
   async execute(input: CopiarDistribuicaoBody) {
     // MT-02: tenantId do guard sempre vence — nunca aceita clienteId do frontend
-    const clienteId = this.req['tenantId'];
+    const clienteId = getAccessScope(this.req).tenantId;
     if (!clienteId) {
       throw QuarteiraoException.badRequest();
     }

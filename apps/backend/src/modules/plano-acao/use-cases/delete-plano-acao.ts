@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
+import { getAccessScope } from '@shared/security/access-scope.helpers';
 
 import { PlanoAcaoException } from '../errors/plano-acao.exception';
 import { PlanoAcaoReadRepository } from '../repositories/plano-acao-read.repository';
@@ -15,7 +16,7 @@ export class DeletePlanoAcao {
   ) {}
 
   async execute(id: string) {
-    const tenantId = this.req['tenantId'] as string | undefined;
+    const tenantId = getAccessScope(this.req).tenantId;
     if (!tenantId) {
       throw PlanoAcaoException.tenantRequired();
     }

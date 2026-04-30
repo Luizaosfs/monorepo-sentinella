@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
+import { getAccessScope } from '@shared/security/access-scope.helpers';
 
 import { ImportLogException } from '../errors/import-log.exception';
 import { ImportLogReadRepository } from '../repositories/import-log-read.repository';
@@ -20,7 +21,7 @@ export class GetImport {
     }
 
     const isAdmin = this.req['user']?.isPlatformAdmin ?? false;
-    if (!isAdmin && log.clienteId !== this.req['tenantId']) {
+    if (!isAdmin && log.clienteId !== getAccessScope(this.req).tenantId) {
       throw ImportLogException.notFound();
     }
 

@@ -2,6 +2,7 @@ import { Body, Controller, Post, Req, UseInterceptors, UsePipes } from '@nestjs/
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 import { Request } from 'express';
 import { AuthenticatedUser } from 'src/guards/auth.guard';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
@@ -26,7 +27,7 @@ export class PilotoController {
   @ApiOperation({ summary: 'Registrar evento de piloto (fire-and-forget)' })
   async logEvento(@Body() body: unknown, @Req() req: Request) {
     const parsed = pilotoEventoSchema.parse(body);
-    const clienteId = req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(req));
     const usuarioId = (req['user'] as AuthenticatedUser).id;
 
     // fire-and-forget — não bloqueia, nunca lança exceção

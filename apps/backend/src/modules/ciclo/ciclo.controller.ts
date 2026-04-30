@@ -15,6 +15,7 @@ import { REQUEST } from '@nestjs/core';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 
 import { Roles } from '@/decorators/roles.decorator';
@@ -55,7 +56,7 @@ export class CicloController {
   @Roles('admin', 'supervisor', 'agente', 'notificador')
   @ApiOperation({ summary: 'Retorna o ciclo ativo do cliente com campos calculados' })
   async ativo() {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const { ciclo, cicloNumeroEfetivo, pctTempoDecorrido } =
       await this.getCicloAtivo.execute(clienteId);
     return ciclo ?? { cicloNumeroEfetivo, pctTempoDecorrido };
@@ -65,7 +66,7 @@ export class CicloController {
   @Roles('admin', 'supervisor', 'agente')
   @ApiOperation({ summary: 'KPIs de progresso do ciclo ativo' })
   async progresso() {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const { progresso } = await this.getCicloProgresso.execute(clienteId);
     return progresso;
   }

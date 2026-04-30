@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Request } from 'express';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 
 import { SaveRiskPolicyInput } from '../dtos/save-risk-policy.body';
 import { RiskPolicy } from '../entities/risk-engine';
@@ -17,7 +18,7 @@ export class SavePolicy {
 
   async execute(input: SaveRiskPolicyInput & { id?: string }) {
     // MT-02: tenantId do guard sempre vence — nunca aceita clienteId do frontend
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
 
     if (input.id) {
       // Update

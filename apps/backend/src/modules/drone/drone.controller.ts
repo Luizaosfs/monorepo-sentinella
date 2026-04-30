@@ -17,6 +17,7 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
 import { Request } from 'express';
 import { AuthenticatedUser } from 'src/guards/auth.guard';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 
 import { Roles } from '@/decorators/roles.decorator';
@@ -112,7 +113,7 @@ export class DroneController {
       .object({ data: z.coerce.date().default(() => new Date()) })
       .parse({ data: dataStr });
     // MT-02: tenantId do guard sempre vence — nunca aceita clienteId do frontend
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.avaliarCondicoesVoo.execute(clienteId, data);
   }
 
@@ -122,7 +123,7 @@ export class DroneController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Listar drones do cliente' })
   async listDrones() {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const { items } = await this.droneFilter.execute(clienteId);
     return items.map(DroneViewModel.toHttp);
   }
@@ -132,7 +133,7 @@ export class DroneController {
   @ApiOperation({ summary: 'Cadastrar drone' })
   async createDrone(@Body() body: CreateDroneBody) {
     const parsed = createDroneSchema.parse(body);
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const { drone } = await this.droneCreate.execute(clienteId, parsed);
     return DroneViewModel.toHttp(drone);
   }
@@ -160,7 +161,7 @@ export class DroneController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Listar voos do cliente' })
   async listVoos() {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const { items } = await this.vooFilter.execute(clienteId);
     return items.map(DroneViewModel.vooToHttp);
   }
@@ -170,7 +171,7 @@ export class DroneController {
   @ApiOperation({ summary: 'Registrar voo' })
   async createVoo(@Body() body: CreateVooBody) {
     const parsed = createVooSchema.parse(body);
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const { voo } = await this.vooCreate.execute(clienteId, parsed);
     return DroneViewModel.vooToHttp(voo);
   }
@@ -198,7 +199,7 @@ export class DroneController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Listar pipeline runs' })
   async listPipelines() {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const { items } = await this.pipelineFilter.execute(clienteId);
     return items.map(DroneViewModel.pipelineToHttp);
   }
@@ -215,7 +216,7 @@ export class DroneController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Importar voos em lote (chunks de 50, skipDuplicates)' })
   async bulkCreateVoos(@Body() body: BulkCreateVoosBody) {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const parsed = bulkCreateVoosSchema.parse(body);
     return this.vooBulkCreate.execute(clienteId, parsed);
   }
@@ -226,7 +227,7 @@ export class DroneController {
   @Roles('admin', 'supervisor', 'agente')
   @ApiOperation({ summary: 'Buscar feedback YOLO de um item específico' })
   async getYoloFeedbackByItem(@Query('levantamentoItemId') levantamentoItemId: string) {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const { feedback } = await this.feedbackGetByItem.execute(levantamentoItemId, clienteId);
     return feedback ?? null;
   }
@@ -236,7 +237,7 @@ export class DroneController {
   @ApiOperation({ summary: 'Registrar feedback YOLO (confirmado/rejeitado)' })
   async createYoloFeedback(@Body() body: CreateYoloFeedbackBody) {
     const parsed = createYoloFeedbackSchema.parse(body);
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const userId = (this.req['user'] as AuthenticatedUser).id;
     const { feedback } = await this.feedbackCreate.execute(clienteId, userId, parsed);
     return DroneViewModel.feedbackToHttp(feedback);
@@ -248,7 +249,7 @@ export class DroneController {
   @Roles('admin', 'supervisor', 'agente')
   @ApiOperation({ summary: 'Listar classes YOLO ativas do cliente' })
   async listYoloClassConfig() {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.yoloClassConfigList.execute(clienteId);
   }
 
@@ -258,7 +259,7 @@ export class DroneController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Resumo de qualidade YOLO (precisão, cobertura, correlações)' })
   async yoloQualidadeResumo() {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.yoloQualidadeResumoUc.execute(clienteId);
   }
 
@@ -268,7 +269,7 @@ export class DroneController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Buscar configuração de risco drone do cliente' })
   async getRiskConfig() {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.riskConfigGet.execute(clienteId);
   }
 
@@ -276,7 +277,7 @@ export class DroneController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Atualizar configuração de risco drone' })
   async updateRiskConfig(@Body() body: UpdateDroneRiskConfigBody) {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const parsed = updateDroneRiskConfigSchema.parse(body);
     await this.riskConfigUpdate.execute(clienteId, parsed);
     return { ok: true };
@@ -286,7 +287,7 @@ export class DroneController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Listar todas as classes YOLO do cliente (incluindo inativas)' })
   async listYoloClasses() {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.yoloClassesList.execute(clienteId);
   }
 
@@ -294,7 +295,7 @@ export class DroneController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Atualizar classe YOLO (campos parciais)' })
   async updateYoloClass(@Param('id') id: string, @Body() body: UpdateYoloClassBody) {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const parsed = updateYoloClassSchema.parse(body);
     await this.yoloClassUpdate.execute(id, clienteId, parsed);
     return { ok: true };
@@ -304,7 +305,7 @@ export class DroneController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Listar sinônimos YOLO do cliente' })
   async listSynonyms() {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.synonymsList.execute(clienteId);
   }
 
@@ -312,7 +313,7 @@ export class DroneController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Adicionar sinônimo YOLO' })
   async addSynonym(@Body() body: AddSynonymBody) {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const parsed = addSynonymSchema.parse(body);
     return this.synonymAdd.execute(clienteId, parsed);
   }
@@ -321,7 +322,7 @@ export class DroneController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Remover sinônimo YOLO' })
   async deleteSynonym(@Param('id') id: string) {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     await this.synonymDelete.execute(id, clienteId);
     return { ok: true };
   }

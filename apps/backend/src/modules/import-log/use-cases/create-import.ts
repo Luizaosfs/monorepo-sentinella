@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
+import { getAccessScope } from '@shared/security/access-scope.helpers';
 
 import { CreateImportLogBody } from '../dtos/create-import-log.body';
 import { ImportLog } from '../entities/import-log';
@@ -16,7 +17,7 @@ export class CreateImport {
 
   async execute(input: CreateImportLogBody) {
     // MT-02: tenantId do guard sempre vence — nunca aceita clienteId do frontend
-    const clienteId = this.req['tenantId'];
+    const clienteId = getAccessScope(this.req).tenantId;
 
     if (!clienteId) {
       throw ImportLogException.clienteIdRequired();

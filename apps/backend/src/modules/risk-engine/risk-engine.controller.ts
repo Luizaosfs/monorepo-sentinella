@@ -18,6 +18,7 @@ import { Request } from 'express';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 import { Prisma } from '@prisma/client';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 
 import { Roles } from '@/decorators/roles.decorator';
@@ -130,7 +131,7 @@ export class RiskEngineController {
   async deletePolicy(@Param('id') id: string) {
     const existing = await this.readRepository.findPolicyById(id);
     if (!existing) throw RiskEngineException.notFound();
-    const tenantId = this.req['tenantId'] as string | undefined;
+    const tenantId = getAccessScope(this.req).tenantId ?? undefined;
     const user = this.req['user'] as any;
     if (tenantId && !user?.isPlatformAdmin && existing.clienteId !== tenantId) {
       throw RiskEngineException.notFound();
@@ -202,7 +203,7 @@ export class RiskEngineController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Deletar sinônimo YOLO' })
   async deleteYoloSynonym(@Param('id') id: string) {
-    const tenantId = this.req['tenantId'] as string | undefined;
+    const tenantId = getAccessScope(this.req).tenantId ?? undefined;
     await this.writeRepository.deleteYoloSynonym(id, tenantId);
     return { success: true };
   }
@@ -213,7 +214,7 @@ export class RiskEngineController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Top imóveis críticos por score territorial' })
   async listTopCriticos(@Query('limit') limit?: string) {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.readRepository.findTopCriticos(clienteId, limit ? parseInt(limit, 10) : 20);
   }
 
@@ -230,14 +231,14 @@ export class RiskEngineController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Score agregado por bairro' })
   listScoreBairros() {
-    return this.getScoreBairro.execute(this.req['tenantId'] as string);
+    return this.getScoreBairro.execute(requireTenantId(getAccessScope(this.req)));
   }
 
   @Get('score/imovel/:imovelId')
   @Roles('admin', 'supervisor', 'agente')
   @ApiOperation({ summary: 'Score territorial de um imóvel' })
   async getScoreImovel(@Param('imovelId') imovelId: string) {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.readRepository.findScoreByImovel(imovelId, clienteId);
   }
 
@@ -245,7 +246,7 @@ export class RiskEngineController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Configuração de pesos do score territorial' })
   async getScoreConfig() {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.readRepository.findScoreConfig(clienteId);
   }
 
@@ -253,7 +254,7 @@ export class RiskEngineController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Atualizar configuração de pesos do score territorial' })
   async upsertScoreConfig(@Body() body: ScoreConfigInput) {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.writeRepository.upsertScoreConfig(clienteId, body);
   }
 
@@ -262,7 +263,7 @@ export class RiskEngineController {
   @HttpCode(202)
   @ApiOperation({ summary: 'Enfileirar recálculo do score territorial' })
   async forcarRecalculo() {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     await this.writeRepository.enqueueScoreRecalculo(clienteId);
     return { queued: true };
   }

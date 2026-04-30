@@ -2,6 +2,7 @@ import { Body, Controller, Inject, Post, UseInterceptors, UsePipes } from '@nest
 import { REQUEST } from '@nestjs/core';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 import { Request } from 'express';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 import { z } from 'zod';
@@ -75,7 +76,7 @@ export class SeedController {
   @ApiOperation({ summary: 'Seed política de risco padrão' })
   async riskPolicy(@Body() body: unknown) {
     const parsed = riskPolicySchema.parse(body);
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.seedService.seedRiskPolicy(clienteId, parsed);
   }
 
@@ -84,7 +85,7 @@ export class SeedController {
   @ApiOperation({ summary: 'Seed configuração padrão de SLA' })
   async slaConfig(@Body() body: unknown) {
     const { config } = slaConfigSchema.parse(body);
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.seedService.seedSlaConfig(clienteId, config);
   }
 
@@ -93,7 +94,7 @@ export class SeedController {
   @ApiOperation({ summary: 'Seed catálogo padrão de plano de ação' })
   async planoAcaoCatalogo(@Body() body: unknown) {
     const { items } = planoAcaoSchema.parse(body);
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.seedService.seedPlanoAcaoCatalogo(clienteId, items);
   }
 
@@ -102,7 +103,7 @@ export class SeedController {
   @ApiOperation({ summary: 'Seed feriados padrão de SLA' })
   async slaFeriados(@Body() body: unknown) {
     const { feriados } = slaFeriadosSchema.parse(body);
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.seedService.seedSlaFeriados(clienteId, feriados);
   }
 
@@ -111,7 +112,7 @@ export class SeedController {
   @ApiOperation({ summary: 'Seed configuração de risco de drone (YOLO classes + config)' })
   async droneRiskConfig(@Body() body: unknown) {
     const { config, yoloClasses, synonyms } = droneRiskConfigSchema.parse(body);
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     return this.seedService.seedDroneRiskConfig(clienteId, config, yoloClasses, synonyms);
   }
 }

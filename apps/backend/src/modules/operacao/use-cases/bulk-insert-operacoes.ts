@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
 
@@ -7,12 +7,14 @@ import { BulkInsertOperacoesInput } from '../dtos/bulk-insert-operacoes.body';
 import { Operacao } from '../entities/operacao';
 import { OperacaoReadRepository } from '../repositories/operacao-read.repository';
 import { OperacaoWriteRepository } from '../repositories/operacao-write.repository';
+import { PrismaService } from 'src/shared/modules/database/prisma/prisma.service';
 
 @Injectable()
 export class BulkInsertOperacoes {
   constructor(
     private readRepository: OperacaoReadRepository,
     private writeRepository: OperacaoWriteRepository,
+    private prisma: PrismaService,
     @Inject(REQUEST) private req: Request,
   ) {}
 
@@ -20,6 +22,15 @@ export class BulkInsertOperacoes {
     const clienteId = requireTenantId(getAccessScope(this.req));
     const created: Operacao[] = [];
     let skipped = 0;
+
+    const uniqueItemIds = [...new Set(data.operacoes.map((r) => r.itemLevantamentoId).filter(Boolean))];
+    if (uniqueItemIds.length > 0) {
+      const valid = await this.prisma.client.levantamento_itens.count({
+        where: { id: { in: uniqueItemIds }, cliente_id: clienteId },
+      });
+      if (valid !== uniqueItemIds.length)
+        throw new ForbiddenException('itemLevantamentoId inválido para este cliente');
+    }
 
     for (const row of data.operacoes) {
       const existente = await this.readRepository.findAtivaParaItem(

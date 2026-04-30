@@ -2,6 +2,7 @@ import { Controller, Get, Inject, UseInterceptors, UsePipes } from '@nestjs/comm
 import { REQUEST } from '@nestjs/core';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
+import { getAccessScope } from '@shared/security/access-scope.helpers';
 import { Request } from 'express';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 
@@ -23,7 +24,7 @@ export class TagsController {
   @Roles('admin', 'supervisor', 'agente', 'notificador')
   @ApiOperation({ summary: 'Listar tags disponíveis (globais + do cliente)' })
   async list() {
-    const clienteId = this.req['tenantId'] as string | undefined;
+    const clienteId = getAccessScope(this.req).tenantId ?? undefined;
     return this.listTagsUc.execute(clienteId);
   }
 }

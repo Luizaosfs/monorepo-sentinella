@@ -1,6 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 
 import { PrismaService } from 'src/shared/modules/database/prisma/prisma.service';
 import { QuarteiraoWriteRepository } from '../../quarteirao/repositories/quarteirao-write.repository';
@@ -20,7 +21,7 @@ export class BatchCreateImoveis {
   ) {}
 
   async execute(data: BatchCreateImoveisInput) {
-    const clienteId = this.req['tenantId'] as string;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     let importados = 0;
     let falhas = 0;
 
