@@ -26,6 +26,13 @@ async function bootstrap() {
   // Permite que req.ip reflita o IP real atrás de proxy/load balancer
   app.getHttpAdapter().getInstance().set('trust proxy', true);
 
+  const allowedOrigins = process.env.CLIENT_URL?.split(',').map(o => o.trim()).filter(Boolean) ?? [];
+  const isDev = process.env.NODE_ENV === 'development';
+
+  if (!isDev && allowedOrigins.length === 0) {
+    throw new Error('CLIENT_URL must be set with at least one origin in non-development environments');
+  }
+
   //app.use(helmet());
   app.use(
     helmet({
@@ -34,16 +41,7 @@ async function bootstrap() {
           defaultSrc: ["'self'"],
           connectSrc: [
             "'self'",
-            "https://sentinellamap.com.br",
-            "https://www.sentinellamap.com.br",
-            "http://localhost:3333",
-            "http://localhost:8080",
-            "http://177.7.37.14:8080/",
-            "http://177.7.37.14:3333/",
-            "https://177.7.37.14:8080/",
-            "https://177.7.37.14:3333/",
-            "https://*.supabase.co",
-            "wss://*.supabase.co",
+            ...allowedOrigins,
             "https://maps.googleapis.com",
             "https://*.sentry.io",
             "https://o4511116110528512.ingest.us.sentry.io",
@@ -76,13 +74,6 @@ async function bootstrap() {
 
   app.useGlobalPipes(new MyZodValidationPipe());
   app.useGlobalFilters(new GlobalExceptionFilter());
-
-  const allowedOrigins = process.env.CLIENT_URL?.split(',').map(o => o.trim()).filter(Boolean) ?? [];
-  const isDev = process.env.NODE_ENV === 'development';
-
-  if (!isDev && allowedOrigins.length === 0) {
-    throw new Error('CLIENT_URL must be set with at least one origin in non-development environments');
-  }
 
   app.enableCors({
     origin: isDev ? true : allowedOrigins,

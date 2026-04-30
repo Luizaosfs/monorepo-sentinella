@@ -11,12 +11,9 @@ const DEFAULT_ERROR_FACTORY: TenantOwnershipErrorFactory = () =>
 /**
  * Valida que o recurso (identificado por clienteId) pertence ao escopo do usuário.
  *
- * - Admin com escopo total: passa.
+ * - Admin com escopo total (clienteIdsPermitidos === null): passa.
  * - Demais papéis (incluindo analista_regional): clienteId precisa estar em scope.clienteIdsPermitidos.
- *
- * Compatibilidade preservada: usa AccessScope quando disponível (requests reais via TenantGuard).
- * Fallback para req['tenantId'] + req['user'].isPlatformAdmin quando AccessScope ausente
- * (testes unitários de use-cases que ainda mockam o modelo antigo — removido em 1B/1C).
+ * - Scope ausente (sem TenantGuard): nega acesso.
  */
 export function assertTenantOwnership(
   clienteId: string | null | undefined,
@@ -29,19 +26,12 @@ export function assertTenantOwnership(
 
   const scope = req['accessScope'] as AccessScope | undefined;
 
-  if (scope) {
-    if (scope.clienteIdsPermitidos === null) return;
-    if (!scope.clienteIdsPermitidos.includes(clienteId)) {
-      throw errorFactory();
-    }
-    return;
+  if (!scope) {
+    throw errorFactory();
   }
 
-  // Fallback legado: suporta testes que mockam req['tenantId'] + req['user']
-  const user = req['user'] as { isPlatformAdmin?: boolean } | undefined;
-  if (user?.isPlatformAdmin) return;
-  const tenantId = req['tenantId'] as string | undefined;
-  if (!tenantId || clienteId !== tenantId) {
+  if (scope.clienteIdsPermitidos === null) return;
+  if (!scope.clienteIdsPermitidos.includes(clienteId)) {
     throw errorFactory();
   }
 }

@@ -15,12 +15,11 @@ describe('DeleteItem', () => {
   let useCase: DeleteItem;
   const readRepo = mock<PluvioReadRepository>();
   const writeRepo = mock<PluvioWriteRepository>();
-  const req: any = { user: { isPlatformAdmin: true }, tenantId: null };
+  const req: any = { accessScope: { clienteIdsPermitidos: null } };
 
   beforeEach(async () => {
     jest.clearAllMocks();
-    req.user = { isPlatformAdmin: true };
-    req.tenantId = null;
+    req.accessScope = { clienteIdsPermitidos: null };
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         DeleteItem,
@@ -59,8 +58,7 @@ describe('DeleteItem', () => {
     readRepo.findItemById.mockResolvedValue(item);
     readRepo.findRunById.mockResolvedValue(run);
 
-    req.user = { isPlatformAdmin: false };
-    req.tenantId = 'cliente-B';
+    req.accessScope = { clienteIdsPermitidos: ['cliente-B'] };
 
     await expect(useCase.execute(item.id!)).rejects.toBeInstanceOf(ForbiddenException);
     expect(writeRepo.deleteItem).not.toHaveBeenCalled();

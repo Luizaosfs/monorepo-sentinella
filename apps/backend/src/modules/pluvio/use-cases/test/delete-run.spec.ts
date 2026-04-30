@@ -15,12 +15,11 @@ describe('DeleteRun', () => {
   let useCase: DeleteRun;
   const readRepo = mock<PluvioReadRepository>();
   const writeRepo = mock<PluvioWriteRepository>();
-  const req: any = { user: { isPlatformAdmin: true }, tenantId: null };
+  const req: any = { accessScope: { clienteIdsPermitidos: null } };
 
   beforeEach(async () => {
     jest.clearAllMocks();
-    req.user = { isPlatformAdmin: true };
-    req.tenantId = null;
+    req.accessScope = { clienteIdsPermitidos: null };
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         DeleteRun,
@@ -56,8 +55,7 @@ describe('DeleteRun', () => {
     (run as any).props = { ...(run as any).props, clienteId: 'cliente-A' };
     readRepo.findRunById.mockResolvedValue(run);
 
-    req.user = { isPlatformAdmin: false };
-    req.tenantId = 'cliente-B';
+    req.accessScope = { clienteIdsPermitidos: ['cliente-B'] };
 
     await expect(useCase.execute(run.id!)).rejects.toBeInstanceOf(ForbiddenException);
     expect(writeRepo.deleteRun).not.toHaveBeenCalled();
@@ -69,8 +67,7 @@ describe('DeleteRun', () => {
     readRepo.findRunById.mockResolvedValue(run);
     writeRepo.deleteRun.mockResolvedValue();
 
-    req.user = { isPlatformAdmin: false };
-    req.tenantId = 'cliente-A';
+    req.accessScope = { clienteIdsPermitidos: ['cliente-A'] };
 
     await useCase.execute(run.id!);
     expect(writeRepo.deleteRun).toHaveBeenCalledWith(run.id);

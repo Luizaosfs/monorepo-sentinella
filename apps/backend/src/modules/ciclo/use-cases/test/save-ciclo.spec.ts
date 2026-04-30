@@ -18,8 +18,7 @@ describe('SaveCiclo', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockReq.user = { isPlatformAdmin: true };
-    mockReq.tenantId = undefined;
+    mockReq.accessScope = { tenantId: null, clienteIdsPermitidos: null };
     useCase = new SaveCiclo(readRepo, writeRepo, mockReq as any);
   });
 
@@ -92,7 +91,7 @@ describe('SaveCiclo', () => {
     readRepo.findById.mockImplementation(async (_id, clienteId) =>
       clienteId === 'cli-ERRADO' ? null : ciclo,
     );
-    const wrongTenantReq = { user: { isPlatformAdmin: false }, tenantId: 'cli-ERRADO' };
+    const wrongTenantReq = { accessScope: { tenantId: 'cli-ERRADO', clienteIdsPermitidos: ['cli-ERRADO'] } };
     const uc = new SaveCiclo(readRepo, writeRepo, wrongTenantReq as any);
 
     await expect(uc.execute(ciclo.id!, { status: 'ativo' } as SaveCicloBody)).rejects.toBeDefined();

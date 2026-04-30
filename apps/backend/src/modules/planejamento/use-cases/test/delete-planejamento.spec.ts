@@ -14,8 +14,8 @@ function makeUseCase() {
 
 beforeEach(() => {
   jest.clearAllMocks();
-  mockReq.user = { isPlatformAdmin: true, id: 'user-uuid' };
-  mockReq.tenantId = undefined;
+  mockReq.user = { id: 'user-uuid' };
+  mockReq.accessScope = { tenantId: null, clienteIdsPermitidos: null };
   writeRepo.softDelete.mockResolvedValue(undefined);
 });
 
@@ -33,8 +33,7 @@ describe('DeletePlanejamento', () => {
     readRepo.findById.mockImplementation(async (_id, clienteId) =>
       clienteId === 'cli-OWNER' ? plan : null,
     );
-    mockReq.user = { isPlatformAdmin: false };
-    mockReq.tenantId = 'cli-OTHER';
+    mockReq.accessScope = { tenantId: 'cli-OTHER', clienteIdsPermitidos: ['cli-OTHER'] };
 
     await expect(makeUseCase().execute('plan-1')).rejects.toBeDefined();
     expect(writeRepo.softDelete).not.toHaveBeenCalled();
@@ -43,8 +42,8 @@ describe('DeletePlanejamento', () => {
   it('tenant correto → softDelete chamado, retorna { deleted: true }', async () => {
     const plan = { id: 'plan-1', clienteId: 'cli-OWNER' } as any;
     readRepo.findById.mockResolvedValue(plan);
-    mockReq.user = { isPlatformAdmin: false, id: 'user-uuid' };
-    mockReq.tenantId = 'cli-OWNER';
+    mockReq.user = { id: 'user-uuid' };
+    mockReq.accessScope = { tenantId: 'cli-OWNER', clienteIdsPermitidos: ['cli-OWNER'] };
 
     await expect(makeUseCase().execute('plan-1')).resolves.toMatchObject({ deleted: true });
     expect(writeRepo.softDelete).toHaveBeenCalledWith('plan-1', 'user-uuid');

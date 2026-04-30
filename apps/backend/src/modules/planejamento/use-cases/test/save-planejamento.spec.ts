@@ -14,8 +14,7 @@ function makeUseCase() {
 
 beforeEach(() => {
   jest.clearAllMocks();
-  mockReq.user = { isPlatformAdmin: true };
-  mockReq.tenantId = undefined;
+  mockReq.accessScope = { tenantId: null, clienteIdsPermitidos: null };
   writeRepo.save.mockResolvedValue(undefined);
 });
 
@@ -33,8 +32,7 @@ describe('SavePlanejamento', () => {
     readRepo.findById.mockImplementation(async (_id, clienteId) =>
       clienteId === 'cli-OWNER' ? plan : null,
     );
-    mockReq.user = { isPlatformAdmin: false };
-    mockReq.tenantId = 'cli-OTHER';
+    mockReq.accessScope = { tenantId: 'cli-OTHER', clienteIdsPermitidos: ['cli-OTHER'] };
 
     await expect(makeUseCase().execute('plan-1', {})).rejects.toBeDefined();
     expect(writeRepo.save).not.toHaveBeenCalled();
@@ -43,8 +41,7 @@ describe('SavePlanejamento', () => {
   it('tenant correto → aplica patch e salva', async () => {
     const plan = { id: 'plan-1', clienteId: 'cli-OWNER', descricao: undefined, ativo: undefined } as any;
     readRepo.findById.mockResolvedValue(plan);
-    mockReq.user = { isPlatformAdmin: false };
-    mockReq.tenantId = 'cli-OWNER';
+    mockReq.accessScope = { tenantId: 'cli-OWNER', clienteIdsPermitidos: ['cli-OWNER'] };
 
     const result = await makeUseCase().execute('plan-1', { descricao: 'nova desc' });
 

@@ -15,7 +15,7 @@ describe('DeleteRisco', () => {
   let useCase: DeleteRisco;
   const readRepo = mock<PluvioReadRepository>();
   const writeRepo = mock<PluvioWriteRepository>();
-  const req: any = { user: { isPlatformAdmin: true }, tenantId: null };
+  const req: any = { accessScope: { clienteIdsPermitidos: null } };
 
   const makeRisco = () =>
     new PluvioRisco(
@@ -30,8 +30,7 @@ describe('DeleteRisco', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
-    req.user = { isPlatformAdmin: true };
-    req.tenantId = null;
+    req.accessScope = { clienteIdsPermitidos: null };
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         DeleteRisco,
@@ -67,8 +66,7 @@ describe('DeleteRisco', () => {
     readRepo.findRiscoById.mockResolvedValue(risco);
     readRepo.findClienteIdByRegiaoId.mockResolvedValue('cliente-A');
 
-    req.user = { isPlatformAdmin: false };
-    req.tenantId = 'cliente-B';
+    req.accessScope = { clienteIdsPermitidos: ['cliente-B'] };
 
     await expect(useCase.execute(risco.id!)).rejects.toBeInstanceOf(ForbiddenException);
     expect(writeRepo.deleteRisco).not.toHaveBeenCalled();

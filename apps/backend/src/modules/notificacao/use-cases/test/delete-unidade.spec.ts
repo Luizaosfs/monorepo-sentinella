@@ -10,12 +10,11 @@ describe('DeleteUnidade', () => {
   let useCase: DeleteUnidade;
   const readRepo = mock<NotificacaoReadRepository>();
   const writeRepo = mock<NotificacaoWriteRepository>();
-  const req: any = { user: { isPlatformAdmin: true }, tenantId: null };
+  const req: any = { accessScope: { tenantId: null, clienteIdsPermitidos: null } };
 
   beforeEach(async () => {
     jest.clearAllMocks();
-    req.user = { isPlatformAdmin: true };
-    req.tenantId = null;
+    req.accessScope = { tenantId: null, clienteIdsPermitidos: null };
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         DeleteUnidade,
@@ -34,8 +33,7 @@ describe('DeleteUnidade', () => {
       clienteId === 'cliente-A' ? ({ clienteId: 'cliente-A' } as any) : null,
     );
 
-    req.user = { isPlatformAdmin: false };
-    req.tenantId = 'cliente-B';
+    req.accessScope = { tenantId: 'cliente-B', clienteIdsPermitidos: ['cliente-B'] };
 
     await expect(useCase.execute('unidade-uuid')).rejects.toBeDefined();
     expect(writeRepo.deleteUnidade).not.toHaveBeenCalled();
@@ -45,8 +43,7 @@ describe('DeleteUnidade', () => {
     readRepo.findUnidadeById.mockResolvedValue({ clienteId: 'cliente-A' } as any);
     writeRepo.deleteUnidade.mockResolvedValue();
 
-    req.user = { isPlatformAdmin: false };
-    req.tenantId = 'cliente-A';
+    req.accessScope = { tenantId: 'cliente-A', clienteIdsPermitidos: ['cliente-A'] };
 
     await useCase.execute('unidade-uuid');
     expect(writeRepo.deleteUnidade).toHaveBeenCalledWith('unidade-uuid');
