@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useClienteAtivo } from '@/hooks/useClienteAtivo';
@@ -16,13 +16,14 @@ import { Input } from '@/components/ui/input';
 import {
   Loader2, Search, MapPin, ChevronRight,
   Map, PlusCircle, ListTodo, Users, RefreshCw,
-  AlertTriangle,
+  AlertTriangle, Pencil,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import PullToRefresh from '@/components/PullToRefresh';
 import { captureError } from '@/lib/sentry';
 import { useDebounce } from '@/hooks/useDebounce';
+import { carregarRascunho, formatarTempoRascunho } from '@/lib/vistoriaRascunho';
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 
@@ -394,6 +395,7 @@ const AgenteLevantamentos = () => {
                 <FocoCard
                   key={foco.id}
                   foco={foco}
+                  agenteId={usuario?.id}
                   onNavigate={() => navigate(`/agente/focos/${foco.id}`)}
                   onAcaoRapida={(statusNovo) => {
                     if (statusNovo === 'em_inspecao') {
@@ -438,6 +440,7 @@ const AgenteLevantamentos = () => {
                 <FocoCard
                   key={foco.id}
                   foco={foco}
+                  agenteId={usuario?.id}
                   onNavigate={() => navigate(`/agente/focos/${foco.id}`)}
                   onAssumir={() => claimMutation.mutate(foco.id)}
                   isPending={claimMutation.isPending}
@@ -475,13 +478,22 @@ interface FocoCardProps {
   onAssumir?:  () => void;
   isPending:   boolean;
   modoFila?:   boolean;
+  agenteId?:   string;
 }
 
-function FocoCard({ foco, onNavigate, onAcaoRapida, onAssumir, isPending, modoFila }: FocoCardProps) {
+function FocoCard({ foco, onNavigate, onAcaoRapida, onAssumir, isPending, modoFila, agenteId }: FocoCardProps) {
   const acao = ACAO_RAPIDA[foco.status as FocoRiscoStatus];
   const endereco = foco.endereco_normalizado
     ?? [foco.logradouro, foco.numero].filter(Boolean).join(', ')
     ?? '— endereço não informado';
+
+  const [rascunhoInfo, setRascunhoInfo] = useState<{ existe: boolean; savedAt?: string }>({ existe: false });
+  useEffect(() => {
+    if (!foco.imovel_id || !agenteId) return;
+    carregarRascunho(foco.imovel_id, agenteId).then((r) => {
+      if (r) setRascunhoInfo({ existe: true, savedAt: r.savedAt });
+    });
+  }, [foco.imovel_id, agenteId]);
 
   return (
     <Card
@@ -529,6 +541,12 @@ function FocoCard({ foco, onNavigate, onAcaoRapida, onAssumir, isPending, modoFi
               <p className="text-xs text-muted-foreground mt-0.5">
                 {[foco.bairro, foco.regiao_nome].filter(Boolean).join(' · ')}
               </p>
+            )}
+            {rascunhoInfo.existe && (
+              <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5">
+                <Pencil className="w-2.5 h-2.5" />
+                Rascunho salvo {rascunhoInfo.savedAt ? formatarTempoRascunho(rascunhoInfo.savedAt) : ''}
+              </span>
             )}
           </div>
         </div>

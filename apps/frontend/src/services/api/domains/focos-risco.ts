@@ -58,7 +58,7 @@ export const focosRisco = {
     motivo?: string,
     responsavelId?: string,
   ): Promise<Ret<typeof _sb.focosRisco.transicionar>> =>
-    http.post(`/focos-risco/${focoId}/transicionar`, { statusNovo, motivo, responsavelId }),
+    http.post(`/focos-risco/${focoId}/transicionar`, { statusPara: statusNovo, motivo }),
 
   iniciarInspecao: (focoId: string, observacao?: string): Promise<unknown> =>
     http.patch(`/focos-risco/${focoId}/iniciar-inspecao`, { observacao }),

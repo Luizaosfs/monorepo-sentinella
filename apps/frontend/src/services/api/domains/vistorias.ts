@@ -3,6 +3,18 @@ import { api as _sb } from '../../api-stub';
 import { qs } from '../shared/qs';
 import { deepToCamel, type Ret } from '../shared/case-mappers';
 
+function omitNullFields(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(omitNullFields);
+  if (value !== null && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>)
+        .filter(([, v]) => v !== null)
+        .map(([k, v]) => [k, omitNullFields(v)]),
+    );
+  }
+  return value;
+}
+
 export const vistorias = {
   listByAgente: (
     clienteId: string,
@@ -31,7 +43,7 @@ export const vistorias = {
   createCompleta: async (payload: Record<string, unknown>): Promise<string> => {
     const result = await http.post<{ id: string }>(
       '/vistorias/completa',
-      deepToCamel(payload) as Record<string, unknown>,
+      omitNullFields(deepToCamel(payload)) as Record<string, unknown>,
     );
     return result.id;
   },

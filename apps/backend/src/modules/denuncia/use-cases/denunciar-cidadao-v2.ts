@@ -218,7 +218,7 @@ export class DenunciarCidadaoV2 {
           cliente_id: clienteId,
           status_anterior: null,
           status_novo: 'suspeita',
-          tipo_evento: 'CRIACAO',
+          tipo_evento: 'criacao',
           motivo: 'Denúncia via canal cidadão',
         },
       })

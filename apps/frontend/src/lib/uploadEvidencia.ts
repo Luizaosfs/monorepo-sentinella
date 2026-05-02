@@ -4,7 +4,7 @@ import { captureError } from '@/lib/sentry';
 const BACKEND_URL = (import.meta.env.VITE_API_URL as string | undefined) || 'http://localhost:3333';
 
 type UploadBody = {
-  file_base64: string;
+  fileBase64: string;
   filename: string;
   folder?: string;
 };
