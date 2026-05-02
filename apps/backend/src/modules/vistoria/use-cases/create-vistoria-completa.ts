@@ -104,6 +104,7 @@ export class CreateVistoriaCompleta {
             clienteId,
             vistoriaId: id,
             qtdComFocos: 1,
+            tratado: dep.tratado ?? false,
           });
         } catch (err) {
           this.logger.error(

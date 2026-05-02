@@ -9,6 +9,8 @@ export interface CriarFocoDeVistoriaDepositoInput {
   clienteId: string;
   vistoriaId: string;
   qtdComFocos: number | null | undefined;
+  /** true = larvicida aplicado → foco auto-avança até resolvido; false → confirmado (tratamento pendente) */
+  tratado: boolean;
 }
 
 export interface CriarFocoDeVistoriaDepositoResult {
@@ -108,6 +110,56 @@ export class CriarFocoDeVistoriaDeposito {
     this.logger.log(
       `Foco auto-criado de vistoria_deposito: vistoria=${input.vistoriaId} foco=${foco.id} imovel=${vistoria.imovel_id ?? 'null'}`,
     );
+
+    // Auto-avança o status com base no tratamento aplicado na vistoria:
+    // tratado=true  → resolvido  (larvas encontradas + larvicida aplicado)
+    // tratado=false → confirmado (larvas encontradas, tratamento pendente)
+    const statusFinal = input.tratado ? 'resolvido' : 'confirmado';
+    const motivoHistorico = input.tratado
+      ? 'Vistoria com tratamento aplicado — resolução automática'
+      : 'Vistoria com larvas encontradas — aguarda tratamento';
+
+    const transicoes = input.tratado
+      ? [
+          { status_anterior: 'em_triagem',       status_novo: 'aguarda_inspecao', tipo_evento: 'transicao_status'  },
+          { status_anterior: 'aguarda_inspecao', status_novo: 'em_inspecao',      tipo_evento: 'inspecao_iniciada' },
+          { status_anterior: 'em_inspecao',      status_novo: 'confirmado',       tipo_evento: 'transicao_status'  },
+          { status_anterior: 'confirmado',       status_novo: 'em_tratamento',    tipo_evento: 'transicao_status'  },
+          { status_anterior: 'em_tratamento',    status_novo: 'resolvido',        tipo_evento: 'transicao_status'  },
+        ]
+      : [
+          { status_anterior: 'em_triagem',       status_novo: 'aguarda_inspecao', tipo_evento: 'transicao_status'  },
+          { status_anterior: 'aguarda_inspecao', status_novo: 'em_inspecao',      tipo_evento: 'inspecao_iniciada' },
+          { status_anterior: 'em_inspecao',      status_novo: 'confirmado',       tipo_evento: 'transicao_status'  },
+        ];
+
+    try {
+      await this.prisma.client.$transaction(async (tx) => {
+        await tx.focos_risco.update({
+          where: { id: foco.id },
+          data: { status: statusFinal },
+        });
+        await tx.foco_risco_historico.createMany({
+          data: transicoes.map((t) => ({
+            foco_risco_id: foco.id,
+            cliente_id: vistoria.cliente_id,
+            status_anterior: t.status_anterior,
+            status_novo: t.status_novo,
+            tipo_evento: t.tipo_evento,
+            motivo: motivoHistorico,
+          })),
+        });
+      });
+      this.logger.log(
+        `Foco auto-avançado para ${statusFinal}: foco=${foco.id} tratado=${input.tratado}`,
+      );
+    } catch (err) {
+      this.logger.error(
+        `Falha ao auto-avançar foco ${foco.id} para ${statusFinal}: ${
+          err instanceof Error ? err.message : String(err)
+        }`,
+      );
+    }
 
     try {
       await this.cruzarFocoNovoComCasos.execute({
