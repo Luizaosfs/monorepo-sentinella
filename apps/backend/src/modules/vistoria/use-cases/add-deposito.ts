@@ -47,6 +47,7 @@ export class AddDeposito {
         clienteId,
         vistoriaId,
         qtdComFocos: data.qtdComFocos,
+        tratado: data.usouLarvicida ?? false,
       });
     } catch (err) {
       this.logger.error(
