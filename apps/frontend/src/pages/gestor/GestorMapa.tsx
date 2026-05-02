@@ -178,7 +178,7 @@ export default function GestorMapa() {
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             />
-            <FocoClusterLayer focos={focosFiltrados} onFocoClick={handleFocoClick} />
+            <FocoClusterLayer focos={focosFiltrados} onFocoClick={handleFocoClick} onFocoVistoria={(foco) => navigate(`/gestor/focos/${foco.id}`)} />
             {mostrarCasos && <CasosMapaLayer casos={casos} comCruzamento={comCruzamentoSet} />}
           </MapContainer>
         )}
