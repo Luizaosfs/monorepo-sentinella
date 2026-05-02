@@ -187,8 +187,12 @@ export default function GestorFocoDetalhe() {
 
   const qc = useQueryClient();
   const atribuirMutation = useMutation({
-    mutationFn: (agenteId: string | undefined) =>
-      api.focosRisco.atribuirAgente(id!, agenteId),
+    mutationFn: async (agenteId: string | undefined) => {
+      await api.focosRisco.atribuirAgente(id!, agenteId);
+      if (foco?.status === 'em_triagem') {
+        await api.focosRisco.transicionar(id!, 'aguarda_inspecao');
+      }
+    },
     onSuccess: () => {
       const msg = foco?.status === 'em_triagem'
         ? 'Foco encaminhado para inspeção.'
@@ -961,7 +965,7 @@ export default function GestorFocoDetalhe() {
       <Dialog open={atribuirDialog} onOpenChange={setAtribuirDialog}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Atribuir Responsável</DialogTitle>
+            <DialogTitle>{foco?.status === 'em_triagem' ? 'Encaminhar para inspeção' : 'Atribuir Responsável'}</DialogTitle>
           </DialogHeader>
           <div className="py-2">
             <Select value={novoResponsavelAtribuir} onValueChange={setNovoResponsavelAtribuir}>
@@ -986,7 +990,7 @@ export default function GestorFocoDetalhe() {
               onClick={() => atribuirMutation.mutate(novoResponsavelAtribuir === '__remove__' ? undefined : novoResponsavelAtribuir)}
               disabled={atribuirMutation.isPending || !novoResponsavelAtribuir}
             >
-              {atribuirMutation.isPending ? 'Salvando...' : 'Salvar'}
+              {atribuirMutation.isPending ? 'Salvando...' : foco?.status === 'em_triagem' ? 'Encaminhar' : 'Salvar'}
             </Button>
           </DialogFooter>
         </DialogContent>
