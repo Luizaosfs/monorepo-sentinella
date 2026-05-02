@@ -2,7 +2,7 @@ import { Usuario } from '@modules/usuario/entities/usuario';
 import { UsuarioReadRepository } from '@modules/usuario/repositories/usuario-read.repository';
 import { UsuarioWriteRepository } from '@modules/usuario/repositories/usuario-write.repository';
 import { Injectable } from '@nestjs/common';
-import * as crypto from 'crypto';
+import { generateUUID } from '@shared/utils/uuid.util';
 
 import { PapelApp } from '@/decorators/roles.decorator';
 
@@ -26,7 +26,7 @@ export class PrismaUsuarioWriteRepository implements UsuarioWriteRepository {
 
     // Fase 3: auth_id gerado localmente — sem INSERT em auth.users
     // auth.users não é mais necessário para novos usuários
-    const authId = crypto.randomUUID();
+    const authId = generateUUID();
 
     const data = PrismaUsuarioMapper.toCreatePrisma(usuario);
     const created = await this.prisma.client.usuarios.create({

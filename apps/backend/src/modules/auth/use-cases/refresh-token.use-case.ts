@@ -1,3 +1,5 @@
+import { createHash } from 'crypto';
+
 import { HttpException, Injectable, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
@@ -50,7 +52,7 @@ export class RefreshTokenUseCase {
     }
 
     // Valida token na whitelist — rejeita tokens usados, revogados ou expirados
-    const tokenHash = crypto.createHash('sha256').update(input.refreshToken).digest('hex');
+    const tokenHash = createHash('sha256').update(input.refreshToken).digest('hex');
     const tokenRecord = await this.prisma.client.refresh_tokens.findUnique({
       where: { token_hash: tokenHash },
     });
@@ -91,7 +93,7 @@ export class RefreshTokenUseCase {
 
     // Rotação: invalida token anterior (condicional em used_at IS NULL) e registra o novo.
     // updateMany com where used_at: null evita race de duas refresh concorrentes vencerem ambas.
-    const newTokenHash = crypto.createHash('sha256').update(newRefreshToken).digest('hex');
+    const newTokenHash = createHash('sha256').update(newRefreshToken).digest('hex');
     await this.prisma.client.$transaction(async (tx) => {
       const invalidated = await tx.refresh_tokens.updateMany({
         where: { id: tokenRecord.id, used_at: null },
