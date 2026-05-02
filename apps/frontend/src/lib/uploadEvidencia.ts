@@ -6,11 +6,12 @@ const BACKEND_URL = (import.meta.env.VITE_API_URL as string | undefined) || 'htt
 type UploadBody = {
   fileBase64: string;
   filename: string;
-  folder?: string;
+  modulo?: string;
 };
 
 /**
- * Envia arquivo para o endpoint NestJS /cloudinary/upload com JWT atual.
+ * Envia arquivo para o endpoint NestJS /cloudinary/upload-evidencia com JWT atual.
+ * O backend monta a pasta automaticamente como sentinella/{tenantId}/{modulo}.
  */
 export async function invokeUploadEvidencia(
   body: UploadBody,
@@ -21,13 +22,13 @@ export async function invokeUploadEvidencia(
     return { error: new Error('Sessão não encontrada. Faça login novamente.') };
   }
 
-  const res = await fetch(`${BACKEND_URL}/cloudinary/upload`, {
+  const res = await fetch(`${BACKEND_URL}/cloudinary/upload-evidencia`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${accessToken}`,
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify({ fileBase64: body.fileBase64, modulo: body.modulo ?? 'vistoria' }),
     credentials: 'include',
   });
 
@@ -54,10 +55,8 @@ export async function invokeUploadEvidencia(
   }
 
   if (parsed && typeof parsed === 'object' && parsed !== null && 'url' in parsed && (parsed as { url: unknown }).url) {
-    return {
-      url: (parsed as { url: string }).url,
-      public_id: (parsed as { public_id?: string }).public_id,
-    };
+    const p = parsed as { url: string; publicId?: string; public_id?: string };
+    return { url: p.url, public_id: p.publicId ?? p.public_id };
   }
   return { error: new Error('Resposta inválida do upload') };
 }
