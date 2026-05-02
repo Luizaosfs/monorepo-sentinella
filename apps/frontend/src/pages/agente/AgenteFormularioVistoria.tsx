@@ -228,9 +228,7 @@ export default function AgenteFormularioVistoria() {
   // quando havia larvas — o frontend apenas reflete o estado resultante.
   // Único caso em que o frontend chama a API: sem larvas → descartado (backend não trata).
   const temFocosEncontrados = etapa3.depositos.some((d) => d.qtd_com_focos > 0);
-  const tratamentoAplicado =
-    etapa4.tratamentos.some((t) => t.usou_larvicida) ||
-    etapa4.tratamentos.reduce((sum, t) => sum + (t.qtd_eliminados ?? 0), 0) > 0;
+  const tratamentoAplicado = etapa4.tratamentos.some((t) => t.usou_larvicida);
   useEffect(() => {
     if (!done || wasSemAcesso || !focoId || focoClassificado || focoClassificando) return;
     setFocoClassificando(true);
