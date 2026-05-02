@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { generateUUID } from '@/lib/uuid';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, CheckCircle2, AlertTriangle, Loader2, WifiOff, Cloud, ThumbsUp, ThumbsDown, UserCheck } from 'lucide-react';
@@ -178,7 +179,7 @@ export default function AgenteFormularioVistoria() {
   const [focoClassificado, setFocoClassificado] = useState<'confirmado' | 'descartado' | 'resolvido' | null>(null);
   const [focoClassificando, setFocoClassificando] = useState(false);
   // Gerada uma vez por montagem — garante idempotência no RPC (evita 409 em retry/double-click)
-  const [idempotencyKey] = useState(() => crypto.randomUUID());
+  const [idempotencyKey] = useState(() => generateUUID());
 
   // ── Comandos de voz para navegação entre etapas (Módulo 5.3) ─────────────
   const etapaRef = useRef(etapa);

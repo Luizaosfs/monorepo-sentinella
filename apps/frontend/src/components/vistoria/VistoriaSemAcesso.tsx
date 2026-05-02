@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { generateUUID } from '@/lib/uuid';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -83,7 +84,7 @@ export function VistoriaSemAcesso({
   const contadorTentativas = vistorias.filter((v) => !v.acesso_realizado).length;
 
   // Gerada uma vez por montagem — garante idempotência no RPC (evita 409 em retry/double-click)
-  const [idempotencyKey] = useState(() => crypto.randomUUID());
+  const [idempotencyKey] = useState(() => generateUUID());
 
   const [motivo, setMotivo] = useState<MotivoSemAcesso | null>(null);
   const [horario, setHorario] = useState<HorarioSugerido | null>(null);

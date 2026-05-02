@@ -19,6 +19,7 @@
  */
 
 import { StatusAtendimento, TipoDeposito, TipoAtividade, FocoRiscoStatus } from '@/types/database';
+import { generateUUID } from '@/lib/uuid';
 
 const DB_NAME = 'sentinela-offline';
 const STORE   = 'operations';
@@ -146,7 +147,7 @@ export async function enqueue(op: DistributiveOmit<QueuedOperation, 'id'>): Prom
   const db = await openDb();
   // Garantir idempotency_key para save_vistoria se não vier do caller
   const opWithKey = op.type === 'save_vistoria' && !op.payload.idempotency_key
-    ? { ...op, payload: { ...op.payload, idempotency_key: crypto.randomUUID() } }
+    ? { ...op, payload: { ...op.payload, idempotency_key: generateUUID() } }
     : op;
   const entry = { ...opWithKey, id: `${Date.now()}-${Math.random().toString(36).slice(2)}` };
   return new Promise((resolve, reject) => {

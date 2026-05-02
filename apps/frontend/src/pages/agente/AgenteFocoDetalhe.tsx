@@ -38,6 +38,7 @@ import {
   useAtualizarStatusFoco,
 } from '@/hooks/queries/useFocosRisco';
 import { useReinspecoesByFoco } from '@/hooks/queries/useReinspecoes';
+import { useRegioes } from '@/hooks/queries/useRegioes';
 import { useClienteAtivo } from '@/hooks/useClienteAtivo';
 import { logEvento } from '@/lib/pilotoEventos';
 import type { FocoRiscoAtivo, FocoRiscoStatus, TipoImovel } from '@/types/database';
@@ -70,10 +71,13 @@ export default function AgenteFocoDetalhe() {
     numero: '',
     quarteirao: '',
     tipo_imovel: 'residencial' as TipoImovel,
+    bairro: '',
+    regiao_id: '',
   });
   const [cadastrandoImovel, setCadastrandoImovel] = useState(false);
 
   const { clienteId } = useClienteAtivo();
+  const { data: regioes = [] } = useRegioes(clienteId);
   const iniciarInspecao = useIniciarInspecaoFoco();
   const atualizarStatus = useAtualizarStatusFoco();
 
@@ -88,11 +92,16 @@ export default function AgenteFocoDetalhe() {
     staleTime: STALE.SHORT,
   });
 
-  // Pré-preenche logradouro do formulário de imóvel quando o foco carrega
+  // Pré-preenche campos do formulário de imóvel quando o foco carrega
   useEffect(() => {
     if (foco && !foco.imovel_id) {
       const logradouro = foco.logradouro ?? foco.endereco_normalizado ?? '';
-      setImovelForm((prev) => prev.logradouro ? prev : { ...prev, logradouro });
+      setImovelForm((prev) => ({
+        ...prev,
+        logradouro: prev.logradouro || logradouro,
+        bairro: prev.bairro || (foco.bairro ?? ''),
+        regiao_id: prev.regiao_id || (foco.regiao_id ?? ''),
+      }));
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [foco?.id]);
@@ -254,11 +263,11 @@ export default function AgenteFocoDetalhe() {
         toast.info('Imóvel já cadastrado neste endereço — vinculado ao foco.');
       } else {
         imovel = await api.imoveis.create({
-          regiao_id: foco.regiao_id ?? undefined,
+          regiao_id: imovelForm.regiao_id || foco.regiao_id || undefined,
           tipo_imovel: imovelForm.tipo_imovel,
           logradouro: logradouro || undefined,
           numero,
-          bairro: foco.bairro ?? undefined,
+          bairro: imovelForm.bairro || foco.bairro || undefined,
           quarteirao: imovelForm.quarteirao.trim() || undefined,
           latitude: foco.latitude ?? undefined,
           longitude: foco.longitude ?? undefined,
@@ -433,6 +442,34 @@ export default function AgenteFocoDetalhe() {
                         className="h-9 text-sm"
                       />
                     </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold">Bairro / Região</Label>
+                    {regioes.length > 0 ? (
+                      <Select
+                        value={imovelForm.regiao_id}
+                        onValueChange={(v) => {
+                          const reg = regioes.find((r: { id: string; nome: string }) => r.id === v);
+                          setImovelForm((p) => ({ ...p, regiao_id: v, bairro: reg?.nome ?? p.bairro }));
+                        }}
+                      >
+                        <SelectTrigger className="h-9 text-sm">
+                          <SelectValue placeholder="Selecione o bairro..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {regioes.map((r: { id: string; nome: string }) => (
+                            <SelectItem key={r.id} value={r.id}>{r.nome}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Input
+                        placeholder="Ex: Centro, Setsul..."
+                        value={imovelForm.bairro}
+                        onChange={(e) => setImovelForm((p) => ({ ...p, bairro: e.target.value }))}
+                        className="h-9 text-sm"
+                      />
+                    )}
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs font-semibold">Tipo de imóvel</Label>

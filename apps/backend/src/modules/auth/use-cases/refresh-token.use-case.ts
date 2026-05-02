@@ -1,7 +1,7 @@
 import { HttpException, Injectable, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
-import * as crypto from 'crypto';
+import { generateUUID } from '@shared/utils/uuid.util';
 import { AuthException } from 'src/guards/errors/auth.exception';
 import { env } from 'src/lib/env/server';
 
@@ -85,7 +85,7 @@ export class RefreshTokenUseCase {
     });
 
     const newRefreshToken = await this.jwtService.signAsync(
-      { sub: usuario.auth_id, type: 'refresh', jti: crypto.randomUUID() },
+      { sub: usuario.auth_id, type: 'refresh', jti: generateUUID() },
       { secret: env.SECRET_JWT, expiresIn: env.REFRESH_TOKEN_EXPIRES_IN as any },
     );
 
