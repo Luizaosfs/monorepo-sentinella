@@ -8,8 +8,8 @@
       restart: unless-stopped
       environment:
         POSTGRES_DB: sentinella
-        POSTGRES_USER: luizAntonio
-        POSTGRES_PASSWORD: "Sentinella147852369"
+        POSTGRES_USER: ${POSTGRES_USER}
+        POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       volumes:
         - postgres_data:/var/lib/postgresql/data
       networks:
@@ -24,15 +24,21 @@
       depends_on:
         - postgres
       environment:
-        VAPID_PUBLIC_KEY: BLm_JDjfGlF2uynGyHBmCBSRchrolRdkiFXmeiPhZlTsaLu-YO97oyN9_iTLiYXcWsX_9nIJ1ni0lxSmrjNGvbc
-        VAPID_PRIVATE_KEY: OI45JTnbr9onkOyQuisH0BBaGQcoYLaeqbiBlpMTaVw
-        VAPID_SUBJECT: mailto:luizantonio@sentinellamap.com.br
-        CANAL_CIDADAO_IP_SALT: ccis9e0998c60eb7d08d832ef1964ae021faf6bb65321b0bf28e90f606d2fd8412fe
         NODE_ENV: production
         PORT: 3000
-        DATABASE_URL: "postgresql://luizAntonio:Sentinella147852369@postgres:5432/sentinella"
-        SECRET_JWT: 9e0998c60eb7d08d832ef1964ae021faf6bb65321b0bf28e90f606d2fd8412fe
+        DATABASE_URL: ${DATABASE_URL}
+        SECRET_JWT: ${SECRET_JWT}
         CLIENT_URL: "http://177.7.37.14:8080"
+        CANAL_CIDADAO_IP_SALT: ${CANAL_CIDADAO_IP_SALT}
+        CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
+        CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+        CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
+        CLOUDINARY_UPLOAD_PRESET: "levantamento_manual"
+        ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+        CNES_API_URL: "https://apidadosabertos.saude.gov.br"
+        VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY}
+        VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY}
+        VAPID_SUBJECT: ${VAPID_SUBJECT}
       ports:
         - "3000:3000"
       networks:
@@ -44,6 +50,10 @@
         dockerfile: apps/frontend/Dockerfile
         args:
           VITE_API_URL: "http://177.7.37.14:3000"
+          VITE_GOOGLE_MAPS_KEY: ${VITE_GOOGLE_MAPS_KEY}
+          VITE_CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
+          VITE_CLOUDINARY_UPLOAD_PRESET: "levantamento_manual"
+          VITE_SENTRY_DSN: ${VITE_SENTRY_DSN}
       container_name: sentinella-web
       restart: unless-stopped
       depends_on:

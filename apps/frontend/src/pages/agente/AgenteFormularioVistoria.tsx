@@ -523,7 +523,7 @@ export default function AgenteFormularioVistoria() {
           const up = await invokeUploadEvidencia({
             fileBase64: base64,
             filename: `assinatura_${agenteId}_${Date.now()}.${extAssinatura}`,
-            folder: 'assinaturas',
+            modulo: 'assinaturas',
           });
           if ('url' in up) {
             assinaturaUrl = up.url;
