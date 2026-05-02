@@ -39,8 +39,12 @@ import { GetExecutivoBairrosVariacao } from './use-cases/get-executivo-bairros-v
 import { GetExecutivoComparativoCiclos } from './use-cases/get-executivo-comparativo-ciclos';
 
 // Regional / Analytics
+import { GetRegionalComparativo } from './use-cases/get-regional-comparativo';
+import { GetRegionalEvolucao } from './use-cases/get-regional-evolucao';
+import { GetRegionalMunicipioDetalhe } from './use-cases/get-regional-municipio-detalhe';
 import { GetRegionalKpi } from './use-cases/get-regional-kpi';
 import { GetRegionalRelatorioCSV } from './use-cases/get-regional-relatorio-csv';
+import { GetRegionalRelatorioPDF } from './use-cases/get-regional-relatorio-pdf';
 import { GetRegionalResumo } from './use-cases/get-regional-resumo';
 import { GetRegionalSla } from './use-cases/get-regional-sla';
 import { GetRegionalUso } from './use-cases/get-regional-uso';
@@ -100,8 +104,12 @@ import { GerarResumoDiario } from './use-cases/gerar-resumo-diario';
     GetExecutivoBairrosVariacao,
     GetExecutivoComparativoCiclos,
     // Regional
+    GetRegionalComparativo,
+    GetRegionalEvolucao,
+    GetRegionalMunicipioDetalhe,
     GetRegionalKpi,
     GetRegionalRelatorioCSV,
+    GetRegionalRelatorioPDF,
     GetRegionalResumo,
     GetRegionalSla,
     GetRegionalUso,

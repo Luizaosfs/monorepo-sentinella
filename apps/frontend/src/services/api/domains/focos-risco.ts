@@ -63,7 +63,7 @@ export const focosRisco = {
   iniciarInspecao: (focoId: string, observacao?: string): Promise<unknown> =>
     http.patch(`/focos-risco/${focoId}/iniciar-inspecao`, { observacao }),
 
-  atribuirAgente: (focoId: string, agenteId: string, motivo?: string): Promise<void> =>
+  atribuirAgente: (focoId: string, agenteId: string | undefined, motivo?: string): Promise<void> =>
     http.patch(`/focos-risco/${focoId}/atribuir-agente`, { agenteId, motivo }),
 
   atribuirAgenteLote: (

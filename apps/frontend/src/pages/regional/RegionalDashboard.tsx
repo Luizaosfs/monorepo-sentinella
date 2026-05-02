@@ -13,7 +13,7 @@ import {
   Treemap, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend,
   Cell, PieChart, Pie, LineChart, Line, AreaChart, Area,
 } from 'recharts';
-import { useRegionalKpi, useRegionalResumo, useRegionalSla, useRegionalUso, useRegionalVulnerabilidade } from '@/hooks/queries/useRegionalData';
+import { useRegionalComparativo, useRegionalEvolucao, useRegionalKpi, useRegionalMunicipioDetalhe, useRegionalResumo, useRegionalSla, useRegionalUso, useRegionalVulnerabilidade } from '@/hooks/queries/useRegionalData';
 import { useClienteAtivo } from '@/hooks/useClienteAtivo';
 import { http, tokenStore } from '@sentinella/api-client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,10 +24,13 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import {
+  Sheet, SheetContent, SheetHeader, SheetTitle,
+} from '@/components/ui/sheet';
+import {
   Loader2, MapPin, CheckCircle2, AlertTriangle, Activity, TrendingUp,
-  Download, FileText, Sparkles, AlertCircle, WifiOff, BarChart3, Map as MapIcon, PieChart as PieIcon,
+  Download, FileText, Sparkles, AlertCircle, WifiOff, BarChart3, Map as MapIcon, PieChart as PieIcon, ArrowLeftRight, Search,
 } from 'lucide-react';
-import type { RegionalKpiMunicipio, RegionalResumoMunicipio, RegionalSlaMunicipio, RegionalUsoSistema, RegionalVulnerabilidadeMunicipio } from '@/types/database';
+import type { RegionalComparativoResponse, RegionalEvolucaoItem, RegionalKpiMunicipio, RegionalMunicipioDetalhe, RegionalResumoMunicipio, RegionalSlaMunicipio, RegionalUsoSistema, RegionalVulnerabilidadeMunicipio } from '@/types/database';
 
 // ── Tipos internos ────────────────────────────────────────────────────────────
 
@@ -489,6 +492,497 @@ function MarkdownRenderer({ content }: { content: string }) {
   return <div className="space-y-0.5">{elements}</div>;
 }
 
+// ── Drill-down por município ──────────────────────────────────────────────────
+
+function MunicipioDetalheSheet({
+  clienteId,
+  onClose,
+}: {
+  clienteId: string | null;
+  onClose: () => void;
+}) {
+  const { data, isLoading, isError } = useRegionalMunicipioDetalhe(clienteId ?? undefined, !!clienteId);
+
+  const distVuln = data ? [
+    { nome: 'Baixa',   valor: data.vulnerabilidade.vulnerabilidade_baixa,   fill: '#86efac' },
+    { nome: 'Média',   valor: data.vulnerabilidade.vulnerabilidade_media,   fill: '#fde047' },
+    { nome: 'Alta',    valor: data.vulnerabilidade.vulnerabilidade_alta,    fill: '#fb923c' },
+    { nome: 'Crítica', valor: data.vulnerabilidade.vulnerabilidade_critica, fill: '#ef4444' },
+  ] : [];
+
+  const distRisco = data ? [
+    { nome: 'Baixo',   valor: data.vulnerabilidade.risco_vetorial_baixo,   fill: '#86efac' },
+    { nome: 'Médio',   valor: data.vulnerabilidade.risco_vetorial_medio,   fill: '#fde047' },
+    { nome: 'Alto',    valor: data.vulnerabilidade.risco_vetorial_alto,    fill: '#fb923c' },
+    { nome: 'Crítico', valor: data.vulnerabilidade.risco_vetorial_critico, fill: '#ef4444' },
+  ] : [];
+
+  const distPrioridade = data ? [
+    { nome: 'P1', valor: data.vulnerabilidade.prioridade_p1, fill: '#ef4444' },
+    { nome: 'P2', valor: data.vulnerabilidade.prioridade_p2, fill: '#f97316' },
+    { nome: 'P3', valor: data.vulnerabilidade.prioridade_p3, fill: '#eab308' },
+    { nome: 'P4', valor: data.vulnerabilidade.prioridade_p4, fill: '#84cc16' },
+    { nome: 'P5', valor: data.vulnerabilidade.prioridade_p5, fill: '#22c55e' },
+  ] : [];
+
+  const evolucaoChart = data?.evolucao.slice(-6).map(r => ({
+    label: formatPeriodo(r.periodo),
+    total_focos: r.total_focos,
+    focos_resolvidos: r.focos_resolvidos,
+  })) ?? [];
+
+  return (
+    <Sheet open={!!clienteId} onOpenChange={open => !open && onClose()}>
+      <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto">
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center gap-2 h-48 text-muted-foreground">
+            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+            <span className="text-sm">Carregando dados do município...</span>
+          </div>
+        ) : isError || !data ? (
+          <div className="flex flex-col items-center justify-center gap-2 h-48 text-muted-foreground">
+            <AlertTriangle className="w-6 h-6 text-amber-500" />
+            <span className="text-sm">Não foi possível carregar os dados regionais.</span>
+          </div>
+        ) : (
+          <div className="space-y-5 pb-8">
+            {/* Cabeçalho */}
+            <SheetHeader className="space-y-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <SheetTitle className="text-lg">{data.cliente.nome}</SheetTitle>
+                <Badge className="bg-violet-100 text-violet-800 border-0 text-xs">Análise regional</Badge>
+              </div>
+              {(data.cliente.cidade || data.cliente.uf) && (
+                <p className="text-sm text-muted-foreground">
+                  {[data.cliente.cidade, data.cliente.uf].filter(Boolean).join(' · ')}
+                </p>
+              )}
+            </SheetHeader>
+
+            {/* KPI cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {[
+                { label: 'Focos totais',  value: fmt(data.resumo.total_focos) },
+                { label: 'Ativos',        value: fmt(data.resumo.focos_ativos) },
+                { label: 'Resolvidos',    value: fmt(data.resumo.focos_resolvidos) },
+                { label: 'Taxa resolução',value: pct(data.resumo.taxa_resolucao_pct) },
+                { label: 'Vistorias',     value: fmt(data.resumo.total_vistorias) },
+                { label: 'Vuln. crítica', value: fmt(data.resumo.vulnerabilidade_critica_count) },
+                { label: 'Risco vet. crit.', value: fmt(data.resumo.risco_vetorial_critico_count) },
+                { label: 'Prioridade P1', value: fmt(data.resumo.prioridade_p1_count) },
+              ].map(k => (
+                <Card key={k.label}>
+                  <CardContent className="pt-3 pb-2">
+                    <p className="text-xs text-muted-foreground">{k.label}</p>
+                    <p className="text-xl font-bold font-mono">{k.value}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {/* Distribuição vulnerabilidade */}
+            <Card>
+              <CardHeader className="pb-1"><CardTitle className="text-sm">Distribuição — Vulnerabilidade & Risco</CardTitle></CardHeader>
+              <CardContent className="space-y-3">
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Vulnerabilidade domiciliar</p>
+                  <div className="flex gap-2 flex-wrap">
+                    {distVuln.map(d => (
+                      <div key={d.nome} className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: d.fill }} />
+                        <span className="text-xs">{d.nome}: <strong>{d.valor}</strong></span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Risco vetorial</p>
+                  <div className="flex gap-2 flex-wrap">
+                    {distRisco.map(d => (
+                      <div key={d.nome} className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: d.fill }} />
+                        <span className="text-xs">{d.nome}: <strong>{d.valor}</strong></span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Alertas saúde — urgente: <strong>{data.vulnerabilidade.alerta_saude_urgente}</strong> / atenção: <strong>{data.vulnerabilidade.alerta_saude_atencao}</strong> / normal: <strong>{data.vulnerabilidade.alerta_saude_normal}</strong></p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Prioridades (vistorias)</p>
+                  <div className="flex gap-2 flex-wrap">
+                    {distPrioridade.map(d => (
+                      <div key={d.nome} className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: d.fill }} />
+                        <span className="text-xs">{d.nome}: <strong>{d.valor}</strong></span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Evolução — últimos 6 meses */}
+            {evolucaoChart.length > 0 && (
+              <Card>
+                <CardHeader className="pb-1"><CardTitle className="text-sm flex items-center gap-1.5"><TrendingUp className="w-3.5 h-3.5" /> Evolução — últimos 6 meses</CardTitle></CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={160}>
+                    <LineChart data={evolucaoChart} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
+                      <XAxis dataKey="label" tick={{ fontSize: 10 }} />
+                      <YAxis tick={{ fontSize: 10 }} />
+                      <Tooltip formatter={(v: number) => fmt(v)} contentStyle={TOOLTIP_STYLE} />
+                      <Legend wrapperStyle={{ fontSize: 11 }} />
+                      <Line type="monotone" dataKey="total_focos" stroke="#4F46E5" strokeWidth={2} name="Total" dot={false} />
+                      <Line type="monotone" dataKey="focos_resolvidos" stroke="#10B981" strokeWidth={2} name="Resolvidos" dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                  <Table className="mt-2">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-xs">Período</TableHead>
+                        <TableHead className="text-right text-xs">Focos</TableHead>
+                        <TableHead className="text-right text-xs">Resolvidos</TableHead>
+                        <TableHead className="text-right text-xs">Taxa</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {data.evolucao.slice(-6).map(r => (
+                        <TableRow key={r.periodo}>
+                          <TableCell className="font-mono text-xs py-1">{formatPeriodo(r.periodo)}</TableCell>
+                          <TableCell className="text-right font-mono text-xs py-1">{fmt(r.total_focos)}</TableCell>
+                          <TableCell className="text-right font-mono text-xs py-1">{fmt(r.focos_resolvidos)}</TableCell>
+                          <TableCell className="text-right text-xs py-1">{pct(r.taxa_resolucao_pct)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Comparativo */}
+            {data.comparativo && (
+              <Card>
+                <CardHeader className="pb-1"><CardTitle className="text-sm flex items-center gap-1.5"><ArrowLeftRight className="w-3.5 h-3.5" /> Comparativo — últimos 30 dias</CardTitle></CardHeader>
+                <CardContent>
+                  <div className="text-xs text-muted-foreground mb-3">
+                    Atual: {data.comparativo.periodo_atual.data_inicio} → {data.comparativo.periodo_atual.data_fim} ·
+                    Anterior: {data.comparativo.periodo_anterior.data_inicio} → {data.comparativo.periodo_anterior.data_fim}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {([
+                      { label: 'Focos', atual: data.comparativo.periodo_atual.total_focos, anterior: data.comparativo.periodo_anterior.total_focos, var_: data.comparativo.variacao.total_focos_pct, sentido: 'melhor_baixo' },
+                      { label: 'Resolvidos', atual: data.comparativo.periodo_atual.focos_resolvidos, anterior: data.comparativo.periodo_anterior.focos_resolvidos, var_: data.comparativo.variacao.focos_resolvidos_pct, sentido: 'melhor_alto' },
+                      { label: 'Vistorias', atual: data.comparativo.periodo_atual.total_vistorias, anterior: data.comparativo.periodo_anterior.total_vistorias, var_: data.comparativo.variacao.total_vistorias_pct, sentido: 'melhor_alto' },
+                      { label: 'Taxa resolução', atual: `${data.comparativo.periodo_atual.taxa_resolucao_pct.toFixed(1)}%`, anterior: `${data.comparativo.periodo_anterior.taxa_resolucao_pct.toFixed(1)}%`, var_: data.comparativo.variacao.taxa_resolucao_pp, sentido: 'melhor_alto' },
+                    ] as { label: string; atual: string | number; anterior: string | number; var_: number | null; sentido: 'melhor_alto' | 'melhor_baixo' }[]).map(c => {
+                      const interp = interpretacao(c.var_, c.sentido);
+                      return (
+                        <div key={c.label} className="rounded-lg border p-2.5">
+                          <p className="text-xs text-muted-foreground">{c.label}</p>
+                          <p className="text-base font-bold font-mono">{String(c.atual)}</p>
+                          <p className="text-xs text-muted-foreground">ant. {String(c.anterior)}</p>
+                          {c.var_ === null ? (
+                            <p className="text-xs font-medium mt-0.5 text-slate-500">Sem base anterior</p>
+                          ) : (
+                            <p className={`text-xs font-medium mt-0.5 ${interp.color}`}>
+                              {fmtVariacao(c.var_, c.label === 'Taxa resolução' ? 'pp' : '%')} · {interp.label}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )}
+      </SheetContent>
+    </Sheet>
+  );
+}
+
+// ── Comparativo de períodos ───────────────────────────────────────────────────
+
+function fmtVariacao(v: number | null, unit = '%'): string {
+  if (v === null) return '—';
+  const sign = v > 0 ? '+' : '';
+  return `${sign}${v.toFixed(1)}${unit}`;
+}
+
+function interpretacao(v: number | null, sentido: 'melhor_alto' | 'melhor_baixo'): { label: string; color: string } {
+  if (v === null) return { label: 'Sem base anterior', color: 'text-slate-500' };
+  if (Math.abs(v) < 1) return { label: 'Estável', color: 'text-slate-600' };
+  const subiu = v > 0;
+  if (sentido === 'melhor_alto') {
+    return subiu ? { label: 'Melhorou', color: 'text-emerald-600' } : { label: 'Piorou', color: 'text-red-600' };
+  }
+  return subiu ? { label: 'Piorou', color: 'text-red-600' } : { label: 'Melhorou', color: 'text-emerald-600' };
+}
+
+function ComparativoContent({ data }: { data: RegionalComparativoResponse }) {
+  const { periodo_atual, periodo_anterior, variacao } = data;
+
+  const cards: {
+    label: string;
+    atual: string | number;
+    anterior: string | number;
+    var: number | null;
+    sentido: 'melhor_alto' | 'melhor_baixo';
+    unit: string;
+  }[] = [
+    { label: 'Total focos',       atual: periodo_atual.total_focos,                anterior: periodo_anterior.total_focos,                var: variacao.total_focos_pct,             sentido: 'melhor_baixo', unit: '%' },
+    { label: 'Focos ativos',      atual: periodo_atual.focos_ativos,               anterior: periodo_anterior.focos_ativos,               var: variacao.focos_ativos_pct,            sentido: 'melhor_baixo', unit: '%' },
+    { label: 'Focos resolvidos',  atual: periodo_atual.focos_resolvidos,           anterior: periodo_anterior.focos_resolvidos,           var: variacao.focos_resolvidos_pct,        sentido: 'melhor_alto',  unit: '%' },
+    { label: 'Taxa resolução',    atual: `${periodo_atual.taxa_resolucao_pct.toFixed(1)}%`,  anterior: `${periodo_anterior.taxa_resolucao_pct.toFixed(1)}%`,  var: variacao.taxa_resolucao_pp, sentido: 'melhor_alto', unit: 'pp' },
+    { label: 'Total vistorias',   atual: periodo_atual.total_vistorias,            anterior: periodo_anterior.total_vistorias,            var: variacao.total_vistorias_pct,         sentido: 'melhor_alto',  unit: '%' },
+    { label: 'Vuln. crítica',     atual: periodo_atual.vulnerabilidade_critica_count, anterior: periodo_anterior.vulnerabilidade_critica_count, var: variacao.vulnerabilidade_critica_pct, sentido: 'melhor_baixo', unit: '%' },
+    { label: 'Risco vet. crítico',atual: periodo_atual.risco_vetorial_critico_count, anterior: periodo_anterior.risco_vetorial_critico_count, var: variacao.risco_vetorial_critico_pct, sentido: 'melhor_baixo', unit: '%' },
+    { label: 'Alertas urgentes',  atual: periodo_atual.alerta_saude_urgente_count, anterior: periodo_anterior.alerta_saude_urgente_count, var: variacao.alerta_saude_urgente_pct,    sentido: 'melhor_baixo', unit: '%' },
+    { label: 'Prioridade P1',     atual: periodo_atual.prioridade_p1_count,        anterior: periodo_anterior.prioridade_p1_count,        var: variacao.prioridade_p1_pct,           sentido: 'melhor_baixo', unit: '%' },
+  ];
+
+  return (
+    <div className="space-y-4">
+      {/* Cabeçalho dos períodos */}
+      <div className="flex flex-wrap gap-3">
+        <Card className="flex-1 min-w-[160px]">
+          <CardContent className="pt-3 pb-3">
+            <p className="text-xs text-muted-foreground uppercase tracking-wide">Período atual</p>
+            <p className="text-sm font-semibold font-mono">{periodo_atual.data_inicio} → {periodo_atual.data_fim}</p>
+          </CardContent>
+        </Card>
+        <Card className="flex-1 min-w-[160px]">
+          <CardContent className="pt-3 pb-3">
+            <p className="text-xs text-muted-foreground uppercase tracking-wide">Período anterior</p>
+            <p className="text-sm font-semibold font-mono">{periodo_anterior.data_inicio} → {periodo_anterior.data_fim}</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* 9 cards comparativos em grade 3×3 */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {cards.map(c => {
+          const interp = interpretacao(c.var, c.sentido);
+          const varStr = fmtVariacao(c.var, c.unit);
+          const isNull = c.var === null;
+          const isUp = !isNull && c.var! > 0;
+          const arrowClass = isNull
+            ? 'text-slate-400'
+            : c.sentido === 'melhor_alto'
+              ? (isUp ? 'text-emerald-600' : 'text-red-600')
+              : (isUp ? 'text-red-600' : 'text-emerald-600');
+          const arrow = isNull ? '—' : isUp ? '↑' : (c.var === 0 ? '→' : '↓');
+          return (
+            <Card key={c.label}>
+              <CardContent className="pt-4 pb-4">
+                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-2">{c.label}</p>
+                <div className="flex items-end justify-between gap-2">
+                  <div>
+                    <p className="text-xl font-bold font-mono">{String(c.atual)}</p>
+                    <p className="text-xs text-muted-foreground">ant. {String(c.anterior)}</p>
+                  </div>
+                  <div className="text-right">
+                    {isNull ? (
+                      <p className="text-xs font-medium text-slate-500 mt-1">Sem base anterior</p>
+                    ) : (
+                      <>
+                        <p className={`text-base font-bold font-mono ${arrowClass}`}>{arrow} {varStr}</p>
+                        <p className={`text-xs font-medium ${interp.color}`}>{interp.label}</p>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      {/* Tabela resumo */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Resumo comparativo</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0 overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Indicador</TableHead>
+                <TableHead className="text-right">Anterior</TableHead>
+                <TableHead className="text-right">Atual</TableHead>
+                <TableHead className="text-right">Variação</TableHead>
+                <TableHead>Interpretação</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {cards.map(c => {
+                const interp = interpretacao(c.var, c.sentido);
+                return (
+                  <TableRow key={c.label}>
+                    <TableCell className="font-medium text-sm">{c.label}</TableCell>
+                    <TableCell className="text-right font-mono text-sm">{String(c.anterior)}</TableCell>
+                    <TableCell className="text-right font-mono text-sm">{String(c.atual)}</TableCell>
+                    <TableCell className="text-right font-mono text-sm">{fmtVariacao(c.var, c.unit)}</TableCell>
+                    <TableCell><span className={`text-xs font-medium ${interp.color}`}>{interp.label}</span></TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// ── Evolução temporal ─────────────────────────────────────────────────────────
+
+const MESES_PT = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+function formatPeriodo(periodo: string): string {
+  const [year, month] = periodo.split('-');
+  return `${MESES_PT[parseInt(month, 10) - 1]}/${year.slice(2)}`;
+}
+
+function EvolucaoContent({ evolucao }: { evolucao: RegionalEvolucaoItem[] }) {
+  const totalFocos      = evolucao.reduce((s, r) => s + r.total_focos, 0);
+  const totalResolvidos = evolucao.reduce((s, r) => s + r.focos_resolvidos, 0);
+  const totalVistorias  = evolucao.reduce((s, r) => s + r.total_vistorias, 0);
+  const totalVulnCrit   = evolucao.reduce((s, r) => s + r.vulnerabilidade_critica_count, 0);
+  const taxaMedia = evolucao.length
+    ? evolucao.reduce((s, r) => s + r.taxa_resolucao_pct, 0) / evolucao.length
+    : 0;
+
+  const chartData = evolucao.map(r => ({ ...r, label: formatPeriodo(r.periodo) }));
+
+  return (
+    <div className="space-y-4">
+      {/* Cards de resumo */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <Card>
+          <CardContent className="pt-4 pb-3">
+            <p className="text-xs text-muted-foreground">Total focos</p>
+            <p className="text-2xl font-bold font-mono">{fmt(totalFocos)}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4 pb-3">
+            <p className="text-xs text-muted-foreground">Resolvidos</p>
+            <p className="text-2xl font-bold font-mono text-emerald-600">{fmt(totalResolvidos)}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4 pb-3">
+            <p className="text-xs text-muted-foreground">Taxa média resolução</p>
+            <p className="text-2xl font-bold font-mono">{pct(taxaMedia)}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4 pb-3">
+            <p className="text-xs text-muted-foreground">Total vistorias</p>
+            <p className="text-2xl font-bold font-mono">{fmt(totalVistorias)}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4 pb-3">
+            <p className="text-xs text-muted-foreground">Vuln. crítica acum.</p>
+            <p className="text-2xl font-bold font-mono text-red-600">{fmt(totalVulnCrit)}</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Gráfico de linha: focos totais vs resolvidos */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <TrendingUp className="w-4 h-4 text-primary" /> Focos por Mês
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={220}>
+            <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+              <XAxis dataKey="label" tick={{ fontSize: 11 }} />
+              <YAxis tick={{ fontSize: 11 }} />
+              <Tooltip formatter={(v: number) => fmt(v)} />
+              <Legend wrapperStyle={{ fontSize: 12 }} />
+              <Line type="monotone" dataKey="total_focos" stroke="#4F46E5" strokeWidth={2} name="Total focos" dot={false} />
+              <Line type="monotone" dataKey="focos_resolvidos" stroke="#10B981" strokeWidth={2} name="Resolvidos" dot={false} />
+            </LineChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
+
+      {/* Gráfico de barras: indicadores críticos */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-amber-500" /> Indicadores Críticos por Mês
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={200}>
+            <BarChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+              <XAxis dataKey="label" tick={{ fontSize: 11 }} />
+              <YAxis tick={{ fontSize: 11 }} />
+              <Tooltip formatter={(v: number) => fmt(v)} />
+              <Legend wrapperStyle={{ fontSize: 12 }} />
+              <Bar dataKey="vulnerabilidade_critica_count" fill="#DC2626" name="Vuln. Crítica" />
+              <Bar dataKey="risco_vetorial_critico_count"  fill="#D97706" name="Risco Vet. Crítico" />
+              <Bar dataKey="alerta_saude_urgente_count"    fill="#7C3AED" name="Alert. Urgentes" />
+            </BarChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
+
+      {/* Tabela mensal */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Detalhamento Mensal</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0 overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Período</TableHead>
+                <TableHead className="text-right">Focos</TableHead>
+                <TableHead className="text-right">Resolvidos</TableHead>
+                <TableHead className="text-right">Taxa Res.</TableHead>
+                <TableHead className="text-right">Vistorias</TableHead>
+                <TableHead className="text-right">Vuln. Crit.</TableHead>
+                <TableHead className="text-right">Risco Crit.</TableHead>
+                <TableHead className="text-right">Alert. Urg.</TableHead>
+                <TableHead className="text-right">P1</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {evolucao.map((row) => (
+                <TableRow key={row.periodo}>
+                  <TableCell className="font-mono text-sm">{formatPeriodo(row.periodo)}</TableCell>
+                  <TableCell className="text-right font-mono">{fmt(row.total_focos)}</TableCell>
+                  <TableCell className="text-right font-mono">{fmt(row.focos_resolvidos)}</TableCell>
+                  <TableCell className="text-right">
+                    <Badge className={`border-0 text-xs ${row.taxa_resolucao_pct >= 70 ? 'bg-emerald-100 text-emerald-800' : row.taxa_resolucao_pct >= 40 ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-800'}`}>
+                      {pct(row.taxa_resolucao_pct)}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right font-mono">{fmt(row.total_vistorias)}</TableCell>
+                  <TableCell className="text-right font-mono text-red-600">{fmt(row.vulnerabilidade_critica_count)}</TableCell>
+                  <TableCell className="text-right font-mono text-amber-600">{fmt(row.risco_vetorial_critico_count)}</TableCell>
+                  <TableCell className="text-right font-mono text-violet-600">{fmt(row.alerta_saude_urgente_count)}</TableCell>
+                  <TableCell className="text-right font-mono">{fmt(row.prioridade_p1_count)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 export default function RegionalDashboard() {
   const { agrupamentoId } = useClienteAtivo();
   const [insights, setInsights] = useState<string | null>(null);
@@ -504,12 +998,15 @@ export default function RegionalDashboard() {
 
   const [exportandoCsv, setExportandoCsv] = useState(false);
   const [exportandoPdf, setExportandoPdf] = useState(false);
+  const [detalheClienteId, setDetalheClienteId] = useState<string | null>(null);
 
   const { data: kpi = [], isLoading: loadingKpi, isError: errorKpi, refetch: refetchKpi } = useRegionalKpi();
   const { data: sla = [], isLoading: loadingSla } = useRegionalSla();
   const { data: uso = [], isLoading: loadingUso } = useRegionalUso();
   const { data: resumo = [] } = useRegionalResumo();
   const { data: vulnerabilidade = [] } = useRegionalVulnerabilidade();
+  const { data: evolucao = [], isLoading: loadingEvolucao } = useRegionalEvolucao();
+  const { data: comparativo, isLoading: loadingComparativo } = useRegionalComparativo();
 
   const loading = loadingKpi || loadingSla || loadingUso;
 
@@ -680,66 +1177,32 @@ export default function RegionalDashboard() {
     }
   }, []);
 
-  // Gerar PDF client-side com jsPDF + autotable
+  // Download PDF autenticado do backend (relatório executivo oficial)
   const gerarPDF = useCallback(async () => {
     setExportandoPdf(true);
     try {
-      const [{ jsPDF }, { default: autoTable }] = await Promise.all([
-        import('jspdf'),
-        import('jspdf-autotable'),
-      ]);
-      const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-      const today = new Date().toLocaleDateString('pt-BR');
-
-      doc.setFontSize(18);
-      doc.setTextColor(30, 30, 30);
-      doc.text('Relatório Regional — Sentinella', 14, 18);
-      doc.setFontSize(10);
-      doc.setTextColor(100, 100, 100);
-      doc.text(`Gerado em ${today}  •  ${totais.municipios} município${totais.municipios !== 1 ? 's' : ''}`, 14, 26);
-
-      autoTable(doc, {
-        startY: 32,
-        head: [['Município', 'UF', 'Focos Totais', 'Ativos', 'Resolvidos', 'Taxa Res.', 'SLA Vencido', 'Score']],
-        body: kpi.map(r => {
-          const s = scoreMap.get(r.cliente_id);
-          return [
-            r.municipio_nome, r.uf ?? '—',
-            r.total_focos, r.focos_ativos, r.focos_resolvidos,
-            `${r.taxa_resolucao_pct.toFixed(1)}%`, r.sla_vencido_count,
-            s ? `${s.score} (${s.grade})` : '—',
-          ];
-        }),
-        styles: { fontSize: 9 },
-        headStyles: { fillColor: [79, 70, 229] },
+      const token = tokenStore.getAccessToken();
+      const baseUrl = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') ?? '';
+      const res = await fetch(`${baseUrl}/analytics/regional/relatorio.pdf`, {
+        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       });
-
-      if (vulnerabilidade.length > 0) {
-        doc.addPage();
-        doc.setFontSize(14);
-        doc.setTextColor(30, 30, 30);
-        doc.text('Vulnerabilidade por Município', 14, 16);
-        autoTable(doc, {
-          startY: 22,
-          head: [['Município', 'UF', 'Vuln Alta', 'Vuln Crítica', 'Risco Vet Alto', 'Risco Vet Crítico', 'Alerta Saúde', 'P1', 'P2']],
-          body: vulnerabilidade.map(v => [
-            v.municipio_nome, v.uf ?? '—',
-            v.vulnerabilidade_alta, v.vulnerabilidade_critica,
-            v.risco_vetorial_alto, v.risco_vetorial_critico,
-            v.alerta_saude_urgente, v.prioridade_p1, v.prioridade_p2,
-          ]),
-          styles: { fontSize: 9 },
-          headStyles: { fillColor: [220, 38, 38] },
-        });
-      }
-
-      doc.save(`relatorio-regional-${new Date().toISOString().slice(0, 10)}.pdf`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `relatorio-regional-sentinella-${new Date().toISOString().slice(0, 10)}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     } catch (err) {
       console.error('[exportar-pdf]', err);
     } finally {
       setExportandoPdf(false);
     }
-  }, [kpi, scoreMap, vulnerabilidade, totais.municipios]);
+  }, []);
 
   // Gerar gráficos IA
   const gerarGraficos = useCallback(async () => {
@@ -806,7 +1269,7 @@ export default function RegionalDashboard() {
         <div>
           <h1 className="text-2xl font-bold text-foreground">Painel Regional</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Visão comparativa de {totais.municipios} município{totais.municipios !== 1 ? 's' : ''} — somente leitura
+            Painel analítico regional — dados consolidados de {totais.municipios} município{totais.municipios !== 1 ? 's' : ''} vinculado{totais.municipios !== 1 ? 's' : ''}
           </p>
         </div>
         <div className="flex gap-2">
@@ -816,6 +1279,7 @@ export default function RegionalDashboard() {
             onClick={downloadCSV}
             disabled={exportandoCsv}
             className="gap-2"
+            aria-label={exportandoCsv ? 'Exportando CSV...' : 'Exportar relatório CSV'}
           >
             {exportandoCsv
               ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -828,6 +1292,7 @@ export default function RegionalDashboard() {
             onClick={gerarPDF}
             disabled={exportandoPdf}
             className="gap-2"
+            aria-label={exportandoPdf ? 'Gerando PDF...' : 'Exportar relatório PDF'}
           >
             {exportandoPdf
               ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -874,6 +1339,15 @@ export default function RegionalDashboard() {
           <TabsTrigger value="visao-geral" className="gap-1.5 text-xs shrink-0 flex-1">
             <BarChart3 className="w-3.5 h-3.5" /> Visão Geral
           </TabsTrigger>
+          <TabsTrigger value="vulnerabilidade" className="gap-1.5 text-xs shrink-0 flex-1">
+            <AlertTriangle className="w-3.5 h-3.5" /> Vulnerabilidade
+          </TabsTrigger>
+          <TabsTrigger value="evolucao" className="gap-1.5 text-xs shrink-0 flex-1">
+            <TrendingUp className="w-3.5 h-3.5" /> Evolução
+          </TabsTrigger>
+          <TabsTrigger value="comparativo" className="gap-1.5 text-xs shrink-0 flex-1">
+            <ArrowLeftRight className="w-3.5 h-3.5" /> Comparativo
+          </TabsTrigger>
           <TabsTrigger value="mapa-visual" className="gap-1.5 text-xs shrink-0 flex-1">
             <MapIcon className="w-3.5 h-3.5" /> Mapa Visual
           </TabsTrigger>
@@ -885,9 +1359,6 @@ export default function RegionalDashboard() {
                 {alertas.length}
               </span>
             )}
-          </TabsTrigger>
-          <TabsTrigger value="vulnerabilidade" className="gap-1.5 text-xs shrink-0 flex-1">
-            <AlertTriangle className="w-3.5 h-3.5" /> Vulnerabilidade
           </TabsTrigger>
           <TabsTrigger value="insights-ia" className="gap-1.5 text-xs shrink-0 flex-1">
             <Sparkles className="w-3.5 h-3.5" /> Insights IA
@@ -928,10 +1399,23 @@ export default function RegionalDashboard() {
                       ? new Date(u.ultimo_evento_em).toLocaleDateString('pt-BR')
                       : '—';
                     return (
-                      <TableRow key={row.cliente_id}>
+                      <TableRow
+                        key={row.cliente_id}
+                        className="cursor-pointer hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset"
+                        role="button"
+                        tabIndex={0}
+                        aria-label={`Ver análise de ${row.municipio_nome}`}
+                        onClick={() => setDetalheClienteId(row.cliente_id)}
+                        onKeyDown={e => e.key === 'Enter' && setDetalheClienteId(row.cliente_id)}
+                      >
                         <TableCell>
-                          <div className="font-medium">{row.municipio_nome}</div>
-                          {row.uf && <div className="text-xs text-muted-foreground">{row.cidade} · {row.uf}</div>}
+                          <div className="flex items-center gap-2">
+                            <div>
+                              <div className="font-medium">{row.municipio_nome}</div>
+                              {row.uf && <div className="text-xs text-muted-foreground">{row.cidade} · {row.uf}</div>}
+                            </div>
+                            <Search className="w-3.5 h-3.5 text-muted-foreground/50 shrink-0" />
+                          </div>
                         </TableCell>
                         <TableCell className="text-center">
                           {s && <GradeBadge score={s.score} grade={s.grade} />}
@@ -1554,7 +2038,44 @@ export default function RegionalDashboard() {
           </Card>
         </TabsContent>
 
+        {/* ── Tab: Evolução ────────────────────────────────────────────────── */}
+        <TabsContent value="evolucao" className="space-y-4 mt-4">
+          {loadingEvolucao ? (
+            <div className="flex flex-col items-center justify-center gap-2 py-12 text-muted-foreground">
+              <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              <span className="text-sm">Carregando dados regionais...</span>
+            </div>
+          ) : evolucao.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground text-sm">
+              Nenhum dado regional encontrado para o escopo atual.
+            </div>
+          ) : (
+            <EvolucaoContent evolucao={evolucao} />
+          )}
+        </TabsContent>
+
+        {/* ── Tab: Comparativo ─────────────────────────────────────────────── */}
+        <TabsContent value="comparativo" className="space-y-4 mt-4">
+          {loadingComparativo ? (
+            <div className="flex flex-col items-center justify-center gap-2 py-12 text-muted-foreground">
+              <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              <span className="text-sm">Carregando dados regionais...</span>
+            </div>
+          ) : !comparativo ? (
+            <div className="text-center py-12 text-muted-foreground text-sm">
+              Nenhum dado regional encontrado para o escopo atual.
+            </div>
+          ) : (
+            <ComparativoContent data={comparativo} />
+          )}
+        </TabsContent>
+
       </Tabs>
+
+      <MunicipioDetalheSheet
+        clienteId={detalheClienteId}
+        onClose={() => setDetalheClienteId(null)}
+      />
     </div>
   );
 }

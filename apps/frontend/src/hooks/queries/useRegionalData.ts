@@ -5,7 +5,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { http } from '@sentinella/api-client';
 import { STALE } from '@/lib/queryConfig';
-import type { RegionalKpiMunicipio, RegionalResumoMunicipio, RegionalSlaMunicipio, RegionalUsoSistema, RegionalVulnerabilidadeMunicipio } from '@/types/database';
+import type { RegionalComparativoResponse, RegionalEvolucaoItem, RegionalKpiMunicipio, RegionalMunicipioDetalhe, RegionalResumoMunicipio, RegionalSlaMunicipio, RegionalUsoSistema, RegionalVulnerabilidadeMunicipio } from '@/types/database';
 
 export function useRegionalKpi(enabled = true) {
   return useQuery<RegionalKpiMunicipio[]>({
@@ -79,5 +79,69 @@ export function useRegionalVulnerabilidade(enabled = true) {
     },
     enabled,
     staleTime: STALE.MEDIUM,
+  });
+}
+
+export function useRegionalEvolucao(
+  params?: { dataInicio?: string; dataFim?: string },
+  enabled = true,
+) {
+  const qs = params
+    ? new URLSearchParams(
+        Object.fromEntries(
+          Object.entries(params).filter(([, v]) => v !== undefined) as [string, string][],
+        ),
+      ).toString()
+    : '';
+
+  return useQuery<RegionalEvolucaoItem[]>({
+    queryKey: ['regional-evolucao', params?.dataInicio, params?.dataFim],
+    queryFn: async () => {
+      try {
+        const path = qs ? `/analytics/regional/evolucao?${qs}` : '/analytics/regional/evolucao';
+        return await http.get(path) as RegionalEvolucaoItem[];
+      } catch {
+        return [];
+      }
+    },
+    enabled,
+    staleTime: STALE.MEDIUM,
+  });
+}
+
+export function useRegionalComparativo(
+  params?: { dataInicio?: string; dataFim?: string },
+  enabled = true,
+) {
+  const qs = params
+    ? new URLSearchParams(
+        Object.fromEntries(
+          Object.entries(params).filter(([, v]) => v !== undefined) as [string, string][],
+        ),
+      ).toString()
+    : '';
+
+  return useQuery<RegionalComparativoResponse | null>({
+    queryKey: ['regional-comparativo', params?.dataInicio, params?.dataFim],
+    queryFn: async () => {
+      try {
+        const path = qs ? `/analytics/regional/comparativo?${qs}` : '/analytics/regional/comparativo';
+        return await http.get(path) as RegionalComparativoResponse;
+      } catch {
+        return null;
+      }
+    },
+    enabled,
+    staleTime: STALE.MEDIUM,
+  });
+}
+
+export function useRegionalMunicipioDetalhe(clienteId?: string, enabled = true) {
+  return useQuery<RegionalMunicipioDetalhe>({
+    queryKey: ['regional-municipio-detalhe', clienteId],
+    queryFn: () => http.get(`/analytics/regional/municipio/${clienteId}`) as Promise<RegionalMunicipioDetalhe>,
+    enabled: enabled && !!clienteId,
+    staleTime: STALE.MEDIUM,
+    retry: 1,
   });
 }

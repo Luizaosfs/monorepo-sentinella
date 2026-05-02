@@ -175,6 +175,99 @@ export interface RegionalResumoMunicipio {
   calculado_em: string;
 }
 
+export interface RegionalEvolucaoItem {
+  periodo: string;                      // YYYY-MM
+  total_focos: number;
+  focos_ativos: number;
+  focos_resolvidos: number;
+  focos_descartados: number;
+  taxa_resolucao_pct: number;
+  sla_vencido_count: number;            // sempre 0 — métrica point-in-time, não histórica
+  total_vistorias: number;
+  vulnerabilidade_critica_count: number;
+  risco_vetorial_critico_count: number;
+  alerta_saude_urgente_count: number;
+  prioridade_p1_count: number;
+}
+
+export interface RegionalMunicipioResumo {
+  total_focos: number;
+  focos_ativos: number;
+  focos_resolvidos: number;
+  focos_descartados: number;
+  taxa_resolucao_pct: number;
+  sla_vencido_count: number;
+  total_vistorias: number;
+  vulnerabilidade_alta_count: number;
+  vulnerabilidade_critica_count: number;
+  risco_vetorial_alto_count: number;
+  risco_vetorial_critico_count: number;
+  alerta_saude_urgente_count: number;
+  prioridade_p1_count: number;
+  prioridade_p2_count: number;
+}
+
+export interface RegionalMunicipioVulnerabilidade {
+  total_vistorias: number;
+  vulnerabilidade_baixa: number;
+  vulnerabilidade_media: number;
+  vulnerabilidade_alta: number;
+  vulnerabilidade_critica: number;
+  risco_vetorial_baixo: number;
+  risco_vetorial_medio: number;
+  risco_vetorial_alto: number;
+  risco_vetorial_critico: number;
+  alerta_saude_normal: number;
+  alerta_saude_atencao: number;
+  alerta_saude_urgente: number;
+  prioridade_p1: number;
+  prioridade_p2: number;
+  prioridade_p3: number;
+  prioridade_p4: number;
+  prioridade_p5: number;
+}
+
+export interface RegionalMunicipioDetalhe {
+  cliente: { id: string; nome: string; cidade?: string; uf?: string };
+  resumo: RegionalMunicipioResumo;
+  vulnerabilidade: RegionalMunicipioVulnerabilidade;
+  evolucao: RegionalEvolucaoItem[];
+  comparativo: RegionalComparativoResponse | null;
+}
+
+export interface RegionalComparativoPeriodo {
+  data_inicio: string;
+  data_fim: string;
+  total_focos: number;
+  focos_ativos: number;
+  focos_resolvidos: number;
+  focos_descartados: number;
+  taxa_resolucao_pct: number;
+  total_vistorias: number;
+  vulnerabilidade_critica_count: number;
+  risco_vetorial_critico_count: number;
+  alerta_saude_urgente_count: number;
+  prioridade_p1_count: number;
+}
+
+export interface RegionalComparativoVariacao {
+  total_focos_pct: number | null;
+  focos_ativos_pct: number | null;
+  focos_resolvidos_pct: number | null;
+  taxa_resolucao_pp: number;
+  total_vistorias_pct: number | null;
+  vulnerabilidade_critica_pct: number | null;
+  risco_vetorial_critico_pct: number | null;
+  alerta_saude_urgente_pct: number | null;
+  prioridade_p1_pct: number | null;
+}
+
+export interface RegionalComparativoResponse {
+  periodo_atual: RegionalComparativoPeriodo;
+  periodo_anterior: RegionalComparativoPeriodo;
+  variacao: RegionalComparativoVariacao;
+}
+
 export type LevantamentoTipoEntrada = 'DRONE' | 'MANUAL';
 
 export interface Levantamento {

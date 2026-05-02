@@ -230,7 +230,8 @@
       "PowerShell(New-Item *)",
       "Bash(cd /d D:\\\\sentinella\\\\monorepo-sentinella)",
       "Bash(dir /s /b *.tsx *.ts)",
-      "PowerShell(cd \"D:\\\\sentinella\\\\monorepo-sentinella\"; Get-ChildItem -Recurse -Include \"ItemDetailsPanel.tsx\",\"http-client.ts\" | ForEach-Object { $_.FullName })"
+      "PowerShell(cd \"D:\\\\sentinella\\\\monorepo-sentinella\"; Get-ChildItem -Recurse -Include \"ItemDetailsPanel.tsx\",\"http-client.ts\" | ForEach-Object { $_.FullName })",
+      "Bash(pnpm --filter frontend lint)"
     ]
   }
 }

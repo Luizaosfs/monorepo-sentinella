@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 /** ID do foco vem da rota (`:id`); body só com dados da atribuição. */
 export const atribuirAgenteSchema = z.object({
-  agenteId: z.string().uuid({ message: 'agenteId deve ser um UUID válido' }),
+  agenteId: z.string().uuid({ message: 'agenteId deve ser um UUID válido' }).optional(),
   motivo: z.string().optional(),
 });
 

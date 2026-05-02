@@ -187,7 +187,7 @@ export default function GestorFocoDetalhe() {
 
   const qc = useQueryClient();
   const atribuirMutation = useMutation({
-    mutationFn: (agenteId: string) =>
+    mutationFn: (agenteId: string | undefined) =>
       api.focosRisco.atribuirAgente(id!, agenteId),
     onSuccess: () => {
       const msg = foco?.status === 'em_triagem'
@@ -983,8 +983,8 @@ export default function GestorFocoDetalhe() {
               Cancelar
             </Button>
             <Button
-              onClick={() => atribuirMutation.mutate(novoResponsavelAtribuir === '__remove__' ? '' : novoResponsavelAtribuir)}
-              disabled={atribuirMutation.isPending}
+              onClick={() => atribuirMutation.mutate(novoResponsavelAtribuir === '__remove__' ? undefined : novoResponsavelAtribuir)}
+              disabled={atribuirMutation.isPending || !novoResponsavelAtribuir}
             >
               {atribuirMutation.isPending ? 'Salvando...' : 'Salvar'}
             </Button>
