@@ -89,22 +89,45 @@ export default function AgenteFocoDetalhe() {
     queryKey: ['foco_risco_agente', focoId],
     queryFn: () => api.focosRisco.getPorId(focoId!),
     enabled: !!focoId,
-    staleTime: STALE.SHORT,
+    staleTime: STALE.LIVE,
   });
 
-  // Pré-preenche campos do formulário de imóvel quando o foco carrega
+  // Pré-preenche campos do formulário de imóvel quando o foco (e regiões) carregam
   useEffect(() => {
-    if (foco && !foco.imovel_id) {
-      const logradouro = foco.logradouro ?? foco.endereco_normalizado ?? '';
-      setImovelForm((prev) => ({
-        ...prev,
-        logradouro: prev.logradouro || logradouro,
-        bairro: prev.bairro || (foco.bairro ?? ''),
-        regiao_id: prev.regiao_id || (foco.regiao_id ?? ''),
-      }));
+    if (!foco || foco.imovel_id) return;
+
+    // Separa logradouro do bairro quando endereco_normalizado tem o formato "Logradouro, Bairro"
+    let logradouro = foco.logradouro ?? '';
+    let bairroParsed = foco.bairro ?? '';
+    if (!logradouro && foco.endereco_normalizado) {
+      const lastComma = foco.endereco_normalizado.lastIndexOf(',');
+      if (lastComma > 0) {
+        logradouro = foco.endereco_normalizado.slice(0, lastComma).trim();
+        bairroParsed = bairroParsed || foco.endereco_normalizado.slice(lastComma + 1).trim();
+      } else {
+        logradouro = foco.endereco_normalizado;
+      }
     }
+
+    // Tenta fazer match do bairro contra a lista de regiões (case-insensitive + parcial)
+    let regiaoId = foco.regiao_id ?? '';
+    if (!regiaoId && bairroParsed && regioes.length > 0) {
+      const bNome = bairroParsed.toLowerCase();
+      const match = regioes.find((r: { id: string; nome: string }) => {
+        const rNome = r.nome.toLowerCase();
+        return rNome === bNome || rNome.includes(bNome) || bNome.includes(rNome);
+      });
+      if (match) regiaoId = match.id;
+    }
+
+    setImovelForm((prev) => ({
+      ...prev,
+      logradouro: prev.logradouro || logradouro,
+      bairro: prev.bairro || bairroParsed,
+      regiao_id: prev.regiao_id || regiaoId,
+    }));
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [foco?.id]);
+  }, [foco, regioes]); // regioes incluído para match funcionar mesmo quando carregam depois do foco
 
   // Instrumentação: log ao abrir o foco
   useEffect(() => {

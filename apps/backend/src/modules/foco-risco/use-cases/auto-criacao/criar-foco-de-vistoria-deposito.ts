@@ -53,7 +53,7 @@ export class CriarFocoDeVistoriaDeposito {
     }
 
     if (vistoria.foco_risco_id) {
-      return { criado: false, motivo: 'vistoria_ja_vinculada' };
+      return this.avancarFocoVinculado(vistoria.foco_risco_id, input.clienteId, input.tratado);
     }
 
     let regiaoId: string | null = null;
@@ -178,5 +178,71 @@ export class CriarFocoDeVistoriaDeposito {
     }
 
     return { criado: true, focoId: foco.id };
+  }
+
+  private async avancarFocoVinculado(
+    focoId: string,
+    clienteId: string,
+    tratado: boolean,
+  ): Promise<CriarFocoDeVistoriaDepositoResult> {
+    const foco = await this.prisma.client.focos_risco.findFirst({
+      where: { id: focoId, cliente_id: clienteId },
+      select: { id: true, status: true },
+    });
+
+    if (!foco || foco.status !== 'em_inspecao') {
+      this.logger.log(
+        `Foco vinculado ${focoId} ignorado (status=${foco?.status ?? 'nao encontrado'}) — sem avanço`,
+      );
+      return { criado: false, motivo: 'vistoria_ja_vinculada' };
+    }
+
+    const statusFinal = tratado ? 'resolvido' : 'confirmado';
+    const motivoHistorico = tratado
+      ? 'Vistoria com tratamento aplicado — resolucao automatica'
+      : 'Vistoria com larvas encontradas — aguarda tratamento';
+
+    const transicoes = tratado
+      ? [
+          { status_anterior: 'em_inspecao',  status_novo: 'confirmado',    tipo_evento: 'transicao_status' },
+          { status_anterior: 'confirmado',    status_novo: 'em_tratamento', tipo_evento: 'transicao_status' },
+          { status_anterior: 'em_tratamento', status_novo: 'resolvido',     tipo_evento: 'transicao_status' },
+        ]
+      : [
+          { status_anterior: 'em_inspecao',  status_novo: 'confirmado',    tipo_evento: 'transicao_status' },
+        ];
+
+    try {
+      await this.prisma.client.$transaction(async (tx) => {
+        await tx.focos_risco.update({
+          where: { id: foco.id },
+          data: {
+            status: statusFinal,
+            ...(statusFinal === 'resolvido' ? { resolvido_em: new Date() } : {}),
+          },
+        });
+        await tx.foco_risco_historico.createMany({
+          data: transicoes.map((t) => ({
+            foco_risco_id: foco.id,
+            cliente_id: clienteId,
+            status_anterior: t.status_anterior,
+            status_novo: t.status_novo,
+            tipo_evento: t.tipo_evento,
+            motivo: motivoHistorico,
+          })),
+        });
+      });
+      this.logger.log(
+        `Foco vinculado avancado para ${statusFinal}: foco=${foco.id} tratado=${tratado}`,
+      );
+    } catch (err) {
+      this.logger.error(
+        `Falha ao avancar foco vinculado ${foco.id} para ${statusFinal}: ${
+          err instanceof Error ? err.message : String(err)
+        }`,
+      );
+    }
+
+    return { criado: false, focoId: foco.id };
   }
 }

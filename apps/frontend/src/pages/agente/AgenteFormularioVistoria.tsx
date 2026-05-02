@@ -223,41 +223,37 @@ export default function AgenteFormularioVistoria() {
   const [etapa4, setEtapa4] = useState<Etapa4Data>({ tratamentos: [] });
   const [etapa5, setEtapa5] = useState<Etapa5Data>(ETAPA5_DEFAULT);
 
-  // Auto-classifica foco ao concluir vistoria
-  // - focos encontrados + tratamento aplicado (qtd_eliminados > 0) → confirmado → em_tratamento → resolvido
-  // - focos encontrados + sem tratamento → confirmado (aguarda ação posterior)
-  // - sem focos → descartado
+  // Auto-classifica foco ao concluir vistoria.
+  // O backend (avancarFocoVinculado) já avançou o foco para confirmado ou resolvido
+  // quando havia larvas — o frontend apenas reflete o estado resultante.
+  // Único caso em que o frontend chama a API: sem larvas → descartado (backend não trata).
   const temFocosEncontrados = etapa3.depositos.some((d) => d.qtd_com_focos > 0);
-  const tratamentoAplicado = etapa4.tratamentos.reduce((sum, t) => sum + (t.qtd_eliminados ?? 0), 0) > 0;
+  const tratamentoAplicado =
+    etapa4.tratamentos.some((t) => t.usou_larvicida) ||
+    etapa4.tratamentos.reduce((sum, t) => sum + (t.qtd_eliminados ?? 0), 0) > 0;
   useEffect(() => {
     if (!done || wasSemAcesso || !focoId || focoClassificado || focoClassificando) return;
     setFocoClassificando(true);
 
     if (temFocosEncontrados && tratamentoAplicado) {
-      api.focosRisco.transicionar(focoId, 'confirmado', undefined, undefined)
-        .then(() => api.focosRisco.transicionar(focoId, 'em_tratamento', undefined, undefined))
-        .then(() => api.focosRisco.transicionar(focoId, 'resolvido', undefined, undefined))
-        .then(() => {
-          setFocoClassificado('resolvido');
-          toast.success('Foco resolvido — tratamento aplicado na vistoria.');
-        })
-        .catch(() => {
-          toast.error('Falha ao registrar resolução do foco. Verifique a conexão.');
-        })
-        .finally(() => setFocoClassificando(false));
+      // Backend já avançou o foco para resolvido via avancarFocoVinculado
+      setFocoClassificado('resolvido');
+      toast.success('Foco resolvido — tratamento aplicado na vistoria.');
+      setFocoClassificando(false);
+    } else if (temFocosEncontrados) {
+      // Backend já avançou o foco para confirmado via avancarFocoVinculado (tratado=false)
+      setFocoClassificado('confirmado');
+      toast.success('Foco confirmado — larvas encontradas, tratamento pendente.');
+      setFocoClassificando(false);
     } else {
-      const resultado: 'confirmado' | 'descartado' = temFocosEncontrados ? 'confirmado' : 'descartado';
-      api.focosRisco.transicionar(focoId, resultado, undefined, undefined)
+      // Sem larvas: backend não faz nada, frontend descarta o foco
+      api.focosRisco.transicionar(focoId, 'descartado', undefined, undefined)
         .then(() => {
-          setFocoClassificado(resultado);
-          toast.success(
-            resultado === 'confirmado'
-              ? 'Foco confirmado — larvas encontradas, tratamento pendente.'
-              : 'Foco descartado — nenhuma larva encontrada.',
-          );
+          setFocoClassificado('descartado');
+          toast.success('Foco descartado — nenhuma larva encontrada.');
         })
         .catch(() => {
-          toast.error('Falha ao classificar o foco automaticamente.');
+          toast.error('Falha ao descartar o foco automaticamente.');
         })
         .finally(() => setFocoClassificando(false));
     }
