@@ -31,7 +31,7 @@ export class RolesGuard implements CanActivate {
     if (!hasRole) {
       const logger = new (require('@nestjs/common').Logger)('RolesGuard');
       logger.warn(`RolesGuard: acesso negado user=${user.id} papeis=${user.papeis} required=${requiredRoles}`);
-      throw AuthException.unauthorized();
+      throw AuthException.accessDenied();
     }
 
     return true;

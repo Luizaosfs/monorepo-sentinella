@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import "@/lib/leaflet";
 import { MapContainer, TileLayer, useMap } from "react-leaflet";
-import { LevantamentoItem } from "@/types/database";
+import { LevantamentoItem, FocoRiscoAtivo } from "@/types/database";
 import { MapClusterLayer } from "./MapClusterLayer";
 import { MapPopupLayer } from "./MapPopupLayer";
 import { HeatmapLayer } from "./HeatmapLayer";
+import { FocoClusterLayer } from "./FocoClusterLayer";
 import { useTheme } from "@/hooks/useTheme";
 import { TILE_LAYERS, type TileLayerType } from "@/components/map/tileLayerControl";
 import { cn } from "@/lib/utils";
@@ -21,22 +22,27 @@ interface LeafletMapViewProps {
   onSelectItem?: (item: LevantamentoItem) => void;
   heatmapEnabled?: boolean;
   itemStatuses?: Record<string, string>;
+  focos?: FocoRiscoAtivo[];
+  onFocoClick?: (foco: FocoRiscoAtivo) => void;
+  onFocoVistoria?: (foco: FocoRiscoAtivo) => void;
 }
 
-function MapFitter({ items, fallbackCenter }: { items: LevantamentoItem[]; fallbackCenter: [number, number] }) {
+function MapFitter({ items, focos = [], fallbackCenter }: { items: LevantamentoItem[]; focos?: FocoRiscoAtivo[]; fallbackCenter: [number, number] }) {
   const map = useMap();
 
   useEffect(() => {
-    const withCoords = items.filter((i) => i.latitude != null && i.longitude != null);
-    if (withCoords.length > 1) {
-      const bounds: [number, number][] = withCoords.map((i) => [i.latitude!, i.longitude!]);
+    const bounds: [number, number][] = [
+      ...items.filter((i) => i.latitude != null && i.longitude != null).map((i) => [i.latitude!, i.longitude!] as [number, number]),
+      ...focos.filter((f) => f.latitude != null && f.longitude != null).map((f) => [f.latitude!, f.longitude!] as [number, number]),
+    ];
+    if (bounds.length > 1) {
       map.fitBounds(bounds, { padding: [40, 40] });
-    } else if (withCoords.length === 1) {
-      map.setView([withCoords[0].latitude!, withCoords[0].longitude!], 16);
+    } else if (bounds.length === 1) {
+      map.setView(bounds[0], 16);
     } else {
       map.setView(fallbackCenter, 13);
     }
-  }, [items, map, fallbackCenter]);
+  }, [items, focos, map, fallbackCenter]);
 
   return null;
 }
@@ -54,6 +60,9 @@ export function LeafletMapView({
   onSelectItem,
   heatmapEnabled = false,
   itemStatuses = {},
+  focos,
+  onFocoClick,
+  onFocoVistoria,
 }: LeafletMapViewProps) {
   const { theme } = useTheme();
   const isDark = theme === "dark";
@@ -108,7 +117,10 @@ export function LeafletMapView({
         )}
         {heatmapEnabled && <HeatmapLayer items={items} />}
         {popupItem && <MapPopupLayer item={popupItem} onClose={onClosePopup} onVerDetalhes={onVerDetalhes} />}
-        <MapFitter items={items} fallbackCenter={center} />
+        {focos && focos.length > 0 && (
+          <FocoClusterLayer focos={focos} onFocoClick={onFocoClick} onFocoVistoria={onFocoVistoria} />
+        )}
+        <MapFitter items={items} focos={focos} fallbackCenter={center} />
       </MapContainer>
 
       {/* Status legend — no mobile fica no canto inferior esquerdo (acima do nav) para não sobrepor toolbar/seletor de mapa */}

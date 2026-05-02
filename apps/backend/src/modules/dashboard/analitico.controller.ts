@@ -32,49 +32,49 @@ export class AnaliticoController {
   ) {}
 
   @Get('bairros')
-  @Roles('admin', 'supervisor')
+  @Roles('admin', 'supervisor', 'analista_regional')
   @ApiOperation({ summary: 'Lista de bairros com vistorias registradas' })
   bairros() {
     return this.getAnaliticoBairros.execute(requireTenantId(getAccessScope(this.req)));
   }
 
   @Get('resumo')
-  @Roles('admin', 'supervisor')
+  @Roles('admin', 'supervisor', 'analista_regional')
   @ApiOperation({ summary: 'KPIs macro de vistoria' })
   resumo() {
     return this.getAnaliticoResumo.execute(requireTenantId(getAccessScope(this.req)));
   }
 
   @Get('risco-territorial')
-  @Roles('admin', 'supervisor')
+  @Roles('admin', 'supervisor', 'analista_regional')
   @ApiOperation({ summary: 'Risco por bairro' })
   riscoTerritorial() {
     return this.getAnaliticoRiscoTerritorial.execute(requireTenantId(getAccessScope(this.req)));
   }
 
   @Get('vulnerabilidade')
-  @Roles('admin', 'supervisor')
+  @Roles('admin', 'supervisor', 'analista_regional')
   @ApiOperation({ summary: 'Vulnerabilidade domiciliar por bairro' })
   vulnerabilidade() {
     return this.getAnaliticoVulnerabilidade.execute(requireTenantId(getAccessScope(this.req)));
   }
 
   @Get('alerta-saude')
-  @Roles('admin', 'supervisor')
+  @Roles('admin', 'supervisor', 'analista_regional')
   @ApiOperation({ summary: 'Distribuição de alerta de saúde' })
   alertaSaude() {
     return this.getAnaliticoAlertaSaude.execute(requireTenantId(getAccessScope(this.req)));
   }
 
   @Get('resultado-operacional')
-  @Roles('admin', 'supervisor')
+  @Roles('admin', 'supervisor', 'analista_regional')
   @ApiOperation({ summary: 'Resultado operacional por bairro' })
   resultadoOperacional() {
     return this.getAnaliticoResultadoOperacional.execute(requireTenantId(getAccessScope(this.req)));
   }
 
   @Get('imoveis-criticos')
-  @Roles('admin', 'supervisor')
+  @Roles('admin', 'supervisor', 'analista_regional')
   @ApiOperation({ summary: 'Imóveis P1/P2 críticos' })
   imoveisCriticos() {
     return this.getAnaliticoImoveisCriticos.execute(requireTenantId(getAccessScope(this.req)));

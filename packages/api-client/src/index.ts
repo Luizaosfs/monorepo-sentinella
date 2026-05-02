@@ -10,5 +10,5 @@
  *   configureHttpClient(import.meta.env.VITE_API_URL)
  */
 
-export { http, httpRequest, configureHttpClient, HttpClientError } from './http-client';
+export { http, httpRequest, configureHttpClient, HttpClientError, silentRefresh } from './http-client';
 export { tokenStore } from './token-store';

@@ -20,7 +20,7 @@ import { PapelApp } from '@/decorators/roles.decorator';
  *
  *   REGIONAL:
  *     - analista_regional
- *     - tenantId = null (não tem cliente único)
+ *     - tenantId = ?clienteId (se fornecido e validado contra o agrupamento) | null (escopo total do agrupamento)
  *     - agrupamentoId = user.agrupamentoId (não-nulo, garantido pelo guard)
  *     - clienteIdsPermitidos = lista de clientes do agrupamento (não-vazia, garantida pelo guard)
  */
@@ -51,7 +51,7 @@ export type RegionalScope = {
   userId: string;
   papeis: PapelApp[];
   isAdmin: false;
-  tenantId: null;
+  tenantId: string | null; // null = todos do agrupamento; string = município selecionado via ?clienteId
   clienteIdsPermitidos: string[]; // 1+ elementos, garantido pelo guard
   agrupamentoId: string;
 };

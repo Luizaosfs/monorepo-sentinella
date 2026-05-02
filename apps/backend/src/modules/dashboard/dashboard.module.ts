@@ -40,8 +40,11 @@ import { GetExecutivoComparativoCiclos } from './use-cases/get-executivo-compara
 
 // Regional / Analytics
 import { GetRegionalKpi } from './use-cases/get-regional-kpi';
+import { GetRegionalRelatorioCSV } from './use-cases/get-regional-relatorio-csv';
+import { GetRegionalResumo } from './use-cases/get-regional-resumo';
 import { GetRegionalSla } from './use-cases/get-regional-sla';
 import { GetRegionalUso } from './use-cases/get-regional-uso';
+import { GetRegionalVulnerabilidade } from './use-cases/get-regional-vulnerabilidade';
 
 // Analítico
 import { GetAnaliticoBairros } from './use-cases/get-analitico-bairros';
@@ -98,8 +101,11 @@ import { GerarResumoDiario } from './use-cases/gerar-resumo-diario';
     GetExecutivoComparativoCiclos,
     // Regional
     GetRegionalKpi,
+    GetRegionalRelatorioCSV,
+    GetRegionalResumo,
     GetRegionalSla,
     GetRegionalUso,
+    GetRegionalVulnerabilidade,
     // Analítico
     GetAnaliticoBairros,
     GetAnaliticoResumo,

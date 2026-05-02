@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
 import { AuthenticatedUser } from 'src/guards/auth.guard';
@@ -32,7 +32,21 @@ export class GerarRelatorioAnalitico {
   ) {}
 
   async execute(input: RelatorioAnaliticoBody): Promise<{ relatorio: RelatorioGerado }> {
-    const clienteId = requireTenantId(getAccessScope(this.req));
+    const scope = getAccessScope(this.req);
+    let clienteId: string;
+
+    if (scope.kind === 'regional') {
+      if (!input.clienteId) {
+        throw new ForbiddenException('clienteId obrigatório para analista_regional');
+      }
+      if (!scope.clienteIdsPermitidos.includes(input.clienteId)) {
+        throw new ForbiddenException('Município não pertence ao seu agrupamento');
+      }
+      clienteId = input.clienteId;
+    } else {
+      clienteId = requireTenantId(scope);
+    }
+
     const userId = (this.req['user'] as AuthenticatedUser).id;
 
     const [

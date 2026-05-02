@@ -22,7 +22,7 @@ import { AuthenticatedUser } from './auth.guard';
  * Variantes resultantes:
  * - admin → PlatformScope (tenantId = ?clienteId | null; clienteIdsPermitidos = [tenantId] | null)
  * - supervisor/agente/notificador → MunicipalScope (tenantId = user.clienteId)
- * - analista_regional → RegionalScope (tenantId = null; lista de clientes do agrupamento)
+ * - analista_regional → RegionalScope (tenantId = ?clienteId validado | null; lista de clientes do agrupamento)
  *
  * Mantém compatibilidade temporária populando também `req.tenantId` (removido em 1B/1C).
  *
@@ -100,12 +100,17 @@ export class TenantGuard implements CanActivate {
         throw new ForbiddenException('Agrupamento sem clientes vinculados');
       }
 
+      const requestedClienteId = (request.query?.clienteId as string | undefined) ?? null;
+      if (requestedClienteId && !clienteIds.includes(requestedClienteId)) {
+        throw new ForbiddenException('Município não pertence ao seu agrupamento');
+      }
+
       return {
         kind: 'regional',
         userId: user.id,
         papeis: user.papeis,
         isAdmin: false,
-        tenantId: null,
+        tenantId: requestedClienteId,
         clienteIdsPermitidos: clienteIds,
         agrupamentoId: user.agrupamentoId,
       } satisfies RegionalScope;

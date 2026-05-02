@@ -129,6 +129,52 @@ export interface RegionalUsoSistema {
   calculado_em: string;
 }
 
+/** P5: Vulnerabilidade por município — GET /analytics/regional/vulnerabilidade. */
+export interface RegionalVulnerabilidadeMunicipio {
+  cliente_id: string;
+  municipio_nome: string;
+  cidade: string | null;
+  uf: string | null;
+  total_vistorias: number;
+  vulnerabilidade_baixa: number;
+  vulnerabilidade_media: number;
+  vulnerabilidade_alta: number;
+  vulnerabilidade_critica: number;
+  risco_vetorial_baixo: number;
+  risco_vetorial_medio: number;
+  risco_vetorial_alto: number;
+  risco_vetorial_critico: number;
+  alerta_saude_urgente: number;
+  prioridade_p1: number;
+  prioridade_p2: number;
+  prioridade_p3: number;
+  calculado_em: string;
+}
+
+/** P5: Resumo consolidado por município — GET /analytics/regional/resumo. */
+export interface RegionalResumoMunicipio {
+  cliente_id: string;
+  municipio_nome: string;
+  cidade: string | null;
+  uf: string | null;
+  total_focos: number;
+  focos_ativos: number;
+  focos_resolvidos: number;
+  focos_descartados: number;
+  taxa_resolucao_pct: number;
+  sla_vencido_count: number;
+  total_vistorias: number;
+  vistorias_visitadas: number;
+  vulnerabilidade_alta_count: number;
+  vulnerabilidade_critica_count: number;
+  risco_vetorial_alto_count: number;
+  risco_vetorial_critico_count: number;
+  alerta_saude_urgente_count: number;
+  prioridade_p1_count: number;
+  prioridade_p2_count: number;
+  calculado_em: string;
+}
+
 export type LevantamentoTipoEntrada = 'DRONE' | 'MANUAL';
 
 export interface Levantamento {

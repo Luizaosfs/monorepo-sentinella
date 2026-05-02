@@ -18,16 +18,16 @@ export const scoreSurto = {
 };
 
 export const dashboardAnalitico = {
-  getResumo: (): Promise<unknown> => http.get('/dashboard/analitico/resumo'),
-  getRiscoTerritorial: (): Promise<unknown> => http.get('/dashboard/analitico/risco-territorial'),
-  getVulnerabilidade: (): Promise<unknown> => http.get('/dashboard/analitico/vulnerabilidade'),
-  getAlertaSaude: (): Promise<unknown> => http.get('/dashboard/analitico/alerta-saude'),
-  getResultadoOperacional: (): Promise<unknown> => http.get('/dashboard/analitico/resultado-operacional'),
-  getImoveisCriticos: (): Promise<unknown> => http.get('/dashboard/analitico/imoveis-criticos'),
+  getResumo: (clienteId?: string): Promise<unknown> => http.get(`/dashboard/analitico/resumo${qs({ clienteId })}`),
+  getRiscoTerritorial: (clienteId?: string): Promise<unknown> => http.get(`/dashboard/analitico/risco-territorial${qs({ clienteId })}`),
+  getVulnerabilidade: (clienteId?: string): Promise<unknown> => http.get(`/dashboard/analitico/vulnerabilidade${qs({ clienteId })}`),
+  getAlertaSaude: (clienteId?: string): Promise<unknown> => http.get(`/dashboard/analitico/alerta-saude${qs({ clienteId })}`),
+  getResultadoOperacional: (clienteId?: string): Promise<unknown> => http.get(`/dashboard/analitico/resultado-operacional${qs({ clienteId })}`),
+  getImoveisCriticos: (clienteId?: string): Promise<unknown> => http.get(`/dashboard/analitico/imoveis-criticos${qs({ clienteId })}`),
   getBairros: async (clienteId?: string): Promise<string[]> =>
     http.get(`/dashboard/analitico/bairros${qs({ clienteId })}`),
   relatorio: async (clienteId: string, periodoInicio: string, periodoFim: string): Promise<unknown> =>
-    http.post(`/dashboard/relatorio-analitico${qs({ clienteId })}`, deepToCamel({ periodoInicio, periodoFim })),
+    http.post(`/dashboard/relatorio-analitico${qs({ clienteId })}`, deepToCamel({ periodoInicio, periodoFim, clienteId })),
   salvarRelatorio: async (payload: { clienteId: string; periodoInicio: string; periodoFim: string; payload: unknown }): Promise<unknown> =>
     http.post(`/dashboard/relatorios${qs({ clienteId: payload.clienteId })}`, deepToCamel(payload as Record<string, unknown>)),
   listarRelatorios: async (clienteId?: string): Promise<unknown[]> => {

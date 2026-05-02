@@ -6,6 +6,7 @@
  */
 import { useState, useMemo } from 'react';
 import { useClienteAtivo } from '@/hooks/useClienteAtivo';
+import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/services/api';
 import { gerarRelatorioAnaliticoPdf } from '@/lib/relatorioAnaliticoPdf';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -319,7 +320,8 @@ function PreviewRelatorio({ payload, onExport, exporting }: {
 // ─── Página principal ─────────────────────────────────────────────────────────
 
 export default function GestorRelatorios() {
-  const { clienteId } = useClienteAtivo();
+  const { clienteId, loading: clienteLoading, clientes, setClienteId } = useClienteAtivo();
+  const { isAnalistaRegional } = useAuth();
   const presets = useMemo(() => buildPresets(), []);
 
   const [presetIdx, setPresetIdx] = useState<string>('1'); // 30 dias
@@ -379,11 +381,26 @@ export default function GestorRelatorios() {
           <CardTitle className="text-sm">Configurar relatório</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-end">
-            <div className="space-y-1 flex-1">
+          <div className="flex flex-col sm:flex-row gap-3 items-end">
+            {isAnalistaRegional && clientes.length > 0 && (
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">Município</label>
+                <Select value={clienteId ?? ''} onValueChange={setClienteId}>
+                  <SelectTrigger className="w-full sm:w-[220px]">
+                    <SelectValue placeholder="Selecionar município..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {clientes.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            <div className="space-y-1">
               <label className="text-xs font-medium text-muted-foreground">Período</label>
               <Select value={presetIdx} onValueChange={setPresetIdx}>
-                <SelectTrigger className="w-full sm:w-[220px]">
+                <SelectTrigger className="w-full sm:w-[200px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -392,15 +409,23 @@ export default function GestorRelatorios() {
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-[11px] text-muted-foreground">
-                {format(new Date(preset.inicio + 'T00:00:00'), "dd 'de' MMMM", { locale: ptBR })} a {format(new Date(preset.fim + 'T00:00:00'), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
-              </p>
             </div>
-            <Button onClick={gerarRelatorio} disabled={loading || !clienteId} className="gap-2 shrink-0">
-              {loading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+            <Button onClick={gerarRelatorio} disabled={loading || clienteLoading || !clienteId} className="gap-2 shrink-0">
+              {(loading || clienteLoading) ? <RefreshCw className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
               {loading ? 'Gerando...' : 'Gerar relatório'}
             </Button>
           </div>
+          <p className="text-[11px] text-muted-foreground">
+            {format(new Date(preset.inicio + 'T00:00:00'), "dd 'de' MMMM", { locale: ptBR })} a {format(new Date(preset.fim + 'T00:00:00'), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+          </p>
+
+          {!clienteLoading && !clienteId && (
+            <div className="rounded-lg border border-yellow-200 bg-yellow-50 dark:bg-yellow-950/20 px-3 py-2">
+              <p className="text-xs text-yellow-700 flex items-center gap-1.5">
+                <AlertTriangle className="h-3.5 w-3.5" /> Conta sem município vinculado. Contate o administrador do sistema.
+              </p>
+            </div>
+          )}
 
           {error && (
             <div className="rounded-lg border border-red-200 bg-red-50 dark:bg-red-950/20 px-3 py-2">

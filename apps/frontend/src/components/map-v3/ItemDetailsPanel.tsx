@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label";
 import { http } from "@sentinella/api-client";
 import { api } from "@/services/api";
 import { useClienteAtivo } from "@/hooks/useClienteAtivo";
+import { useAuth } from "@/hooks/useAuth";
 import { useHistoricoAtendimentoLocal } from "@/hooks/useHistoricoAtendimentoLocal";
 import {
   Collapsible,
@@ -66,6 +67,7 @@ interface Props {
 export function ItemDetailsPanel({ item, onClose, onOpenImage, onCreateTask, onSendFieldTeam, onMarkResolved }: Props) {
   const isLg = useIsLgBreakpoint();
   const { clienteId } = useClienteAtivo();
+  const { isAdminOrSupervisor } = useAuth();
   const [sendingTeam, setSendingTeam] = useState(false);
   const [resolving, setResolving] = useState(false);
   const [cancelling, setCancelling] = useState(false);
@@ -81,11 +83,11 @@ export function ItemDetailsPanel({ item, onClose, onOpenImage, onCreateTask, onS
   );
 
   useEffect(() => {
-    if (!clienteId) return;
+    if (!clienteId || !isAdminOrSupervisor) return;
     http.get(`/usuarios?clienteId=${encodeURIComponent(clienteId)}&ativo=true`)
       .then((data) => setAgentes((data as Agente[]) || []))
       .catch(() => setAgentes([]));
-  }, [clienteId]);
+  }, [clienteId, isAdminOrSupervisor]);
 
   // Fetch operation status for this item
   useEffect(() => {
@@ -97,7 +99,7 @@ export function ItemDetailsPanel({ item, onClose, onOpenImage, onCreateTask, onS
         const op = list[0];
         const responsavelId = (op.responsavel_id ?? op.responsavelId) as string | null;
         let nome: string | null = null;
-        if (responsavelId) {
+        if (responsavelId && isAdminOrSupervisor) {
           const usr = await http.get(`/usuarios/${encodeURIComponent(responsavelId)}`).catch(() => null) as Record<string, unknown> | null;
           nome = (usr?.nome as string | null) ?? null;
         }

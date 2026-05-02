@@ -37,4 +37,8 @@ export const AuthException = createExceptionFactory({
     type: 'unauthorized',
     message: 'Sua sessão expirou após 30 dias de inatividade. Faça login novamente.',
   },
+  accessDenied: {
+    type: 'forbidden',
+    message: 'Acesso negado. Você não tem permissão para esta ação.',
+  },
 });

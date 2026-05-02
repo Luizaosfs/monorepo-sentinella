@@ -89,10 +89,20 @@ function buildPopupHtml(foco: FocoRiscoAtivo): string {
   <div style="font-weight:600;color:#111827;margin-bottom:2px;">${endereco}</div>
   ${bairro ? `<div style="font-size:11px;color:#6B7280;margin-bottom:4px;">${bairro}</div>` : ''}
   ${data ? `<div style="font-size:11px;color:#9CA3AF;">${data}</div>` : ''}
-  <div style="margin-top:8px;text-align:right;">
+  <div style="margin-top:10px;padding-top:10px;border-top:1px solid #F1F5F9;display:flex;gap:8px;">
     <span data-acao="detalhes" style="
-      font-size:11px;color:#2563EB;cursor:pointer;font-weight:500;
-    ">Ver detalhes →</span>
+      flex:1;display:inline-flex;align-items:center;justify-content:center;
+      font-size:12px;font-weight:500;color:#374151;cursor:pointer;
+      background:#F9FAFB;border:1px solid #E5E7EB;
+      padding:7px 0;border-radius:8px;
+    ">Ver detalhes</span>
+    <span data-acao="vistoria" style="
+      flex:1;display:inline-flex;align-items:center;justify-content:center;
+      font-size:12px;font-weight:600;color:#fff;cursor:pointer;
+      background:#4F46E5;border:1px solid #4338CA;
+      padding:7px 0;border-radius:8px;
+      box-shadow:0 1px 3px rgba(79,70,229,0.4);
+    ">Vistoria</span>
   </div>
 </div>`;
 }
@@ -131,13 +141,16 @@ function createFocoIcon(foco: FocoRiscoAtivo) {
 interface Props {
   focos: FocoRiscoAtivo[];
   onFocoClick?: (foco: FocoRiscoAtivo) => void;
+  onFocoVistoria?: (foco: FocoRiscoAtivo) => void;
 }
 
-export function FocoClusterLayer({ focos, onFocoClick }: Props) {
+export function FocoClusterLayer({ focos, onFocoClick, onFocoVistoria }: Props) {
   const map = useMap();
   const groupRef = useRef<L.MarkerClusterGroup | null>(null);
   const onFocoClickRef = useRef(onFocoClick);
   onFocoClickRef.current = onFocoClick;
+  const onFocoVistoriaRef = useRef(onFocoVistoria);
+  onFocoVistoriaRef.current = onFocoVistoria;
 
   useEffect(() => {
     if (!map) return;
@@ -170,9 +183,13 @@ export function FocoClusterLayer({ focos, onFocoClick }: Props) {
         marker.on('popupopen', (e) => {
           const container = (e as L.PopupEvent).popup.getElement();
           if (!container) return;
-          const btn = container.querySelector('[data-acao="detalhes"]') as HTMLElement | null;
-          btn?.addEventListener('click', () => {
+          const btnDetalhes = container.querySelector('[data-acao="detalhes"]') as HTMLElement | null;
+          btnDetalhes?.addEventListener('click', () => {
             onFocoClickRef.current?.(foco);
+          });
+          const btnVistoria = container.querySelector('[data-acao="vistoria"]') as HTMLElement | null;
+          btnVistoria?.addEventListener('click', () => {
+            onFocoVistoriaRef.current?.(foco);
           });
         });
         group.addLayer(marker);

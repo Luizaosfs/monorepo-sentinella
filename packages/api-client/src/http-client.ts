@@ -104,16 +104,14 @@ export async function httpRequest<T>(
         : `HTTP ${res.status}`;
 
     // Refresh reativo: retry único em 401 (defesa contra race condition token expirado).
-    // O cookie httpOnly é enviado automaticamente — não é necessário verificar se
-    // há refreshToken em memória.
-    if (
-      res.status === 401 &&
-      !skipAuth &&
-      !_alreadyRetried &&
-      path !== '/auth/refresh'
-    ) {
-      const ok = await refreshTokens();
-      if (ok) return httpRequest<T>(path, options, true);
+    // Se o refresh falhar OU se o retry também retornar 401, encerra a sessão.
+    if (res.status === 401 && !skipAuth && path !== '/auth/refresh') {
+      if (!_alreadyRetried) {
+        const ok = await refreshTokens();
+        if (ok) return httpRequest<T>(path, options, true);
+        // refresh falhou — cai em handleSessionExpired abaixo
+      }
+      // _alreadyRetried=true (token recém-emitido ainda rejeitado) ou refresh falhou
       handleSessionExpired();
     }
 
@@ -124,6 +122,13 @@ export async function httpRequest<T>(
   if (res.status === 204) return undefined as unknown as T;
 
   return res.json() as Promise<T>;
+}
+
+/** Renova o access_token silenciosamente via cookie httpOnly.
+ *  Usa a mesma deduplicação (inflightRefresh) do refresh reativo — chamadas
+ *  concorrentes (ex.: StrictMode double-invoke) aguardam o mesmo Promise. */
+export function silentRefresh(): Promise<boolean> {
+  return refreshTokens();
 }
 
 type HttpOpts = RequestInit & { skipAuth?: boolean };

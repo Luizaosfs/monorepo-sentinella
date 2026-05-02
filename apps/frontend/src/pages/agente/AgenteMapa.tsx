@@ -90,6 +90,10 @@ export default function AgenteMapa() {
     () => focosAtribuidos.filter((f) => f.latitude != null || f.longitude != null).map(focoToItem),
     [focosAtribuidos],
   );
+  const focosComCoordenadas = useMemo(
+    () => focosAtribuidos.filter((f) => f.latitude != null && f.longitude != null),
+    [focosAtribuidos],
+  );
   const todosItens = useMemo(
     () => [...itens, ...focosComoItens],
     [itens, focosComoItens],
@@ -117,6 +121,21 @@ export default function AgenteMapa() {
       return true;
     });
   }, [todosItens, filterRisk, filterType]);
+
+  // IDs de focos que passaram pelos filtros (para sincronizar FocoClusterLayer)
+  const filteredFocoIds = useMemo(
+    () => new Set(filteredItems.filter(isFocoRiscoItem).map((i) => i.id)),
+    [filteredItems],
+  );
+  const filteredFocos = useMemo(
+    () => focosComCoordenadas.filter((f) => filteredFocoIds.has(f.id)),
+    [focosComCoordenadas, filteredFocoIds],
+  );
+  // Apenas itens regulares (não-foco) para o MapClusterLayer
+  const filteredItensOnly = useMemo(
+    () => filteredItems.filter((i) => !isFocoRiscoItem(i)),
+    [filteredItems],
+  );
 
   const stats = useMemo(() => {
     let alto = 0,
@@ -311,10 +330,13 @@ export default function AgenteMapa() {
         </Button>
         <div className="absolute inset-0 z-0">
           <LeafletMapView
-            items={filteredItems}
+            items={filteredItensOnly}
             center={defaultCenter}
             selectedItemId={selectedItem?.id}
             onSelectItem={(item) => setSelectedItem(item)}
+            focos={filteredFocos}
+            onFocoClick={(foco) => setSelectedItem(focoToItem(foco))}
+            onFocoVistoria={(foco) => navigate(`/agente/focos/${foco.id}`)}
           />
         </div>
       </div>

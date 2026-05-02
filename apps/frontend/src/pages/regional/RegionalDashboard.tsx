@@ -13,9 +13,9 @@ import {
   Treemap, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend,
   Cell, PieChart, Pie, LineChart, Line, AreaChart, Area,
 } from 'recharts';
-import { useRegionalKpi, useRegionalSla, useRegionalUso } from '@/hooks/queries/useRegionalData';
+import { useRegionalKpi, useRegionalResumo, useRegionalSla, useRegionalUso, useRegionalVulnerabilidade } from '@/hooks/queries/useRegionalData';
 import { useClienteAtivo } from '@/hooks/useClienteAtivo';
-import { http } from '@sentinella/api-client';
+import { http, tokenStore } from '@sentinella/api-client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -25,9 +25,9 @@ import {
 } from '@/components/ui/table';
 import {
   Loader2, MapPin, CheckCircle2, AlertTriangle, Activity, TrendingUp,
-  Download, Sparkles, AlertCircle, WifiOff, BarChart3, Map as MapIcon, PieChart as PieIcon,
+  Download, FileText, Sparkles, AlertCircle, WifiOff, BarChart3, Map as MapIcon, PieChart as PieIcon,
 } from 'lucide-react';
-import type { RegionalKpiMunicipio, RegionalSlaMunicipio, RegionalUsoSistema } from '@/types/database';
+import type { RegionalKpiMunicipio, RegionalResumoMunicipio, RegionalSlaMunicipio, RegionalUsoSistema, RegionalVulnerabilidadeMunicipio } from '@/types/database';
 
 // ── Tipos internos ────────────────────────────────────────────────────────────
 
@@ -502,9 +502,14 @@ export default function RegionalDashboard() {
   const [graficosError, setGraficosError] = useState<string | null>(null);
   const [graficosGeradoEm, setGraficosGeradoEm] = useState<string | null>(null);
 
+  const [exportandoCsv, setExportandoCsv] = useState(false);
+  const [exportandoPdf, setExportandoPdf] = useState(false);
+
   const { data: kpi = [], isLoading: loadingKpi, isError: errorKpi, refetch: refetchKpi } = useRegionalKpi();
   const { data: sla = [], isLoading: loadingSla } = useRegionalSla();
   const { data: uso = [], isLoading: loadingUso } = useRegionalUso();
+  const { data: resumo = [] } = useRegionalResumo();
+  const { data: vulnerabilidade = [] } = useRegionalVulnerabilidade();
 
   const loading = loadingKpi || loadingSla || loadingUso;
 
@@ -557,6 +562,50 @@ export default function RegionalDashboard() {
     [kpi],
   );
 
+  // Totais do resumo consolidado
+  const totaisResumo = useMemo(() => ({
+    p1: resumo.reduce((s, r) => s + r.prioridade_p1_count, 0),
+    p2: resumo.reduce((s, r) => s + r.prioridade_p2_count, 0),
+    vistorias: resumo.reduce((s, r) => s + r.total_vistorias, 0),
+    visitadas: resumo.reduce((s, r) => s + r.vistorias_visitadas, 0),
+    vulnCritica: resumo.reduce((s, r) => s + r.vulnerabilidade_critica_count, 0),
+    vulnAlta: resumo.reduce((s, r) => s + r.vulnerabilidade_alta_count, 0),
+    riscoVetCritico: resumo.reduce((s, r) => s + r.risco_vetorial_critico_count, 0),
+    alertaSaude: resumo.reduce((s, r) => s + r.alerta_saude_urgente_count, 0),
+  }), [resumo]);
+
+  const rankingVulnerabilidade = useMemo(
+    () => [...resumo]
+      .sort((a, b) => (b.vulnerabilidade_critica_count + b.vulnerabilidade_alta_count) - (a.vulnerabilidade_critica_count + a.vulnerabilidade_alta_count))
+      .slice(0, 5),
+    [resumo],
+  );
+
+  const rankingRiscoVetorial = useMemo(
+    () => [...resumo]
+      .sort((a, b) => (b.risco_vetorial_critico_count + b.risco_vetorial_alto_count) - (a.risco_vetorial_critico_count + a.risco_vetorial_alto_count))
+      .slice(0, 5),
+    [resumo],
+  );
+
+  // Rankings de vulnerabilidade
+  const rankingVulnCritica = useMemo(
+    () => [...vulnerabilidade].sort((a, b) => b.vulnerabilidade_critica - a.vulnerabilidade_critica).slice(0, 5),
+    [vulnerabilidade],
+  );
+  const rankingRiscoVet = useMemo(
+    () => [...vulnerabilidade].sort((a, b) => (b.risco_vetorial_critico + b.risco_vetorial_alto) - (a.risco_vetorial_critico + a.risco_vetorial_alto)).slice(0, 5),
+    [vulnerabilidade],
+  );
+  const rankingAlertaSaude = useMemo(
+    () => [...vulnerabilidade].sort((a, b) => b.alerta_saude_urgente - a.alerta_saude_urgente).slice(0, 5),
+    [vulnerabilidade],
+  );
+  const rankingP1 = useMemo(
+    () => [...vulnerabilidade].sort((a, b) => b.prioridade_p1 - a.prioridade_p1).slice(0, 5),
+    [vulnerabilidade],
+  );
+
   // Dados para treemap
   const treemapData = useMemo(() =>
     kpi
@@ -603,6 +652,94 @@ export default function RegionalDashboard() {
       setInsightsLoading(false);
     }
   }, []);
+
+  // Download CSV autenticado do backend (dados completos resumo + vulnerabilidade)
+  const downloadCSV = useCallback(async () => {
+    setExportandoCsv(true);
+    try {
+      const token = tokenStore.getAccessToken();
+      const baseUrl = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') ?? '';
+      const res = await fetch(`${baseUrl}/analytics/regional/relatorio.csv`, {
+        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `relatorio-regional-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('[exportar-csv]', err);
+    } finally {
+      setExportandoCsv(false);
+    }
+  }, []);
+
+  // Gerar PDF client-side com jsPDF + autotable
+  const gerarPDF = useCallback(async () => {
+    setExportandoPdf(true);
+    try {
+      const [{ jsPDF }, { default: autoTable }] = await Promise.all([
+        import('jspdf'),
+        import('jspdf-autotable'),
+      ]);
+      const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+      const today = new Date().toLocaleDateString('pt-BR');
+
+      doc.setFontSize(18);
+      doc.setTextColor(30, 30, 30);
+      doc.text('Relatório Regional — Sentinella', 14, 18);
+      doc.setFontSize(10);
+      doc.setTextColor(100, 100, 100);
+      doc.text(`Gerado em ${today}  •  ${totais.municipios} município${totais.municipios !== 1 ? 's' : ''}`, 14, 26);
+
+      autoTable(doc, {
+        startY: 32,
+        head: [['Município', 'UF', 'Focos Totais', 'Ativos', 'Resolvidos', 'Taxa Res.', 'SLA Vencido', 'Score']],
+        body: kpi.map(r => {
+          const s = scoreMap.get(r.cliente_id);
+          return [
+            r.municipio_nome, r.uf ?? '—',
+            r.total_focos, r.focos_ativos, r.focos_resolvidos,
+            `${r.taxa_resolucao_pct.toFixed(1)}%`, r.sla_vencido_count,
+            s ? `${s.score} (${s.grade})` : '—',
+          ];
+        }),
+        styles: { fontSize: 9 },
+        headStyles: { fillColor: [79, 70, 229] },
+      });
+
+      if (vulnerabilidade.length > 0) {
+        doc.addPage();
+        doc.setFontSize(14);
+        doc.setTextColor(30, 30, 30);
+        doc.text('Vulnerabilidade por Município', 14, 16);
+        autoTable(doc, {
+          startY: 22,
+          head: [['Município', 'UF', 'Vuln Alta', 'Vuln Crítica', 'Risco Vet Alto', 'Risco Vet Crítico', 'Alerta Saúde', 'P1', 'P2']],
+          body: vulnerabilidade.map(v => [
+            v.municipio_nome, v.uf ?? '—',
+            v.vulnerabilidade_alta, v.vulnerabilidade_critica,
+            v.risco_vetorial_alto, v.risco_vetorial_critico,
+            v.alerta_saude_urgente, v.prioridade_p1, v.prioridade_p2,
+          ]),
+          styles: { fontSize: 9 },
+          headStyles: { fillColor: [220, 38, 38] },
+        });
+      }
+
+      doc.save(`relatorio-regional-${new Date().toISOString().slice(0, 10)}.pdf`);
+    } catch (err) {
+      console.error('[exportar-pdf]', err);
+    } finally {
+      setExportandoPdf(false);
+    }
+  }, [kpi, scoreMap, vulnerabilidade, totais.municipios]);
 
   // Gerar gráficos IA
   const gerarGraficos = useCallback(async () => {
@@ -672,15 +809,32 @@ export default function RegionalDashboard() {
             Visão comparativa de {totais.municipios} município{totais.municipios !== 1 ? 's' : ''} — somente leitura
           </p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => exportarCSV(kpi, usoMap, scoreMap)}
-          className="gap-2"
-        >
-          <Download className="w-3.5 h-3.5" />
-          Exportar CSV
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={downloadCSV}
+            disabled={exportandoCsv}
+            className="gap-2"
+          >
+            {exportandoCsv
+              ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              : <Download className="w-3.5 h-3.5" />}
+            CSV
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={gerarPDF}
+            disabled={exportandoPdf}
+            className="gap-2"
+          >
+            {exportandoPdf
+              ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              : <FileText className="w-3.5 h-3.5" />}
+            PDF
+          </Button>
+        </div>
       </div>
 
       {/* KPI Cards */}
@@ -731,6 +885,9 @@ export default function RegionalDashboard() {
                 {alertas.length}
               </span>
             )}
+          </TabsTrigger>
+          <TabsTrigger value="vulnerabilidade" className="gap-1.5 text-xs shrink-0 flex-1">
+            <AlertTriangle className="w-3.5 h-3.5" /> Vulnerabilidade
           </TabsTrigger>
           <TabsTrigger value="insights-ia" className="gap-1.5 text-xs shrink-0 flex-1">
             <Sparkles className="w-3.5 h-3.5" /> Insights IA
@@ -860,6 +1017,109 @@ export default function RegionalDashboard() {
               </CardContent>
             </Card>
           </div>
+
+          {/* ── Resumo consolidado (vistorias, vulnerabilidade, risco, prioridade) ── */}
+          {resumo.length > 0 && (
+            <>
+              {/* KPI cards de campo */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <KpiCard
+                  title="Focos P1 ativos"
+                  value={fmt(totaisResumo.p1)}
+                  sub={`+ ${fmt(totaisResumo.p2)} em P2`}
+                  icon={AlertCircle}
+                  color="bg-red-50 text-red-600"
+                />
+                <KpiCard
+                  title="Vistorias realizadas"
+                  value={fmt(totaisResumo.visitadas)}
+                  sub={`de ${fmt(totaisResumo.vistorias)} agendadas`}
+                  icon={Activity}
+                  color="bg-blue-50 text-blue-600"
+                />
+                <KpiCard
+                  title="Vulnerabilidade crítica"
+                  value={fmt(totaisResumo.vulnCritica)}
+                  sub={`+ ${fmt(totaisResumo.vulnAlta)} alta`}
+                  icon={AlertTriangle}
+                  color={totaisResumo.vulnCritica > 0 ? 'bg-red-50 text-red-600' : 'bg-slate-50 text-slate-500'}
+                />
+                <KpiCard
+                  title="Risco vetorial crítico"
+                  value={fmt(totaisResumo.riscoVetCritico)}
+                  sub={totaisResumo.alertaSaude > 0 ? `${fmt(totaisResumo.alertaSaude)} alertas saúde` : 'sem alertas urgentes'}
+                  icon={AlertTriangle}
+                  color={totaisResumo.riscoVetCritico > 0 ? 'bg-orange-50 text-orange-600' : 'bg-slate-50 text-slate-500'}
+                />
+              </div>
+
+              {/* Rankings — Vulnerabilidade e Risco vetorial */}
+              <div className="grid md:grid-cols-2 gap-4">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4 text-red-500" /> Ranking de vulnerabilidade
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2 pt-0">
+                    {rankingVulnerabilidade.map((r: RegionalResumoMunicipio, i: number) => {
+                      const total = r.vulnerabilidade_critica_count + r.vulnerabilidade_alta_count;
+                      return (
+                        <div key={r.cliente_id} className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground w-5 text-center">{i + 1}</span>
+                          <span className="flex-1 truncate ml-2 font-medium">{r.municipio_nome}</span>
+                          <div className="flex items-center gap-1.5 text-xs">
+                            {r.vulnerabilidade_critica_count > 0 && (
+                              <Badge className="bg-red-100 text-red-800 border-0">{r.vulnerabilidade_critica_count} crit.</Badge>
+                            )}
+                            {r.vulnerabilidade_alta_count > 0 && (
+                              <Badge className="bg-orange-100 text-orange-800 border-0">{r.vulnerabilidade_alta_count} alta</Badge>
+                            )}
+                            {total === 0 && <span className="text-muted-foreground">—</span>}
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {rankingVulnerabilidade.length === 0 && (
+                      <p className="text-xs text-muted-foreground py-2">Sem dados de vulnerabilidade registrados</p>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <TrendingUp className="w-4 h-4 text-orange-500" /> Ranking de risco vetorial
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2 pt-0">
+                    {rankingRiscoVetorial.map((r: RegionalResumoMunicipio, i: number) => {
+                      const total = r.risco_vetorial_critico_count + r.risco_vetorial_alto_count;
+                      return (
+                        <div key={r.cliente_id} className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground w-5 text-center">{i + 1}</span>
+                          <span className="flex-1 truncate ml-2 font-medium">{r.municipio_nome}</span>
+                          <div className="flex items-center gap-1.5 text-xs">
+                            {r.risco_vetorial_critico_count > 0 && (
+                              <Badge className="bg-red-100 text-red-800 border-0">{r.risco_vetorial_critico_count} crit.</Badge>
+                            )}
+                            {r.risco_vetorial_alto_count > 0 && (
+                              <Badge className="bg-orange-100 text-orange-800 border-0">{r.risco_vetorial_alto_count} alto</Badge>
+                            )}
+                            {total === 0 && <span className="text-muted-foreground">—</span>}
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {rankingRiscoVetorial.length === 0 && (
+                      <p className="text-xs text-muted-foreground py-2">Sem dados de risco vetorial registrados</p>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            </>
+          )}
+
         </TabsContent>
 
         {/* ── Tab: Mapa Visual ─────────────────────────────────────────────── */}
@@ -966,6 +1226,176 @@ export default function RegionalDashboard() {
                 {alertas.map((a, i) => <AlertaCard key={`${a.cliente_id}-${i}`} alerta={a} />)}
               </div>
             </div>
+          )}
+        </TabsContent>
+
+        {/* ── Tab: Vulnerabilidade ──────────────────────────────────────────── */}
+        <TabsContent value="vulnerabilidade" className="space-y-4 mt-4">
+
+          {vulnerabilidade.length === 0 ? (
+            <Card>
+              <CardContent className="flex items-center justify-center py-12 text-sm text-muted-foreground">
+                Nenhuma vistoria consolidada encontrada nos municípios do agrupamento.
+              </CardContent>
+            </Card>
+          ) : (
+            <>
+              {/* Tabela comparativa */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Vulnerabilidade por município</CardTitle>
+                </CardHeader>
+                <CardContent className="p-0 overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Município / UF</TableHead>
+                        <TableHead className="text-right">Vistorias</TableHead>
+                        <TableHead className="text-right">Vuln. crítica</TableHead>
+                        <TableHead className="text-right">Vuln. alta</TableHead>
+                        <TableHead className="text-right">Risco vet. crítico</TableHead>
+                        <TableHead className="text-right">Risco vet. alto</TableHead>
+                        <TableHead className="text-right">Alerta urgente</TableHead>
+                        <TableHead className="text-right">P1 / P2</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {vulnerabilidade.map((row: RegionalVulnerabilidadeMunicipio) => (
+                        <TableRow key={row.cliente_id}>
+                          <TableCell>
+                            <div className="font-medium">{row.municipio_nome}</div>
+                            {row.uf && <div className="text-xs text-muted-foreground">{row.cidade} · {row.uf}</div>}
+                          </TableCell>
+                          <TableCell className="text-right font-mono">{fmt(row.total_vistorias)}</TableCell>
+                          <TableCell className="text-right">
+                            <Badge className={`border-0 ${row.vulnerabilidade_critica > 0 ? 'bg-red-100 text-red-800' : 'bg-slate-100 text-slate-500'}`}>
+                              {fmt(row.vulnerabilidade_critica)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Badge className={`border-0 ${row.vulnerabilidade_alta > 0 ? 'bg-orange-100 text-orange-800' : 'bg-slate-100 text-slate-500'}`}>
+                              {fmt(row.vulnerabilidade_alta)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Badge className={`border-0 ${row.risco_vetorial_critico > 0 ? 'bg-red-100 text-red-800' : 'bg-slate-100 text-slate-500'}`}>
+                              {fmt(row.risco_vetorial_critico)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Badge className={`border-0 ${row.risco_vetorial_alto > 0 ? 'bg-orange-100 text-orange-800' : 'bg-slate-100 text-slate-500'}`}>
+                              {fmt(row.risco_vetorial_alto)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Badge className={`border-0 ${row.alerta_saude_urgente > 0 ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-500'}`}>
+                              {fmt(row.alerta_saude_urgente)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right text-sm font-mono">
+                            <span className={row.prioridade_p1 > 0 ? 'text-red-600 font-bold' : 'text-muted-foreground'}>{row.prioridade_p1}</span>
+                            <span className="text-muted-foreground mx-1">/</span>
+                            <span className={row.prioridade_p2 > 0 ? 'text-orange-600' : 'text-muted-foreground'}>{row.prioridade_p2}</span>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+
+              {/* Rankings */}
+              <div className="grid md:grid-cols-2 gap-4">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4 text-red-500" /> Maior vulnerabilidade crítica
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2 pt-0">
+                    {rankingVulnCritica.map((r: RegionalVulnerabilidadeMunicipio, i: number) => (
+                      <div key={r.cliente_id} className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground w-5 text-center">{i + 1}</span>
+                        <span className="flex-1 truncate ml-2 font-medium">{r.municipio_nome}</span>
+                        <Badge className={`border-0 ${r.vulnerabilidade_critica > 0 ? 'bg-red-100 text-red-800' : 'bg-slate-100 text-slate-500'}`}>
+                          {fmt(r.vulnerabilidade_critica)}
+                        </Badge>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <TrendingUp className="w-4 h-4 text-orange-500" /> Maior risco vetorial
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2 pt-0">
+                    {rankingRiscoVet.map((r: RegionalVulnerabilidadeMunicipio, i: number) => (
+                      <div key={r.cliente_id} className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground w-5 text-center">{i + 1}</span>
+                        <span className="flex-1 truncate ml-2 font-medium">{r.municipio_nome}</span>
+                        <div className="flex items-center gap-1">
+                          {r.risco_vetorial_critico > 0 && (
+                            <Badge className="border-0 bg-red-100 text-red-800">{r.risco_vetorial_critico}</Badge>
+                          )}
+                          {r.risco_vetorial_alto > 0 && (
+                            <Badge className="border-0 bg-orange-100 text-orange-800">{r.risco_vetorial_alto}</Badge>
+                          )}
+                          {r.risco_vetorial_critico === 0 && r.risco_vetorial_alto === 0 && (
+                            <span className="text-muted-foreground text-xs">—</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 text-amber-500" /> Maior alerta de saúde urgente
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2 pt-0">
+                    {rankingAlertaSaude.map((r: RegionalVulnerabilidadeMunicipio, i: number) => (
+                      <div key={r.cliente_id} className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground w-5 text-center">{i + 1}</span>
+                        <span className="flex-1 truncate ml-2 font-medium">{r.municipio_nome}</span>
+                        <Badge className={`border-0 ${r.alerta_saude_urgente > 0 ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-500'}`}>
+                          {fmt(r.alerta_saude_urgente)}
+                        </Badge>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Activity className="w-4 h-4 text-red-600" /> Maior prioridade P1
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2 pt-0">
+                    {rankingP1.map((r: RegionalVulnerabilidadeMunicipio, i: number) => (
+                      <div key={r.cliente_id} className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground w-5 text-center">{i + 1}</span>
+                        <span className="flex-1 truncate ml-2 font-medium">{r.municipio_nome}</span>
+                        <div className="flex items-center gap-1">
+                          <Badge className={`border-0 ${r.prioridade_p1 > 0 ? 'bg-red-100 text-red-800' : 'bg-slate-100 text-slate-500'}`}>
+                            P1: {r.prioridade_p1}
+                          </Badge>
+                          <Badge className="border-0 bg-orange-100 text-orange-800">
+                            P2: {r.prioridade_p2}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              </div>
+            </>
           )}
         </TabsContent>
 

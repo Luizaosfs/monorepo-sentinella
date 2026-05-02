@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, createContext, useContext, forwardRef, type ReactNode } from 'react';
-import { http, tokenStore } from '@sentinella/api-client';
+import { http, tokenStore, silentRefresh } from '@sentinella/api-client';
 import '@/lib/api-client-config';
 import { PapelApp } from '@/types/database';
 
@@ -74,22 +74,15 @@ export const AuthProvider = forwardRef<HTMLDivElement, { children: ReactNode }>(
   const loadMe = async () => {
     if (!tokenStore.getAccessToken()) {
       // Sem access_token em memória (page refresh normal) — tenta renovar
-      // silenciosamente via cookie httpOnly antes de considerar deslogado.
-      try {
-        const refreshed = await http.post<{ accessToken: string; user: AuthMeResult }>(
-          '/auth/refresh',
-          undefined,
-          { skipAuth: true },
-        );
-        tokenStore.setTokens(refreshed.accessToken);
-        setUsuario(refreshed.user);
-        setPapel(resolvePapel(refreshed.user.papeis));
-      } catch {
-        // Cookie ausente, inválido ou revogado — usuário não autenticado.
+      // silenciosamente via cookie httpOnly. Usa silentRefresh (mesma
+      // deduplicação do refresh reativo) para evitar rotação dupla em StrictMode.
+      const ok = await silentRefresh();
+      if (!ok) {
         setUsuario(null);
         setPapel(null);
+        return;
       }
-      return;
+      // token armazenado por silentRefresh — cai em /auth/me abaixo
     }
     try {
       const me = await http.get<AuthMeResult>('/auth/me');

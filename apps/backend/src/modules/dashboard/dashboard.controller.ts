@@ -165,7 +165,7 @@ export class DashboardController {
   @Post('relatorio-analitico')
   @UseGuards(UserThrottlerGuard)
   @Throttle({ default: { limit: 3, ttl: 60_000 } })
-  @Roles('admin', 'supervisor')
+  @Roles('admin', 'supervisor', 'analista_regional')
   @ApiOperation({ summary: 'Gera relatório analítico completo do período e salva' })
   async relatorioAnalitico(@Body() body: RelatorioAnaliticoBody) {
     const parsed = relatorioAnaliticoBodySchema.parse(body);
@@ -198,7 +198,7 @@ export class DashboardController {
   }
 
   @Get('relatorios')
-  @Roles('admin', 'supervisor')
+  @Roles('admin', 'supervisor', 'analista_regional')
   @ApiOperation({ summary: 'Listar relatórios gerados' })
   async listRelatorios() {
     const clienteId = requireTenantId(getAccessScope(this.req));
@@ -209,7 +209,7 @@ export class DashboardController {
   @Post('relatorios')
   @UseGuards(UserThrottlerGuard)
   @Throttle({ default: { limit: 3, ttl: 60_000 } })
-  @Roles('admin', 'supervisor')
+  @Roles('admin', 'supervisor', 'analista_regional')
   @ApiOperation({ summary: 'Gerar relatório' })
   async createRelatorio(@Body() body: CreateRelatorioBody) {
     const parsed = createRelatorioSchema.parse(body);

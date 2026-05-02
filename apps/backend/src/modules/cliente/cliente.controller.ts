@@ -21,6 +21,7 @@ import {
   paginationSchema,
 } from '@shared/dtos/pagination-body';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
+import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 
@@ -73,6 +74,7 @@ export class ClienteController {
     private upsertIntegracaoUc: UpsertIntegracao,
     private updateIntegracaoMetaUc: UpdateIntegracaoMeta,
     private testarIntegracaoUc: TestarIntegracao,
+    private prisma: PrismaService,
     @Inject(REQUEST) private req: Request,
   ) {}
 
@@ -176,6 +178,19 @@ export class ClienteController {
       items: result.items.map(ClienteViewModel.toHttp),
       pagination: result.pagination,
     };
+  }
+
+  @Get('regional')
+  @Roles('analista_regional')
+  @ApiOperation({ summary: 'Lista municípios do agrupamento do analista_regional autenticado' })
+  async getMunicipiosRegionais() {
+    const scope = getAccessScope(this.req);
+    if (scope.kind !== 'regional' || !scope.clienteIdsPermitidos?.length) return [];
+    return this.prisma.client.clientes.findMany({
+      where: { id: { in: scope.clienteIdsPermitidos }, ativo: true },
+      select: { id: true, nome: true },
+      orderBy: { nome: 'asc' },
+    });
   }
 
   @Get('me')

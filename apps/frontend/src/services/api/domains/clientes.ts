@@ -50,6 +50,11 @@ export const clientes = {
   ): Promise<void> =>
     http.put(`/clientes/${id}`, deepToCamel(payload)),
 
+  listRegional: async (): Promise<{ id: string; nome: string }[]> => {
+    const raw = await http.get('/clientes/regional');
+    return (Array.isArray(raw) ? raw : []) as { id: string; nome: string }[];
+  },
+
   resolverPorCoordenada: (lat: number, lng: number) =>
     http.get(`/clientes/resolver-coordenada${qs({ lat, lng })}`),
 

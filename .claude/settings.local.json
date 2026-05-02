@@ -227,7 +227,10 @@
       "Read(//d/sentinella/**)",
       "Bash(\"C:/Program Files/PostgreSQL/17/bin/psql\" -U postgres -d sentinella -c \"SELECT COUNT\\(*\\) AS total_regioes, COUNT\\(CASE WHEN area IS NOT NULL THEN 1 END\\) AS com_area FROM regioes WHERE deleted_at IS NULL;\")",
       "PowerShell($env:PGPASSWORD=\"Sentinella147852369\"; & \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql\" -h 177.7.37.14 -U luizAntonio -d sentinella -c \"SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_name ILIKE '%quarteirao%' ORDER BY table_name;\" 2>&1)",
-      "PowerShell(New-Item *)"
+      "PowerShell(New-Item *)",
+      "Bash(cd /d D:\\\\sentinella\\\\monorepo-sentinella)",
+      "Bash(dir /s /b *.tsx *.ts)",
+      "PowerShell(cd \"D:\\\\sentinella\\\\monorepo-sentinella\"; Get-ChildItem -Recurse -Include \"ItemDetailsPanel.tsx\",\"http-client.ts\" | ForEach-Object { $_.FullName })"
     ]
   }
 }

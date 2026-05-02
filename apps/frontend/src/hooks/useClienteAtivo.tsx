@@ -36,7 +36,7 @@ const ClienteAtivoContext = createContext<ClienteAtivoContextType>({} as Cliente
 const STORAGE_KEY = 'sentinela_cliente_ativo';
 
 export const ClienteAtivoProvider = forwardRef<HTMLDivElement, { children: ReactNode }>(({ children }, _ref) => {
-  const { usuario, isAdmin, loading: authLoading } = useAuth();
+  const { usuario, isAdmin, isAnalistaRegional, loading: authLoading } = useAuth();
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(() => {
     try {
@@ -65,6 +65,13 @@ export const ClienteAtivoProvider = forwardRef<HTMLDivElement, { children: React
           } else if (!selectedId && sorted.length > 0) {
             setSelectedId(sorted[0].id);
           }
+        } else if (usuario.agrupamentoId) {
+          const list = await api.clientes.listRegional() as Cliente[];
+          const sorted = [...list].sort((a, b) => a.nome.localeCompare(b.nome));
+          setClientes(sorted);
+          if (!selectedId || !sorted.find((c) => c.id === selectedId)) {
+            setSelectedId(sorted[0]?.id || null);
+          }
         } else if (usuario.clienteId) {
           const meu = await api.clientes.me() as Cliente | null;
           setClientes(meu ? [meu] : []);
@@ -80,9 +87,9 @@ export const ClienteAtivoProvider = forwardRef<HTMLDivElement, { children: React
 
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAdmin, authLoading, usuario, usuario?.clienteId]);
+  }, [isAdmin, isAnalistaRegional, authLoading, usuario, usuario?.clienteId, usuario?.agrupamentoId]);
 
-  const clienteId = isAdmin ? selectedId : usuario?.clienteId || null;
+  const clienteId = (isAdmin || isAnalistaRegional) ? selectedId : usuario?.clienteId || null;
 
   // P1-2: busca contexto do contrato SaaS sempre que o clienteId ativo mudar.
   // Depende do clienteId computado acima (que por sua vez depende de isAdmin + selectedId).
