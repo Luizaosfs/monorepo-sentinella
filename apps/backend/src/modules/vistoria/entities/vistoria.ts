@@ -17,16 +17,35 @@ export interface VistoriaDeposito {
 export interface VistoriaSintoma {
   id?: string;
   vistoriaId?: string;
-  sintoma: string;
-  observacao?: string;
+  febre: boolean;
+  manchasVermelhas: boolean;
+  dorArticulacoes: boolean;
+  dorCabeca: boolean;
+  nausea: boolean;
+  moradoresSintomasQtd: number;
+  gerouCasoNotificadoId?: string;
   createdAt?: Date;
 }
 
 export interface VistoriaRisco {
   id?: string;
   vistoriaId?: string;
-  tipoRisco: string;
-  descricao?: string;
+  menorIncapaz: boolean;
+  idosoIncapaz: boolean;
+  mobilidadeReduzida: boolean;
+  acamado: boolean;
+  depQuimico: boolean;
+  riscoAlimentar: boolean;
+  riscoMoradia: boolean;
+  criadouroAnimais: boolean;
+  lixo: boolean;
+  residuosOrganicos: boolean;
+  residuosQuimicos: boolean;
+  residuosMedicos: boolean;
+  acumuloMaterialOrganico: boolean;
+  animaisSinaisLv: boolean;
+  caixaDestampada: boolean;
+  outroRiscoVetorial?: string;
   createdAt?: Date;
 }
 

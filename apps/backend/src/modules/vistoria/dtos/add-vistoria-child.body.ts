@@ -22,6 +22,7 @@ export const addSintomasSchema = z.object({
   manchasVermelhas:     z.boolean().default(false),
   dorArticulacoes:      z.boolean().default(false),
   dorCabeca:            z.boolean().default(false),
+  nausea:               z.boolean().default(false),
   moradoresSintomasQtd: z.number().int().default(0),
 });
 export class AddSintomasBody extends createZodDto(addSintomasSchema) {}
@@ -31,6 +32,8 @@ export const addRiscosSchema = z.object({
   vistoriaId:              z.string().uuid({ message: 'ID da vistoria inválido' }),
   menorIncapaz:            z.boolean().default(false),
   idosoIncapaz:            z.boolean().default(false),
+  mobilidadeReduzida:      z.boolean().default(false),
+  acamado:                 z.boolean().default(false),
   depQuimico:              z.boolean().default(false),
   riscoAlimentar:          z.boolean().default(false),
   riscoMoradia:            z.boolean().default(false),

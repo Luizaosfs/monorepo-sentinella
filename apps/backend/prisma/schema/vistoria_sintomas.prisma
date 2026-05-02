@@ -6,6 +6,7 @@ model vistoria_sintomas {
   manchas_vermelhas       Boolean   @default(false)
   dor_articulacoes        Boolean   @default(false)
   dor_cabeca              Boolean   @default(false)
+  nausea                  Boolean   @default(false)
   moradores_sintomas_qtd  Int       @default(0)
   gerou_caso_notificado_id String?  @db.Uuid
   deleted_at              DateTime? @db.Timestamptz

@@ -68,6 +68,7 @@ import { GetFocoAtivoById } from './use-cases/get-foco-ativo-by-id';
 import { GetFocoHistorico } from './use-cases/get-foco-historico';
 import { GetFocoTimeline } from './use-cases/get-foco-timeline';
 import { GetFocoRisco } from './use-cases/get-foco-risco';
+import { GetFocoDetalhes } from './use-cases/get-foco-detalhes';
 import { IniciarInspecao } from './use-cases/iniciar-inspecao';
 import { ListFocosByIds } from './use-cases/list-focos-by-ids';
 import { PaginationFocoRisco } from './use-cases/pagination-foco-risco';
@@ -97,6 +98,7 @@ export class FocoRiscoController {
     private getFocoTimelineUc: GetFocoTimeline,
     private listFocosByIdsUc: ListFocosByIds,
     private updateFocoRiscoUc: UpdateFocoRisco,
+    private getFocoDetalhesUc: GetFocoDetalhes,
     private prisma: PrismaService,
     @Inject(REQUEST) private req: Request,
   ) {}
@@ -211,6 +213,13 @@ export class FocoRiscoController {
   @ApiOperation({ summary: 'Timeline unificada do foco (estados, vistorias, SLA, casos)' })
   async getTimeline(@Param('id') id: string) {
     return this.getFocoTimelineUc.execute(id);
+  }
+
+  @Get(':id/detalhes')
+  @Roles('admin', 'supervisor', 'agente')
+  @ApiOperation({ summary: 'Detalhes completos do foco: imóvel, vistoria, depósitos, sintomas, calhas, riscos' })
+  async getDetalhes(@Param('id') id: string) {
+    return this.getFocoDetalhesUc.execute(id, getAccessScope(this.req).tenantId);
   }
 
   @Get('by-levantamento-item')

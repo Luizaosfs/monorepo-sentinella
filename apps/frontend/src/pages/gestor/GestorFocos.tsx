@@ -1,7 +1,15 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle,
 } from '@/components/ui/sheet';
@@ -18,6 +26,7 @@ import {
   Filter, Search, ChevronLeft, ChevronRight,
   CheckSquare, Square, Users, X, Loader2, MapPin,
   ZoomIn, AlertCircle, Clock, Eye, Activity, Info, Stethoscope, AlertTriangle, PlayCircle,
+  ArrowUpDown, ArrowUp, ArrowDown,
 } from 'lucide-react';
 import { useClienteAtivo } from '@/hooks/useClienteAtivo';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -31,9 +40,11 @@ import { SlaBadge } from '@/components/foco/SlaBadge';
 import { OrigemIcone } from '@/components/foco/OrigemIcone';
 import { LABEL_STATUS } from '@/types/focoRisco';
 import { mapFocoToStatusOperacional, LABEL_STATUS_OPERACIONAL, type FocoStatus } from '@/lib/mapStatusOperacional';
+import type { ReactNode } from 'react';
 import type {
   FocoRiscoAtivo, FocoRiscoStatus, FocoRiscoPrioridade, FocoRiscoOrigem,
 } from '@/types/database';
+import { cn } from '@/lib/utils';
 import { logEvento } from '@/lib/pilotoEventos';
 import { getSlaReductionReason } from '@/types/sla';
 import {
@@ -46,8 +57,17 @@ import { STALE } from '@/lib/queryConfig';
 type FiltroStatus = 'todos' | FocoRiscoStatus;
 type FiltroPrioridade = 'todos' | FocoRiscoPrioridade;
 type FiltroOrigem = 'todos' | FocoRiscoOrigem;
+type FiltroSla = 'todos' | NonNullable<FocoRiscoAtivo['sla_status']>;
 
 const PAGE_SIZE = 30;
+
+const LABEL_SLA_FILTRO: Record<Exclude<FiltroSla, 'todos'>, string> = {
+  vencido: 'Vencido',
+  critico: 'Crítico',
+  atencao: 'Atenção',
+  ok: 'No prazo',
+  sem_sla: 'Sem SLA',
+};
 
 const STATUS_FILTROS: FiltroStatus[] = [
   'todos', 'suspeita', 'em_triagem', 'aguarda_inspecao', 'em_inspecao',
@@ -83,6 +103,133 @@ const BORDER_PRIORIDADE: Record<string, string> = {
   P3: 'border-l-[3px] border-l-yellow-400',
 };
 
+/** Ordenação client-side na página atual (após busca / parado). */
+type TableSortKey = 'score' | 'status' | 'prioridade' | 'sla' | 'codigo' | 'endereco' | 'origem';
+
+const STATUS_SORT_ORDER: FocoRiscoStatus[] = [
+  'suspeita', 'em_triagem', 'aguarda_inspecao', 'em_inspecao',
+  'confirmado', 'em_tratamento', 'resolvido', 'descartado',
+];
+
+const PRIORIDADE_SORT_VAL: Record<string, number> = { P1: 1, P2: 2, P3: 3, P4: 4, P5: 5 };
+
+const SLA_SORT_RANK: Record<string, number> = {
+  vencido: 0, critico: 1, atencao: 2, ok: 3, sem_sla: 4,
+};
+
+function statusSortIndex(status: string): number {
+  const i = STATUS_SORT_ORDER.indexOf(status as FocoRiscoStatus);
+  return i === -1 ? 99 : i;
+}
+
+function compareFocosTable(
+  a: FocoRiscoAtivo,
+  b: FocoRiscoAtivo,
+  key: TableSortKey,
+  dir: 'asc' | 'desc',
+): number {
+  const mul = dir === 'asc' ? 1 : -1;
+  switch (key) {
+    case 'score': {
+      const va = a.score_prioridade ?? 0;
+      const vb = b.score_prioridade ?? 0;
+      return (va - vb) * mul;
+    }
+    case 'status':
+      return (statusSortIndex(a.status) - statusSortIndex(b.status)) * mul;
+    case 'prioridade': {
+      const pa = PRIORIDADE_SORT_VAL[a.prioridade ?? ''] ?? 99;
+      const pb = PRIORIDADE_SORT_VAL[b.prioridade ?? ''] ?? 99;
+      return (pa - pb) * mul;
+    }
+    case 'sla': {
+      const ra = SLA_SORT_RANK[a.sla_status ?? 'sem_sla'] ?? 5;
+      const rb = SLA_SORT_RANK[b.sla_status ?? 'sem_sla'] ?? 5;
+      if (ra !== rb) return (ra - rb) * mul;
+      const ta = a.sla_prazo_em ? new Date(a.sla_prazo_em).getTime() : 0;
+      const tb = b.sla_prazo_em ? new Date(b.sla_prazo_em).getTime() : 0;
+      return (ta - tb) * mul;
+    }
+    case 'codigo':
+      return (a.codigo_foco ?? '').localeCompare(b.codigo_foco ?? '', 'pt-BR', { numeric: true, sensitivity: 'base' }) * mul;
+    case 'endereco': {
+      const sa = `${a.logradouro ?? ''} ${a.numero ?? ''} ${a.bairro ?? ''} ${a.endereco_normalizado ?? ''}`.trim().toLowerCase();
+      const sb = `${b.logradouro ?? ''} ${b.numero ?? ''} ${b.bairro ?? ''} ${b.endereco_normalizado ?? ''}`.trim().toLowerCase();
+      return sa.localeCompare(sb, 'pt-BR') * mul;
+    }
+    case 'origem':
+      return (a.origem_tipo ?? '').localeCompare(b.origem_tipo ?? '', 'pt-BR') * mul;
+    default:
+      return 0;
+  }
+}
+
+function SortFilterColHeader({
+  label,
+  colKey,
+  activeSort,
+  sortDir,
+  onSort,
+  filterContent,
+  className,
+  narrow,
+}: {
+  label: string;
+  colKey: TableSortKey;
+  activeSort: TableSortKey;
+  sortDir: 'asc' | 'desc';
+  onSort: (k: TableSortKey) => void;
+  filterContent: ReactNode;
+  className?: string;
+  narrow?: boolean;
+}) {
+  const active = activeSort === colKey;
+  return (
+    <th
+      className={cn(
+        'py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground',
+        narrow ? 'px-3' : 'px-4',
+        className,
+      )}
+    >
+      <div className="flex items-center gap-0.5">
+        <button
+          type="button"
+          onClick={() => onSort(colKey)}
+          className="inline-flex max-w-[min(100%,11rem)] items-center gap-1 rounded-md py-0.5 pr-1 text-left transition-colors hover:bg-muted/80 hover:text-foreground"
+          title="Ordenar por esta coluna"
+        >
+          <span className="truncate">{label}</span>
+          {active ? (
+            sortDir === 'asc' ? (
+              <ArrowUp className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden />
+            ) : (
+              <ArrowDown className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden />
+            )
+          ) : (
+            <ArrowUpDown className="h-3.5 w-3.5 shrink-0 opacity-40" aria-hidden />
+          )}
+        </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className="shrink-0 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+              title="Filtrar coluna"
+              aria-label={`Filtro: ${label}`}
+            >
+              <Filter className="h-3 w-3" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-52">
+            {filterContent}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </th>
+  );
+}
+
 function acaoBtnClass(status: FocoRiscoStatus): string {
   const base = 'h-6 px-2 text-[10px] border transition-colors rounded-md font-semibold whitespace-nowrap';
   switch (status) {
@@ -114,7 +261,11 @@ export default function GestorFocos() {
   const [filtroPrioridade, setFiltroPrioridade] = useState<FiltroPrioridade>('todos');
   const [filtroOrigem, setFiltroOrigem] = useState<FiltroOrigem>('todos');
   const [filtroParado, setFiltroParado] = useState(false);
+  const [filtroSla, setFiltroSla] = useState<FiltroSla>('todos');
+  const [sortKey, setSortKey] = useState<TableSortKey>('score');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [page, setPage] = useState(1);
+  const buscaRef = useRef<HTMLInputElement>(null);
 
   // ── Lightbox ─────────────────────────────────────────────────────────────────
   const [lightbox, setLightbox] = useState<{
@@ -184,22 +335,8 @@ export default function GestorFocos() {
   });
 
   // Limpa seleção ao mudar filtros ou página
-  useEffect(() => { setPage(1); setSelecionados(new Set()); }, [filtroStatus, filtroPrioridade, filtroOrigem, filtroParado]);
+  useEffect(() => { setPage(1); setSelecionados(new Set()); }, [filtroStatus, filtroPrioridade, filtroOrigem, filtroParado, filtroSla]);
   useEffect(() => { setSelecionados(new Set()); }, [page]);
-
-  // Piloto: registra quando focos de alta prioridade ou críticos são exibidos
-  useEffect(() => {
-    if (!clienteId || focos.length === 0) return;
-    const altaPrioridade = focos.filter((f) => f.prioridade === 'P1' || f.prioridade === 'P2');
-    const criticos = focos.filter((f) => (f.score_prioridade ?? 0) >= 50);
-    if (altaPrioridade.length > 0) {
-      logEvento('foco_alta_prioridade_listado', clienteId, { count: altaPrioridade.length, page });
-    }
-    if (criticos.length > 0) {
-      logEvento('foco_critico_exibido', clienteId, { count: criticos.length, page });
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [focos]);
 
   const usuarioPorId = useMemo(() => {
     const m = new Map<string, { nome?: string | null; email?: string | null }>();
@@ -216,6 +353,7 @@ export default function GestorFocos() {
       const q = busca.toLowerCase();
       resultado = resultado.filter(
         (f) =>
+          (f.codigo_foco ?? '').toLowerCase().includes(q) ||
           (f.logradouro ?? '').toLowerCase().includes(q) ||
           (f.bairro ?? '').toLowerCase().includes(q) ||
           (f.endereco_normalizado ?? '').toLowerCase().includes(q),
@@ -226,8 +364,40 @@ export default function GestorFocos() {
         (f) => f.updated_at && new Date(f.updated_at).getTime() < limiteParado,
       );
     }
+    if (filtroSla !== 'todos') {
+      resultado = resultado.filter((f) => (f.sla_status ?? 'sem_sla') === filtroSla);
+    }
     return resultado;
-  }, [focos, busca, filtroParado]);
+  }, [focos, busca, filtroParado, filtroSla]);
+
+  const focosOrdenados = useMemo(() => {
+    const copy = [...focosFiltrados];
+    copy.sort((a, b) => compareFocosTable(a, b, sortKey, sortDir));
+    return copy;
+  }, [focosFiltrados, sortKey, sortDir]);
+
+  function handleHeaderSort(col: TableSortKey) {
+    if (sortKey !== col) {
+      setSortKey(col);
+      setSortDir('desc');
+    } else {
+      setSortDir((d) => (d === 'desc' ? 'asc' : 'desc'));
+    }
+  }
+
+  // Piloto: registra quando focos de alta prioridade ou críticos são exibidos (lista visível)
+  useEffect(() => {
+    if (!clienteId || focosOrdenados.length === 0) return;
+    const altaPrioridade = focosOrdenados.filter((f) => f.prioridade === 'P1' || f.prioridade === 'P2');
+    const criticos = focosOrdenados.filter((f) => (f.score_prioridade ?? 0) >= 50);
+    if (altaPrioridade.length > 0) {
+      logEvento('foco_alta_prioridade_listado', clienteId, { count: altaPrioridade.length, page });
+    }
+    if (criticos.length > 0) {
+      logEvento('foco_critico_exibido', clienteId, { count: criticos.length, page });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focosOrdenados, clienteId, page]);
 
   // Contagem de filtros ativos
   const filtrosAtivos = [
@@ -236,12 +406,13 @@ export default function GestorFocos() {
     filtroOrigem !== 'todos',
     !!busca,
     filtroParado,
+    filtroSla !== 'todos',
   ].filter(Boolean).length;
 
   // ── Lote: união de transições disponíveis para os selecionados ────────────────
   const transicoesLote = useMemo<FocoRiscoStatus[]>(() => {
     if (selecionados.size === 0) return [];
-    const focosSel = focosFiltrados.filter((f) => selecionados.has(f.id));
+    const focosSel = focosOrdenados.filter((f) => selecionados.has(f.id));
     if (focosSel.length === 0) return [];
     const union = new Set<FocoRiscoStatus>();
     for (const f of focosSel) {
@@ -251,19 +422,19 @@ export default function GestorFocos() {
       'em_triagem', 'aguarda_inspecao', 'confirmado', 'em_tratamento', 'resolvido', 'descartado',
     ];
     return ordem.filter((t) => union.has(t));
-  }, [selecionados, focosFiltrados]);
+  }, [selecionados, focosOrdenados]);
 
   const elegiveisPorLoteStatus = useMemo(() => {
     if (!loteStatusDialog) return [];
-    return focosFiltrados.filter(
+    return focosOrdenados.filter(
       (f) =>
         selecionados.has(f.id) &&
         getTransicoesPermitidas(f.status as FocoRiscoStatus).includes(loteStatusDialog),
     );
-  }, [loteStatusDialog, focosFiltrados, selecionados]);
+  }, [loteStatusDialog, focosOrdenados, selecionados]);
 
-  const todosSelecionados = focosFiltrados.length > 0 && selecionados.size === focosFiltrados.length;
-  const algunsSelecionados = selecionados.size > 0 && selecionados.size < focosFiltrados.length;
+  const todosSelecionados = focosOrdenados.length > 0 && selecionados.size === focosOrdenados.length;
+  const algunsSelecionados = selecionados.size > 0 && selecionados.size < focosOrdenados.length;
 
   function toggleSelecionado(id: string, e: React.MouseEvent) {
     e.stopPropagation();
@@ -277,9 +448,9 @@ export default function GestorFocos() {
 
   function toggleTodos() {
     setSelecionados(
-      selecionados.size === focosFiltrados.length
+      selecionados.size === focosOrdenados.length
         ? new Set()
-        : new Set(focosFiltrados.map((f) => f.id)),
+        : new Set(focosOrdenados.map((f) => f.id)),
     );
   }
 
@@ -290,6 +461,9 @@ export default function GestorFocos() {
     setFiltroOrigem('todos');
     setBusca('');
     setFiltroParado(false);
+    setFiltroSla('todos');
+    setSortKey('score');
+    setSortDir('desc');
   }
 
   // ── Ação em lote: chama API diretamente, invalida uma única vez ao final ──────
@@ -495,7 +669,8 @@ export default function GestorFocos() {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Buscar por endereço ou bairro..."
+              ref={buscaRef}
+              placeholder="Buscar por código, endereço ou bairro..."
               className="pl-9 h-9 text-sm bg-background"
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
@@ -608,7 +783,7 @@ export default function GestorFocos() {
             </div>
           ))}
         </div>
-      ) : focosFiltrados.length === 0 ? (
+      ) : focosOrdenados.length === 0 ? (
         <div className="rounded-xl border border-dashed py-14 flex flex-col items-center gap-3 text-center">
           <Filter className="w-8 h-8 text-muted-foreground" />
           <div>
@@ -641,7 +816,7 @@ export default function GestorFocos() {
             </span>
           </div>
 
-          {focosFiltrados.map((foco) => {
+          {focosOrdenados.map((foco) => {
             const isSelecionado = selecionados.has(foco.id);
             const borderClass = BORDER_PRIORIDADE[foco.prioridade ?? ''] ?? '';
             const slaVencido = foco.sla_status === 'vencido';
@@ -685,7 +860,11 @@ export default function GestorFocos() {
                   <FocoRiscoCard
                     foco={foco}
                     usuarioPorId={usuarioPorId}
-                    onAbrirDetalhe={() => setSelectedFoco(foco)}
+                    onAbrirDetalhe={() =>
+                      foco.status === 'resolvido'
+                        ? navigate(`/gestor/focos/${foco.id}/relatorio`)
+                        : setSelectedFoco(foco)
+                    }
                     onVerNoMapa={() => navigate(`/gestor/mapa?foco=${foco.id}`)}
                     onTransicionar={(f, s) => handleTransicionar(f, s)}
                   />
@@ -711,16 +890,144 @@ export default function GestorFocos() {
                     </button>
                   </th>
                   <th className="px-2 py-3 w-14 text-left text-xs font-bold text-muted-foreground uppercase tracking-wider">Img</th>
-                  <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Status</th>
-                  <th className="text-left px-3 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Prior.</th>
-                  <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">SLA</th>
-                  <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Endereço</th>
-                  <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Origem</th>
+                  <SortFilterColHeader
+                    label="Status"
+                    colKey="status"
+                    activeSort={sortKey}
+                    sortDir={sortDir}
+                    onSort={handleHeaderSort}
+                    filterContent={
+                      <>
+                        <DropdownMenuLabel>Filtrar status</DropdownMenuLabel>
+                        {STATUS_FILTROS.map((s) => (
+                          <DropdownMenuItem key={s} onClick={() => setFiltroStatus(s)}>
+                            <span className="flex items-center gap-2">
+                              {s !== 'todos' && (
+                                <span className={cn('inline-block h-1.5 w-1.5 rounded-full shrink-0', STATUS_DOT[s] ?? 'bg-gray-400')} />
+                              )}
+                              {LABEL_FILTRO_STATUS[s]}
+                            </span>
+                          </DropdownMenuItem>
+                        ))}
+                      </>
+                    }
+                  />
+                  <SortFilterColHeader
+                    label="Prior."
+                    colKey="prioridade"
+                    narrow
+                    activeSort={sortKey}
+                    sortDir={sortDir}
+                    onSort={handleHeaderSort}
+                    filterContent={
+                      <>
+                        <DropdownMenuLabel>Filtrar prioridade</DropdownMenuLabel>
+                        {(['todos', 'P1', 'P2', 'P3', 'P4', 'P5'] as FiltroPrioridade[]).map((p) => (
+                          <DropdownMenuItem key={p} onClick={() => setFiltroPrioridade(p)}>
+                            {p === 'todos' ? 'Todas' : p}
+                          </DropdownMenuItem>
+                        ))}
+                      </>
+                    }
+                  />
+                  <SortFilterColHeader
+                    label="SLA"
+                    colKey="sla"
+                    activeSort={sortKey}
+                    sortDir={sortDir}
+                    onSort={handleHeaderSort}
+                    filterContent={
+                      <>
+                        <DropdownMenuLabel>Filtrar SLA</DropdownMenuLabel>
+                        <DropdownMenuItem onClick={() => setFiltroSla('todos')}>Todos</DropdownMenuItem>
+                        {(Object.keys(LABEL_SLA_FILTRO) as (keyof typeof LABEL_SLA_FILTRO)[]).map((k) => (
+                          <DropdownMenuItem key={k} onClick={() => setFiltroSla(k)}>
+                            {LABEL_SLA_FILTRO[k]}
+                          </DropdownMenuItem>
+                        ))}
+                      </>
+                    }
+                  />
+                  <SortFilterColHeader
+                    label="Cód."
+                    colKey="codigo"
+                    narrow
+                    activeSort={sortKey}
+                    sortDir={sortDir}
+                    onSort={handleHeaderSort}
+                    filterContent={
+                      <>
+                        <DropdownMenuLabel>Busca (código ou endereço)</DropdownMenuLabel>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setBusca('');
+                            requestAnimationFrame(() => buscaRef.current?.focus());
+                          }}
+                        >
+                          Limpar busca
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            requestAnimationFrame(() => buscaRef.current?.focus());
+                          }}
+                        >
+                          Ir ao campo de busca
+                        </DropdownMenuItem>
+                      </>
+                    }
+                  />
+                  <SortFilterColHeader
+                    label="Endereço"
+                    colKey="endereco"
+                    activeSort={sortKey}
+                    sortDir={sortDir}
+                    onSort={handleHeaderSort}
+                    filterContent={
+                      <>
+                        <DropdownMenuLabel>Busca (código ou endereço)</DropdownMenuLabel>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setBusca('');
+                            requestAnimationFrame(() => buscaRef.current?.focus());
+                          }}
+                        >
+                          Limpar busca
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            requestAnimationFrame(() => buscaRef.current?.focus());
+                          }}
+                        >
+                          Ir ao campo de busca
+                        </DropdownMenuItem>
+                      </>
+                    }
+                  />
+                  <SortFilterColHeader
+                    label="Origem"
+                    colKey="origem"
+                    activeSort={sortKey}
+                    sortDir={sortDir}
+                    onSort={handleHeaderSort}
+                    filterContent={
+                      <>
+                        <DropdownMenuLabel>Filtrar origem</DropdownMenuLabel>
+                        {(['todos', 'drone', 'agente', 'cidadao', 'pluvio', 'manual'] as FiltroOrigem[]).map((o) => (
+                          <DropdownMenuItem key={o} onClick={() => setFiltroOrigem(o)}>
+                            <span className="flex items-center gap-2">
+                              {o !== 'todos' && <OrigemIcone origem={o as FocoRiscoOrigem} />}
+                              {o === 'todos' ? 'Todas' : o}
+                            </span>
+                          </DropdownMenuItem>
+                        ))}
+                      </>
+                    }
+                  />
                   <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/40">
-                {focosFiltrados.map((foco) => {
+                {focosOrdenados.map((foco) => {
                   const transicoes = getTransicoesPermitidas(foco.status as FocoRiscoStatus);
                   const isSelecionado = selecionados.has(foco.id);
                   const borderClass = BORDER_PRIORIDADE[foco.prioridade ?? ''] ?? '';
@@ -804,12 +1111,12 @@ export default function GestorFocos() {
                           )}
                         </div>
                       </td>
+                      <td className="px-3 py-3 max-w-[120px]">
+                        <span className="font-mono text-[11px] text-muted-foreground tracking-wide break-all">
+                          {foco.codigo_foco ?? '—'}
+                        </span>
+                      </td>
                       <td className="px-4 py-3 max-w-[200px]">
-                        {foco.codigo_foco && (
-                          <div className="text-[10px] font-mono text-muted-foreground/70 mb-0.5 tracking-wide">
-                            {foco.codigo_foco}
-                          </div>
-                        )}
                         <div className="truncate font-medium text-xs">
                           {foco.logradouro || foco.endereco_normalizado || '—'}
                         </div>
@@ -1000,9 +1307,13 @@ export default function GestorFocos() {
               />
               <Button
                 className="w-full"
-                onClick={() => navigate(`/gestor/focos/${selectedFoco.id}`)}
+                onClick={() => navigate(
+                  selectedFoco.status === 'resolvido'
+                    ? `/gestor/focos/${selectedFoco.id}/relatorio`
+                    : `/gestor/focos/${selectedFoco.id}`
+                )}
               >
-                Ver detalhe completo
+                {selectedFoco.status === 'resolvido' ? 'Ver relatório' : 'Ver detalhe completo'}
               </Button>
             </div>
           )}

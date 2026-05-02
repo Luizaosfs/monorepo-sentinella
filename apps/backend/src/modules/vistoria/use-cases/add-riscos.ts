@@ -27,6 +27,8 @@ export class AddRiscos {
         cliente_id:                clienteId,
         menor_incapaz:             data.menorIncapaz,
         idoso_incapaz:             data.idosoIncapaz,
+        mobilidade_reduzida:       data.mobilidadeReduzida,
+        acamado:                   data.acamado,
         dep_quimico:               data.depQuimico,
         risco_alimentar:           data.riscoAlimentar,
         risco_moradia:             data.riscoMoradia,

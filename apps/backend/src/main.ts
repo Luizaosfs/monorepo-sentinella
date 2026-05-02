@@ -19,12 +19,6 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   // bodyParser desabilitado para definir limite de 15MB (fotos base64 facilmente chegam a 10MB)
   const app = await NestFactory.create(AppModule, { bodyParser: false });
-  app.use(express.json({ limit: '15mb' }));
-  app.use(express.urlencoded({ extended: true, limit: '15mb' }));
-  app.use(cookieParser());
-
-  // Permite que req.ip reflita o IP real atrás de proxy/load balancer
-  app.getHttpAdapter().getInstance().set('trust proxy', true);
 
   const allowedOrigins = process.env.CLIENT_URL?.split(',').map(o => o.trim()).filter(Boolean) ?? [];
   const isDev = process.env.NODE_ENV === 'development';
@@ -32,6 +26,19 @@ async function bootstrap() {
   if (!isDev && allowedOrigins.length === 0) {
     throw new Error('CLIENT_URL must be set with at least one origin in non-development environments');
   }
+
+  // CORS antes de qualquer outro middleware — garante headers mesmo em respostas de erro (413, 401, etc.)
+  app.enableCors({
+    origin: isDev ? true : allowedOrigins,
+    credentials: true,
+  });
+
+  app.use(express.json({ limit: '15mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '15mb' }));
+  app.use(cookieParser());
+
+  // Permite que req.ip reflita o IP real atrás de proxy/load balancer
+  app.getHttpAdapter().getInstance().set('trust proxy', true);
 
   //app.use(helmet());
   app.use(
@@ -74,11 +81,6 @@ async function bootstrap() {
 
   app.useGlobalPipes(new MyZodValidationPipe());
   app.useGlobalFilters(new GlobalExceptionFilter());
-
-  app.enableCors({
-    origin: isDev ? true : allowedOrigins,
-    credentials: true,
-  });
 
   if (process.env.NODE_ENV !== 'production') {
     patchNestJsSwagger();

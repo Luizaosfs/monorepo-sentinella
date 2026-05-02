@@ -28,6 +28,7 @@ import { CriarFocoDeLevantamentoItem } from './use-cases/auto-criacao/criar-foco
 import { CriarFocoDeVistoriaDeposito } from './use-cases/auto-criacao/criar-foco-de-vistoria-deposito';
 import { NormalizarCicloFoco } from './use-cases/normalizar-ciclo-foco';
 import { RecalcularScorePrioridadeFoco } from './use-cases/recalcular-score-prioridade-foco';
+import { GetFocoDetalhes } from './use-cases/get-foco-detalhes';
 
 @Module({
   providers: [
@@ -52,6 +53,7 @@ import { RecalcularScorePrioridadeFoco } from './use-cases/recalcular-score-prio
     CriarFocoDeVistoriaDeposito,
     NormalizarCicloFoco,
     RecalcularScorePrioridadeFoco,
+    GetFocoDetalhes,
     JwtService,
     PrismaService,
   ],

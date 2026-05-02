@@ -213,6 +213,13 @@ export default function GestorFocoDetalhe() {
   const foco = data?.foco ?? null;
   const timeline = data?.timeline ?? [];
 
+  // Redirect resolved focos to the detailed report page
+  useEffect(() => {
+    if (foco?.status === 'resolvido') {
+      navigate(`/gestor/focos/${id}/relatorio`, { replace: true });
+    }
+  }, [foco?.status, id, navigate]);
+
   const { ativo: modoAnalitico } = useModoAnalitico();
 
   // ── Vistorias consolidadas para o imóvel deste foco ───────────────────────
@@ -351,6 +358,11 @@ export default function GestorFocoDetalhe() {
             Voltar
           </Button>
           <span className="text-xs font-mono text-muted-foreground">{codigo}</span>
+          {foco?.status === 'resolvido' && (
+            <Button size="sm" variant="outline" className="ml-2" onClick={() => navigate(`/gestor/focos/${id}/relatorio`)}>
+              Ver relatório
+            </Button>
+          )}
         </div>
 
         <div className="flex flex-wrap gap-1.5 items-center">

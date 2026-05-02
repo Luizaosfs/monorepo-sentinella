@@ -26,8 +26,12 @@ export class VistoriaViewModel {
   static sintomaToHttp(sint: VistoriaSintoma) {
     return {
       id: sint.id,
-      sintoma: sint.sintoma,
-      observacao: sint.observacao,
+      febre: sint.febre,
+      manchasVermelhas: sint.manchasVermelhas,
+      dorArticulacoes: sint.dorArticulacoes,
+      dorCabeca: sint.dorCabeca,
+      nausea: sint.nausea,
+      moradoresSintomasQtd: sint.moradoresSintomasQtd,
       createdAt: sint.createdAt,
     };
   }
@@ -35,8 +39,22 @@ export class VistoriaViewModel {
   static riscoToHttp(risco: VistoriaRisco) {
     return {
       id: risco.id,
-      tipoRisco: risco.tipoRisco,
-      descricao: risco.descricao,
+      menorIncapaz: risco.menorIncapaz,
+      idosoIncapaz: risco.idosoIncapaz,
+      mobilidadeReduzida: risco.mobilidadeReduzida,
+      acamado: risco.acamado,
+      depQuimico: risco.depQuimico,
+      riscoAlimentar: risco.riscoAlimentar,
+      riscoMoradia: risco.riscoMoradia,
+      criadouroAnimais: risco.criadouroAnimais,
+      lixo: risco.lixo,
+      residuosOrganicos: risco.residuosOrganicos,
+      residuosQuimicos: risco.residuosQuimicos,
+      residuosMedicos: risco.residuosMedicos,
+      acumuloMaterialOrganico: risco.acumuloMaterialOrganico,
+      animaisSinaisLv: risco.animaisSinaisLv,
+      caixaDestampada: risco.caixaDestampada,
+      outroRiscoVetorial: risco.outroRiscoVetorial,
       createdAt: risco.createdAt,
     };
   }

@@ -98,6 +98,7 @@ const ConsultaProtocolo = safeLazy(() => import("@/pages/public/ConsultaProtocol
 const MunicipioPublico = safeLazy(() => import("@/pages/public/MunicipioPublico"));
 const GestorFocos = safeLazy(() => import("@/pages/gestor/GestorFocos"));
 const GestorFocoDetalhe = safeLazy(() => import("@/pages/gestor/GestorFocoDetalhe"));
+const GestorFocoRelatorio = safeLazy(() => import("@/pages/gestor/GestorFocoRelatorio"));
 const GestorMapa = safeLazy(() => import("@/pages/gestor/GestorMapa"));
 const GestorTriagem = safeLazy(() => import("@/pages/gestor/GestorTriagem"));
 const CentralOperacional = safeLazy(() => import("@/pages/gestor/CentralOperacional"));
@@ -273,6 +274,7 @@ const App = () => (
               <Route path="/gestor/triagem"   element={<SupervisorOnlyGuard><GestorTriagem /></SupervisorOnlyGuard>} />
               <Route path="/gestor/focos"     element={<SupervisorOnlyGuard><GestorFocos /></SupervisorOnlyGuard>} />
               <Route path="/gestor/focos/:id" element={<SupervisorOnlyGuard><GestorFocoDetalhe /></SupervisorOnlyGuard>} />
+              <Route path="/gestor/focos/:id/relatorio" element={<SupervisorOnlyGuard><GestorFocoRelatorio /></SupervisorOnlyGuard>} />
               <Route path="/gestor/mapa"      element={<SupervisorOnlyGuard><GestorMapa /></SupervisorOnlyGuard>} />
               {/* Operacional municipal — admin ou supervisor */}
               <Route path="/gestor/planejamentos"           element={<AdminOrSupervisorGuard><AdminPlanejamentos /></AdminOrSupervisorGuard>} />

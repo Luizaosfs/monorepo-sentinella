@@ -14,6 +14,8 @@ model vistoria_riscos {
   acumulo_material_organico Boolean  @default(false)
   animais_sinais_lv        Boolean   @default(false)
   caixa_destampada         Boolean   @default(false)
+  mobilidade_reduzida      Boolean   @default(false)
+  acamado                  Boolean   @default(false)
   outro_risco_vetorial     String?
   deleted_at               DateTime? @db.Timestamptz
   cliente_id               String    @db.Uuid

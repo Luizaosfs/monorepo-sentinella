@@ -29,6 +29,7 @@ export class AddSintomas {
         manchas_vermelhas:      data.manchasVermelhas,
         dor_articulacoes:       data.dorArticulacoes,
         dor_cabeca:             data.dorCabeca,
+        nausea:                 data.nausea,
         moradores_sintomas_qtd: data.moradoresSintomasQtd,
       },
     });

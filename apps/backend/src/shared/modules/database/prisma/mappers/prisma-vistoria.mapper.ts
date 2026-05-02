@@ -23,16 +23,35 @@ type RawDeposito = {
 type RawSintoma = {
   id: string;
   vistoria_id: string;
-  sintoma: string;
-  observacao: string | null;
+  febre: boolean;
+  manchas_vermelhas: boolean;
+  dor_articulacoes: boolean;
+  dor_cabeca: boolean;
+  nausea: boolean;
+  moradores_sintomas_qtd: number;
+  gerou_caso_notificado_id: string | null;
   created_at: Date;
 };
 
 type RawRisco = {
   id: string;
   vistoria_id: string;
-  tipo_risco: string;
-  descricao: string | null;
+  menor_incapaz: boolean;
+  idoso_incapaz: boolean;
+  mobilidade_reduzida: boolean;
+  acamado: boolean;
+  dep_quimico: boolean;
+  risco_alimentar: boolean;
+  risco_moradia: boolean;
+  criadouro_animais: boolean;
+  lixo: boolean;
+  residuos_organicos: boolean;
+  residuos_quimicos: boolean;
+  residuos_medicos: boolean;
+  acumulo_material_organico: boolean;
+  animais_sinais_lv: boolean;
+  caixa_destampada: boolean;
+  outro_risco_vetorial: string | null;
   created_at: Date;
 };
 
@@ -128,8 +147,13 @@ export class PrismaVistoriaMapper {
     return {
       id: raw.id,
       vistoriaId: raw.vistoria_id,
-      sintoma: raw.sintoma,
-      observacao: raw.observacao ?? undefined,
+      febre: raw.febre,
+      manchasVermelhas: raw.manchas_vermelhas,
+      dorArticulacoes: raw.dor_articulacoes,
+      dorCabeca: raw.dor_cabeca,
+      nausea: raw.nausea,
+      moradoresSintomasQtd: raw.moradores_sintomas_qtd,
+      gerouCasoNotificadoId: raw.gerou_caso_notificado_id ?? undefined,
       createdAt: raw.created_at,
     };
   }
@@ -138,8 +162,22 @@ export class PrismaVistoriaMapper {
     return {
       id: raw.id,
       vistoriaId: raw.vistoria_id,
-      tipoRisco: raw.tipo_risco,
-      descricao: raw.descricao ?? undefined,
+      menorIncapaz: raw.menor_incapaz,
+      idosoIncapaz: raw.idoso_incapaz,
+      mobilidadeReduzida: raw.mobilidade_reduzida,
+      acamado: raw.acamado,
+      depQuimico: raw.dep_quimico,
+      riscoAlimentar: raw.risco_alimentar,
+      riscoMoradia: raw.risco_moradia,
+      criadouroAnimais: raw.criadouro_animais,
+      lixo: raw.lixo,
+      residuosOrganicos: raw.residuos_organicos,
+      residuosQuimicos: raw.residuos_quimicos,
+      residuosMedicos: raw.residuos_medicos,
+      acumuloMaterialOrganico: raw.acumulo_material_organico,
+      animaisSinaisLv: raw.animais_sinais_lv,
+      caixaDestampada: raw.caixa_destampada,
+      outroRiscoVetorial: raw.outro_risco_vetorial ?? undefined,
       createdAt: raw.created_at,
     };
   }
@@ -301,11 +339,12 @@ export class PrismaVistoriaMapper {
     return {
       vistoria_id: sint.vistoriaId,
       cliente_id: sint.clienteId,
-      febre: false,
-      manchas_vermelhas: false,
-      dor_articulacoes: false,
-      dor_cabeca: false,
-      moradores_sintomas_qtd: 0,
+      febre: sint.febre,
+      manchas_vermelhas: sint.manchasVermelhas,
+      dor_articulacoes: sint.dorArticulacoes,
+      dor_cabeca: sint.dorCabeca,
+      nausea: sint.nausea,
+      moradores_sintomas_qtd: sint.moradoresSintomasQtd,
     };
   }
 
@@ -313,19 +352,22 @@ export class PrismaVistoriaMapper {
     return {
       vistoria_id: risco.vistoriaId,
       cliente_id: risco.clienteId,
-      menor_incapaz: false,
-      idoso_incapaz: false,
-      dep_quimico: false,
-      risco_alimentar: false,
-      risco_moradia: false,
-      criadouro_animais: false,
-      lixo: false,
-      residuos_organicos: false,
-      residuos_quimicos: false,
-      residuos_medicos: false,
-      acumulo_material_organico: false,
-      animais_sinais_lv: false,
-      caixa_destampada: false,
+      menor_incapaz: risco.menorIncapaz,
+      idoso_incapaz: risco.idosoIncapaz,
+      mobilidade_reduzida: risco.mobilidadeReduzida,
+      acamado: risco.acamado,
+      dep_quimico: risco.depQuimico,
+      risco_alimentar: risco.riscoAlimentar,
+      risco_moradia: risco.riscoMoradia,
+      criadouro_animais: risco.criadouroAnimais,
+      lixo: risco.lixo,
+      residuos_organicos: risco.residuosOrganicos,
+      residuos_quimicos: risco.residuosQuimicos,
+      residuos_medicos: risco.residuosMedicos,
+      acumulo_material_organico: risco.acumuloMaterialOrganico,
+      animais_sinais_lv: risco.animaisSinaisLv,
+      caixa_destampada: risco.caixaDestampada,
+      outro_risco_vetorial: risco.outroRiscoVetorial ?? null,
     };
   }
 
