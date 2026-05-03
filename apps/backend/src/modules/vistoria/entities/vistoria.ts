@@ -7,11 +7,13 @@ export interface VistoriaDeposito {
   tipoDeposito: string;
   quantidade?: number;
   qtdComAgua?: number;
+  qtdComFocos?: number;
+  qtdEliminados?: number;
+  usouLarvicida?: boolean;
   comLarva?: boolean;
   eliminado?: boolean;
   tratado?: boolean;
-  observacao?: string;
-  fotoUrl?: string;
+  vedado?: boolean;
   createdAt?: Date;
 }
 

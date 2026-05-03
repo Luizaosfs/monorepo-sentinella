@@ -14,11 +14,13 @@ export class VistoriaViewModel {
       id: dep.id,
       tipoDeposito: dep.tipoDeposito,
       quantidade: dep.quantidade,
+      qtdComAgua: dep.qtdComAgua,
+      qtdComFocos: dep.qtdComFocos,
+      qtdEliminados: dep.qtdEliminados,
+      usouLarvicida: dep.usouLarvicida,
       comLarva: dep.comLarva,
       eliminado: dep.eliminado,
-      tratado: dep.tratado,
-      observacao: dep.observacao,
-      fotoUrl: dep.fotoUrl,
+      vedado: dep.vedado,
       createdAt: dep.createdAt,
     };
   }

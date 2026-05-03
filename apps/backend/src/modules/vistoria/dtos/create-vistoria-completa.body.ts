@@ -6,18 +6,15 @@ const depositoSchema = z.object({
   tipoDeposito: z
     .string({ required_error: 'Tipo de depósito obrigatório' })
     .describe('Tipo do depósito (A1, A2, B, C, D1, D2, E)'),
-  quantidade: z.coerce
-    .number()
-    .int()
-    .positive()
-    .optional()
-    .describe('Quantidade encontrada'),
+  quantidade: z.coerce.number().int().positive().optional().describe('Quantidade inspecionada'),
   qtdComAgua: z.coerce.number().int().min(0).optional().describe('Quantidade com água'),
-  comLarva: z.boolean().optional().describe('Presença de larvas'),
+  qtdComFocos: z.coerce.number().int().min(0).optional().describe('Quantidade com focos'),
+  qtdEliminados: z.coerce.number().int().min(0).default(0).describe('Quantidade eliminada'),
+  usouLarvicida: z.boolean().optional().describe('Usou larvicida'),
+  comLarva: z.boolean().optional().describe('Presença de larvas (atalho mobile)'),
   eliminado: z.boolean().optional().describe('Depósito eliminado'),
-  tratado: z.boolean().optional().describe('Depósito tratado'),
-  observacao: z.string().optional().describe('Observações'),
-  fotoUrl: z.string().url().optional().describe('URL da foto'),
+  tratado: z.boolean().optional().describe('Depósito tratado (atalho mobile)'),
+  vedado: z.boolean().default(false).describe('Depósito vedado'),
 });
 
 const sintomaSchema = z.object({

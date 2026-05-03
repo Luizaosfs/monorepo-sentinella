@@ -10,13 +10,14 @@ import {
 type RawDeposito = {
   id: string;
   vistoria_id: string;
-  tipo_deposito: string;
-  quantidade: number | null;
-  com_larva: boolean | null;
+  tipo: string;
+  qtd_inspecionados: number | null;
+  qtd_com_focos: number | null;
+  qtd_eliminados: number | null;
+  usou_larvicida: boolean | null;
+  qtd_com_agua: number | null;
   eliminado: boolean | null;
-  tratado: boolean | null;
-  observacao: string | null;
-  foto_url: string | null;
+  vedado: boolean | null;
   created_at: Date;
 };
 
@@ -134,13 +135,15 @@ export class PrismaVistoriaMapper {
     return {
       id: raw.id,
       vistoriaId: raw.vistoria_id,
-      tipoDeposito: raw.tipo_deposito,
-      quantidade: raw.quantidade ?? undefined,
-      comLarva: raw.com_larva ?? undefined,
+      tipoDeposito: raw.tipo,
+      quantidade: raw.qtd_inspecionados ?? undefined,
+      qtdComFocos: raw.qtd_com_focos ?? undefined,
+      qtdEliminados: raw.qtd_eliminados ?? undefined,
+      usouLarvicida: raw.usou_larvicida ?? undefined,
+      qtdComAgua: raw.qtd_com_agua ?? undefined,
+      comLarva: raw.qtd_com_focos != null ? raw.qtd_com_focos > 0 : undefined,
       eliminado: raw.eliminado ?? undefined,
-      tratado: raw.tratado ?? undefined,
-      observacao: raw.observacao ?? undefined,
-      fotoUrl: raw.foto_url ?? undefined,
+      vedado: raw.vedado ?? undefined,
       createdAt: raw.created_at,
     };
   }
@@ -330,12 +333,12 @@ export class PrismaVistoriaMapper {
       cliente_id: dep.clienteId,
       tipo: dep.tipoDeposito ?? '',
       qtd_inspecionados: dep.quantidade ?? 0,
-      qtd_com_focos: dep.comLarva ? 1 : 0,
-      qtd_eliminados: 0,
-      usou_larvicida: dep.tratado ?? false,
+      qtd_com_focos: dep.qtdComFocos ?? (dep.comLarva ? 1 : 0),
+      qtd_eliminados: dep.qtdEliminados ?? 0,
+      usou_larvicida: dep.usouLarvicida ?? dep.tratado ?? false,
       qtd_com_agua: dep.qtdComAgua ?? 0,
       eliminado: dep.eliminado ?? false,
-      vedado: false,
+      vedado: dep.vedado ?? false,
     };
   }
 
