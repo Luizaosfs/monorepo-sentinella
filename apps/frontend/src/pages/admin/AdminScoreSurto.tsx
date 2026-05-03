@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
+import { ListColumnHeader } from '@/components/ui/list-column-header';
 import {
   Tooltip,
   TooltipContent,
@@ -117,13 +118,13 @@ export default function AdminScoreSurto() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/30">
-                  <th className="px-4 py-3 text-left font-semibold text-muted-foreground whitespace-nowrap">Região</th>
-                  <th className="px-4 py-3 text-left font-semibold text-muted-foreground whitespace-nowrap min-w-[180px]">Score Total</th>
-                  <th className="px-4 py-3 text-center font-semibold text-muted-foreground whitespace-nowrap">Classificação</th>
-                  <th className="px-4 py-3 text-right font-semibold text-muted-foreground whitespace-nowrap">Pluvio</th>
-                  <th className="px-4 py-3 text-right font-semibold text-muted-foreground whitespace-nowrap">Recorrência</th>
-                  <th className="px-4 py-3 text-right font-semibold text-muted-foreground whitespace-nowrap">Casos 14d</th>
-                  <th className="px-4 py-3 text-right font-semibold text-muted-foreground whitespace-nowrap">SLA Vencido</th>
+                  <ListColumnHeader label="Região" className="whitespace-nowrap" />
+                  <ListColumnHeader label="Score Total" className="min-w-[180px] whitespace-nowrap" />
+                  <ListColumnHeader label="Classificação" className="whitespace-nowrap" contentClassName="justify-center" />
+                  <ListColumnHeader label="Pluvio" className="whitespace-nowrap" contentClassName="justify-end" />
+                  <ListColumnHeader label="Recorrência" className="whitespace-nowrap" contentClassName="justify-end" />
+                  <ListColumnHeader label="Casos 14d" className="whitespace-nowrap" contentClassName="justify-end" />
+                  <ListColumnHeader label="SLA Vencido" className="whitespace-nowrap" contentClassName="justify-end" />
                 </tr>
               </thead>
               <tbody>

@@ -17,6 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ListColumnHeader } from '@/components/ui/list-column-header';
 import { cn } from '@/lib/utils';
 
 interface YoloQualidadeResumo {
@@ -215,10 +216,10 @@ export default function AdminYoloQualidade() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/30">
-                  <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Endereço</th>
-                  <th className="px-4 py-3 text-center font-semibold text-muted-foreground">Risco Drone</th>
-                  <th className="px-4 py-3 text-center font-semibold text-muted-foreground">Campo Confirmou</th>
-                  <th className="px-4 py-3 text-right font-semibold text-muted-foreground">Distância</th>
+                  <ListColumnHeader label="Endereço" />
+                  <ListColumnHeader label="Risco Drone" contentClassName="justify-center" />
+                  <ListColumnHeader label="Campo Confirmou" contentClassName="justify-center" />
+                  <ListColumnHeader label="Distância" contentClassName="justify-end" />
                 </tr>
               </thead>
               <tbody>

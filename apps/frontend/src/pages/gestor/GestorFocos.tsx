@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef, type ReactNode } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -13,13 +13,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ListColumnHeader } from '@/components/ui/list-column-header';
 import { toast } from 'sonner';
 import {
-  Filter, Search, ChevronLeft, ChevronRight, Eraser,
+  Filter, Search, ChevronLeft, ChevronRight,
   CheckSquare, Square, Users, X, Loader2, MapPin,
   ZoomIn, AlertCircle, Clock, Eye, Activity, Info, Stethoscope, AlertTriangle, PlayCircle,
-  ArrowUpDown, ArrowUp, ArrowDown,
 } from 'lucide-react';
 import { useClienteAtivo } from '@/hooks/useClienteAtivo';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -192,93 +191,6 @@ function formatDataCurta(value?: string | null): string {
     hour: '2-digit',
     minute: '2-digit',
   }).format(date);
-}
-
-function SortFilterColHeader({
-  label,
-  colKey,
-  activeSort,
-  sortDir,
-  onSort,
-  filterContent,
-  isFiltered,
-  onClearFilter,
-  className,
-  narrow,
-}: {
-  label: string;
-  colKey: TableSortKey;
-  activeSort: TableSortKey;
-  sortDir: 'asc' | 'desc';
-  onSort: (k: TableSortKey) => void;
-  filterContent?: ReactNode;
-  isFiltered?: boolean;
-  onClearFilter?: () => void;
-  className?: string;
-  narrow?: boolean;
-}) {
-  const active = activeSort === colKey;
-  return (
-    <th
-      className={cn(
-        'py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground',
-        narrow ? 'px-3' : 'px-4',
-        className,
-      )}
-    >
-      <div className="flex items-center gap-1">
-        <button
-          type="button"
-          onClick={() => onSort(colKey)}
-          className="inline-flex max-w-[min(100%,11rem)] items-center gap-1 rounded-md px-1.5 py-1 text-left transition-colors hover:bg-background hover:text-foreground"
-          title="Ordenar por esta coluna"
-        >
-          <span className="truncate">{label}</span>
-          {active ? (
-            sortDir === 'asc' ? (
-              <ArrowUp className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden />
-            ) : (
-              <ArrowDown className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden />
-            )
-          ) : (
-            <ArrowUpDown className="h-3.5 w-3.5 shrink-0 opacity-40" aria-hidden />
-          )}
-        </button>
-        {filterContent && (
-          isFiltered ? (
-            <button
-              type="button"
-              onClick={onClearFilter}
-              className="inline-flex h-7 w-7 items-center justify-center rounded-md text-primary transition-colors hover:bg-primary/10"
-              title={`Limpar filtro de ${label}`}
-              aria-label={`Limpar filtro de ${label}`}
-            >
-              <Eraser className="h-3.5 w-3.5" aria-hidden />
-            </button>
-          ) : (
-            <Popover>
-              <PopoverTrigger asChild>
-                <button
-                  type="button"
-                  className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
-                  title={`Filtrar ${label}`}
-                  aria-label={`Filtrar ${label}`}
-                >
-                  <Filter className="h-3.5 w-3.5" aria-hidden />
-                </button>
-              </PopoverTrigger>
-              <PopoverContent align="start" className="w-80 p-3 shadow-lg">
-                {filterContent}
-                <p className="mt-2 text-[11px] leading-snug text-muted-foreground">
-                  Dica: use os filtros de outras colunas para combinar critérios.
-                </p>
-              </PopoverContent>
-            </Popover>
-          )
-        )}
-      </div>
-    </th>
-  );
 }
 
 function acaoBtnClass(status: FocoRiscoStatus): string {
@@ -983,9 +895,9 @@ export default function GestorFocos() {
                     </button>
                   </th>
                   <th className="px-2 py-3 w-14 text-left text-xs font-bold text-muted-foreground uppercase tracking-wider">Img</th>
-                  <SortFilterColHeader
+                  <ListColumnHeader<TableSortKey>
                     label="Última vistoria"
-                    colKey="ultimaVistoria"
+                    sortKey="ultimaVistoria"
                     activeSort={sortKey}
                     sortDir={sortDir}
                     onSort={handleHeaderSort}
@@ -1001,9 +913,9 @@ export default function GestorFocos() {
                       </button>
                     )}
                   />
-                  <SortFilterColHeader
+                  <ListColumnHeader<TableSortKey>
                     label="Status"
-                    colKey="status"
+                    sortKey="status"
                     activeSort={sortKey}
                     sortDir={sortDir}
                     onSort={handleHeaderSort}
@@ -1022,9 +934,9 @@ export default function GestorFocos() {
                       </select>
                     )}
                   />
-                  <SortFilterColHeader
+                  <ListColumnHeader<TableSortKey>
                     label="Prior."
-                    colKey="prioridade"
+                    sortKey="prioridade"
                     narrow
                     activeSort={sortKey}
                     sortDir={sortDir}
@@ -1044,9 +956,9 @@ export default function GestorFocos() {
                       </select>
                     )}
                   />
-                  <SortFilterColHeader
+                  <ListColumnHeader<TableSortKey>
                     label="SLA"
-                    colKey="sla"
+                    sortKey="sla"
                     activeSort={sortKey}
                     sortDir={sortDir}
                     onSort={handleHeaderSort}
@@ -1066,9 +978,9 @@ export default function GestorFocos() {
                       </select>
                     )}
                   />
-                  <SortFilterColHeader
+                  <ListColumnHeader<TableSortKey>
                     label="Cód."
-                    colKey="codigo"
+                    sortKey="codigo"
                     narrow
                     activeSort={sortKey}
                     sortDir={sortDir}
@@ -1088,9 +1000,9 @@ export default function GestorFocos() {
                       </div>
                     )}
                   />
-                  <SortFilterColHeader
+                  <ListColumnHeader<TableSortKey>
                     label="Endereço"
-                    colKey="endereco"
+                    sortKey="endereco"
                     activeSort={sortKey}
                     sortDir={sortDir}
                     onSort={handleHeaderSort}
@@ -1109,9 +1021,9 @@ export default function GestorFocos() {
                       </div>
                     )}
                   />
-                  <SortFilterColHeader
+                  <ListColumnHeader<TableSortKey>
                     label="Origem"
-                    colKey="origem"
+                    sortKey="origem"
                     activeSort={sortKey}
                     sortDir={sortDir}
                     onSort={handleHeaderSort}

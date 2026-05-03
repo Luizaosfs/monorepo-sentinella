@@ -11,6 +11,7 @@ import {
   Activity, CheckCircle2, XCircle, AlertTriangle,
   Loader2, ChevronDown, ExternalLink, Clock,
 } from 'lucide-react';
+import { ListColumnHeader } from '@/components/ui/list-column-header';
 import { usePipelineRuns, usePipelineRunAtivo, type PipelineRun } from '@/hooks/queries/usePipelineRuns';
 
 const STATUS_CONFIG = {
@@ -110,14 +111,14 @@ export default function AdminPipelineStatus() {
             <table className="w-full text-sm">
               <thead className="bg-muted/50 border-b border-border/60">
                 <tr>
-                  <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Início</th>
-                  <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Levantamento</th>
-                  <th className="text-center px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Status</th>
-                  <th className="text-center px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Imagens</th>
-                  <th className="text-right px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Itens</th>
-                  <th className="text-right px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Focos</th>
-                  <th className="text-right px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Duração</th>
-                  <th className="text-center px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Versão</th>
+                  <ListColumnHeader label="Início" />
+                  <ListColumnHeader label="Levantamento" />
+                  <ListColumnHeader label="Status" contentClassName="justify-center" />
+                  <ListColumnHeader label="Imagens" contentClassName="justify-center" />
+                  <ListColumnHeader label="Itens" contentClassName="justify-end" />
+                  <ListColumnHeader label="Focos" contentClassName="justify-end" />
+                  <ListColumnHeader label="Duração" contentClassName="justify-end" />
+                  <ListColumnHeader label="Versão" contentClassName="justify-center" />
                   <th className="px-4 py-3" />
                 </tr>
               </thead>

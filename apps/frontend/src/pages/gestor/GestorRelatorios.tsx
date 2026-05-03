@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ListColumnHeader } from '@/components/ui/list-column-header';
 import {
   Select,
   SelectContent,
@@ -177,11 +178,11 @@ function PreviewRelatorio({ payload, onExport, exporting }: {
             <table className="w-full text-xs">
               <thead className="bg-muted/50">
                 <tr>
-                  <th className="text-left p-2 font-medium">Bairro</th>
-                  <th className="text-center p-2 font-medium">Vistorias</th>
-                  <th className="text-center p-2 font-medium">P1+P2</th>
-                  <th className="text-center p-2 font-medium">Vetorial ↑</th>
-                  <th className="text-center p-2 font-medium">Alertas</th>
+                  <ListColumnHeader label="Bairro" className="p-2" />
+                  <ListColumnHeader label="Vistorias" className="p-2" contentClassName="justify-center" />
+                  <ListColumnHeader label="P1+P2" className="p-2" contentClassName="justify-center" />
+                  <ListColumnHeader label="Vetorial ↑" className="p-2" contentClassName="justify-center" />
+                  <ListColumnHeader label="Alertas" className="p-2" contentClassName="justify-center" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/50">
@@ -271,12 +272,12 @@ function PreviewRelatorio({ payload, onExport, exporting }: {
             <table className="w-full text-xs">
               <thead className="bg-muted/50">
                 <tr>
-                  <th className="text-left p-2 font-medium">Endereço</th>
-                  <th className="text-center p-2 font-medium">Prior.</th>
-                  <th className="text-center p-2 font-medium">Vetorial</th>
-                  <th className="text-center p-2 font-medium">Vulnerab.</th>
-                  <th className="text-center p-2 font-medium">Saúde</th>
-                  <th className="text-center p-2 font-medium">Acesso</th>
+                  <ListColumnHeader label="Endereço" className="p-2" />
+                  <ListColumnHeader label="Prior." className="p-2" contentClassName="justify-center" />
+                  <ListColumnHeader label="Vetorial" className="p-2" contentClassName="justify-center" />
+                  <ListColumnHeader label="Vulnerab." className="p-2" contentClassName="justify-center" />
+                  <ListColumnHeader label="Saúde" className="p-2" contentClassName="justify-center" />
+                  <ListColumnHeader label="Acesso" className="p-2" contentClassName="justify-center" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/50">

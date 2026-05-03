@@ -143,6 +143,7 @@ const grupoSaudeVigilancia = [
 ];
 
 const grupoInteligencia = [
+  { to: '/gestor/dashboard/territorial', label: 'Dashboard Territorial',     icon: Globe2,          adminOnly: false },
   { to: '/gestor/dashboard-analitico',   label: 'Dashboard Analítico',      icon: LayoutDashboard, adminOnly: false },
   { to: '/gestor/relatorios',            label: 'Relatórios Executivos',     icon: FileSpreadsheet, adminOnly: false },
   { to: '/gestor/mapa-comparativo',      label: 'Mapa Antes/Depois',        icon: GitCompare,  adminOnly: false },
