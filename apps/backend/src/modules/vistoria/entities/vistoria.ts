@@ -6,6 +6,7 @@ export interface VistoriaDeposito {
   vistoriaId?: string;
   tipoDeposito: string;
   quantidade?: number;
+  qtdComAgua?: number;
   comLarva?: boolean;
   eliminado?: boolean;
   tratado?: boolean;
@@ -52,9 +53,11 @@ export interface VistoriaRisco {
 export interface VistoriaCalha {
   id?: string;
   vistoriaId?: string;
-  tipo?: string;
-  estado?: string;
-  comAcumulo?: boolean;
+  posicao?: string;
+  condicao?: string;
+  comFoco?: boolean;
+  acessivel?: boolean;
+  tratamentoRealizado?: boolean;
   observacao?: string;
   createdAt?: Date;
 }

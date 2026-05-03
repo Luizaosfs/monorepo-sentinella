@@ -12,6 +12,7 @@ const depositoSchema = z.object({
     .positive()
     .optional()
     .describe('Quantidade encontrada'),
+  qtdComAgua: z.coerce.number().int().min(0).optional().describe('Quantidade com água'),
   comLarva: z.boolean().optional().describe('Presença de larvas'),
   eliminado: z.boolean().optional().describe('Depósito eliminado'),
   tratado: z.boolean().optional().describe('Depósito tratado'),
@@ -48,9 +49,11 @@ const riscoSchema = z.object({
 });
 
 const calhaSchema = z.object({
-  tipo: z.string().optional().describe('Tipo da calha'),
-  estado: z.string().optional().describe('Estado de conservação'),
-  comAcumulo: z.boolean().optional().describe('Com acúmulo de água'),
+  posicao: z.string().optional().describe('Posição da calha (frente, fundo, lateral, etc.)'),
+  condicao: z.string().optional().describe('Condição da calha (limpa, entupida, com_agua_parada, etc.)'),
+  comFoco: z.boolean().optional().describe('Calha com foco de larvas identificado'),
+  acessivel: z.boolean().optional().describe('Calha acessível para inspeção'),
+  tratamentoRealizado: z.boolean().optional().describe('Tratamento realizado na calha'),
   observacao: z.string().optional().describe('Observações'),
 });
 

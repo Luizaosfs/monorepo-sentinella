@@ -62,9 +62,11 @@ export class VistoriaViewModel {
   static calhaToHttp(calha: VistoriaCalha) {
     return {
       id: calha.id,
-      tipo: calha.tipo,
-      estado: calha.estado,
-      comAcumulo: calha.comAcumulo,
+      posicao: calha.posicao,
+      condicao: calha.condicao,
+      comFoco: calha.comFoco,
+      acessivel: calha.acessivel,
+      tratamentoRealizado: calha.tratamentoRealizado,
       observacao: calha.observacao,
       createdAt: calha.createdAt,
     };

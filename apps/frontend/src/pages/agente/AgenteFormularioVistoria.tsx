@@ -577,6 +577,7 @@ export default function AgenteFormularioVistoria() {
           return {
             tipo_deposito: dep.tipo,
             quantidade: dep.qtd_inspecionados,
+            qtd_com_agua: dep.qtd_com_agua,
             com_larva: dep.qtd_com_focos > 0,
             eliminado: dep.eliminado,
             tratado: trat?.usou_larvicida ?? false,

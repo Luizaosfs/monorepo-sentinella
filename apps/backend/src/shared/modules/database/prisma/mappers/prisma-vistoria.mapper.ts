@@ -58,9 +58,11 @@ type RawRisco = {
 type RawCalha = {
   id: string;
   vistoria_id: string;
-  tipo: string | null;
-  estado: string | null;
-  com_acumulo: boolean | null;
+  posicao: string | null;
+  condicao: string | null;
+  com_foco: boolean | null;
+  acessivel: boolean | null;
+  tratamento_realizado: boolean | null;
   observacao: string | null;
   created_at: Date;
 };
@@ -186,9 +188,11 @@ export class PrismaVistoriaMapper {
     return {
       id: raw.id,
       vistoriaId: raw.vistoria_id,
-      tipo: raw.tipo ?? undefined,
-      estado: raw.estado ?? undefined,
-      comAcumulo: raw.com_acumulo ?? undefined,
+      posicao: raw.posicao ?? undefined,
+      condicao: raw.condicao ?? undefined,
+      comFoco: raw.com_foco ?? undefined,
+      acessivel: raw.acessivel ?? undefined,
+      tratamentoRealizado: raw.tratamento_realizado ?? undefined,
       observacao: raw.observacao ?? undefined,
       createdAt: raw.created_at,
     };
@@ -329,7 +333,7 @@ export class PrismaVistoriaMapper {
       qtd_com_focos: dep.comLarva ? 1 : 0,
       qtd_eliminados: 0,
       usou_larvicida: dep.tratado ?? false,
-      qtd_com_agua: 0,
+      qtd_com_agua: dep.qtdComAgua ?? 0,
       eliminado: dep.eliminado ?? false,
       vedado: false,
     };
@@ -375,11 +379,11 @@ export class PrismaVistoriaMapper {
     return {
       vistoria_id: calha.vistoriaId,
       cliente_id: calha.clienteId,
-      posicao: calha.tipo ?? 'frente',
-      condicao: calha.estado ?? 'limpa',
-      com_foco: calha.comAcumulo ?? false,
-      acessivel: true,
-      tratamento_realizado: false,
+      posicao: calha.posicao ?? 'frente',
+      condicao: calha.condicao ?? 'limpa',
+      com_foco: calha.comFoco ?? false,
+      acessivel: calha.acessivel ?? true,
+      tratamento_realizado: calha.tratamentoRealizado ?? false,
       observacao: calha.observacao ?? null,
     };
   }
