@@ -75,6 +75,11 @@ const RANK_BADGE_CLS = [
 
 const DEPOSITO_COLORS = ['#2563eb', '#f59e0b', '#22c55e', '#8b5cf6'];
 
+/** Paleta do mapa territorial (referência visual): primário + risco alto */
+const PNCD_BARRA_INSPECIONADOS = '#3B82F6';
+/** Vermelho “Crítico” da referência visual (#EF4444) */
+const PNCD_BARRA_COM_FOCO = '#EF4444';
+
 type VulnKey = 'idosoIncapaz' | 'menorIncapaz' | 'mobilidadeReduzida' | 'acamado';
 const VULN_KEYS: VulnKey[] = ['idosoIncapaz', 'menorIncapaz', 'mobilidadeReduzida', 'acamado'];
 const VULN_KEY_SET = new Set<string>(VULN_KEYS);
@@ -783,14 +788,14 @@ export default function GestorDashboardTerritorial() {
                             />
                           )}
                         />
-                        <Bar dataKey="Insp" name="Inspecionados" fill="#93c5fd" radius={[4, 4, 0, 0]} />
-                        <Bar dataKey="Foco" name="Com foco"      fill="#fca5a5" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="Insp" name="Inspecionados" fill={PNCD_BARRA_INSPECIONADOS} radius={[6, 6, 0, 0]} />
+                        <Bar dataKey="Foco" name="Com foco"      fill={PNCD_BARRA_COM_FOCO} radius={[6, 6, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                     <div className="flex gap-4 justify-center mt-2">
                       {[
-                        { color: '#93c5fd', label: 'Inspecionados' },
-                        { color: '#fca5a5', label: 'Com foco' },
+                        { color: PNCD_BARRA_INSPECIONADOS, label: 'Inspecionados' },
+                        { color: PNCD_BARRA_COM_FOCO, label: 'Com foco' },
                       ].map(({ color, label }) => (
                         <span key={label} className="flex items-center gap-1.5 text-[10px] text-slate-400">
                           <span className="inline-block w-2 h-2 rounded-full" style={{ background: color }} />

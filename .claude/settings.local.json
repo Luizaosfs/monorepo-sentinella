@@ -248,7 +248,9 @@
       "PowerShell(Set-Location D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\frontend; $output = & \"node_modules\\\\.bin\\\\tsc.cmd\" --noEmit 2>&1; $erros = $output | Where-Object { $_ -match \"error TS\" }; Write-Output \"Erros: $\\($erros.Count\\)\"; $erros | Where-Object { $_ -match \"Territorial|territorial\" } | ForEach-Object { Write-Output $_ })",
       "Bash(\"node_modules\\\\.bin\\\\tsc.cmd\" --noEmit --project tsconfig.json)",
       "Bash(Select-String \"GestorDashboard\")",
-      "PowerShell(cmd /c \"dir /s /b `\"c:\\\\Users\\\\luiz\\\\Downloads\\\\Downloads_extracted`\"\" 2>&1)"
+      "PowerShell(cmd /c \"dir /s /b `\"c:\\\\Users\\\\luiz\\\\Downloads\\\\Downloads_extracted`\"\" 2>&1)",
+      "PowerShell(cd \"D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\frontend\"; & node \"C:\\\\Program Files\\\\nodejs\\\\node_modules\\\\npm\\\\bin\\\\npx-cli.js\" tsc --noEmit --project tsconfig.app.json 2>&1 | Where-Object { $_ -match \"GestorFocoRelatorio|ScoreImovelCard|FichaImovel360\" })",
+      "PowerShell(cd \"D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\frontend\"; & node \"C:\\\\Program Files\\\\nodejs\\\\node_modules\\\\npm\\\\bin\\\\npx-cli.js\" tsc --noEmit --project tsconfig.app.json 2>&1 | Where-Object { $_ -match \"GestorFocoRelatorio|GestorFocos\\\\.tsx\" })"
     ]
   }
 }

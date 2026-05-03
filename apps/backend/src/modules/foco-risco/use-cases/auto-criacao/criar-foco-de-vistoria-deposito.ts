@@ -218,6 +218,7 @@ export class CriarFocoDeVistoriaDeposito {
           where: { id: foco.id },
           data: {
             status: statusFinal,
+            confirmado_em: new Date(),
             ...(statusFinal === 'resolvido' ? { resolvido_em: new Date() } : {}),
           },
         });

@@ -354,6 +354,11 @@ export default function GestorFocos() {
     return copy;
   }, [focosFiltrados, sortKey, sortDir]);
 
+  function navegarParaRelatorio(focoId: string, ids: string[], idx: number) {
+    try { sessionStorage.setItem('gestor_focos_relatorio_nav', JSON.stringify({ ids })); } catch {}
+    navigate(`/gestor/focos/${focoId}/relatorio`, { state: { ids, index: idx } });
+  }
+
   function handleHeaderSort(col: TableSortKey) {
     if (sortKey !== col) {
       setSortKey(col);
@@ -844,11 +849,11 @@ export default function GestorFocos() {
                   <FocoRiscoCard
                     foco={foco}
                     usuarioPorId={usuarioPorId}
-                    onAbrirDetalhe={() =>
-                      foco.status === 'resolvido'
-                        ? navigate(`/gestor/focos/${foco.id}/relatorio`)
-                        : setSelectedFoco(foco)
-                    }
+                    onAbrirDetalhe={() => navegarParaRelatorio(
+                      foco.id,
+                      focosOrdenados.map(f => f.id),
+                      focosOrdenados.findIndex(f => f.id === foco.id),
+                    )}
                     onVerNoMapa={() => navigate(`/gestor/mapa?foco=${foco.id}`)}
                     onTransicionar={(f, s) => handleTransicionar(f, s)}
                   />
@@ -1210,9 +1215,13 @@ export default function GestorFocos() {
                           })}
                           <button
                             className="h-6 px-2 text-[10px] rounded-md border border-border text-muted-foreground hover:bg-muted transition-colors font-semibold"
-                            onClick={() => navigate(`/gestor/focos/${foco.id}`)}
+                            onClick={() => navegarParaRelatorio(
+                              foco.id,
+                              focosOrdenados.map(f => f.id),
+                              focosOrdenados.findIndex(f => f.id === foco.id),
+                            )}
                           >
-                            Detalhe
+                            Relatório
                           </button>
                         </div>
                       </td>
@@ -1336,13 +1345,13 @@ export default function GestorFocos() {
               />
               <Button
                 className="w-full"
-                onClick={() => navigate(
-                  selectedFoco.status === 'resolvido'
-                    ? `/gestor/focos/${selectedFoco.id}/relatorio`
-                    : `/gestor/focos/${selectedFoco.id}`
+                onClick={() => navegarParaRelatorio(
+                  selectedFoco.id,
+                  focosOrdenados.map(f => f.id),
+                  focosOrdenados.findIndex(f => f.id === selectedFoco.id),
                 )}
               >
-                {selectedFoco.status === 'resolvido' ? 'Ver relatório' : 'Ver detalhe completo'}
+                Ver relatório
               </Button>
             </div>
           )}

@@ -18,7 +18,7 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
   ArrowLeft, AlertCircle, CheckCircle2, Clock, Ban,
-  AlertTriangle, Plane, ShieldAlert, MapPin, Stethoscope,
+  AlertTriangle, Plane, ShieldAlert, ShieldCheck, MapPin, Stethoscope,
   GitMerge, WifiOff, ChevronRight, Home, MessageSquare,
   Activity, CalendarDays, ClipboardCheck,
 } from 'lucide-react';
@@ -41,6 +41,7 @@ import { DimensoesBadges } from '@/components/consolidacao/DimensoesBadges';
 import { PrioridadeBadge as PrioridadeConsolidacaoBadge } from '@/components/consolidacao/PrioridadeBadge';
 import { ConsolidacaoAnaliticaDetalhe } from '@/components/consolidacao/ConsolidacaoAnaliticaDetalhe';
 import { useModoAnalitico } from '@/hooks/useModoAnalitico';
+import { ScoreImovelCard } from '@/components/imoveis/ScoreImovelCard';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -443,6 +444,17 @@ export default function FichaImovel360() {
             )}
           </div>
         )}
+
+        {/* ── Score territorial ─────────────────────────────────────────── */}
+        <div className="rounded-xl border border-border/60 p-4">
+          <SectionHeader icon={ShieldCheck} title="Score territorial" />
+          <ScoreImovelCard
+            score={imovel.score_territorial ?? null}
+            classificacao={imovel.score_classificacao ?? null}
+            fatores={(imovel.score_fatores as Record<string, unknown> | null) ?? null}
+            calculadoEm={imovel.score_calculado_em ?? null}
+          />
+        </div>
 
         {/* ── Localização ───────────────────────────────────────────────── */}
         {imovel.latitude && imovel.longitude && (

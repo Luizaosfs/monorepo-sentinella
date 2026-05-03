@@ -1,10 +1,12 @@
-import { useEffect, useId, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useEffect, useId, useMemo, useState } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { MapContainer, TileLayer, CircleMarker, Tooltip } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import {
   ArrowLeft,
   ArrowRight,
+  ChevronLeft,
+  ChevronRight,
   MapPin,
   Copy,
   Users,
@@ -29,6 +31,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
@@ -41,6 +44,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { useClienteAtivo } from '@/hooks/useClienteAtivo';
+import { useFocosRisco } from '@/hooks/queries/useFocosRisco';
 import { useFocoDetalhes } from '@/hooks/queries/useFocoDetalhes';
 import { useResumoVisualVistoria } from '@/hooks/queries/useResumoVisualVistoria';
 import { PrioridadeBadge } from '@/components/foco/PrioridadeBadge';
@@ -895,6 +900,50 @@ function PageSkeleton() {
 export default function GestorFocoRelatorio() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { clienteId } = useClienteAtivo();
+
+  // Contexto de navegação do location.state (vindo de GestorFocos)
+  const navFromState = location.state as { ids: string[]; index: number } | null;
+
+  // Fallback: busca lista de focos quando não há contexto de navegação (URL direta / refresh)
+  const { data: focosListaData } = useFocosRisco(
+    !navFromState?.ids?.length ? clienteId : null,
+    { pageSize: 500, orderBy: 'ultima_vistoria_em_desc' },
+  );
+
+  const navCtx = useMemo(() => {
+    if (navFromState?.ids?.length) return navFromState;
+    // sessionStorage (navegação prévia dentro da sessão)
+    try {
+      const raw = sessionStorage.getItem('gestor_focos_relatorio_nav');
+      if (raw) {
+        const { ids } = JSON.parse(raw) as { ids: string[] };
+        if (Array.isArray(ids) && ids.length) {
+          const idx = ids.indexOf(id ?? '');
+          if (idx >= 0) return { ids, index: idx };
+        }
+      }
+    } catch {}
+    // API fallback
+    if (focosListaData?.data?.length) {
+      const ids = (focosListaData.data as { id: string }[]).map(f => f.id);
+      const idx = ids.indexOf(id ?? '');
+      if (idx >= 0) return { ids, index: idx };
+    }
+    return null;
+  }, [navFromState, focosListaData, id]);
+
+  const prevId = navCtx && navCtx.index > 0 ? navCtx.ids[navCtx.index - 1] : null;
+  const nextId = navCtx && navCtx.index < navCtx.ids.length - 1 ? navCtx.ids[navCtx.index + 1] : null;
+  const navegarParaFoco = (targetId: string, newIndex: number) => {
+    if (!navCtx) return;
+    try { sessionStorage.setItem('gestor_focos_relatorio_nav', JSON.stringify({ ids: navCtx.ids })); } catch {}
+    navigate(`/gestor/focos/${targetId}/relatorio`, {
+      state: { ids: navCtx.ids, index: newIndex },
+    });
+  };
+
   const { data, isLoading } = useFocoDetalhes(id);
   const { data: resumo, isLoading: resumoLoading } = useResumoVisualVistoria(id);
 
@@ -921,8 +970,8 @@ export default function GestorFocoRelatorio() {
     return resumo?.foco.enderecoNormalizado ?? foco.enderecoNormalizado ?? 'Endereço não informado';
   })();
 
-  const isti = foco.scorePrioridade;
-  const istiInfo = istiClassificacao(isti);
+  const scoreOperacional = foco.scorePrioridade;
+  const istiInfo = istiClassificacao(scoreOperacional);
 
   const equipeNome = (() => {
     const p = (foco as { payload?: Record<string, unknown> }).payload;
@@ -940,9 +989,31 @@ export default function GestorFocoRelatorio() {
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <Card className="border-border/80 shadow-sm overflow-hidden">
         <CardContent className="p-0">
-          <div className="px-4 py-3 sm:px-5 sm:py-3.5 space-y-2">
+          <div className="relative px-4 py-3 sm:px-5 sm:py-3.5 space-y-2">
+            {/* Navegação prev/next — canto superior direito */}
+            <div className="absolute top-3 right-4 sm:top-3.5 sm:right-5 flex items-center gap-1 z-10">
+              <Button
+                variant="outline" size="icon"
+                className="h-8 w-8 shrink-0 rounded-lg border-border/80"
+                disabled={!prevId}
+                onClick={() => prevId && navegarParaFoco(prevId, navCtx!.index - 1)}
+                aria-label="Foco anterior"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="outline" size="icon"
+                className="h-8 w-8 shrink-0 rounded-lg border-border/80"
+                disabled={!nextId}
+                onClick={() => nextId && navegarParaFoco(nextId, navCtx!.index + 1)}
+                aria-label="Próximo foco"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
+
             <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between lg:gap-3">
-              <div className="min-w-0 flex flex-col gap-0.5">
+              <div className="min-w-0 flex flex-col gap-0.5 pr-20">
                 <Button type="button" variant="ghost" size="sm"
                   className="h-auto w-fit -ml-2 px-1.5 py-0.5 gap-1 text-[11px] font-medium leading-none text-muted-foreground/70 hover:text-foreground hover:bg-muted/40"
                   onClick={() => navigate(-1)} aria-label="Voltar à página anterior"
@@ -968,30 +1039,14 @@ export default function GestorFocoRelatorio() {
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-2 shrink-0">
-                {mostrarEncaminhar && (
+              {mostrarEncaminhar && (
+                <div className="flex items-center gap-2 shrink-0">
                   <Button className="rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm gap-2 px-4" onClick={() => navigate(`/gestor/focos/${id}`)}>
                     {foco.status === 'em_triagem' ? 'Encaminhar para inspeção' : 'Re-atribuir agente'}
                     <ArrowRight className="w-4 h-4" />
                   </Button>
-                )}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="icon" className="shrink-0 rounded-lg border-border/80">
-                      <MoreVertical className="w-4 h-4 text-muted-foreground" />
-                      <span className="sr-only">Menu de ações</span>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuItem onClick={() => navigate(`/gestor/focos/${id}`)}>Abrir detalhe do foco</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/gestor/focos/${id}/relatorio`); toast.success('Link copiado'); }}>
-                      Copiar link do relatório
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => navigate('/gestor/focos')}>Voltar à lista de focos</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-3 gap-y-2 pt-1.5 border-t border-border/60">
@@ -1101,20 +1156,47 @@ export default function GestorFocoRelatorio() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col px-4 pb-4 pt-1">
-                <IstiGauge score={isti} />
+                <IstiGauge score={scoreOperacional} />
                 <div className="mt-1 flex items-center justify-between gap-3 border-t border-border/50 pt-3">
                   <span className="text-xs text-muted-foreground">Classificação</span>
                   <span className={cn('inline-flex shrink-0 rounded-md px-2.5 py-1 text-xs font-bold', istiInfo.badgeClass)}>
                     {istiInfo.label}
                   </span>
                 </div>
-                <button type="button"
-                  className="mt-3 inline-flex items-center justify-center gap-1.5 self-center text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400"
-                  onClick={() => toast.info('ISTI — Índice Sanitário Territorial do Imóvel', { description: 'Pontuação de 0 a 100 que resume o contexto sanitário e operacional do imóvel para priorização.', duration: 8000 })}
-                >
-                  Entenda o ISTI
-                  <Info className="h-4 w-4 shrink-0" aria-hidden />
-                </button>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      className="mt-3 inline-flex items-center justify-center gap-1.5 self-center text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400"
+                    >
+                      Como é calculado
+                      <Info className="h-4 w-4 shrink-0" aria-hidden />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent align="center" className="space-y-3 text-sm">
+                    <p className="font-semibold text-foreground">ISTI — Índice de Severidade (0–100)</p>
+                    <p className="text-xs text-muted-foreground">
+                      Pontuação operacional que mede a urgência de atendimento do foco. Composta por três fatores:
+                    </p>
+                    <ul className="space-y-2 border-t border-border/60 pt-2">
+                      <li className="space-y-0.5">
+                        <p className="text-xs font-semibold">SLA — prazo consumido (10–50 pts)</p>
+                        <p className="text-[11px] text-muted-foreground">10 pts se abaixo de 70% do prazo · 20 pts entre 70–90% · 40 pts acima de 90% · 50 pts se vencido</p>
+                      </li>
+                      <li className="space-y-0.5">
+                        <p className="text-xs font-semibold">Reincidência (+20 pts)</p>
+                        <p className="text-[11px] text-muted-foreground">Acrescido quando há registro de foco anterior no mesmo local</p>
+                      </li>
+                      <li className="space-y-0.5">
+                        <p className="text-xs font-semibold">Casos próximos (+5 pts por caso, máx 30 pts)</p>
+                        <p className="text-[11px] text-muted-foreground">Casos de arbovirose notificados nas proximidades do foco</p>
+                      </li>
+                    </ul>
+                    <p className="text-[11px] text-muted-foreground border-t border-border/60 pt-2">
+                      Focos resolvidos ou descartados recebem pontuação 0.
+                    </p>
+                  </PopoverContent>
+                </Popover>
               </CardContent>
             </Card>
           </div>
