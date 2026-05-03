@@ -1016,7 +1016,7 @@ export default function GestorFocoRelatorio() {
               <div className="min-w-0 flex flex-col gap-0.5 pr-20">
                 <Button type="button" variant="ghost" size="sm"
                   className="h-auto w-fit -ml-2 px-1.5 py-0.5 gap-1 text-[11px] font-medium leading-none text-muted-foreground/70 hover:text-foreground hover:bg-muted/40"
-                  onClick={() => navigate(-1)} aria-label="Voltar à página anterior"
+                  onClick={() => navigate('/gestor/focos')} aria-label="Voltar para lista de focos"
                 >
                   <ArrowLeft className="w-3.5 h-3.5 shrink-0 opacity-70" aria-hidden />
                   Voltar

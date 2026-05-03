@@ -1221,7 +1221,7 @@ export default function GestorFocos() {
                               focosOrdenados.findIndex(f => f.id === foco.id),
                             )}
                           >
-                            Relatório
+                            Detalhes
                           </button>
                         </div>
                       </td>
