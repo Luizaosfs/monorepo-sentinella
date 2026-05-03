@@ -10,6 +10,7 @@ import {
   RiscoConsolidacao,
   SintomaConsolidacao,
   VistoriaParaConsolidacao,
+  VistoriaResumoVisual,
 } from '@modules/vistoria/repositories/vistoria-read.repository';
 import { VistoriaReadRepository } from '@modules/vistoria/repositories/vistoria-read.repository';
 import { Injectable } from '@nestjs/common';
@@ -28,6 +29,40 @@ const INCLUDE_DETALHES = {
   riscos:    { where: { deleted_at: null } },
   calhas:    { where: { deleted_at: null } },
 };
+
+const RESUMO_INCLUDE = {
+  depositos: {
+    where: { deleted_at: null },
+    select: {
+      tipo: true, qtd_inspecionados: true, qtd_com_focos: true, qtd_eliminados: true,
+      qtd_com_agua: true, usou_larvicida: true, qtd_larvicida_g: true, eliminado: true, vedado: true,
+    },
+  },
+  sintomas: {
+    where: { deleted_at: null },
+    select: {
+      febre: true, manchas_vermelhas: true, dor_articulacoes: true, dor_cabeca: true,
+      nausea: true, moradores_sintomas_qtd: true, gerou_caso_notificado_id: true,
+    },
+  },
+  calhas: {
+    where: { deleted_at: null },
+    select: {
+      posicao: true, condicao: true, com_foco: true, acessivel: true,
+      tratamento_realizado: true, foto_url: true, observacao: true,
+    },
+  },
+  riscos: {
+    where: { deleted_at: null },
+    select: {
+      menor_incapaz: true, idoso_incapaz: true, dep_quimico: true, risco_alimentar: true,
+      risco_moradia: true, criadouro_animais: true, lixo: true, residuos_organicos: true,
+      residuos_quimicos: true, residuos_medicos: true, acumulo_material_organico: true,
+      animais_sinais_lv: true, caixa_destampada: true, mobilidade_reduzida: true,
+      acamado: true, outro_risco_vetorial: true,
+    },
+  },
+} as const;
 
 @PrismaRepository(VistoriaReadRepository)
 @Injectable()
@@ -264,5 +299,118 @@ export class PrismaVistoriaReadRepository implements VistoriaReadRepository {
       fotoPublicId: r.foto_public_id ?? null,
       fotoUrl: r.foto_url ?? null,
     }));
+  }
+
+  async findResumoByFocoId(
+    focoId: string,
+    origemVistoriaId: string | null,
+    clienteId: string | null,
+  ): Promise<VistoriaResumoVisual | null> {
+    const baseWhere = {
+      deleted_at: null,
+      ...(clienteId != null && { cliente_id: clienteId }),
+    };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let raw: any = null;
+
+    if (origemVistoriaId) {
+      raw = await this.prisma.client.vistorias.findFirst({
+        where: { id: origemVistoriaId, ...baseWhere },
+        include: RESUMO_INCLUDE,
+      });
+    }
+
+    if (!raw) {
+      raw = await this.prisma.client.vistorias.findFirst({
+        where: { foco_risco_id: focoId, ...baseWhere },
+        orderBy: { created_at: 'desc' },
+        include: RESUMO_INCLUDE,
+      });
+    }
+
+    return raw ? this.mapResumoVisual(raw) : null;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private mapResumoVisual(raw: any): VistoriaResumoVisual {
+    return {
+      id: raw.id,
+      data_visita: raw.data_visita,
+      status: raw.status,
+      acesso_realizado: raw.acesso_realizado ?? true,
+      motivo_sem_acesso: raw.motivo_sem_acesso ?? null,
+      moradores_qtd: raw.moradores_qtd ?? null,
+      gravidas: raw.gravidas ?? 0,
+      idosos: raw.idosos ?? 0,
+      criancas_7anos: raw.criancas_7anos ?? 0,
+      origem_visita: raw.origem_visita ?? null,
+      habitat_selecionado: raw.habitat_selecionado ?? null,
+      condicao_habitat: raw.condicao_habitat ?? null,
+      observacao: raw.observacao ?? null,
+      foto_externa_url: raw.foto_externa_url ?? null,
+      resultado_operacional: raw.resultado_operacional ?? null,
+      vulnerabilidade_domiciliar: raw.vulnerabilidade_domiciliar ?? null,
+      alerta_saude: raw.alerta_saude ?? null,
+      risco_socioambiental: raw.risco_socioambiental ?? null,
+      risco_vetorial: raw.risco_vetorial ?? null,
+      prioridade_final: raw.prioridade_final ?? null,
+      prioridade_motivo: raw.prioridade_motivo ?? null,
+      dimensao_dominante: raw.dimensao_dominante ?? null,
+      consolidacao_resumo: raw.consolidacao_resumo ?? null,
+      consolidacao_json: raw.consolidacao_json ?? null,
+      consolidacao_incompleta: raw.consolidacao_incompleta ?? false,
+      versao_regra_consolidacao: raw.versao_regra_consolidacao ?? null,
+      versao_pesos_consolidacao: raw.versao_pesos_consolidacao ?? null,
+      consolidado_em: raw.consolidado_em ?? null,
+      created_at: raw.created_at ?? null,
+      depositos: (raw.depositos ?? []).map((d: any) => ({
+        tipo: d.tipo,
+        qtd_inspecionados: d.qtd_inspecionados ?? 0,
+        qtd_com_focos: d.qtd_com_focos ?? 0,
+        qtd_eliminados: d.qtd_eliminados ?? 0,
+        qtd_com_agua: d.qtd_com_agua ?? 0,
+        usou_larvicida: d.usou_larvicida ?? false,
+        qtd_larvicida_g: d.qtd_larvicida_g != null ? Number(d.qtd_larvicida_g) : null,
+        eliminado: d.eliminado ?? false,
+        vedado: d.vedado ?? false,
+      })),
+      sintomas: (raw.sintomas ?? []).map((s: any) => ({
+        febre: s.febre,
+        manchas_vermelhas: s.manchas_vermelhas,
+        dor_articulacoes: s.dor_articulacoes,
+        dor_cabeca: s.dor_cabeca,
+        nausea: s.nausea,
+        moradores_sintomas_qtd: s.moradores_sintomas_qtd ?? 0,
+        gerou_caso_notificado_id: s.gerou_caso_notificado_id ?? null,
+      })),
+      calhas: (raw.calhas ?? []).map((c: any) => ({
+        posicao: c.posicao,
+        condicao: c.condicao,
+        com_foco: c.com_foco ?? false,
+        acessivel: c.acessivel ?? false,
+        tratamento_realizado: c.tratamento_realizado ?? false,
+        foto_url: c.foto_url ?? null,
+        observacao: c.observacao ?? null,
+      })),
+      riscos: (raw.riscos ?? []).map((r: any) => ({
+        menor_incapaz: r.menor_incapaz,
+        idoso_incapaz: r.idoso_incapaz,
+        dep_quimico: r.dep_quimico,
+        risco_alimentar: r.risco_alimentar,
+        risco_moradia: r.risco_moradia,
+        criadouro_animais: r.criadouro_animais,
+        lixo: r.lixo,
+        residuos_organicos: r.residuos_organicos,
+        residuos_quimicos: r.residuos_quimicos,
+        residuos_medicos: r.residuos_medicos,
+        acumulo_material_organico: r.acumulo_material_organico,
+        animais_sinais_lv: r.animais_sinais_lv,
+        caixa_destampada: r.caixa_destampada,
+        mobilidade_reduzida: r.mobilidade_reduzida,
+        acamado: r.acamado,
+        outro_risco_vetorial: r.outro_risco_vetorial ?? null,
+      })),
+    };
   }
 }

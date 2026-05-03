@@ -2,6 +2,7 @@ import { http } from '@sentinella/api-client';
 import { api as _sb } from '../../api-stub';
 import { qs } from '../shared/qs';
 import { deepToCamel, deepToSnake, type Ret } from '../shared/case-mappers';
+import type { ResumoVisualVistoriaResponse } from '@/types/resumoVistoria';
 
 export const focosRisco = {
   list: async (
@@ -104,4 +105,7 @@ export const focosRisco = {
     http.get(`/focos-risco/by-levantamento-item${qs({ itemId })}`),
   listByImovel: (imovelId: string): Promise<unknown> =>
     http.get(`/focos-risco/by-imovel${qs({ imovelId })}`),
+
+  getResumoVistoria: (focoId: string): Promise<ResumoVisualVistoriaResponse> =>
+    http.get(`/focos-risco/${focoId}/resumo-vistoria`),
 };

@@ -63,6 +63,85 @@ export interface DadosConsolidacao {
   calhas: CalhaAgregada;
 }
 
+export interface VistoriaResumoVisual {
+  id: string;
+  data_visita: Date;
+  status: string;
+  acesso_realizado: boolean;
+  motivo_sem_acesso: string | null;
+  moradores_qtd: number | null;
+  gravidas: number;
+  idosos: number;
+  criancas_7anos: number;
+  origem_visita: string | null;
+  habitat_selecionado: string | null;
+  condicao_habitat: string | null;
+  observacao: string | null;
+  foto_externa_url: string | null;
+  resultado_operacional: string | null;
+  vulnerabilidade_domiciliar: string | null;
+  alerta_saude: string | null;
+  risco_socioambiental: string | null;
+  risco_vetorial: string | null;
+  prioridade_final: string | null;
+  prioridade_motivo: string | null;
+  dimensao_dominante: string | null;
+  consolidacao_resumo: string | null;
+  consolidacao_json: unknown | null;
+  consolidacao_incompleta: boolean;
+  versao_regra_consolidacao: string | null;
+  versao_pesos_consolidacao: string | null;
+  consolidado_em: Date | null;
+  created_at: Date | null;
+  depositos: Array<{
+    tipo: string;
+    qtd_inspecionados: number;
+    qtd_com_focos: number;
+    qtd_eliminados: number;
+    qtd_com_agua: number;
+    usou_larvicida: boolean;
+    qtd_larvicida_g: number | null;
+    eliminado: boolean;
+    vedado: boolean;
+  }>;
+  sintomas: Array<{
+    febre: boolean;
+    manchas_vermelhas: boolean;
+    dor_articulacoes: boolean;
+    dor_cabeca: boolean;
+    nausea: boolean;
+    moradores_sintomas_qtd: number;
+    gerou_caso_notificado_id: string | null;
+  }>;
+  calhas: Array<{
+    posicao: string;
+    condicao: string;
+    com_foco: boolean;
+    acessivel: boolean;
+    tratamento_realizado: boolean;
+    foto_url: string | null;
+    observacao: string | null;
+  }>;
+  riscos: Array<{
+    menor_incapaz: boolean;
+    idoso_incapaz: boolean;
+    dep_quimico: boolean;
+    risco_alimentar: boolean;
+    risco_moradia: boolean;
+    criadouro_animais: boolean;
+    lixo: boolean;
+    residuos_organicos: boolean;
+    residuos_quimicos: boolean;
+    residuos_medicos: boolean;
+    acumulo_material_organico: boolean;
+    animais_sinais_lv: boolean;
+    caixa_destampada: boolean;
+    mobilidade_reduzida: boolean;
+    acamado: boolean;
+    outro_risco_vetorial: string | null;
+  }>;
+}
+
 @Injectable()
 export abstract class VistoriaReadRepository {
   abstract findById(id: string, clienteId: string | null): Promise<Vistoria | null>;
@@ -79,4 +158,9 @@ export abstract class VistoriaReadRepository {
   abstract findCalhasByVistoriaId(
     vistoriaId: string,
   ): Promise<Array<{ id: string; fotoPublicId: string | null; fotoUrl: string | null }>>;
+  abstract findResumoByFocoId(
+    focoId: string,
+    origemVistoriaId: string | null,
+    clienteId: string | null,
+  ): Promise<VistoriaResumoVisual | null>;
 }
