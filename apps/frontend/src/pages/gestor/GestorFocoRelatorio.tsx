@@ -263,15 +263,23 @@ function MoradoresRelatorioCard({ vistoria }: { vistoria: VistoriaDetalhe | null
         </div>
         <div className="grid grid-cols-3 gap-2">
           {[
-            { label: 'Crianças', value: criancas },
-            { label: 'Idosos', value: idosos },
-            { label: 'Gestantes', value: gestantes },
+            { label: 'Crianças', value: criancas, activeColor: 'text-sky-600', activeBg: 'bg-sky-50 border-sky-200 dark:bg-sky-950/30 dark:border-sky-800' },
+            { label: 'Idosos',   value: idosos,   activeColor: 'text-amber-600', activeBg: 'bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:border-amber-800' },
+            { label: 'Gestantes', value: gestantes, activeColor: 'text-rose-600', activeBg: 'bg-rose-50 border-rose-200 dark:bg-rose-950/30 dark:border-rose-800' },
           ].map((item) => (
             <div
               key={item.label}
-              className="rounded-lg border border-border/80 bg-background px-2 py-2.5 text-center shadow-[0_1px_0_rgba(0,0,0,0.02)]"
+              className={cn(
+                'rounded-lg border px-2 py-2.5 text-center transition-colors',
+                item.value > 0 ? item.activeBg : 'border-border/80 bg-background',
+              )}
             >
-              <p className="text-lg font-bold text-foreground tabular-nums leading-tight">{item.value}</p>
+              <p className={cn(
+                'text-lg font-bold tabular-nums leading-tight',
+                item.value > 0 ? item.activeColor : 'text-muted-foreground',
+              )}>
+                {item.value > 0 ? item.value : '—'}
+              </p>
               <p className="text-[11px] text-muted-foreground font-medium mt-1">{item.label}</p>
             </div>
           ))}
