@@ -43,9 +43,9 @@ export interface VistoriaParaConsolidacao {
   imovelId: string | null;
   acessoRealizado: boolean;
   moradoresQtd: number | null;
-  gravidas: boolean;
-  idosos: boolean;
-  criancas7anos: boolean;
+  gravidas: number;
+  idosos: number;
+  criancas7anos: number;
   clienteId: string;
   consolidadoEm: Date | null;
   prioridadeFinal: string | null;
