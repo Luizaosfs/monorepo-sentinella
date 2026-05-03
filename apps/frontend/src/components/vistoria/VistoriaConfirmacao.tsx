@@ -71,9 +71,9 @@ export function VistoriaConfirmacao({ etapa1, etapa2, etapa3, etapa4, etapa5, is
           <SectionTitle icon={<Users className="w-4 h-4" />} label="Responsável" />
           <Row label="Moradores" value={etapa1.moradores_qtd} />
           <Row label="GPS checkin" value={etapa1.checkin_em ? 'Registrado' : 'Não disponível'} />
-          {etapa1.gravidas && <Row label="Grávidas" value="Sim" danger />}
-          {etapa1.idosos && <Row label="Idosos" value="Sim" />}
-          {etapa1.criancas_7anos && <Row label="Crianças < 7 anos" value="Sim" />}
+          {etapa1.gravidas > 0 && <Row label="Grávidas" value={etapa1.gravidas} danger />}
+          {etapa1.idosos > 0 && <Row label="Idosos" value={etapa1.idosos} />}
+          {etapa1.criancas_7anos > 0 && <Row label="Crianças < 7 anos" value={etapa1.criancas_7anos} />}
         </CardContent>
       </Card>
 

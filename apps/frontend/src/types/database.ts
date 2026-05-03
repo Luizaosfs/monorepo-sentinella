@@ -1291,9 +1291,9 @@ export interface Vistoria {
   data_visita: string;
   status: StatusVistoria;
   moradores_qtd: number | null;
-  gravidas: boolean;
-  idosos: boolean;
-  criancas_7anos: boolean;
+  gravidas: number;
+  idosos: number;
+  criancas_7anos: number;
   lat_chegada: number | null;
   lng_chegada: number | null;
   checkin_em: string | null;

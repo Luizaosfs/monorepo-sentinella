@@ -84,9 +84,9 @@ const ETAPAS_POR_ATIVIDADE: Record<TipoAtividade, { label: string; key: number }
 
 const ETAPA1_DEFAULT: Etapa1Data = {
   moradores_qtd: 0,
-  gravidas: false,
-  idosos: false,
-  criancas_7anos: false,
+  gravidas: 0,
+  idosos: 0,
+  criancas_7anos: 0,
   lat_chegada: null,
   lng_chegada: null,
   checkin_em: null,

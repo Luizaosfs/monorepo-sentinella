@@ -12,12 +12,9 @@ export const saveVistoriaSchema = z.object({
     .optional()
     .describe('Data/hora da visita (data_visita)'),
   moradoresQtd: z.coerce.number().int().optional().describe('Qtd de moradores'),
-  gravidas: z.boolean().optional().describe('Há gestantes no imóvel'),
-  idosos: z.boolean().optional().describe('Há idosos no imóvel'),
-  criancas7anos: z
-    .boolean()
-    .optional()
-    .describe('Há crianças menores de 7 anos'),
+  gravidas: z.coerce.number().int().min(0).optional().describe('Quantidade de gestantes no imóvel'),
+  idosos: z.coerce.number().int().min(0).optional().describe('Quantidade de idosos no imóvel'),
+  criancas7anos: z.coerce.number().int().min(0).optional().describe('Quantidade de crianças menores de 7 anos'),
   latChegada: coerceOptionalNumber('Latitude de chegada'),
   lngChegada: coerceOptionalNumber('Longitude de chegada'),
   checkinEm: z.coerce.date().optional().describe('Momento do check-in'),

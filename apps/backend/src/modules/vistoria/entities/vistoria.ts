@@ -69,9 +69,9 @@ interface VistoriaProps {
   dataVisita: Date;
   status: string;
   moradoresQtd?: number;
-  gravidas: boolean;
-  idosos: boolean;
-  criancas7anos: boolean;
+  gravidas: number;
+  idosos: number;
+  criancas7anos: number;
   latChegada?: number;
   lngChegada?: number;
   checkinEm?: Date;
@@ -186,21 +186,21 @@ export class Vistoria extends BaseEntity<VistoriaProps> {
   get gravidas() {
     return this.props.gravidas;
   }
-  set gravidas(v: boolean) {
+  set gravidas(v: number) {
     this.props.gravidas = v;
   }
 
   get idosos() {
     return this.props.idosos;
   }
-  set idosos(v: boolean) {
+  set idosos(v: number) {
     this.props.idosos = v;
   }
 
   get criancas7anos() {
     return this.props.criancas7anos;
   }
-  set criancas7anos(v: boolean) {
+  set criancas7anos(v: number) {
     this.props.criancas7anos = v;
   }
 

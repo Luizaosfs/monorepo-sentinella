@@ -48,9 +48,9 @@ export interface FocoDetalhes {
     id: string;
     dataVisita: string;
     moradoresQtd: number | null;
-    gravidas: boolean;
-    idosos: boolean;
-    criancas7anos: boolean;
+    gravidas: number;
+    idosos: number;
+    criancas7anos: number;
     /** JSON opcional da vistoria (contagens extras, se existirem). */
     payload?: Record<string, unknown> | null;
     tipoAtividade: string;

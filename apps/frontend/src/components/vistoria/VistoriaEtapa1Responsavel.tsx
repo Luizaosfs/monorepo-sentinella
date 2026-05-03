@@ -7,9 +7,9 @@ import { cn } from '@/lib/utils';
 
 export interface Etapa1Data {
   moradores_qtd: number;
-  gravidas: boolean;
-  idosos: boolean;
-  criancas_7anos: boolean;
+  gravidas: number;
+  idosos: number;
+  criancas_7anos: number;
   lat_chegada: number | null;
   lng_chegada: number | null;
   checkin_em: string | null;
@@ -86,27 +86,31 @@ const STATUS_OPTIONS: {
   },
 ];
 
-function Toggle({ label, icon, checked, onChange }: { label: string; icon: React.ReactNode; checked: boolean; onChange: (v: boolean) => void }) {
+function GroupCounter({ label, icon, value, onChange }: { label: string; icon: React.ReactNode; value: number; onChange: (v: number) => void }) {
   return (
-    <button
-      type="button"
-      onClick={() => onChange(!checked)}
-      className={cn(
-        'flex items-center gap-3 w-full p-3.5 rounded-xl border-2 transition-all text-left',
-        checked
-          ? 'border-primary bg-primary/5 text-primary'
-          : 'border-border bg-card text-foreground hover:border-muted-foreground/40'
-      )}
-    >
-      <span className={cn('shrink-0', checked ? 'text-primary' : 'text-muted-foreground')}>{icon}</span>
-      <span className="text-sm font-semibold flex-1">{label}</span>
-      <span className={cn(
-        'w-10 h-6 rounded-full border-2 transition-colors flex items-center px-0.5 shrink-0',
-        checked ? 'bg-primary border-primary justify-end' : 'bg-muted border-border justify-start'
-      )}>
-        <span className="w-4 h-4 rounded-full bg-white shadow" />
-      </span>
-    </button>
+    <div className="flex items-center justify-between py-1">
+      <div className="flex items-center gap-2">
+        <span className="text-muted-foreground shrink-0">{icon}</span>
+        <span className="text-sm font-semibold text-foreground">{label}</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => onChange(Math.max(0, value - 1))}
+          className="w-8 h-8 rounded-xl border-2 border-border flex items-center justify-center text-lg font-bold hover:bg-muted transition-colors"
+        >
+          −
+        </button>
+        <span className="text-xl font-black w-8 text-center tabular-nums">{value}</span>
+        <button
+          type="button"
+          onClick={() => onChange(value + 1)}
+          className="w-8 h-8 rounded-xl border-2 border-border flex items-center justify-center text-lg font-bold hover:bg-muted transition-colors"
+        >
+          +
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -281,26 +285,26 @@ export function VistoriaEtapa1Responsavel({ data, onChange, onNext, onSemAcesso 
             </CardContent>
           </Card>
 
-          {/* Toggles de vulnerabilidade */}
+          {/* Contadores de grupos vulneráveis */}
           <Card className="rounded-2xl border-border">
-            <CardContent className="p-4 space-y-2.5">
+            <CardContent className="p-4 space-y-3">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Grupos vulneráveis</p>
-              <Toggle
-                label="Grávidas na residência"
+              <GroupCounter
+                label="Grávidas"
                 icon={<HeartHandshake className="w-5 h-5" />}
-                checked={data.gravidas}
+                value={data.gravidas}
                 onChange={(v) => onChange({ ...data, gravidas: v })}
               />
-              <Toggle
+              <GroupCounter
                 label="Idosos"
                 icon={<PersonStanding className="w-5 h-5" />}
-                checked={data.idosos}
+                value={data.idosos}
                 onChange={(v) => onChange({ ...data, idosos: v })}
               />
-              <Toggle
-                label="Crianças menores de 7 anos"
+              <GroupCounter
+                label="Crianças < 7 anos"
                 icon={<Baby className="w-5 h-5" />}
-                checked={data.criancas_7anos}
+                value={data.criancas_7anos}
                 onChange={(v) => onChange({ ...data, criancas_7anos: v })}
               />
             </CardContent>

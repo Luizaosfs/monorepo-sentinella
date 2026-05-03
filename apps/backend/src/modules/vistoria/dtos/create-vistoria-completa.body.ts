@@ -88,12 +88,9 @@ export const createVistoriaCompletaSchema = z.object({
   dataVisita: z.coerce.date().describe('Data/hora da visita'),
   status: z.string().default('pendente').describe('Status da vistoria'),
   moradoresQtd: z.coerce.number().int().optional().describe('Qtd de moradores'),
-  gravidas: z.boolean().default(false).describe('Há gestantes no imóvel'),
-  idosos: z.boolean().default(false).describe('Há idosos no imóvel'),
-  criancas7anos: z
-    .boolean()
-    .default(false)
-    .describe('Há crianças menores de 7 anos'),
+  gravidas: z.coerce.number().int().min(0).default(0).describe('Quantidade de gestantes no imóvel'),
+  idosos: z.coerce.number().int().min(0).default(0).describe('Quantidade de idosos no imóvel'),
+  criancas7anos: z.coerce.number().int().min(0).default(0).describe('Quantidade de crianças menores de 7 anos'),
   latChegada: coerceOptionalNumber('Latitude de chegada'),
   lngChegada: coerceOptionalNumber('Longitude de chegada'),
   checkinEm: z.coerce.date().optional().describe('Momento do check-in'),

@@ -216,32 +216,11 @@ const DEPOSITO_TIPOS = ['A1', 'A2', 'B', 'C', 'D1', 'D2', 'E'] as const;
 type Deposito = NonNullable<FocoDetalhes['vistoria']>['depositos'][0];
 type VistoriaDetalhe = NonNullable<FocoDetalhes['vistoria']>;
 
-/** Contagens por grupo: prioriza números no payload; senão reparte moradoresQtd entre os flags true; senão 0/1. */
 function breakdownGruposMoradores(v: VistoriaDetalhe): { criancas: number; idosos: number; gestantes: number } {
-  const p = v.payload;
-  const readNum = (...keys: string[]) => {
-    if (!p || typeof p !== 'object') return undefined;
-    for (const k of keys) {
-      const x = (p as Record<string, unknown>)[k];
-      if (typeof x === 'number' && Number.isFinite(x) && x >= 0) return Math.floor(x);
-    }
-    return undefined;
-  };
-  const cP = readNum('moradores_criancas', 'criancas_qtd', 'qtd_criancas');
-  const iP = readNum('moradores_idosos', 'idosos_qtd', 'qtd_idosos');
-  const gP = readNum('moradores_gestantes', 'gestantes_qtd', 'qtd_gestantes');
-  if (cP !== undefined || iP !== undefined || gP !== undefined) {
-    return {
-      criancas: cP ?? (v.criancas7anos ? 1 : 0),
-      idosos: iP ?? (v.idosos ? 1 : 0),
-      gestantes: gP ?? (v.gravidas ? 1 : 0),
-    };
-  }
-
   return {
-    criancas: v.criancas7anos ? 1 : 0,
-    idosos: v.idosos ? 1 : 0,
-    gestantes: v.gravidas ? 1 : 0,
+    criancas: v.criancas7anos ?? 0,
+    idosos: v.idosos ?? 0,
+    gestantes: v.gravidas ?? 0,
   };
 }
 

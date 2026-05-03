@@ -98,9 +98,9 @@ function SemAcessoWrapper({
 
   const etapa1: Etapa1Data = {
     moradores_qtd: 0,
-    gravidas: false,
-    idosos: false,
-    criancas_7anos: false,
+    gravidas: 0,
+    idosos: 0,
+    criancas_7anos: 0,
     lat_chegada: coords.lat,
     lng_chegada: coords.lng,
     checkin_em: checkinEm,

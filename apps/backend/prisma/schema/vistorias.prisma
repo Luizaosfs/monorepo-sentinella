@@ -9,9 +9,9 @@ model vistorias {
   data_visita                   DateTime  @default(now()) @db.Timestamptz
   status                        String    @default("pendente")
   moradores_qtd                 Int?
-  gravidas                      Boolean   @default(false)
-  idosos                        Boolean   @default(false)
-  criancas_7anos                Boolean   @default(false)
+  gravidas                      Int       @default(0)
+  idosos                        Int       @default(0)
+  criancas_7anos                Int       @default(0)
   lat_chegada                   Float?
   lng_chegada                   Float?
   checkin_em                    DateTime? @db.Timestamptz
