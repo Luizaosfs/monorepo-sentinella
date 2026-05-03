@@ -245,7 +245,9 @@
       "PowerShell(Set-Location D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend; $output = node node_modules\\\\.bin\\\\tsc --noEmit 2>&1; Write-Output \"Lines: $\\($output.Count\\)\"; $output | Select-Object -First 20 | ForEach-Object { Write-Output $_ })",
       "PowerShell(Set-Location D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend; $output = & \"node_modules\\\\.bin\\\\tsc.cmd\" --noEmit 2>&1; $errCount = \\($output | Where-Object { $_ -match \"error TS\" }\\).Count; Write-Output \"TS errors: $errCount\"; $output | Where-Object { $_ -match \"dashboard-territorial|territorial|GetDashboard\" } | ForEach-Object { Write-Output $_ })",
       "PowerShell(Set-Location D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend; $output = & \"node_modules\\\\.bin\\\\jest.cmd\" --config jest.config.ts --testPathPattern=\"get-dashboard-territorial\" --no-coverage 2>&1; $output | ForEach-Object { Write-Output $_ })",
-      "PowerShell(Set-Location D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\frontend; $output = & \"node_modules\\\\.bin\\\\tsc.cmd\" --noEmit 2>&1; $erros = $output | Where-Object { $_ -match \"error TS\" }; Write-Output \"Erros: $\\($erros.Count\\)\"; $erros | Where-Object { $_ -match \"Territorial|territorial\" } | ForEach-Object { Write-Output $_ })"
+      "PowerShell(Set-Location D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\frontend; $output = & \"node_modules\\\\.bin\\\\tsc.cmd\" --noEmit 2>&1; $erros = $output | Where-Object { $_ -match \"error TS\" }; Write-Output \"Erros: $\\($erros.Count\\)\"; $erros | Where-Object { $_ -match \"Territorial|territorial\" } | ForEach-Object { Write-Output $_ })",
+      "Bash(\"node_modules\\\\.bin\\\\tsc.cmd\" --noEmit --project tsconfig.json)",
+      "Bash(Select-String \"GestorDashboard\")"
     ]
   }
 }

@@ -1,16 +1,21 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import 'leaflet/dist/leaflet.css';
-import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from 'react-leaflet';
+import L from '@/lib/leaflet';
+import { MapContainer, TileLayer, CircleMarker, Popup, useMap, useMapEvents } from 'react-leaflet';
 import { LatLngBounds } from 'leaflet';
 import {
-  AlertTriangle, Map, BarChart2, ShieldAlert, Droplets,
-  Bug, Activity, RefreshCw, Filter, X,
+  BarChart, Bar, XAxis, YAxis, Tooltip as ChartTooltip,
+  ResponsiveContainer, CartesianGrid,
+} from 'recharts';
+import {
+  AlertTriangle, Map, BarChart2, ShieldAlert, Bug,
+  Activity, RefreshCw, Filter, X, Layers, Users,
+  MapPin, CheckCircle, Clock, SlidersHorizontal, ChevronDown,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { useDashboardTerritorial } from '@/hooks/queries/useDashboardTerritorial';
 import type {
@@ -19,7 +24,7 @@ import type {
   DashboardTerritorialFatoresRisco,
 } from '@/types/dashboardTerritorial';
 
-// ─── Constantes ───────────────────────────────────────────────────────────────
+// ─── Constants ────────────────────────────────────────────────────────────────
 
 const STATUS_COLOR: Record<string, string> = {
   suspeita: '#f59e0b',
@@ -43,8 +48,7 @@ const STATUS_LABEL: Record<string, string> = {
   descartado: 'Descartado',
 };
 
-const PRIORIDADE_STATUS_OPTIONS = ['P1', 'P2', 'P3', 'P4', 'P5'] as const;
-
+const PRIORIDADE_OPTIONS = ['P1', 'P2', 'P3', 'P4', 'P5'] as const;
 const STATUS_OPTIONS = Object.keys(STATUS_LABEL) as (keyof typeof STATUS_LABEL)[];
 
 const FATOR_LABEL: Record<keyof DashboardTerritorialFatoresRisco, string> = {
@@ -62,12 +66,28 @@ const FATOR_LABEL: Record<keyof DashboardTerritorialFatoresRisco, string> = {
   acamado: 'Acamado',
 };
 
-// ─── Componente auxiliar de mapa ──────────────────────────────────────────────
+const RANK_BADGE_CLS = [
+  'bg-yellow-400 text-yellow-900',
+  'bg-slate-200 text-slate-600',
+  'bg-amber-700 text-white',
+] as const;
+
+type VulnKey = 'idosoIncapaz' | 'menorIncapaz' | 'mobilidadeReduzida' | 'acamado';
+const VULN_KEYS: VulnKey[] = ['idosoIncapaz', 'menorIncapaz', 'mobilidadeReduzida', 'acamado'];
+const VULN_KEY_SET = new Set<string>(VULN_KEYS);
+
+const VULN_META: Record<VulnKey, { label: string; icon: React.ComponentType<{ className?: string }>; iconCls: string }> = {
+  idosoIncapaz:       { label: 'Idosos incapazes',  icon: Users,       iconCls: 'text-blue-500' },
+  menorIncapaz:       { label: 'Menores incapazes', icon: Users,       iconCls: 'text-purple-500' },
+  mobilidadeReduzida: { label: 'Mob. reduzida',     icon: Activity,    iconCls: 'text-orange-500' },
+  acamado:            { label: 'Acamado',           icon: ShieldAlert, iconCls: 'text-red-500' },
+};
+
+// ─── Map helpers ──────────────────────────────────────────────────────────────
 
 function MapResizer() {
   const map = useMap();
   useEffect(() => {
-    // Leaflet não sabe o tamanho real do container até o CSS estar aplicado
     const t = setTimeout(() => map.invalidateSize(), 50);
     return () => clearTimeout(t);
   }, [map]);
@@ -77,10 +97,63 @@ function MapResizer() {
 function AutoFitBounds({ points }: { points: DashboardTerritorialPontoMapa[] }) {
   const map = useMap();
   useEffect(() => {
-    if (points.length === 0) return;
+    if (!points.length) return;
     const bounds = new LatLngBounds(points.map((p) => [p.latitude, p.longitude] as [number, number]));
     if (bounds.isValid()) map.fitBounds(bounds, { padding: [32, 32], maxZoom: 15 });
   }, [map, points]);
+  return null;
+}
+
+type HeatLayerInstance = L.Layer & { _canvas?: HTMLCanvasElement };
+
+function TerritorialHeatmapLayer({ points }: { points: DashboardTerritorialPontoMapa[] }) {
+  const map = useMap();
+  const layerRef = useRef<HeatLayerInstance | null>(null);
+  const [bounds, setBounds] = useState<L.LatLngBounds | null>(() => map?.getBounds() ?? null);
+
+  useMapEvents({
+    moveend: () => setBounds(map.getBounds()),
+    zoomend: () => setBounds(map.getBounds()),
+  });
+
+  const heatPoints = useMemo(() => {
+    const padded = bounds?.pad(0.2) ?? null;
+    return points
+      .filter((p) => !padded || padded.contains([p.latitude, p.longitude]))
+      .map((p): [number, number, number] => [p.latitude, p.longitude, Math.min(p.peso / 5, 1)]);
+  }, [points, bounds]);
+
+  useEffect(() => {
+    if (!map || !heatPoints.length) return;
+    let cancelled = false;
+
+    (async () => {
+      await import('leaflet.heat');
+      if (cancelled) return;
+      type LWithHeat = typeof L & {
+        heatLayer: (pts: [number, number, number][], opts: Record<string, unknown>) => HeatLayerInstance;
+      };
+      const heat = (L as unknown as LWithHeat).heatLayer(heatPoints, {
+        radius: 22,
+        blur: 18,
+        maxZoom: 17,
+        max: 1.0,
+        gradient: { 0.2: '#4ade80', 0.5: '#facc15', 0.75: '#f97316', 1.0: '#ef4444' },
+      });
+      heat.addTo(map);
+      if (heat._canvas) heat._canvas.style.opacity = '0.55';
+      layerRef.current = heat;
+    })();
+
+    return () => {
+      cancelled = true;
+      if (layerRef.current) {
+        layerRef.current.removeFrom(map);
+        layerRef.current = null;
+      }
+    };
+  }, [map, heatPoints]);
+
   return null;
 }
 
@@ -89,52 +162,77 @@ function AutoFitBounds({ points }: { points: DashboardTerritorialPontoMapa[] }) 
 function KpiCard({
   title,
   value,
+  suffix,
   subtitle,
   icon: Icon,
+  iconColor,
   urgent,
   loading,
 }: {
   title: string;
   value: number | null | undefined;
+  suffix?: string;
   subtitle?: string;
   icon: React.ComponentType<{ className?: string }>;
+  iconColor?: string;
   urgent?: boolean;
   loading?: boolean;
 }) {
+  const isHot = urgent && !!value && value > 0;
   return (
-    <Card
+    <div
       className={cn(
-        'border-border/60',
-        urgent && value && value > 0 && 'border-red-300 bg-red-50/40 dark:bg-red-950/20',
+        'h-[120px] rounded-2xl bg-white border border-slate-200 shadow-sm p-5 flex flex-col justify-between',
+        'transition-all duration-200 hover:shadow-md hover:scale-[1.02] cursor-default',
+        isHot && 'border-red-200 bg-red-50/30',
       )}
     >
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between gap-2">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{title}</p>
-          <Icon
-            className={cn(
-              'h-4 w-4 shrink-0',
-              urgent && value && value > 0 ? 'text-red-500' : 'text-muted-foreground',
-            )}
-          />
+      <div className="flex items-center gap-2">
+        <Icon className={cn('h-4 w-4 shrink-0', iconColor ?? 'text-slate-400', isHot && 'text-red-400')} />
+        <span className="text-xs font-medium text-slate-500 truncate">{title}</span>
+      </div>
+      {loading ? (
+        <Skeleton className="h-8 w-16" />
+      ) : (
+        <div>
+          <p className={cn('text-3xl font-bold text-slate-900 tabular-nums leading-none', isHot && 'text-red-600')}>
+            {value ?? 0}
+            {suffix && <span className="text-xl font-normal text-slate-400 ml-0.5">{suffix}</span>}
+          </p>
+          {subtitle && <p className="text-xs text-slate-400 mt-1">{subtitle}</p>}
         </div>
-        {loading ? (
-          <Skeleton className="h-8 w-16 mt-2" />
-        ) : (
-          <div className="mt-2">
-            <span
-              className={cn(
-                'text-3xl font-bold tabular-nums',
-                urgent && value && value > 0 ? 'text-red-600' : 'text-foreground',
-              )}
-            >
-              {value ?? 0}
-            </span>
-            {subtitle && <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      )}
+    </div>
+  );
+}
+
+// ─── PNCD Tooltip ─────────────────────────────────────────────────────────────
+
+type PncdRow = { name: string; fullName: string; Insp: number; Foco: number };
+
+function PncdTooltip({
+  active,
+  payload,
+  label,
+  rows,
+}: {
+  active?: boolean;
+  payload?: Array<{ name?: string; value?: number; color?: string }>;
+  label?: string;
+  rows: PncdRow[];
+}) {
+  if (!active || !payload?.length) return null;
+  const row = rows.find((d) => d.name === label);
+  return (
+    <div className="bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-xs shadow-lg">
+      <p className="font-semibold mb-1.5 text-slate-800">{row?.fullName ?? label}</p>
+      {payload.map((entry) => (
+        <p key={entry.name} className="flex items-center gap-2 text-slate-500">
+          <span className="inline-block w-2 h-2 rounded-full shrink-0" style={{ background: entry.color ?? '#888' }} />
+          {entry.name}: <span className="font-semibold text-slate-800">{entry.value}</span>
+        </p>
+      ))}
+    </div>
   );
 }
 
@@ -143,15 +241,10 @@ function KpiCard({
 export default function GestorDashboardTerritorial() {
   const navigate = useNavigate();
 
-  const [form, setForm] = useState({
-    dataInicio: '',
-    dataFim: '',
-    bairro: '',
-    prioridade: '',
-    status: '',
-  });
-
+  const [form, setForm] = useState({ dataInicio: '', dataFim: '', bairro: '', prioridade: '', status: '' });
   const [params, setParams] = useState<DashboardTerritorialParams>({});
+  const [showHeatmap, setShowHeatmap] = useState(true);
+  const [showFiltros, setShowFiltros] = useState(false);
 
   const { data, isLoading, isError, refetch } = useDashboardTerritorial(params);
 
@@ -163,6 +256,7 @@ export default function GestorDashboardTerritorial() {
       prioridade: form.prioridade || undefined,
       status: form.status || undefined,
     });
+    setShowFiltros(false);
   };
 
   const limpar = () => {
@@ -170,427 +264,612 @@ export default function GestorDashboardTerritorial() {
     setParams({});
   };
 
+  const temFiltros = Object.values(params).some(Boolean);
+
   const mapCenter = useMemo<[number, number]>(() => {
     const pts = data?.pontosMapa ?? [];
-    if (pts.length === 0) return [-15.8, -47.9];
-    const lat = pts.reduce((s, p) => s + p.latitude, 0) / pts.length;
-    const lng = pts.reduce((s, p) => s + p.longitude, 0) / pts.length;
-    return [lat, lng];
+    if (!pts.length) return [-15.8, -47.9];
+    return [
+      pts.reduce((s, p) => s + p.latitude, 0) / pts.length,
+      pts.reduce((s, p) => s + p.longitude, 0) / pts.length,
+    ];
   }, [data?.pontosMapa]);
+
+  const totalVulneraveis = useMemo(() => {
+    if (!data?.fatoresRisco) return null;
+    return VULN_KEYS.reduce((sum, k) => sum + (data.fatoresRisco![k] ?? 0), 0);
+  }, [data?.fatoresRisco]);
 
   const fatoresAtivos = useMemo(() => {
     if (!data?.fatoresRisco) return [];
     return (Object.entries(data.fatoresRisco) as [keyof DashboardTerritorialFatoresRisco, number][])
-      .filter(([, v]) => v > 0)
+      .filter(([k, v]) => v > 0 && !VULN_KEY_SET.has(k))
       .sort(([, a], [, b]) => b - a);
   }, [data?.fatoresRisco]);
 
-  const temFiltrosAtivos = Object.values(params).some(Boolean);
+  const pncdChartData = useMemo<PncdRow[]>(
+    () =>
+      (data?.depositosPncd.porTipo ?? []).map((t) => ({
+        name: t.tipo.length > 8 ? t.tipo.slice(0, 8) + '…' : t.tipo,
+        fullName: t.tipo,
+        Insp: t.qtdInspecionados,
+        Foco: t.qtdComFocos,
+      })),
+    [data?.depositosPncd.porTipo],
+  );
 
   return (
-    <div className="space-y-6 p-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Dashboard Territorial</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Visão consolidada dos focos, vistorias e vulnerabilidades do território
-          </p>
-          {data?.meta.periodoInicio && (
-            <p className="text-xs text-muted-foreground/70 mt-0.5">
-              Período: {data.meta.periodoInicio} → {data.meta.periodoFim}
+    <div className="bg-slate-50 min-h-full">
+      <div className="max-w-[1500px] mx-auto px-6 py-6 space-y-6">
+
+        {/* ── A) Header ── */}
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+              Mapa Territorial de Risco e Vulnerabilidade
+            </h1>
+            <p className="text-sm text-slate-500 mt-1">
+              Painel estratégico para supervisão e tomada de decisão
             </p>
-          )}
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => refetch()}
-          className="shrink-0"
-        >
-          <RefreshCw className="h-4 w-4 mr-1.5" />
-          Atualizar
-        </Button>
-      </div>
-
-      {/* Filtros */}
-      <Card className="border-border/50">
-        <CardContent className="p-4">
-          <div className="flex flex-wrap gap-3 items-end">
-            <div className="flex flex-col gap-1">
-              <label className="text-xs text-muted-foreground font-medium">Data início</label>
-              <input
-                type="date"
-                className="h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-                value={form.dataInicio}
-                onChange={(e) => setForm((f) => ({ ...f, dataInicio: e.target.value }))}
-              />
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-xs text-muted-foreground font-medium">Data fim</label>
-              <input
-                type="date"
-                className="h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-                value={form.dataFim}
-                onChange={(e) => setForm((f) => ({ ...f, dataFim: e.target.value }))}
-              />
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-xs text-muted-foreground font-medium">Bairro</label>
-              <input
-                type="text"
-                placeholder="Ex: Centro"
-                className="h-9 w-40 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-                value={form.bairro}
-                onChange={(e) => setForm((f) => ({ ...f, bairro: e.target.value }))}
-                onKeyDown={(e) => e.key === 'Enter' && aplicar()}
-              />
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-xs text-muted-foreground font-medium">Prioridade</label>
-              <select
-                className="h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-                value={form.prioridade}
-                onChange={(e) => setForm((f) => ({ ...f, prioridade: e.target.value }))}
-              >
-                <option value="">Todas</option>
-                {PRIORIDADE_STATUS_OPTIONS.map((p) => (
-                  <option key={p} value={p}>{p}</option>
-                ))}
-              </select>
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-xs text-muted-foreground font-medium">Status</label>
-              <select
-                className="h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-                value={form.status}
-                onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}
-              >
-                <option value="">Todos</option>
-                {STATUS_OPTIONS.map((s) => (
-                  <option key={s} value={s}>{STATUS_LABEL[s]}</option>
-                ))}
-              </select>
-            </div>
-            <div className="flex gap-2 ml-auto">
-              {temFiltrosAtivos && (
-                <Button variant="ghost" size="sm" onClick={limpar}>
-                  <X className="h-4 w-4 mr-1" />
-                  Limpar
-                </Button>
-              )}
-              <Button size="sm" onClick={aplicar}>
-                <Filter className="h-4 w-4 mr-1.5" />
-                Aplicar
-              </Button>
-            </div>
+            {data?.meta.periodoInicio && (
+              <p className="text-xs text-slate-400 mt-0.5">
+                {data.meta.periodoInicio} → {data.meta.periodoFim}
+              </p>
+            )}
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Estado de erro */}
-      {isError && (
-        <Card className="border-red-200 bg-red-50/40">
-          <CardContent className="p-4 text-center text-red-600 text-sm">
-            Não foi possível carregar o dashboard territorial. Tente novamente.
-          </CardContent>
-        </Card>
-      )}
-
-      {/* KPIs */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
-        <KpiCard title="Focos totais" value={data?.kpis.totalFocos} icon={Activity} loading={isLoading} />
-        <KpiCard title="Focos ativos" value={data?.kpis.focosAtivos} icon={AlertTriangle} loading={isLoading} urgent />
-        <KpiCard title="Resolvidos" value={data?.kpis.focosResolvidos} icon={Activity} loading={isLoading} />
-        <KpiCard
-          title="Taxa de resolução"
-          value={data?.kpis.taxaResolucaoPct != null ? Math.round(data.kpis.taxaResolucaoPct) : null}
-          subtitle="%"
-          icon={BarChart2}
-          loading={isLoading}
-        />
-        <KpiCard title="Vistorias realizadas" value={data?.kpis.vistoriasRealizadas} icon={Activity} loading={isLoading} />
-        <KpiCard title="SLA vencidos" value={data?.kpis.slaVencidos} icon={AlertTriangle} loading={isLoading} urgent />
-        <KpiCard title="Calhas críticas" value={data?.kpis.calhasCriticas} icon={Droplets} loading={isLoading} urgent />
-        <KpiCard title="Calhas tratadas" value={data?.kpis.calhasTratadas} icon={Droplets} loading={isLoading} />
-      </div>
-
-      {/* Mapa + Rankings */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        {/* Mapa */}
-        <Card className="lg:col-span-3 border-border/60 overflow-hidden">
-          <CardHeader className="pb-2 px-4 pt-4">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2">
-              <Map className="h-4 w-4 text-muted-foreground" />
-              Mapa operacional
-              {data && (
-                <Badge variant="secondary" className="ml-auto text-xs font-normal">
-                  {data.meta.totalPontosMapa} pontos
-                </Badge>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowFiltros((v) => !v)}
+              className={cn(
+                'rounded-xl border-slate-200 text-slate-600 hover:bg-slate-50',
+                temFiltros && 'border-blue-300 text-blue-600 bg-blue-50',
               )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            {isLoading ? (
-              <Skeleton className="h-96 w-full rounded-none" />
-            ) : !data?.pontosMapa.length ? (
-              <div className="h-96 flex items-center justify-center text-sm text-muted-foreground">
-                Sem pontos com coordenadas para o filtro selecionado.
-              </div>
-            ) : (
-              <div style={{ height: '384px', width: '100%' }}>
-                <MapContainer
-                  center={mapCenter}
-                  zoom={12}
-                  style={{ height: '100%', width: '100%' }}
-                  scrollWheelZoom
-                >
-                  <TileLayer
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                  />
-                  <MapResizer />
-                  <AutoFitBounds points={data.pontosMapa} />
-                  {data.pontosMapa.map((p) => (
-                    <CircleMarker
-                      key={p.id}
-                      center={[p.latitude, p.longitude]}
-                      radius={6 + p.peso}
-                      pathOptions={{
-                        color: STATUS_COLOR[p.status] ?? '#6b7280',
-                        fillColor: STATUS_COLOR[p.status] ?? '#6b7280',
-                        fillOpacity: 0.75,
-                        weight: 1.5,
-                      }}
-                    >
-                      <Popup>
-                        <div className="text-xs space-y-1 min-w-[160px]">
-                          <p className="font-semibold text-[11px] text-gray-500 uppercase tracking-wide">Foco</p>
-                          <p className="font-mono text-[11px] text-gray-700 break-all">{p.id}</p>
-                          <div className="flex gap-2 pt-1">
-                            <span
-                              className="px-1.5 py-0.5 rounded text-[10px] font-medium text-white"
-                              style={{ background: STATUS_COLOR[p.status] ?? '#6b7280' }}
-                            >
-                              {STATUS_LABEL[p.status] ?? p.status}
-                            </span>
-                            {p.prioridade && (
-                              <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-700">
-                                {p.prioridade}
-                              </span>
-                            )}
-                          </div>
-                          <button
-                            className="mt-1 text-[11px] text-blue-600 underline underline-offset-2 hover:text-blue-800"
-                            onClick={() => navigate(`/gestor/focos/${p.id}/relatorio`)}
-                          >
-                            Ver relatório →
-                          </button>
-                        </div>
-                      </Popup>
-                    </CircleMarker>
-                  ))}
-                </MapContainer>
-              </div>
-            )}
-            {data && (
-              <p className="text-[10px] text-muted-foreground/60 px-3 py-1.5">
-                Peso visual baseado em prioridade real — não é índice sanitário
-              </p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Rankings */}
-        <div className="lg:col-span-2 space-y-4">
-          {/* Ranking por bairro */}
-          <Card className="border-border/60">
-            <CardHeader className="pb-2 px-4 pt-4">
-              <CardTitle className="text-sm font-semibold">Ranking por bairro</CardTitle>
-            </CardHeader>
-            <CardContent className="px-4 pb-4">
-              {isLoading ? (
-                <div className="space-y-2">
-                  {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}
-                </div>
-              ) : !data?.rankingBairro.length ? (
-                <p className="text-xs text-muted-foreground py-4 text-center">
-                  Sem dados por bairro para o período.
-                </p>
-              ) : (
-                <div className="space-y-1">
-                  {data.rankingBairro.map((r) => (
-                    <div key={r.bairro} className="flex items-center justify-between py-1 border-b border-border/40 last:border-0">
-                      <div className="min-w-0">
-                        <p className="text-xs font-medium truncate">{r.bairro}</p>
-                        <p className="text-[10px] text-muted-foreground">
-                          {r.vistoriasRealizadas} vistoria{r.vistoriasRealizadas !== 1 ? 's' : ''}
-                          {r.slaVencidos > 0 && ` · ${r.slaVencidos} SLA vencido${r.slaVencidos > 1 ? 's' : ''}`}
-                        </p>
-                      </div>
-                      <div className="flex gap-2 shrink-0 ml-2">
-                        <span className={cn('text-xs font-bold tabular-nums', r.focosAtivos > 0 && 'text-red-600')}>
-                          {r.focosAtivos}
-                        </span>
-                        <span className="text-xs text-muted-foreground tabular-nums">/ {r.totalFocos}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <p className="text-[10px] text-muted-foreground/50 mt-3 leading-relaxed">
-                rankingBairro usa imoveis.bairro textual; territorialização canônica por bairroId/regiaoId fica para fase posterior
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Ranking por região */}
-          <Card className="border-border/60">
-            <CardHeader className="pb-2 px-4 pt-4">
-              <CardTitle className="text-sm font-semibold">Ranking por região</CardTitle>
-            </CardHeader>
-            <CardContent className="px-4 pb-4">
-              {isLoading ? (
-                <div className="space-y-2">
-                  {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}
-                </div>
-              ) : !data?.rankingRegiao.length ? (
-                <p className="text-xs text-muted-foreground py-4 text-center">
-                  Sem dados por região para o período.
-                </p>
-              ) : (
-                <div className="space-y-1">
-                  {data.rankingRegiao.map((r) => (
-                    <div key={r.regiaoId} className="flex items-center justify-between py-1 border-b border-border/40 last:border-0">
-                      <div className="min-w-0">
-                        <p className="text-xs font-medium truncate">{r.regiaoNome}</p>
-                        <p className="text-[10px] text-muted-foreground">
-                          {r.vistoriasRealizadas} vistoria{r.vistoriasRealizadas !== 1 ? 's' : ''}
-                        </p>
-                      </div>
-                      <div className="flex gap-2 shrink-0 ml-2">
-                        <span className={cn('text-xs font-bold tabular-nums', r.focosAtivos > 0 && 'text-red-600')}>
-                          {r.focosAtivos}
-                        </span>
-                        <span className="text-xs text-muted-foreground tabular-nums">/ {r.totalFocos}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+            >
+              <SlidersHorizontal className="h-3.5 w-3.5 mr-1.5" />
+              Filtros
+              {temFiltros && <span className="ml-1 w-1.5 h-1.5 rounded-full bg-blue-500 inline-block" />}
+              <ChevronDown className={cn('h-3 w-3 ml-1 transition-transform', showFiltros && 'rotate-180')} />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => void refetch()}
+              className="rounded-xl border-slate-200 text-slate-600"
+            >
+              <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+              Atualizar
+            </Button>
+          </div>
         </div>
-      </div>
 
-      {/* Depósitos PNCD + Fatores de risco */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Depósitos PNCD */}
-        <Card className="border-border/60">
-          <CardHeader className="pb-2 px-4 pt-4">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2">
-              <Bug className="h-4 w-4 text-muted-foreground" />
-              Depósitos PNCD
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 pb-4">
-            {isLoading ? (
-              <Skeleton className="h-32 w-full" />
-            ) : !data?.depositosPncd.porTipo.length ? (
-              <p className="text-xs text-muted-foreground py-4 text-center">Sem dados de depósitos.</p>
-            ) : (
-              <>
-                {/* Totais */}
-                <div className="grid grid-cols-4 gap-2 mb-4 pb-3 border-b border-border/40">
-                  {[
-                    { label: 'Inspecionados', value: data.depositosPncd.totais.inspecionados },
-                    { label: 'Com foco', value: data.depositosPncd.totais.comFoco },
-                    { label: 'Com água', value: data.depositosPncd.totais.comAgua },
-                    { label: 'Eliminados', value: data.depositosPncd.totais.eliminados },
-                  ].map(({ label, value }) => (
-                    <div key={label} className="text-center">
-                      <p className="text-lg font-bold tabular-nums">{value}</p>
-                      <p className="text-[10px] text-muted-foreground">{label}</p>
-                    </div>
-                  ))}
+        {/* ── Filtros colapsáveis ── */}
+        {showFiltros && (
+          <Card className="bg-white rounded-2xl border border-slate-200 shadow-sm">
+            <CardContent className="p-5">
+              <div className="flex flex-wrap gap-4 items-end">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs text-slate-500 font-medium">Data início</label>
+                  <input
+                    type="date"
+                    className="h-8 rounded-lg border border-slate-200 bg-white px-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+                    value={form.dataInicio}
+                    onChange={(e) => setForm((f) => ({ ...f, dataInicio: e.target.value }))}
+                  />
                 </div>
-                {/* Por tipo */}
-                <div className="space-y-1">
-                  {data.depositosPncd.porTipo.map((t) => (
-                    <div key={t.tipo} className="grid grid-cols-5 gap-1 text-xs py-1 border-b border-border/30 last:border-0">
-                      <span className="col-span-2 font-medium truncate">{t.tipo}</span>
-                      <span className="text-center tabular-nums text-muted-foreground">{t.qtdInspecionados}</span>
-                      <span className={cn('text-center tabular-nums', t.qtdComFocos > 0 && 'text-red-600 font-semibold')}>
-                        {t.qtdComFocos}
-                      </span>
-                      <span className="text-center tabular-nums text-muted-foreground">{t.qtdEliminados}</span>
-                    </div>
-                  ))}
-                  <div className="grid grid-cols-5 gap-1 text-[10px] text-muted-foreground/60 pt-1">
-                    <span className="col-span-2">Tipo</span>
-                    <span className="text-center">Insp.</span>
-                    <span className="text-center">Foco</span>
-                    <span className="text-center">Elim.</span>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs text-slate-500 font-medium">Data fim</label>
+                  <input
+                    type="date"
+                    className="h-8 rounded-lg border border-slate-200 bg-white px-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+                    value={form.dataFim}
+                    onChange={(e) => setForm((f) => ({ ...f, dataFim: e.target.value }))}
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs text-slate-500 font-medium">Bairro</label>
+                  <input
+                    type="text"
+                    placeholder="Ex: Centro"
+                    className="h-8 w-36 rounded-lg border border-slate-200 bg-white px-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+                    value={form.bairro}
+                    onChange={(e) => setForm((f) => ({ ...f, bairro: e.target.value }))}
+                    onKeyDown={(e) => e.key === 'Enter' && aplicar()}
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs text-slate-500 font-medium">Prioridade</label>
+                  <select
+                    className="h-8 rounded-lg border border-slate-200 bg-white px-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+                    value={form.prioridade}
+                    onChange={(e) => setForm((f) => ({ ...f, prioridade: e.target.value }))}
+                  >
+                    <option value="">Todas</option>
+                    {PRIORIDADE_OPTIONS.map((p) => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs text-slate-500 font-medium">Status</label>
+                  <select
+                    className="h-8 rounded-lg border border-slate-200 bg-white px-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+                    value={form.status}
+                    onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}
+                  >
+                    <option value="">Todos</option>
+                    {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
+                  </select>
+                </div>
+                <div className="flex gap-2 ml-auto">
+                  {temFiltros && (
+                    <Button variant="ghost" size="sm" onClick={limpar} className="rounded-lg text-slate-500">
+                      <X className="h-3.5 w-3.5 mr-1" />
+                      Limpar
+                    </Button>
+                  )}
+                  <Button size="sm" onClick={aplicar} className="rounded-lg">
+                    <Filter className="h-3.5 w-3.5 mr-1.5" />
+                    Aplicar
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* ── Erro ── */}
+        {isError && (
+          <Card className="bg-red-50 border-red-200 rounded-2xl">
+            <CardContent className="p-5 text-center text-red-600 text-sm">
+              Não foi possível carregar o dashboard territorial. Tente novamente.
+            </CardContent>
+          </Card>
+        )}
+
+        {/* ── B) KPIs — 6 cards ── */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-5">
+          <KpiCard
+            title="Vistorias realizadas"
+            value={data?.kpis.vistoriasRealizadas}
+            subtitle="período selecionado"
+            icon={Activity}
+            iconColor="text-blue-500"
+            loading={isLoading}
+          />
+          <KpiCard
+            title="Focos registrados"
+            value={data?.kpis.totalFocos}
+            subtitle="total no período"
+            icon={MapPin}
+            iconColor="text-slate-400"
+            loading={isLoading}
+          />
+          <KpiCard
+            title="Focos ativos"
+            value={data?.kpis.focosAtivos}
+            subtitle="requerem atenção"
+            icon={AlertTriangle}
+            iconColor="text-orange-500"
+            urgent
+            loading={isLoading}
+          />
+          <KpiCard
+            title="Focos resolvidos"
+            value={data?.kpis.focosResolvidos}
+            subtitle="no período"
+            icon={CheckCircle}
+            iconColor="text-emerald-500"
+            loading={isLoading}
+          />
+          <KpiCard
+            title="SLA vencidos"
+            value={data?.kpis.slaVencidos}
+            subtitle="prazo excedido"
+            icon={Clock}
+            iconColor="text-red-500"
+            urgent
+            loading={isLoading}
+          />
+          <KpiCard
+            title="Grupos vulneráveis"
+            value={totalVulneraveis}
+            subtitle="pessoas em risco"
+            icon={Users}
+            iconColor="text-purple-500"
+            loading={isLoading}
+          />
+        </div>
+
+        {/* ── C) Grid principal: mapa (8) + lateral (4) ── */}
+        <div className="grid grid-cols-12 gap-6">
+
+          {/* Mapa */}
+          <Card className="col-span-12 lg:col-span-8 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <CardHeader className="pb-0 px-5 pt-4">
+              <div className="flex items-center gap-2">
+                <Map className="h-4 w-4 text-slate-400 shrink-0" />
+                <CardTitle className="text-sm font-semibold text-slate-700 flex-1">Mapa operacional</CardTitle>
+                {data && (
+                  <span className="text-xs text-slate-400 tabular-nums">
+                    {data.meta.totalPontosMapa} pontos
+                  </span>
+                )}
+                <Button
+                  variant={showHeatmap ? 'secondary' : 'ghost'}
+                  size="sm"
+                  className="h-7 px-2.5 text-xs gap-1.5 rounded-lg"
+                  onClick={() => setShowHeatmap((v) => !v)}
+                >
+                  <Layers className="h-3.5 w-3.5" />
+                  Heatmap
+                </Button>
+              </div>
+            </CardHeader>
+
+            <CardContent className="p-0 mt-3">
+              {isLoading ? (
+                <Skeleton className="h-[520px] w-full rounded-none" />
+              ) : !data?.pontosMapa.length ? (
+                <div className="h-[520px] flex flex-col items-center justify-center gap-3 text-slate-400">
+                  <Map className="h-12 w-12 opacity-10" />
+                  <p className="text-sm">Sem pontos com coordenadas para o filtro selecionado.</p>
+                </div>
+              ) : (
+                <div className="relative" style={{ height: '520px' }}>
+                  <MapContainer
+                    center={mapCenter}
+                    zoom={12}
+                    style={{ height: '100%', width: '100%' }}
+                    scrollWheelZoom
+                  >
+                    <TileLayer
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                    />
+                    <MapResizer />
+                    <AutoFitBounds points={data.pontosMapa} />
+                    {showHeatmap && <TerritorialHeatmapLayer points={data.pontosMapa} />}
+                    {data.pontosMapa.map((p) => (
+                      <CircleMarker
+                        key={p.id}
+                        center={[p.latitude, p.longitude]}
+                        radius={4 + p.peso * 0.8}
+                        pathOptions={{
+                          color: STATUS_COLOR[p.status] ?? '#6b7280',
+                          fillColor: STATUS_COLOR[p.status] ?? '#6b7280',
+                          fillOpacity: showHeatmap ? 0.4 : 0.8,
+                          weight: 1,
+                        }}
+                      >
+                        <Popup>
+                          <div className="text-xs space-y-1.5 min-w-[160px]">
+                            <p className="font-mono text-[10px] text-gray-400 break-all">{p.id}</p>
+                            <div className="flex flex-wrap gap-1.5">
+                              <span
+                                className="px-1.5 py-0.5 rounded-md text-[10px] font-medium text-white"
+                                style={{ background: STATUS_COLOR[p.status] ?? '#6b7280' }}
+                              >
+                                {STATUS_LABEL[p.status] ?? p.status}
+                              </span>
+                              {p.prioridade && (
+                                <span className="px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 text-slate-700">
+                                  {p.prioridade}
+                                </span>
+                              )}
+                            </div>
+                            <button
+                              className="text-[11px] text-blue-600 hover:text-blue-800 underline underline-offset-2"
+                              onClick={() => navigate(`/gestor/focos/${p.id}/relatorio`)}
+                            >
+                              Ver relatório →
+                            </button>
+                          </div>
+                        </Popup>
+                      </CircleMarker>
+                    ))}
+                  </MapContainer>
+
+                  {/* Legenda de risco — overlay */}
+                  <div className="absolute bottom-4 left-4 z-[1000] bg-white/90 backdrop-blur-sm rounded-xl px-3 py-2.5 shadow-md border border-slate-200/60">
+                    <p className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest mb-1.5">Risco</p>
+                    {[
+                      { label: 'Baixo',    color: '#22c55e' },
+                      { label: 'Moderado', color: '#60a5fa' },
+                      { label: 'Alto',     color: '#f97316' },
+                      { label: 'Crítico',  color: '#ef4444' },
+                    ].map(({ label, color }) => (
+                      <div key={label} className="flex items-center gap-2 text-[10px] text-slate-600 py-0.5">
+                        <span className="w-2 h-2 rounded-full shrink-0" style={{ background: color }} />
+                        {label}
+                      </div>
+                    ))}
                   </div>
                 </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
+              )}
+            </CardContent>
+          </Card>
 
-        {/* Fatores de risco */}
-        <Card className="border-border/60">
-          <CardHeader className="pb-2 px-4 pt-4">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2">
-              <ShieldAlert className="h-4 w-4 text-muted-foreground" />
-              Fatores de risco predominantes
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 pb-4">
-            {isLoading ? (
-              <Skeleton className="h-32 w-full" />
-            ) : !fatoresAtivos.length ? (
-              <p className="text-xs text-muted-foreground py-4 text-center">
-                {data?.fatoresRisco === null
-                  ? 'Sem vistorias com dados de risco no período.'
-                  : 'Nenhum fator de risco registrado.'}
-              </p>
-            ) : (
-              <div className="space-y-1.5">
-                {fatoresAtivos.map(([key, count]) => {
-                  const max = fatoresAtivos[0]?.[1] ?? 1;
-                  const pct = Math.round((count / max) * 100);
-                  return (
-                    <div key={key} className="space-y-0.5">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-foreground">{FATOR_LABEL[key]}</span>
-                        <span className="text-xs font-semibold tabular-nums">{count}</span>
+          {/* Coluna lateral */}
+          <div className="col-span-12 lg:col-span-4 flex flex-col gap-5">
+
+            {/* Ranking de bairros */}
+            <Card className="bg-white rounded-2xl border border-slate-200 shadow-sm flex-1">
+              <CardHeader className="pb-0 px-5 pt-5">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm font-semibold text-slate-800">Ranking de bairros</CardTitle>
+                  <span className="text-xs text-slate-400 cursor-default">ver todos</span>
+                </div>
+              </CardHeader>
+              <CardContent className="px-5 pb-5 pt-3">
+                {isLoading ? (
+                  <div className="space-y-3">
+                    {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}
+                  </div>
+                ) : !data?.rankingBairro.length ? (
+                  <p className="text-sm text-slate-400 py-6 text-center">Sem dados por bairro.</p>
+                ) : (
+                  <div>
+                    {data.rankingBairro.slice(0, 5).map((r, idx) => (
+                      <div
+                        key={r.bairro}
+                        className="flex items-center gap-3 py-2 border-b border-slate-100 last:border-none transition-all duration-150 hover:bg-slate-50 hover:translate-x-0.5 rounded px-1"
+                      >
+                        <span
+                          className={cn(
+                            'w-5 h-5 rounded-full text-[9px] font-bold flex items-center justify-center shrink-0',
+                            RANK_BADGE_CLS[idx] ?? 'bg-slate-100 text-slate-500',
+                          )}
+                        >
+                          {idx + 1}
+                        </span>
+                        <span className="text-sm text-slate-700 font-medium flex-1 truncate">{r.bairro}</span>
+                        <span
+                          className={cn(
+                            'text-xs font-semibold px-2 py-0.5 rounded-full tabular-nums',
+                            r.focosAtivos > 10
+                              ? 'bg-red-100 text-red-700'
+                              : r.focosAtivos > 5
+                              ? 'bg-orange-100 text-orange-700'
+                              : r.focosAtivos > 0
+                              ? 'bg-amber-100 text-amber-700'
+                              : 'bg-slate-100 text-slate-500',
+                          )}
+                        >
+                          {r.focosAtivos}
+                        </span>
                       </div>
-                      <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-orange-400 rounded-full transition-all"
-                          style={{ width: `${pct}%` }}
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* PNCD compacto */}
+            <Card className="bg-white rounded-2xl border border-slate-200 shadow-sm flex-1">
+              <CardHeader className="pb-0 px-5 pt-5">
+                <CardTitle className="text-sm font-semibold text-slate-800 flex items-center gap-2">
+                  <Bug className="h-4 w-4 text-slate-400" />
+                  Depósitos PNCD por tipo
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-5 pb-5 pt-3">
+                {isLoading ? (
+                  <Skeleton className="h-40 w-full rounded-xl" />
+                ) : !pncdChartData.length ? (
+                  <p className="text-sm text-slate-400 py-6 text-center">Sem dados de depósitos.</p>
+                ) : (
+                  <>
+                    <ResponsiveContainer width="100%" height={150}>
+                      <BarChart
+                        data={pncdChartData}
+                        barGap={3}
+                        barSize={10}
+                        margin={{ top: 4, right: 4, left: -22, bottom: 0 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.12} />
+                        <XAxis dataKey="name" tick={{ fontSize: 9, fill: '#94a3b8' }} tickLine={false} axisLine={false} />
+                        <YAxis tick={{ fontSize: 9, fill: '#94a3b8' }} tickLine={false} axisLine={false} allowDecimals={false} />
+                        <ChartTooltip
+                          cursor={{ fill: '#f1f5f9', opacity: 0.8 }}
+                          content={(props) => (
+                            <PncdTooltip
+                              active={props.active}
+                              payload={props.payload as Array<{ name?: string; value?: number; color?: string }>}
+                              label={props.label as string}
+                              rows={pncdChartData}
+                            />
+                          )}
                         />
-                      </div>
+                        <Bar dataKey="Insp" name="Inspecionados" fill="#93c5fd" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="Foco" name="Com foco"      fill="#fca5a5" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                    <div className="flex gap-4 justify-center mt-2">
+                      {[
+                        { color: '#93c5fd', label: 'Inspecionados' },
+                        { color: '#fca5a5', label: 'Com foco' },
+                      ].map(({ color, label }) => (
+                        <span key={label} className="flex items-center gap-1.5 text-[10px] text-slate-400">
+                          <span className="inline-block w-2 h-2 rounded-full" style={{ background: color }} />
+                          {label}
+                        </span>
+                      ))}
                     </div>
-                  );
-                })}
+                    {data && (
+                      <p className="text-[10px] text-slate-400 text-center mt-1">
+                        {data.depositosPncd.totais.inspecionados} inspecionados · {data.depositosPncd.totais.comFoco} com foco
+                      </p>
+                    )}
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* ── D) Grid inferior: tabela (8) + fatores+vuln (4) ── */}
+        <div className="grid grid-cols-12 gap-6">
+
+          {/* Resumo por bairro — tabela larga */}
+          <Card className="col-span-12 lg:col-span-8 bg-white rounded-2xl border border-slate-200 shadow-sm">
+            <CardHeader className="pb-0 px-5 pt-5">
+              <CardTitle className="text-sm font-semibold text-slate-800">Resumo por bairro</CardTitle>
+            </CardHeader>
+            <CardContent className="px-5 pb-5 pt-3">
+              {isLoading ? (
+                <div className="space-y-2">
+                  {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}
+                </div>
+              ) : !data?.rankingBairro.length ? (
+                <p className="text-sm text-slate-400 py-6 text-center">Sem dados por bairro para o período.</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-slate-100">
+                        <th className="text-left text-xs font-semibold text-slate-400 pb-2 pr-4">Bairro</th>
+                        <th className="text-right text-xs font-semibold text-slate-400 pb-2 px-3">Total focos</th>
+                        <th className="text-right text-xs font-semibold text-slate-400 pb-2 px-3">Ativos</th>
+                        <th className="text-right text-xs font-semibold text-slate-400 pb-2 px-3">Vistorias</th>
+                        <th className="text-right text-xs font-semibold text-slate-400 pb-2 pl-3">SLA vencidos</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {data.rankingBairro.map((r, idx) => (
+                        <tr
+                          key={r.bairro}
+                          className="border-b border-slate-50 last:border-none hover:bg-slate-50 transition-colors"
+                        >
+                          <td className="py-2.5 pr-4">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={cn(
+                                  'w-5 h-5 rounded-full text-[9px] font-bold flex items-center justify-center shrink-0',
+                                  RANK_BADGE_CLS[idx] ?? 'bg-slate-100 text-slate-500',
+                                )}
+                              >
+                                {idx + 1}
+                              </span>
+                              <span className="text-slate-700 font-medium truncate max-w-[160px]">{r.bairro}</span>
+                            </div>
+                          </td>
+                          <td className="text-right py-2.5 px-3 text-slate-600 tabular-nums">{r.totalFocos}</td>
+                          <td className="text-right py-2.5 px-3 tabular-nums">
+                            <span className={cn(
+                              'font-semibold',
+                              r.focosAtivos > 0 ? 'text-red-500' : 'text-slate-300',
+                            )}>
+                              {r.focosAtivos}
+                            </span>
+                          </td>
+                          <td className="text-right py-2.5 px-3 text-slate-600 tabular-nums">{r.vistoriasRealizadas}</td>
+                          <td className="text-right py-2.5 pl-3 tabular-nums">
+                            {r.slaVencidos > 0 ? (
+                              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-700">
+                                {r.slaVencidos}
+                              </span>
+                            ) : (
+                              <span className="text-slate-300">—</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Coluna inferior direita: fatores + vulnerabilidade */}
+          <div className="col-span-12 lg:col-span-4 flex flex-col gap-5">
+
+            {/* Fatores de risco */}
+            <Card className="bg-white rounded-2xl border border-slate-200 shadow-sm flex-1">
+              <CardHeader className="pb-0 px-5 pt-5">
+                <CardTitle className="text-sm font-semibold text-slate-800 flex items-center gap-2">
+                  <ShieldAlert className="h-4 w-4 text-slate-400" />
+                  Fatores de risco
+                  {fatoresAtivos.length > 0 && (
+                    <span className="ml-auto text-xs font-normal text-slate-400">
+                      {fatoresAtivos.length} registrado{fatoresAtivos.length !== 1 ? 's' : ''}
+                    </span>
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-5 pb-5 pt-3">
+                {isLoading ? (
+                  <Skeleton className="h-24 w-full rounded-xl" />
+                ) : !fatoresAtivos.length ? (
+                  <p className="text-sm text-slate-400 py-4 text-center">Sem fatores registrados.</p>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {fatoresAtivos.map(([key, count]) => (
+                      <span
+                        key={key}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs bg-orange-50 border border-orange-200 text-orange-800"
+                      >
+                        <span className="font-bold tabular-nums">{count}</span>
+                        <span className="text-orange-600">{FATOR_LABEL[key]}</span>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Grupos vulneráveis */}
+            <Card className="bg-white rounded-2xl border border-slate-200 shadow-sm flex-1">
+              <CardHeader className="pb-0 px-5 pt-5">
+                <CardTitle className="text-sm font-semibold text-slate-800 flex items-center gap-2">
+                  <Users className="h-4 w-4 text-slate-400" />
+                  Grupos vulneráveis
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-5 pb-5 pt-3">
+                {isLoading ? (
+                  <div className="grid grid-cols-2 gap-3">
+                    {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-14 w-full rounded-xl" />)}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-3">
+                    {VULN_KEYS.map((k) => {
+                      const meta = VULN_META[k];
+                      const value = data?.fatoresRisco?.[k] ?? 0;
+                      return (
+                        <div
+                          key={k}
+                          className="p-3 rounded-xl bg-slate-50 border border-slate-100 flex flex-col gap-1"
+                        >
+                          <div className="flex items-center gap-1.5">
+                            <meta.icon className={cn('h-3.5 w-3.5', meta.iconCls)} />
+                          </div>
+                          <p className={cn(
+                            'text-xl font-bold tabular-nums leading-none',
+                            value > 0 ? 'text-slate-800' : 'text-slate-300',
+                          )}>
+                            {value}
+                          </p>
+                          <p className="text-[10px] text-slate-400 leading-tight">{meta.label}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Metadados — discreto */}
+            {data?.meta && (
+              <div className="text-[10px] text-slate-400 space-y-0.5 px-1">
+                <p>Máx. 500 pontos no mapa · {data.meta.pesoMapaRegra}</p>
+                {data.meta.observacoes.map((obs, i) => <p key={i}>{obs}</p>)}
               </div>
             )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Meta / observações */}
-      {data?.meta && (
-        <div className="text-[10px] text-muted-foreground/50 space-y-0.5 pt-2 border-t border-border/30">
-          <p>Pontos no mapa: {data.meta.totalPontosMapa} (máx. 500)</p>
-          <p>{data.meta.pesoMapaRegra}</p>
-          {data.meta.observacoes.map((obs, i) => (
-            <p key={i}>{obs}</p>
-          ))}
+          </div>
         </div>
-      )}
+
+      </div>
     </div>
   );
 }
