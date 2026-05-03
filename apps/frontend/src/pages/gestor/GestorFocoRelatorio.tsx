@@ -328,27 +328,14 @@ function RelatorioTag({
   );
 }
 
-function GruposVulneraveisRelatorioCard({
-  risco,
-  vistoria,
-}: {
-  risco: RiscoVistoriaRow | null;
-  vistoria: VistoriaDetalhe | null;
-}) {
-  const idoso = !!(vistoria?.idosos || risco?.idosoIncapaz);
-  const crianca = !!(vistoria?.criancas7anos || risco?.menorIncapaz);
-  const gestante = !!vistoria?.gravidas;
-  const mobilidade = !!risco?.mobilidadeReduzida;
-  const acamado = !!risco?.acamado;
-  const algum = idoso || crianca || gestante || mobilidade || acamado;
-  const semDados = !vistoria && !risco;
+function GruposVulneraveisRelatorioCard({ risco }: { risco: RiscoVistoriaRow | null }) {
+  const semDados = !risco;
 
   const tags = [
-    { label: 'Idoso', active: idoso },
-    { label: 'Criança', active: crianca },
-    { label: 'Gestante', active: gestante },
-    { label: 'Mobilidade reduzida', active: mobilidade },
-    { label: 'Acamado', active: acamado },
+    { label: 'Menor incapaz', active: !!risco?.menorIncapaz },
+    { label: 'Idoso incapaz', active: !!risco?.idosoIncapaz },
+    { label: 'Mobilidade reduzida', active: !!risco?.mobilidadeReduzida },
+    { label: 'Acamado', active: !!risco?.acamado },
   ];
 
   return (
@@ -366,10 +353,7 @@ function GruposVulneraveisRelatorioCard({
           ))}
         </div>
         {semDados && (
-          <p className="mt-2.5 text-xs text-muted-foreground leading-relaxed">Sem dados de vistoria</p>
-        )}
-        {!semDados && !algum && (
-          <p className="mt-2.5 text-xs text-muted-foreground leading-relaxed">Nenhum grupo vulnerável identificado na vistoria.</p>
+          <p className="mt-2.5 text-xs text-muted-foreground leading-relaxed">Sem registro de risco na vistoria.</p>
         )}
       </CardContent>
     </Card>
@@ -1057,10 +1041,12 @@ export default function GestorFocoRelatorio() {
       }, calhas[0])
     : null;
 
-  const gruposCount =
-    Number(!!(vistoria?.idosos || risco?.idosoIncapaz))
-    + Number(!!(vistoria?.criancas7anos || risco?.menorIncapaz))
-    + Number(!!vistoria?.gravidas);
+  const gruposCount = risco
+    ? Number(!!risco.menorIncapaz)
+      + Number(!!risco.idosoIncapaz)
+      + Number(!!risco.mobilidadeReduzida)
+      + Number(!!risco.acamado)
+    : 0;
   const sintomasCount = SINTOMA_LABELS.filter((s) => sintoma?.[s.key] === true).length;
 
   const depositoPredominante = depositos.reduce<{ tipo: string; qtd: number } | null>((best, d) => {
@@ -1102,35 +1088,41 @@ export default function GestorFocoRelatorio() {
   return (
     <div className="max-w-7xl mx-auto px-4 pt-2 pb-10 space-y-3">
 
-      <div className="flex items-center gap-2">
-        <Button variant="ghost" size="sm" className="-ml-2 text-muted-foreground" onClick={() => navigate(-1)}>
-          <ArrowLeft className="w-4 h-4 mr-1" />
-          Voltar
-        </Button>
-      </div>
-
       {/* ── Card ocorrência + stepper (visual alinhado ao painel de ocorrência) ─ */}
       <Card className="border-border/80 shadow-sm overflow-hidden">
         <CardContent className="p-0">
-          <div className="p-5 sm:p-6 space-y-5">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-              <div className="min-w-0 space-y-1">
-                <p className="text-[11px] text-muted-foreground font-medium tracking-wide">Ocorrência</p>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h1 className="text-2xl sm:text-[1.65rem] font-bold font-mono text-foreground tracking-tight">
-                    {codigoStr}
-                  </h1>
-                  <button
-                    type="button"
-                    title="Copiar código"
-                    onClick={() => {
-                      navigator.clipboard.writeText(codigoStr);
-                      toast.success('Código copiado');
-                    }}
-                    className="p-1.5 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
-                  >
-                    <Copy className="w-4 h-4" />
-                  </button>
+          <div className="px-4 py-3 sm:px-5 sm:py-3.5 space-y-2">
+            <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between lg:gap-3">
+              <div className="min-w-0 flex flex-col gap-0.5">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-auto w-fit -ml-2 px-1.5 py-0.5 gap-1 text-[11px] font-medium leading-none text-muted-foreground/70 hover:text-foreground hover:bg-muted/40"
+                  onClick={() => navigate(-1)}
+                  aria-label="Voltar à página anterior"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5 shrink-0 opacity-70" aria-hidden />
+                  Voltar
+                </Button>
+                <div className="space-y-0">
+                  <p className="text-[11px] text-muted-foreground font-medium tracking-wide leading-tight pb-0.5">Ocorrência</p>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h1 className="text-2xl sm:text-[1.65rem] font-bold font-mono text-foreground tracking-tight leading-tight">
+                      {codigoStr}
+                    </h1>
+                    <button
+                      type="button"
+                      title="Copiar código"
+                      onClick={() => {
+                        navigator.clipboard.writeText(codigoStr);
+                        toast.success('Código copiado');
+                      }}
+                      className="p-1.5 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
@@ -1171,8 +1163,8 @@ export default function GestorFocoRelatorio() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-4 gap-y-4 pt-1 border-t border-border/60">
-              <div className="space-y-1.5">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-3 gap-y-2 pt-1.5 border-t border-border/60">
+              <div className="space-y-1">
                 <p className="text-[11px] text-muted-foreground font-medium">Prioridade</p>
                 <div>
                   {foco.prioridade ? (
@@ -1182,27 +1174,27 @@ export default function GestorFocoRelatorio() {
                   )}
                 </div>
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 <p className="text-[11px] text-muted-foreground font-medium">Status atual</p>
-                <div className="flex items-center gap-2 min-h-[28px]">
+                <div className="flex items-center gap-2 min-h-[24px]">
                   <span className="w-2 h-2 rounded-full shrink-0 ring-2 ring-white shadow" style={{ backgroundColor: statusHex }} />
                   <span className="text-sm font-semibold" style={{ color: statusHex }}>
                     {statusLabel}
                   </span>
                 </div>
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 <p className="text-[11px] text-muted-foreground font-medium">Foco</p>
                 <p className="text-sm font-semibold text-red-600 dark:text-red-400 leading-snug">{focoLabel}</p>
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 <p className="text-[11px] text-muted-foreground font-medium">Origem</p>
                 <div className="flex items-center gap-2 text-sm font-medium text-foreground">
                   {origemIcon(foco.origemTipo)}
                   <span>{LABEL_ORIGEM[foco.origemTipo] ?? foco.origemTipo}</span>
                 </div>
               </div>
-              <div className="space-y-1.5 col-span-2 lg:col-span-1">
+              <div className="space-y-1 col-span-2 lg:col-span-1">
                 <p className="text-[11px] text-muted-foreground font-medium">Endereço</p>
                 <div className="flex items-start gap-2 text-sm text-foreground/90">
                   <MapPin className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
@@ -1212,7 +1204,7 @@ export default function GestorFocoRelatorio() {
             </div>
           </div>
 
-          <div className="border-t border-border/60 bg-muted/20 px-3 sm:px-5 py-4">
+          <div className="border-t border-border/60 bg-muted/20 px-3 sm:px-5 py-2.5">
             <RelatorioStatusStepper currentStatus={foco.status} />
           </div>
         </CardContent>
@@ -1223,7 +1215,7 @@ export default function GestorFocoRelatorio() {
 
         <MoradoresRelatorioCard vistoria={vistoria} />
 
-        <GruposVulneraveisRelatorioCard risco={risco} vistoria={vistoria} />
+        <GruposVulneraveisRelatorioCard risco={risco} />
         <SintomasRelatorioCard sintoma={sintoma} />
         <DepositosCard depositos={depositos} />
       </div>
