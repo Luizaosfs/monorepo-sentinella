@@ -309,6 +309,7 @@ function AddCalhaForm({ onAdd }: { onAdd: (c: CalhaRow) => void }) {
   const [pos, setPos] = useState<PosicaoCalha>('frente');
   const [cond, setCond] = useState<CondicaoCalha>('limpa');
   const [foco, setFoco] = useState(false);
+  const [tratado, setTratado] = useState(false);
   const [expanded, setExpanded] = useState(false);
 
   if (!expanded) {
@@ -347,12 +348,17 @@ function AddCalhaForm({ onAdd }: { onAdd: (c: CalhaRow) => void }) {
         <input type="checkbox" checked={foco} onChange={(e) => setFoco(e.target.checked)} className="rounded" />
         <span className="text-sm">Identificou foco nesta calha</span>
       </label>
+      <label className="flex items-center gap-2 cursor-pointer">
+        <input type="checkbox" checked={tratado} onChange={(e) => setTratado(e.target.checked)} className="rounded" />
+        <span className="text-sm">Tratamento realizado</span>
+      </label>
       <div className="flex gap-2">
         <Button variant="outline" size="sm" className="flex-1 rounded-xl" onClick={() => setExpanded(false)}>Cancelar</Button>
         <Button size="sm" className="flex-1 rounded-xl" onClick={() => {
-          onAdd({ posicao: pos, condicao: cond, com_foco: foco, acessivel: true, tratamento_realizado: false, foto_url: null });
+          onAdd({ posicao: pos, condicao: cond, com_foco: foco, acessivel: true, tratamento_realizado: tratado, foto_url: null });
           setExpanded(false);
           setFoco(false);
+          setTratado(false);
         }}>Adicionar</Button>
       </div>
     </div>
@@ -479,6 +485,24 @@ export function VistoriaEtapa3Inspecao({ data, onChange, onNext, vistoriaId }: P
                         </button>
                       </div>
                       <p className="text-xs text-muted-foreground">{CONDICAO_CALHA_LABELS[calha.condicao]}{calha.com_foco ? ' — com foco' : ''}</p>
+                      <button
+                        type="button"
+                        onClick={() => onChange({ ...data, calhas: data.calhas.map((c, i) => i === idx ? { ...c, tratamento_realizado: !c.tratamento_realizado } : c) })}
+                        className={cn(
+                          'flex items-center gap-2 w-full px-3 py-2 rounded-lg border text-xs font-semibold transition-colors',
+                          calha.tratamento_realizado
+                            ? 'border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400'
+                            : 'border-border bg-card text-muted-foreground',
+                        )}
+                      >
+                        <Wrench className="w-3.5 h-3.5 shrink-0" />
+                        <span className="flex-1 text-left">Tratamento realizado</span>
+                        <span className={cn('w-8 h-5 rounded-full border flex items-center px-0.5 shrink-0',
+                          calha.tratamento_realizado ? 'bg-emerald-500 border-emerald-500 justify-end' : 'bg-muted border-border justify-start',
+                        )}>
+                          <span className="w-3.5 h-3.5 rounded-full bg-white shadow" />
+                        </span>
+                      </button>
                     </div>
                   ))}
                   <AddCalhaForm onAdd={(c) => onChange({ ...data, calhas: [...data.calhas, c] })} />
