@@ -2,6 +2,7 @@ import { http } from '@sentinella/api-client';
 import { api as _sb } from '../../api-stub';
 import { qs } from '../shared/qs';
 import { deepToCamel, deepToSnake, type Ret } from '../shared/case-mappers';
+import type { DashboardTerritorialParams, DashboardTerritorialResponse } from '@/types/dashboardTerritorial';
 
 export const resumosDiarios = {
   list: async (clienteId: string): Promise<Ret<typeof _sb.resumosDiarios.list>> => {
@@ -106,4 +107,10 @@ export const piloto = {
   getFunilHoje: (): Promise<unknown> => http.get('/dashboard/piloto/funil-hoje'),
   getDespachosSupervisor: (): Promise<unknown> => http.get('/dashboard/piloto/despachos-supervisor'),
   getProdAgentes: (): Promise<unknown> => http.get('/dashboard/piloto/prod-agentes'),
+};
+
+// clienteId vem do JWT — nunca enviar por query
+export const territorial = {
+  getTerritorial: (params: DashboardTerritorialParams = {}): Promise<DashboardTerritorialResponse> =>
+    http.get(`/dashboard/territorial${qs(params)}`),
 };

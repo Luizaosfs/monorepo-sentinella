@@ -38,6 +38,7 @@ import {
   central,
   executivo,
   eficacia,
+  territorial,
   reincidencia,
   admin,
   piloto,
@@ -143,6 +144,7 @@ export const api = {
   reincidencia,
   admin,
   piloto,
+  territorial,
 
   // Drones
   drones,

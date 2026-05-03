@@ -6,7 +6,10 @@ import {
 } from 'src/modules/foco-risco/entities/foco-risco';
 
 /** Tipo Prisma nativo com relação historico opcional (presente quando include: { historico: true }). */
-type FocoRiscoRaw = PrismaFocoRiscoModel & { historico?: PrismaFocoRiscoHistoricoModel[] };
+type FocoRiscoRaw = PrismaFocoRiscoModel & {
+  historico?: PrismaFocoRiscoHistoricoModel[];
+  ultima_vistoria_em?: Date | null;
+};
 
 export class PrismaFocoRiscoMapper {
   static historicToDomain(raw: PrismaFocoRiscoHistoricoModel): FocoRiscoHistorico {
@@ -56,6 +59,7 @@ export class PrismaFocoRiscoMapper {
         codigoFoco: raw.codigo_foco || undefined,
         payload: raw.payload ?? undefined,
         historico: raw.historico?.map(PrismaFocoRiscoMapper.historicToDomain),
+        ultimaVistoriaEm: raw.ultima_vistoria_em ?? null,
       },
       {
         id: raw.id,

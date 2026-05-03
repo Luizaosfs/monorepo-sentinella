@@ -74,6 +74,10 @@ import { GetEficaciaTratamento } from './use-cases/get-eficacia-tratamento';
 import { TriggerHealthCheck } from './use-cases/trigger-health-check';
 import { GerarResumoDiario } from './use-cases/gerar-resumo-diario';
 
+// Territorial
+import { GetDashboardTerritorial } from './use-cases/get-dashboard-territorial';
+import { TerritorialController } from './territorial.controller';
+
 @Module({
   providers: [
     // Legado
@@ -134,6 +138,8 @@ import { GerarResumoDiario } from './use-cases/gerar-resumo-diario';
     GetEficaciaTratamento,
     TriggerHealthCheck,
     GerarResumoDiario,
+    // Territorial
+    GetDashboardTerritorial,
   ],
   controllers: [
     DashboardController,
@@ -144,6 +150,7 @@ import { GerarResumoDiario } from './use-cases/gerar-resumo-diario';
     AnaliticoController,
     ReincidenciaController,
     EficaciaController,
+    TerritorialController,
   ],
   exports: [DashboardSchedulerService, HealthCheckService, LiraaExportService],
   imports: [DatabaseModule],

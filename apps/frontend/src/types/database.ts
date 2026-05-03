@@ -1760,6 +1760,8 @@ export interface FocoRisco {
   score_prioridade: number;
   /** Identificador legível no formato YYYY-NNNNNNNN. Gerado automaticamente. 20270101. */
   codigo_foco?: string | null;
+  /** Campo derivado na listagem: última vistoria relacionada ao foco/imóvel. */
+  ultima_vistoria_em?: string | null;
 }
 
 export interface FocoRiscoHistorico {
@@ -1858,8 +1860,22 @@ export interface FocoRiscoFiltros {
   ate?: Date;
   page?: number;
   pageSize?: number;
-  /** Ordenação da listagem. Padrão: suspeita_em_desc (mais recentes primeiro). */
-  orderBy?: 'suspeita_em_asc' | 'suspeita_em_desc' | 'score_prioridade_desc';
+  /** Ordenação da listagem. */
+  orderBy?:
+    | 'ultima_vistoria_em_asc'
+    | 'ultima_vistoria_em_desc'
+    | 'suspeita_em_asc'
+    | 'suspeita_em_desc'
+    | 'score_prioridade_asc'
+    | 'score_prioridade_desc'
+    | 'status_asc'
+    | 'status_desc'
+    | 'prioridade_asc'
+    | 'prioridade_desc'
+    | 'codigo_foco_asc'
+    | 'codigo_foco_desc'
+    | 'origem_tipo_asc'
+    | 'origem_tipo_desc';
 }
 
 /**

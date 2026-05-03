@@ -74,6 +74,8 @@ interface FocoRiscoProps {
   historico?: FocoRiscoHistorico[];
   /** URL da imagem do levantamento_item de origem (join externo, não coluna). */
   origemImageUrl?: string | null;
+  /** Data da última vistoria relacionada ao foco/imóvel (campo derivado para listagens). */
+  ultimaVistoriaEm?: Date | null;
 }
 
 export class FocoRisco extends BaseEntity<FocoRiscoProps> {
@@ -230,6 +232,12 @@ export class FocoRisco extends BaseEntity<FocoRiscoProps> {
   }
   set origemImageUrl(v: string | null | undefined) {
     this.props.origemImageUrl = v;
+  }
+  get ultimaVistoriaEm() {
+    return this.props.ultimaVistoriaEm;
+  }
+  set ultimaVistoriaEm(v: Date | null | undefined) {
+    this.props.ultimaVistoriaEm = v;
   }
 
   podeTransicionar(paraStatus: FocoRiscoStatus): boolean {

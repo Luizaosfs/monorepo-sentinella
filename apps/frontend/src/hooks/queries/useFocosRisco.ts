@@ -22,6 +22,7 @@ export function useFocosRisco(
       f.origem_tipo ?? null,
       f.page ?? null,
       f.pageSize ?? null,
+      f.orderBy ?? null,
       f.de?.toISOString() ?? null,
       f.ate?.toISOString() ?? null,
     ],

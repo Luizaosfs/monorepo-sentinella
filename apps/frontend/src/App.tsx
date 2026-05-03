@@ -99,6 +99,7 @@ const MunicipioPublico = safeLazy(() => import("@/pages/public/MunicipioPublico"
 const GestorFocos = safeLazy(() => import("@/pages/gestor/GestorFocos"));
 const GestorFocoDetalhe = safeLazy(() => import("@/pages/gestor/GestorFocoDetalhe"));
 const GestorFocoRelatorio = safeLazy(() => import("@/pages/gestor/GestorFocoRelatorio"));
+const GestorDashboardTerritorial = safeLazy(() => import("@/pages/gestor/GestorDashboardTerritorial"));
 const GestorMapa = safeLazy(() => import("@/pages/gestor/GestorMapa"));
 const GestorTriagem = safeLazy(() => import("@/pages/gestor/GestorTriagem"));
 const CentralOperacional = safeLazy(() => import("@/pages/gestor/CentralOperacional"));
@@ -291,6 +292,7 @@ const App = () => (
               <Route path="/gestor/heatmap-temporal"        element={<AdminOrSupervisorGuard><AdminHeatmapTemporal /></AdminOrSupervisorGuard>} />
               <Route path="/gestor/produtividade-agentes"   element={<AdminOrSupervisorGuard><AdminProdutividadeAgentes /></AdminOrSupervisorGuard>} />
               <Route path="/gestor/eficacia-tratamentos"    element={<AdminOrSupervisorGuard><AdminEficaciaTratamentos /></AdminOrSupervisorGuard>} />
+              <Route path="/gestor/dashboard/territorial"    element={<AdminOrSupervisorGuard><GestorDashboardTerritorial /></AdminOrSupervisorGuard>} />
               <Route path="/gestor/executivo"               element={<AdminOrSupervisorGuard><PainelExecutivo /></AdminOrSupervisorGuard>} />
               <Route path="/gestor/supervisor-tempo-real"   element={<AdminOrSupervisorGuard><AdminSupervisorTempoReal /></AdminOrSupervisorGuard>} />
               <Route path="/gestor/pluvio-risco"            element={<AdminOrSupervisorGuard><AdminPluvioRisco /></AdminOrSupervisorGuard>} />

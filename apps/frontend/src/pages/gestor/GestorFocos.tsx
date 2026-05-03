@@ -1,15 +1,7 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle,
 } from '@/components/ui/sheet';
@@ -21,9 +13,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { toast } from 'sonner';
 import {
-  Filter, Search, ChevronLeft, ChevronRight,
+  Filter, Search, ChevronLeft, ChevronRight, Eraser,
   CheckSquare, Square, Users, X, Loader2, MapPin,
   ZoomIn, AlertCircle, Clock, Eye, Activity, Info, Stethoscope, AlertTriangle, PlayCircle,
   ArrowUpDown, ArrowUp, ArrowDown,
@@ -40,9 +33,8 @@ import { SlaBadge } from '@/components/foco/SlaBadge';
 import { OrigemIcone } from '@/components/foco/OrigemIcone';
 import { LABEL_STATUS } from '@/types/focoRisco';
 import { mapFocoToStatusOperacional, LABEL_STATUS_OPERACIONAL, type FocoStatus } from '@/lib/mapStatusOperacional';
-import type { ReactNode } from 'react';
 import type {
-  FocoRiscoAtivo, FocoRiscoStatus, FocoRiscoPrioridade, FocoRiscoOrigem,
+  FocoRiscoAtivo, FocoRiscoStatus, FocoRiscoPrioridade, FocoRiscoOrigem, FocoRiscoFiltros,
 } from '@/types/database';
 import { cn } from '@/lib/utils';
 import { logEvento } from '@/lib/pilotoEventos';
@@ -103,8 +95,8 @@ const BORDER_PRIORIDADE: Record<string, string> = {
   P3: 'border-l-[3px] border-l-yellow-400',
 };
 
-/** Ordenação client-side na página atual (após busca / parado). */
-type TableSortKey = 'score' | 'status' | 'prioridade' | 'sla' | 'codigo' | 'endereco' | 'origem';
+/** Ordenação da lista; algumas colunas usam ordenação server-side e outras refinam a página atual. */
+type TableSortKey = 'ultimaVistoria' | 'score' | 'status' | 'prioridade' | 'sla' | 'codigo' | 'endereco' | 'origem';
 
 const STATUS_SORT_ORDER: FocoRiscoStatus[] = [
   'suspeita', 'em_triagem', 'aguarda_inspecao', 'em_inspecao',
@@ -130,6 +122,11 @@ function compareFocosTable(
 ): number {
   const mul = dir === 'asc' ? 1 : -1;
   switch (key) {
+    case 'ultimaVistoria': {
+      const va = a.ultima_vistoria_em ? new Date(a.ultima_vistoria_em).getTime() : 0;
+      const vb = b.ultima_vistoria_em ? new Date(b.ultima_vistoria_em).getTime() : 0;
+      return (va - vb) * mul;
+    }
     case 'score': {
       const va = a.score_prioridade ?? 0;
       const vb = b.score_prioridade ?? 0;
@@ -164,6 +161,39 @@ function compareFocosTable(
   }
 }
 
+function orderByFromSort(sortKey: TableSortKey, sortDir: 'asc' | 'desc'): NonNullable<FocoRiscoFiltros['orderBy']> {
+  const suffix = sortDir;
+  switch (sortKey) {
+    case 'ultimaVistoria':
+      return `ultima_vistoria_em_${suffix}`;
+    case 'score':
+      return `score_prioridade_${suffix}`;
+    case 'status':
+      return `status_${suffix}`;
+    case 'prioridade':
+      return `prioridade_${suffix}`;
+    case 'codigo':
+      return `codigo_foco_${suffix}`;
+    case 'origem':
+      return `origem_tipo_${suffix}`;
+    default:
+      return `ultima_vistoria_em_${suffix}`;
+  }
+}
+
+function formatDataCurta(value?: string | null): string {
+  if (!value) return '—';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '—';
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date);
+}
+
 function SortFilterColHeader({
   label,
   colKey,
@@ -171,6 +201,8 @@ function SortFilterColHeader({
   sortDir,
   onSort,
   filterContent,
+  isFiltered,
+  onClearFilter,
   className,
   narrow,
 }: {
@@ -179,7 +211,9 @@ function SortFilterColHeader({
   activeSort: TableSortKey;
   sortDir: 'asc' | 'desc';
   onSort: (k: TableSortKey) => void;
-  filterContent: ReactNode;
+  filterContent?: ReactNode;
+  isFiltered?: boolean;
+  onClearFilter?: () => void;
   className?: string;
   narrow?: boolean;
 }) {
@@ -192,11 +226,11 @@ function SortFilterColHeader({
         className,
       )}
     >
-      <div className="flex items-center gap-0.5">
+      <div className="flex items-center gap-1">
         <button
           type="button"
           onClick={() => onSort(colKey)}
-          className="inline-flex max-w-[min(100%,11rem)] items-center gap-1 rounded-md py-0.5 pr-1 text-left transition-colors hover:bg-muted/80 hover:text-foreground"
+          className="inline-flex max-w-[min(100%,11rem)] items-center gap-1 rounded-md px-1.5 py-1 text-left transition-colors hover:bg-background hover:text-foreground"
           title="Ordenar por esta coluna"
         >
           <span className="truncate">{label}</span>
@@ -210,21 +244,38 @@ function SortFilterColHeader({
             <ArrowUpDown className="h-3.5 w-3.5 shrink-0 opacity-40" aria-hidden />
           )}
         </button>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+        {filterContent && (
+          isFiltered ? (
             <button
               type="button"
-              className="shrink-0 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
-              title="Filtrar coluna"
-              aria-label={`Filtro: ${label}`}
+              onClick={onClearFilter}
+              className="inline-flex h-7 w-7 items-center justify-center rounded-md text-primary transition-colors hover:bg-primary/10"
+              title={`Limpar filtro de ${label}`}
+              aria-label={`Limpar filtro de ${label}`}
             >
-              <Filter className="h-3 w-3" />
+              <Eraser className="h-3.5 w-3.5" aria-hidden />
             </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-52">
-            {filterContent}
-          </DropdownMenuContent>
-        </DropdownMenu>
+          ) : (
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
+                  title={`Filtrar ${label}`}
+                  aria-label={`Filtrar ${label}`}
+                >
+                  <Filter className="h-3.5 w-3.5" aria-hidden />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent align="start" className="w-80 p-3 shadow-lg">
+                {filterContent}
+                <p className="mt-2 text-[11px] leading-snug text-muted-foreground">
+                  Dica: use os filtros de outras colunas para combinar critérios.
+                </p>
+              </PopoverContent>
+            </Popover>
+          )
+        )}
       </div>
     </th>
   );
@@ -257,12 +308,14 @@ export default function GestorFocos() {
 
   // ── Filtros ──────────────────────────────────────────────────────────────────
   const [busca, setBusca] = useState('');
+  const [buscaCodigo, setBuscaCodigo] = useState('');
+  const [buscaEndereco, setBuscaEndereco] = useState('');
   const [filtroStatus, setFiltroStatus] = useState<FiltroStatus>('todos');
   const [filtroPrioridade, setFiltroPrioridade] = useState<FiltroPrioridade>('todos');
   const [filtroOrigem, setFiltroOrigem] = useState<FiltroOrigem>('todos');
   const [filtroParado, setFiltroParado] = useState(false);
   const [filtroSla, setFiltroSla] = useState<FiltroSla>('todos');
-  const [sortKey, setSortKey] = useState<TableSortKey>('score');
+  const [sortKey, setSortKey] = useState<TableSortKey>('ultimaVistoria');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [page, setPage] = useState(1);
   const buscaRef = useRef<HTMLInputElement>(null);
@@ -310,8 +363,8 @@ export default function GestorFocos() {
     origem_tipo: filtroOrigem !== 'todos' ? filtroOrigem : undefined,
     page,
     pageSize: PAGE_SIZE,
-    orderBy: 'score_prioridade_desc' as const,
-  }), [filtroStatus, filtroPrioridade, filtroOrigem, page]);
+    orderBy: orderByFromSort(sortKey, sortDir),
+  }), [filtroStatus, filtroPrioridade, filtroOrigem, page, sortKey, sortDir]);
 
   const { data, isLoading } = useFocosRisco(clienteId, filtrosQuery);
   const focos = data?.data ?? [];
@@ -335,7 +388,7 @@ export default function GestorFocos() {
   });
 
   // Limpa seleção ao mudar filtros ou página
-  useEffect(() => { setPage(1); setSelecionados(new Set()); }, [filtroStatus, filtroPrioridade, filtroOrigem, filtroParado, filtroSla]);
+  useEffect(() => { setPage(1); setSelecionados(new Set()); }, [filtroStatus, filtroPrioridade, filtroOrigem, filtroParado, filtroSla, buscaCodigo, buscaEndereco, sortKey, sortDir]);
   useEffect(() => { setSelecionados(new Set()); }, [page]);
 
   const usuarioPorId = useMemo(() => {
@@ -359,6 +412,19 @@ export default function GestorFocos() {
           (f.endereco_normalizado ?? '').toLowerCase().includes(q),
       );
     }
+    if (buscaCodigo) {
+      const q = buscaCodigo.toLowerCase();
+      resultado = resultado.filter((f) => (f.codigo_foco ?? '').toLowerCase().includes(q));
+    }
+    if (buscaEndereco) {
+      const q = buscaEndereco.toLowerCase();
+      resultado = resultado.filter(
+        (f) =>
+          (f.logradouro ?? '').toLowerCase().includes(q) ||
+          (f.bairro ?? '').toLowerCase().includes(q) ||
+          (f.endereco_normalizado ?? '').toLowerCase().includes(q),
+      );
+    }
     if (filtroParado) {
       resultado = resultado.filter(
         (f) => f.updated_at && new Date(f.updated_at).getTime() < limiteParado,
@@ -368,7 +434,7 @@ export default function GestorFocos() {
       resultado = resultado.filter((f) => (f.sla_status ?? 'sem_sla') === filtroSla);
     }
     return resultado;
-  }, [focos, busca, filtroParado, filtroSla]);
+  }, [focos, busca, buscaCodigo, buscaEndereco, filtroParado, filtroSla]);
 
   const focosOrdenados = useMemo(() => {
     const copy = [...focosFiltrados];
@@ -405,6 +471,8 @@ export default function GestorFocos() {
     filtroPrioridade !== 'todos',
     filtroOrigem !== 'todos',
     !!busca,
+    !!buscaCodigo,
+    !!buscaEndereco,
     filtroParado,
     filtroSla !== 'todos',
   ].filter(Boolean).length;
@@ -460,9 +528,11 @@ export default function GestorFocos() {
     setFiltroPrioridade('todos');
     setFiltroOrigem('todos');
     setBusca('');
+    setBuscaCodigo('');
+    setBuscaEndereco('');
     setFiltroParado(false);
     setFiltroSla('todos');
-    setSortKey('score');
+    setSortKey('ultimaVistoria');
     setSortDir('desc');
   }
 
@@ -615,7 +685,7 @@ export default function GestorFocos() {
       </div>
 
       {/* KPI bar */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-2.5">
         {kpiCards.map((card) => {
           const count = kpiData
             ? (Array.isArray(kpiData)
@@ -626,7 +696,7 @@ export default function GestorFocos() {
             <button
               key={card.key}
               onClick={() => setFiltroStatus(filtroStatus === card.key ? 'todos' : card.key as FiltroStatus)}
-              className={`rounded-xl border p-3 flex items-center gap-3 text-left transition-all hover:shadow-sm ${card.bg} ${card.border} ${
+              className={`rounded-xl border px-3 py-2.5 flex items-center gap-2.5 text-left transition-all hover:shadow-sm ${card.bg} ${card.border} ${
                 filtroStatus === card.key ? 'ring-2 ring-offset-1 ring-primary/40' : ''
               }`}
             >
@@ -664,8 +734,8 @@ export default function GestorFocos() {
       )}
 
       {/* Filtros */}
-      <div className="rounded-xl border border-border/60 bg-muted/30 p-3 space-y-3">
-        <div className="flex gap-2">
+      <div className="rounded-xl border border-border/60 bg-background/95 p-3 shadow-sm space-y-3 lg:hidden">
+        <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
@@ -687,20 +757,7 @@ export default function GestorFocos() {
           )}
         </div>
 
-        {/* G3: filtro rápido de focos parados */}
-        <button
-          onClick={() => setFiltroParado(!filtroParado)}
-          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors w-fit ${
-            filtroParado
-              ? 'bg-orange-500 text-white border-orange-500'
-              : 'border-border bg-background text-muted-foreground hover:bg-muted'
-          }`}
-        >
-          <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${filtroParado ? 'bg-white' : 'bg-orange-400'}`} />
-          Parados +7 dias
-        </button>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,0.7fr)_minmax(0,0.9fr)_auto]">
           <div className="space-y-1.5">
             <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Status</p>
             <div className="flex flex-wrap gap-1">
@@ -763,6 +820,21 @@ export default function GestorFocos() {
                 </button>
               ))}
             </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Atalhos</p>
+            <button
+              onClick={() => setFiltroParado(!filtroParado)}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors w-fit ${
+                filtroParado
+                  ? 'bg-orange-500 text-white border-orange-500'
+                  : 'border-border bg-background text-muted-foreground hover:bg-muted'
+              }`}
+            >
+              <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${filtroParado ? 'bg-white' : 'bg-orange-400'}`} />
+              Parados +7 dias
+            </button>
           </div>
         </div>
       </div>
@@ -876,6 +948,27 @@ export default function GestorFocos() {
       ) : (
         /* ── Desktop: tabela ───────────────────────────────────────────────── */
         <div className="rounded-xl border border-border/60 overflow-hidden">
+          <div className="flex items-center justify-between gap-3 border-b border-border/60 bg-background px-4 py-2.5">
+            <div>
+              <p className="text-sm font-semibold text-foreground">Lista de focos</p>
+              <p className="text-[11px] text-muted-foreground">
+                {focosOrdenados.length} exibido(s) nesta página · ordenado por {sortKey === 'ultimaVistoria' ? 'última vistoria' : 'coluna selecionada'}
+              </p>
+            </div>
+            {filtrosAtivos > 0 ? (
+              <Button variant="outline" size="sm" className="h-8 gap-1.5" onClick={limparFiltros}>
+                <X className="w-3.5 h-3.5" />
+                Limpar filtros
+                <span className="bg-primary text-primary-foreground rounded-full text-[10px] font-bold w-4 h-4 flex items-center justify-center leading-none">
+                  {filtrosAtivos}
+                </span>
+              </Button>
+            ) : (
+              <span className="hidden rounded-full border border-border/70 bg-muted/40 px-2.5 py-1 text-[11px] font-medium text-muted-foreground sm:inline-flex">
+                Filtros por coluna
+              </span>
+            )}
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-muted/50 border-b border-border/60 sticky top-0 z-10">
@@ -891,26 +984,43 @@ export default function GestorFocos() {
                   </th>
                   <th className="px-2 py-3 w-14 text-left text-xs font-bold text-muted-foreground uppercase tracking-wider">Img</th>
                   <SortFilterColHeader
+                    label="Última vistoria"
+                    colKey="ultimaVistoria"
+                    activeSort={sortKey}
+                    sortDir={sortDir}
+                    onSort={handleHeaderSort}
+                    isFiltered={filtroParado}
+                    onClearFilter={() => setFiltroParado(false)}
+                    filterContent={(
+                      <button
+                        type="button"
+                        onClick={() => setFiltroParado(true)}
+                        className="h-9 w-full rounded-md border border-border bg-background px-3 text-left text-sm font-medium transition-colors hover:bg-muted"
+                      >
+                        Parados +7 dias
+                      </button>
+                    )}
+                  />
+                  <SortFilterColHeader
                     label="Status"
                     colKey="status"
                     activeSort={sortKey}
                     sortDir={sortDir}
                     onSort={handleHeaderSort}
-                    filterContent={
-                      <>
-                        <DropdownMenuLabel>Filtrar status</DropdownMenuLabel>
+                    isFiltered={filtroStatus !== 'todos'}
+                    onClearFilter={() => setFiltroStatus('todos')}
+                    filterContent={(
+                      <select
+                        aria-label="Filtrar por status"
+                        value={filtroStatus}
+                        onChange={(e) => setFiltroStatus(e.target.value as FiltroStatus)}
+                        className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
+                      >
                         {STATUS_FILTROS.map((s) => (
-                          <DropdownMenuItem key={s} onClick={() => setFiltroStatus(s)}>
-                            <span className="flex items-center gap-2">
-                              {s !== 'todos' && (
-                                <span className={cn('inline-block h-1.5 w-1.5 rounded-full shrink-0', STATUS_DOT[s] ?? 'bg-gray-400')} />
-                              )}
-                              {LABEL_FILTRO_STATUS[s]}
-                            </span>
-                          </DropdownMenuItem>
+                          <option key={s} value={s}>{s === 'todos' ? '0 - TODOS' : LABEL_FILTRO_STATUS[s]}</option>
                         ))}
-                      </>
-                    }
+                      </select>
+                    )}
                   />
                   <SortFilterColHeader
                     label="Prior."
@@ -919,16 +1029,20 @@ export default function GestorFocos() {
                     activeSort={sortKey}
                     sortDir={sortDir}
                     onSort={handleHeaderSort}
-                    filterContent={
-                      <>
-                        <DropdownMenuLabel>Filtrar prioridade</DropdownMenuLabel>
-                        {(['todos', 'P1', 'P2', 'P3', 'P4', 'P5'] as FiltroPrioridade[]).map((p) => (
-                          <DropdownMenuItem key={p} onClick={() => setFiltroPrioridade(p)}>
-                            {p === 'todos' ? 'Todas' : p}
-                          </DropdownMenuItem>
+                    isFiltered={filtroPrioridade !== 'todos'}
+                    onClearFilter={() => setFiltroPrioridade('todos')}
+                    filterContent={(
+                      <select
+                        aria-label="Filtrar por prioridade"
+                        value={filtroPrioridade}
+                        onChange={(e) => setFiltroPrioridade(e.target.value as FiltroPrioridade)}
+                        className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
+                      >
+                        {(['todos', 'P1', 'P2', 'P3'] as FiltroPrioridade[]).map((p) => (
+                          <option key={p} value={p}>{p === 'todos' ? 'Todas' : p}</option>
                         ))}
-                      </>
-                    }
+                      </select>
+                    )}
                   />
                   <SortFilterColHeader
                     label="SLA"
@@ -936,17 +1050,21 @@ export default function GestorFocos() {
                     activeSort={sortKey}
                     sortDir={sortDir}
                     onSort={handleHeaderSort}
-                    filterContent={
-                      <>
-                        <DropdownMenuLabel>Filtrar SLA</DropdownMenuLabel>
-                        <DropdownMenuItem onClick={() => setFiltroSla('todos')}>Todos</DropdownMenuItem>
-                        {(Object.keys(LABEL_SLA_FILTRO) as (keyof typeof LABEL_SLA_FILTRO)[]).map((k) => (
-                          <DropdownMenuItem key={k} onClick={() => setFiltroSla(k)}>
-                            {LABEL_SLA_FILTRO[k]}
-                          </DropdownMenuItem>
+                    isFiltered={filtroSla !== 'todos'}
+                    onClearFilter={() => setFiltroSla('todos')}
+                    filterContent={(
+                      <select
+                        aria-label="Filtrar por SLA"
+                        value={filtroSla}
+                        onChange={(e) => setFiltroSla(e.target.value as FiltroSla)}
+                        className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
+                      >
+                        <option value="todos">Todos</option>
+                        {(Object.keys(LABEL_SLA_FILTRO) as Exclude<FiltroSla, 'todos'>[]).map((s) => (
+                          <option key={s} value={s}>{LABEL_SLA_FILTRO[s]}</option>
                         ))}
-                      </>
-                    }
+                      </select>
+                    )}
                   />
                   <SortFilterColHeader
                     label="Cód."
@@ -955,26 +1073,20 @@ export default function GestorFocos() {
                     activeSort={sortKey}
                     sortDir={sortDir}
                     onSort={handleHeaderSort}
-                    filterContent={
-                      <>
-                        <DropdownMenuLabel>Busca (código ou endereço)</DropdownMenuLabel>
-                        <DropdownMenuItem
-                          onClick={() => {
-                            setBusca('');
-                            requestAnimationFrame(() => buscaRef.current?.focus());
-                          }}
-                        >
-                          Limpar busca
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => {
-                            requestAnimationFrame(() => buscaRef.current?.focus());
-                          }}
-                        >
-                          Ir ao campo de busca
-                        </DropdownMenuItem>
-                      </>
-                    }
+                    isFiltered={!!buscaCodigo}
+                    onClearFilter={() => setBuscaCodigo('')}
+                    filterContent={(
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          aria-label="Buscar por código"
+                          placeholder="Pesquisar código..."
+                          className="h-10 border-border bg-background pl-9 text-sm"
+                          value={buscaCodigo}
+                          onChange={(e) => setBuscaCodigo(e.target.value)}
+                        />
+                      </div>
+                    )}
                   />
                   <SortFilterColHeader
                     label="Endereço"
@@ -982,26 +1094,20 @@ export default function GestorFocos() {
                     activeSort={sortKey}
                     sortDir={sortDir}
                     onSort={handleHeaderSort}
-                    filterContent={
-                      <>
-                        <DropdownMenuLabel>Busca (código ou endereço)</DropdownMenuLabel>
-                        <DropdownMenuItem
-                          onClick={() => {
-                            setBusca('');
-                            requestAnimationFrame(() => buscaRef.current?.focus());
-                          }}
-                        >
-                          Limpar busca
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => {
-                            requestAnimationFrame(() => buscaRef.current?.focus());
-                          }}
-                        >
-                          Ir ao campo de busca
-                        </DropdownMenuItem>
-                      </>
-                    }
+                    isFiltered={!!buscaEndereco}
+                    onClearFilter={() => setBuscaEndereco('')}
+                    filterContent={(
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          aria-label="Buscar por endereço ou bairro"
+                          placeholder="Pesquisar endereço ou bairro..."
+                          className="h-10 border-border bg-background pl-9 text-sm"
+                          value={buscaEndereco}
+                          onChange={(e) => setBuscaEndereco(e.target.value)}
+                        />
+                      </div>
+                    )}
                   />
                   <SortFilterColHeader
                     label="Origem"
@@ -1009,19 +1115,20 @@ export default function GestorFocos() {
                     activeSort={sortKey}
                     sortDir={sortDir}
                     onSort={handleHeaderSort}
-                    filterContent={
-                      <>
-                        <DropdownMenuLabel>Filtrar origem</DropdownMenuLabel>
+                    isFiltered={filtroOrigem !== 'todos'}
+                    onClearFilter={() => setFiltroOrigem('todos')}
+                    filterContent={(
+                      <select
+                        aria-label="Filtrar por origem"
+                        value={filtroOrigem}
+                        onChange={(e) => setFiltroOrigem(e.target.value as FiltroOrigem)}
+                        className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
+                      >
                         {(['todos', 'drone', 'agente', 'cidadao', 'pluvio', 'manual'] as FiltroOrigem[]).map((o) => (
-                          <DropdownMenuItem key={o} onClick={() => setFiltroOrigem(o)}>
-                            <span className="flex items-center gap-2">
-                              {o !== 'todos' && <OrigemIcone origem={o as FocoRiscoOrigem} />}
-                              {o === 'todos' ? 'Todas' : o}
-                            </span>
-                          </DropdownMenuItem>
+                          <option key={o} value={o}>{o === 'todos' ? 'Todas' : o}</option>
                         ))}
-                      </>
-                    }
+                      </select>
+                    )}
                   />
                   <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Ações</th>
                 </tr>
@@ -1071,6 +1178,16 @@ export default function GestorFocos() {
                             <OrigemIcone origem={foco.origem_tipo as FocoRiscoOrigem} />
                           </div>
                         )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-xs font-semibold text-foreground tabular-nums">
+                            {formatDataCurta(foco.ultima_vistoria_em)}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground">
+                            {foco.ultima_vistoria_em ? 'vistoria' : 'sem vistoria'}
+                          </span>
+                        </div>
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex flex-col gap-0.5">

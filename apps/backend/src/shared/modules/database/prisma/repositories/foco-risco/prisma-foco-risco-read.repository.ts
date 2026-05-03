@@ -10,7 +10,7 @@ import {
   TimelineItem,
 } from '@modules/foco-risco/repositories/foco-risco-read.repository';
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma, type focos_risco as PrismaFocoRiscoModel } from '@prisma/client';
 import { PaginationProps } from 'src/shared/dtos/pagination-body';
 import { Paginate } from 'src/utils/pagination';
 
@@ -46,28 +46,99 @@ export class PrismaFocoRiscoReadRepository implements FocoRiscoReadRepository {
       where: this.buildWhere(filters),
       orderBy: { created_at: 'desc' },
     });
-    return this.attachImageUrls(rows.map((r) => PrismaFocoRiscoMapper.toDomain(r)), rows);
+    return this.attachListDerivados(rows.map((r) => PrismaFocoRiscoMapper.toDomain(r)), rows);
   }
 
   async findPaginated(
     filters: FilterFocoRiscoInput,
     { currentPage, perPage, orderKey, orderValue }: PaginationProps,
   ): Promise<FocoRiscoPaginated> {
+    if (orderKey === 'ultima_vistoria_em') {
+      return this.findPaginatedPorUltimaVistoria(filters, currentPage, perPage, orderValue);
+    }
+
     const where = this.buildWhere(filters);
+    const safeOrderKey = this.safeOrderKey(orderKey);
     const [items, count] = await this.prisma.client.$transaction([
       this.prisma.client.focos_risco.findMany({
         where,
         skip: perPage * (currentPage - 1),
         take: perPage,
-        orderBy: [{ [orderKey]: orderValue }, { created_at: 'asc' }],
+        orderBy: [{ [safeOrderKey]: orderValue }, { created_at: 'desc' }],
       }),
       this.prisma.client.focos_risco.count({ where }),
     ]);
     const pagination = await Paginate(count, perPage, currentPage);
     return {
+      items: await this.attachListDerivados(items.map((r) => PrismaFocoRiscoMapper.toDomain(r as any)), items),
+      pagination,
+    };
+  }
+
+  private async findPaginatedPorUltimaVistoria(
+    filters: FilterFocoRiscoInput,
+    currentPage: number,
+    perPage: number,
+    orderValue: 'asc' | 'desc',
+  ): Promise<FocoRiscoPaginated> {
+    const where = this.buildSqlWhere(filters);
+    const offset = perPage * (currentPage - 1);
+    const orderDirection = orderValue === 'asc' ? Prisma.sql`ASC` : Prisma.sql`DESC`;
+
+    const [items, countRows] = await this.prisma.client.$transaction([
+      this.prisma.client.$queryRaw<Array<PrismaFocoRiscoModel & { ultima_vistoria_em: Date | null }>>(Prisma.sql`
+        SELECT
+          f.*,
+          uv.ultima_vistoria_em
+        FROM public.focos_risco f
+        LEFT JOIN LATERAL (
+          SELECT MAX(COALESCE(v.data_visita, v.checkin_em, v.created_at)) AS ultima_vistoria_em
+          FROM public.vistorias v
+          WHERE v.deleted_at IS NULL
+            AND v.cliente_id = f.cliente_id
+            AND (
+              v.foco_risco_id = f.id
+              OR v.id = f.origem_vistoria_id
+              OR (
+                f.imovel_id IS NOT NULL
+                AND v.imovel_id = f.imovel_id
+                AND (f.ciclo IS NULL OR v.ciclo = f.ciclo)
+              )
+            )
+        ) uv ON TRUE
+        WHERE ${where}
+        ORDER BY uv.ultima_vistoria_em ${orderDirection} NULLS LAST, f.created_at DESC
+        LIMIT ${perPage}
+        OFFSET ${offset}
+      `),
+      this.prisma.client.$queryRaw<Array<{ total: bigint }>>(Prisma.sql`
+        SELECT COUNT(*)::bigint AS total
+        FROM public.focos_risco f
+        WHERE ${where}
+      `),
+    ]);
+
+    const count = Number(countRows[0]?.total ?? 0);
+    const pagination = await Paginate(count, perPage, currentPage);
+    return {
       items: await this.attachImageUrls(items.map((r) => PrismaFocoRiscoMapper.toDomain(r as any)), items),
       pagination,
     };
+  }
+
+  private safeOrderKey(orderKey?: string): keyof Prisma.focos_riscoOrderByWithRelationInput {
+    const allowed = new Set([
+      'created_at',
+      'updated_at',
+      'suspeita_em',
+      'score_prioridade',
+      'status',
+      'prioridade',
+      'codigo_foco',
+      'origem_tipo',
+      'inspecao_em',
+    ]);
+    return (orderKey && allowed.has(orderKey) ? orderKey : 'created_at') as keyof Prisma.focos_riscoOrderByWithRelationInput;
   }
 
   /** Batch-carrega image_url de levantamento_itens e anexa em cada foco. */
@@ -89,6 +160,49 @@ export class PrismaFocoRiscoReadRepository implements FocoRiscoReadRepository {
       focos[i].origemImageUrl = itemId ? (imageMap.get(itemId) ?? null) : null;
     }
     return focos;
+  }
+
+  private async attachListDerivados(
+    focos: FocoRisco[],
+    rows: Array<{ id: string; origem_levantamento_item_id?: string | null }>,
+  ): Promise<FocoRisco[]> {
+    const withImages = await this.attachImageUrls(focos, rows);
+    await this.attachUltimaVistoriaEm(withImages);
+    return withImages;
+  }
+
+  private async attachUltimaVistoriaEm(focos: FocoRisco[]): Promise<void> {
+    if (!focos.length) return;
+    const ids = focos.map((f) => f.id).filter((id): id is string => !!id);
+    if (!ids.length) return;
+
+    const rows = await this.prisma.client.$queryRaw<Array<{ foco_id: string; ultima_vistoria_em: Date | null }>>(Prisma.sql`
+      SELECT
+        f.id AS foco_id,
+        uv.ultima_vistoria_em
+      FROM public.focos_risco f
+      LEFT JOIN LATERAL (
+        SELECT MAX(COALESCE(v.data_visita, v.checkin_em, v.created_at)) AS ultima_vistoria_em
+        FROM public.vistorias v
+        WHERE v.deleted_at IS NULL
+          AND v.cliente_id = f.cliente_id
+          AND (
+            v.foco_risco_id = f.id
+            OR v.id = f.origem_vistoria_id
+            OR (
+              f.imovel_id IS NOT NULL
+              AND v.imovel_id = f.imovel_id
+              AND (f.ciclo IS NULL OR v.ciclo = f.ciclo)
+            )
+          )
+      ) uv ON TRUE
+      WHERE f.id IN (${Prisma.join(ids)})
+    `);
+
+    const map = new Map(rows.map((r) => [r.foco_id, r.ultima_vistoria_em]));
+    for (const foco of focos) {
+      foco.ultimaVistoriaEm = map.get(foco.id!) ?? null;
+    }
   }
 
   async findManyByIds(ids: string[], clienteId: string): Promise<FocoRisco[]> {
@@ -298,5 +412,36 @@ export class PrismaFocoRiscoReadRepository implements FocoRiscoReadRepository {
       ...(filters.responsavelId && { responsavel_id: filters.responsavelId }),
       ...(filters.origemTipo && { origem_tipo: filters.origemTipo }),
     };
+  }
+
+  private buildSqlWhere(filters: FilterFocoRiscoInput): Prisma.Sql {
+    const clauses: Prisma.Sql[] = [Prisma.sql`f.deleted_at IS NULL`];
+    if (filters.clienteId != null) {
+      clauses.push(Prisma.sql`f.cliente_id = ${filters.clienteId}::uuid`);
+    }
+    if (filters.status?.length) {
+      clauses.push(
+        filters.status.length === 1
+          ? Prisma.sql`f.status = ${filters.status[0]}`
+          : Prisma.sql`f.status IN (${Prisma.join(filters.status)})`,
+      );
+    }
+    if (filters.prioridade?.length) {
+      clauses.push(
+        filters.prioridade.length === 1
+          ? Prisma.sql`f.prioridade = ${filters.prioridade[0]}`
+          : Prisma.sql`f.prioridade IN (${Prisma.join(filters.prioridade)})`,
+      );
+    }
+    if (filters.regiaoId) {
+      clauses.push(Prisma.sql`f.regiao_id = ${filters.regiaoId}::uuid`);
+    }
+    if (filters.responsavelId) {
+      clauses.push(Prisma.sql`f.responsavel_id = ${filters.responsavelId}::uuid`);
+    }
+    if (filters.origemTipo) {
+      clauses.push(Prisma.sql`f.origem_tipo = ${filters.origemTipo}`);
+    }
+    return Prisma.join(clauses, ' AND ');
   }
 }
