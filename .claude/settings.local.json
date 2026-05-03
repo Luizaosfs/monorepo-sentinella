@@ -236,7 +236,8 @@
       "Bash(\"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -U postgres -d sentinella -c \"\\\\d vistoria_riscos\")",
       "Bash(\"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -U postgres -d sentinella -c \"\\\\d vistoria_sintomas\")",
       "PowerShell(& \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -U postgres -d sentinella -f \"D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend\\\\prisma\\\\migrations\\\\add_vistoria_vulnerability_fields.sql\")",
-      "Bash(grep -E \"\\\\.\\(ts|prisma\\)$\")"
+      "Bash(grep -E \"\\\\.\\(ts|prisma\\)$\")",
+      "PowerShell($env:PGPASSWORD = \"Sentinella147852369\"; & \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -h 177.7.37.14 -U luizAntonio -d sentinella -c \"SELECT column_name, data_type, column_default FROM information_schema.columns WHERE table_name = 'vistorias' AND column_name IN \\('gravidas', 'idosos', 'criancas_7anos'\\);\")"
     ]
   }
 }
