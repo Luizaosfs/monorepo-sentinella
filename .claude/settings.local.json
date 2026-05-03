@@ -235,7 +235,8 @@
       "mcp__ide__getDiagnostics",
       "Bash(\"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -U postgres -d sentinella -c \"\\\\d vistoria_riscos\")",
       "Bash(\"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -U postgres -d sentinella -c \"\\\\d vistoria_sintomas\")",
-      "PowerShell(& \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -U postgres -d sentinella -f \"D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend\\\\prisma\\\\migrations\\\\add_vistoria_vulnerability_fields.sql\")"
+      "PowerShell(& \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -U postgres -d sentinella -f \"D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend\\\\prisma\\\\migrations\\\\add_vistoria_vulnerability_fields.sql\")",
+      "Bash(grep -E \"\\\\.\\(ts|prisma\\)$\")"
     ]
   }
 }

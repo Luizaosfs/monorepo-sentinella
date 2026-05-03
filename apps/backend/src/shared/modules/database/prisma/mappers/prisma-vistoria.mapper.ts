@@ -375,9 +375,9 @@ export class PrismaVistoriaMapper {
     return {
       vistoria_id: calha.vistoriaId,
       cliente_id: calha.clienteId,
-      posicao: 'frente',
-      condicao: 'limpa',
-      com_foco: false,
+      posicao: calha.tipo ?? 'frente',
+      condicao: calha.estado ?? 'limpa',
+      com_foco: calha.comAcumulo ?? false,
       acessivel: true,
       tratamento_realizado: false,
       observacao: calha.observacao ?? null,

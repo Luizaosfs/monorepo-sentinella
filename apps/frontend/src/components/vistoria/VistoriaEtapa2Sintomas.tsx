@@ -8,6 +8,7 @@ export interface Etapa2Data {
   manchas_vermelhas: boolean;
   dor_articulacoes: boolean;
   dor_cabeca: boolean;
+  nausea: boolean;
   moradores_sintomas_qtd: number;
 }
 
@@ -22,6 +23,7 @@ const SINTOMAS: { key: keyof Omit<Etapa2Data, 'moradores_sintomas_qtd'>; label: 
   { key: 'manchas_vermelhas', label: 'Manchas vermelhas' },
   { key: 'dor_articulacoes', label: 'Dor nas articulações' },
   { key: 'dor_cabeca', label: 'Dor de cabeça' },
+  { key: 'nausea', label: 'Náusea' },
 ];
 
 export function VistoriaEtapa2Sintomas({ data, onChange, onNext }: Props) {

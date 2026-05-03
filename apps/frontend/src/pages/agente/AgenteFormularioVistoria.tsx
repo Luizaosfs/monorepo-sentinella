@@ -97,6 +97,7 @@ const ETAPA2_DEFAULT: Etapa2Data = {
   manchas_vermelhas: false,
   dor_articulacoes: false,
   dor_cabeca: false,
+  nausea: false,
   moradores_sintomas_qtd: 0,
 };
 
@@ -418,7 +419,7 @@ export default function AgenteFormularioVistoria() {
       );
       const algumSintoma =
         etapa2.febre || etapa2.manchas_vermelhas || etapa2.dor_articulacoes ||
-        etapa2.dor_cabeca || etapa2.moradores_sintomas_qtd > 0;
+        etapa2.dor_cabeca || etapa2.nausea || etapa2.moradores_sintomas_qtd > 0;
       const { observacao: _obs2, ...riscosBooleans2 } = etapa5;
       const algumRisco = Object.values(riscosBooleans2).some(
         (v) => (typeof v === 'boolean' && v) || (typeof v === 'string' && v.trim()),
@@ -464,12 +465,15 @@ export default function AgenteFormularioVistoria() {
             manchas_vermelhas: etapa2.manchas_vermelhas,
             dor_articulacoes: etapa2.dor_articulacoes,
             dor_cabeca: etapa2.dor_cabeca,
+            nausea: etapa2.nausea,
             moradores_sintomas_qtd: etapa2.moradores_sintomas_qtd,
           } : null,
           riscos: algumRisco ? {
             vistoria_id: '',
             menor_incapaz: etapa5.menor_incapaz,
             idoso_incapaz: etapa5.idoso_incapaz,
+            mobilidade_reduzida: etapa5.mobilidade_reduzida,
+            acamado: etapa5.acamado,
             dep_quimico: etapa5.dep_quimico,
             risco_alimentar: etapa5.risco_alimentar,
             risco_moradia: etapa5.risco_moradia,
@@ -537,7 +541,7 @@ export default function AgenteFormularioVistoria() {
       const algumSintoma =
         etapa2.febre || etapa2.manchas_vermelhas ||
         etapa2.dor_articulacoes || etapa2.dor_cabeca ||
-        etapa2.moradores_sintomas_qtd > 0;
+        etapa2.nausea || etapa2.moradores_sintomas_qtd > 0;
 
       const { observacao: _obs, ...riscosBooleans } = etapa5;
       const algumRisco = Object.values(riscosBooleans).some(
@@ -583,24 +587,27 @@ export default function AgenteFormularioVistoria() {
           manchas_vermelhas: etapa2.manchas_vermelhas,
           dor_articulacoes: etapa2.dor_articulacoes,
           dor_cabeca: etapa2.dor_cabeca,
+          nausea: etapa2.nausea,
           moradores_sintomas_qtd: etapa2.moradores_sintomas_qtd,
         }] : undefined,
-        riscos: algumRisco ? [
-          etapa5.menor_incapaz && { tipo_risco: 'menor_incapaz' },
-          etapa5.idoso_incapaz && { tipo_risco: 'idoso_incapaz' },
-          etapa5.dep_quimico && { tipo_risco: 'dep_quimico' },
-          etapa5.risco_alimentar && { tipo_risco: 'risco_alimentar' },
-          etapa5.risco_moradia && { tipo_risco: 'risco_moradia' },
-          etapa5.criadouro_animais && { tipo_risco: 'criadouro_animais' },
-          etapa5.lixo && { tipo_risco: 'lixo' },
-          etapa5.residuos_organicos && { tipo_risco: 'residuos_organicos' },
-          etapa5.residuos_quimicos && { tipo_risco: 'residuos_quimicos' },
-          etapa5.residuos_medicos && { tipo_risco: 'residuos_medicos' },
-          etapa5.acumulo_material_organico && { tipo_risco: 'acumulo_material_organico' },
-          etapa5.animais_sinais_lv && { tipo_risco: 'animais_sinais_lv' },
-          etapa5.caixa_destampada && { tipo_risco: 'caixa_destampada' },
-          etapa5.outro_risco_vetorial.trim() && { tipo_risco: etapa5.outro_risco_vetorial.trim() },
-        ].filter(Boolean) : undefined,
+        riscos: algumRisco ? [{
+          menor_incapaz: etapa5.menor_incapaz,
+          idoso_incapaz: etapa5.idoso_incapaz,
+          mobilidade_reduzida: etapa5.mobilidade_reduzida,
+          acamado: etapa5.acamado,
+          dep_quimico: etapa5.dep_quimico,
+          risco_alimentar: etapa5.risco_alimentar,
+          risco_moradia: etapa5.risco_moradia,
+          criadouro_animais: etapa5.criadouro_animais,
+          lixo: etapa5.lixo,
+          residuos_organicos: etapa5.residuos_organicos,
+          residuos_quimicos: etapa5.residuos_quimicos,
+          residuos_medicos: etapa5.residuos_medicos,
+          acumulo_material_organico: etapa5.acumulo_material_organico,
+          animais_sinais_lv: etapa5.animais_sinais_lv,
+          caixa_destampada: etapa5.caixa_destampada,
+          outro_risco_vetorial: etapa5.outro_risco_vetorial.trim() || null,
+        }] : undefined,
         tem_calha: etapa3.tem_calha,
         calha_inacessivel: etapa3.calha_inacessivel,
         calhas: etapa3.tem_calha ? etapa3.calhas : [],

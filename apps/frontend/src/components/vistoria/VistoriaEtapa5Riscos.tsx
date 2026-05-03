@@ -9,6 +9,8 @@ export interface Etapa5Data {
   // Risco Social
   menor_incapaz: boolean;
   idoso_incapaz: boolean;
+  mobilidade_reduzida: boolean;
+  acamado: boolean;
   dep_quimico: boolean;
   risco_alimentar: boolean;
   risco_moradia: boolean;
@@ -29,6 +31,8 @@ export interface Etapa5Data {
 export const ETAPA5_DEFAULT: Etapa5Data = {
   menor_incapaz: false,
   idoso_incapaz: false,
+  mobilidade_reduzida: false,
+  acamado: false,
   dep_quimico: false,
   risco_alimentar: false,
   risco_moradia: false,
@@ -54,6 +58,8 @@ interface RiscoItem {
 const RISCOS_SOCIAIS: RiscoItem[] = [
   { key: 'menor_incapaz', label: 'Menor incapaz presente' },
   { key: 'idoso_incapaz', label: 'Idoso incapaz presente' },
+  { key: 'mobilidade_reduzida', label: 'Mobilidade reduzida' },
+  { key: 'acamado', label: 'Morador acamado' },
   { key: 'dep_quimico', label: 'Dependente químico' },
   { key: 'risco_alimentar', label: 'Risco alimentar' },
   { key: 'risco_moradia', label: 'Risco de moradia' },

@@ -238,31 +238,10 @@ function breakdownGruposMoradores(v: VistoriaDetalhe): { criancas: number; idoso
     };
   }
 
-  const total = v.moradoresQtd;
-  const cFl = !!v.criancas7anos;
-  const iFl = !!v.idosos;
-  const gFl = !!v.gravidas;
-  const onIdx = [cFl, iFl, gFl].map((f, i) => (f ? i : -1)).filter((i) => i >= 0);
-  const n = onIdx.length;
-
-  if (total != null && total >= 0 && n > 0) {
-    const base = Math.floor(total / n);
-    let rem = total % n;
-    const o = { criancas: 0, idosos: 0, gestantes: 0 };
-    for (const idx of onIdx) {
-      const add = base + (rem > 0 ? 1 : 0);
-      if (rem > 0) rem -= 1;
-      if (idx === 0) o.criancas = add;
-      else if (idx === 1) o.idosos = add;
-      else o.gestantes = add;
-    }
-    return o;
-  }
-
   return {
-    criancas: cFl ? 1 : 0,
-    idosos: iFl ? 1 : 0,
-    gestantes: gFl ? 1 : 0,
+    criancas: v.criancas7anos ? 1 : 0,
+    idosos: v.idosos ? 1 : 0,
+    gestantes: v.gravidas ? 1 : 0,
   };
 }
 
