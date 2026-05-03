@@ -171,7 +171,7 @@ export class GetResumoVisualVistoriaPorFoco {
       (acc, d) => ({
         inspecionados: acc.inspecionados + d.qtdInspecionados,
         comFocos: acc.comFocos + d.qtdComFocos,
-        eliminados: acc.eliminados + d.qtdEliminados,
+        eliminados: acc.eliminados + (d.eliminado ? 1 : 0),
         comAgua: acc.comAgua + d.qtdComAgua,
         comLarvicida: acc.comLarvicida + (d.usouLarvicida ? 1 : 0),
       }),
@@ -222,7 +222,7 @@ export class GetResumoVisualVistoriaPorFoco {
     const tratamento: ResumoVisualVistoriaResponse['tratamento'] = {
       larvicidaAplicado: depositosItens.some((d) => d.usouLarvicida),
       totalLarvicidaG: depositosItens.reduce((sum, d) => sum + (d.qtdLarvicidaG ?? 0), 0),
-      depositosEliminados: depositosItens.reduce((sum, d) => sum + d.qtdEliminados, 0),
+      depositosEliminados: depositosItens.filter((d) => d.eliminado).length,
       depositosVedados: depositosItens.filter((d) => d.vedado).length,
       calhasTratadas: calhasItens.filter((c) => c.tratamentoRealizado).length,
     };
