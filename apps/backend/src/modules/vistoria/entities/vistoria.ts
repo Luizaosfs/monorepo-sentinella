@@ -10,6 +10,7 @@ export interface VistoriaDeposito {
   qtdComFocos?: number;
   qtdEliminados?: number;
   usouLarvicida?: boolean;
+  qtdLarvicidaG?: number | null;
   comLarva?: boolean;
   eliminado?: boolean;
   tratado?: boolean;

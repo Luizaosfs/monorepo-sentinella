@@ -15,6 +15,7 @@ type RawDeposito = {
   qtd_com_focos: number | null;
   qtd_eliminados: number | null;
   usou_larvicida: boolean | null;
+  qtd_larvicida_g: number | null;
   qtd_com_agua: number | null;
   eliminado: boolean | null;
   vedado: boolean | null;
@@ -140,6 +141,7 @@ export class PrismaVistoriaMapper {
       qtdComFocos: raw.qtd_com_focos ?? undefined,
       qtdEliminados: raw.qtd_eliminados ?? undefined,
       usouLarvicida: raw.usou_larvicida ?? undefined,
+      qtdLarvicidaG: raw.qtd_larvicida_g ?? undefined,
       qtdComAgua: raw.qtd_com_agua ?? undefined,
       comLarva: raw.qtd_com_focos != null ? raw.qtd_com_focos > 0 : undefined,
       eliminado: raw.eliminado ?? undefined,
@@ -336,6 +338,7 @@ export class PrismaVistoriaMapper {
       qtd_com_focos: dep.qtdComFocos ?? (dep.comLarva ? 1 : 0),
       qtd_eliminados: dep.qtdEliminados ?? 0,
       usou_larvicida: dep.usouLarvicida ?? dep.tratado ?? false,
+      qtd_larvicida_g: dep.qtdLarvicidaG ?? null,
       qtd_com_agua: dep.qtdComAgua ?? 0,
       eliminado: dep.eliminado ?? false,
       vedado: dep.vedado ?? false,

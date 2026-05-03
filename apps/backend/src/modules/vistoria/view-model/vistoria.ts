@@ -18,6 +18,7 @@ export class VistoriaViewModel {
       qtdComFocos: dep.qtdComFocos,
       qtdEliminados: dep.qtdEliminados,
       usouLarvicida: dep.usouLarvicida,
+      qtdLarvicidaG: dep.qtdLarvicidaG,
       comLarva: dep.comLarva,
       eliminado: dep.eliminado,
       vedado: dep.vedado,

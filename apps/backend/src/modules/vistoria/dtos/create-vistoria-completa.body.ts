@@ -11,6 +11,7 @@ const depositoSchema = z.object({
   qtdComFocos: z.coerce.number().int().min(0).optional().describe('Quantidade com focos'),
   qtdEliminados: z.coerce.number().int().min(0).default(0).describe('Quantidade eliminada'),
   usouLarvicida: z.boolean().optional().describe('Usou larvicida'),
+  qtdLarvicidaG: z.coerce.number().min(0).optional().nullable().describe('Quantidade de larvicida (g)'),
   comLarva: z.boolean().optional().describe('Presença de larvas (atalho mobile)'),
   eliminado: z.boolean().optional().describe('Depósito eliminado'),
   tratado: z.boolean().optional().describe('Depósito tratado (atalho mobile)'),

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import 'leaflet/dist/leaflet.css';
 import L from '@/lib/leaflet';
@@ -6,10 +6,10 @@ import { MapContainer, TileLayer, CircleMarker, Popup, useMap, useMapEvents } fr
 import { LatLngBounds } from 'leaflet';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip as ChartTooltip,
-  ResponsiveContainer, CartesianGrid,
+  ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell,
 } from 'recharts';
 import {
-  AlertTriangle, Map, BarChart2, ShieldAlert, Bug,
+  AlertTriangle, Map, ShieldAlert,
   Activity, RefreshCw, Filter, X, Layers, Users,
   MapPin, CheckCircle, Clock, SlidersHorizontal, ChevronDown,
 } from 'lucide-react';
@@ -22,6 +22,7 @@ import type {
   DashboardTerritorialParams,
   DashboardTerritorialPontoMapa,
   DashboardTerritorialFatoresRisco,
+  DashboardTerritorialDepositosPncd,
 } from '@/types/dashboardTerritorial';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -71,6 +72,8 @@ const RANK_BADGE_CLS = [
   'bg-slate-200 text-slate-600',
   'bg-amber-700 text-white',
 ] as const;
+
+const DEPOSITO_COLORS = ['#2563eb', '#f59e0b', '#22c55e', '#8b5cf6'];
 
 type VulnKey = 'idosoIncapaz' | 'menorIncapaz' | 'mobilidadeReduzida' | 'acamado';
 const VULN_KEYS: VulnKey[] = ['idosoIncapaz', 'menorIncapaz', 'mobilidadeReduzida', 'acamado'];
@@ -232,6 +235,109 @@ function PncdTooltip({
           {entry.name}: <span className="font-semibold text-slate-800">{entry.value}</span>
         </p>
       ))}
+    </div>
+  );
+}
+
+function SectionCard({
+  title,
+  children,
+  className,
+}: {
+  title: string;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <Card className={cn('bg-white rounded-2xl border border-slate-200 shadow-sm', className)}>
+      <CardHeader className="pb-0 px-5 pt-5">
+        <CardTitle className="text-sm font-semibold text-slate-800">{title}</CardTitle>
+      </CardHeader>
+      <CardContent className="px-5 pb-5 pt-3">{children}</CardContent>
+    </Card>
+  );
+}
+
+function DepositosDonut({
+  depositos,
+  loading,
+}: {
+  depositos?: DashboardTerritorialDepositosPncd;
+  loading?: boolean;
+}) {
+  const rows = useMemo(() => {
+    if (!depositos) return [];
+    return [
+      { name: 'Inspecionados', value: depositos.totais.inspecionados },
+      { name: 'Com foco', value: depositos.totais.comFoco },
+      { name: 'Eliminados', value: depositos.totais.eliminados },
+      { name: 'Com água', value: depositos.totais.comAgua },
+    ].filter((item) => item.value > 0);
+  }, [depositos]);
+
+  const total = rows.reduce((sum, item) => sum + item.value, 0);
+
+  if (loading) return <Skeleton className="h-44 w-full rounded-xl" />;
+  if (!total) return <p className="text-sm text-slate-400 py-6 text-center">Sem dados PNCD no período.</p>;
+
+  return (
+    <div className="grid grid-cols-[120px_1fr] gap-4 items-center min-h-[150px]">
+      <div className="relative h-[120px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie data={rows} dataKey="value" nameKey="name" innerRadius={38} outerRadius={56} paddingAngle={3}>
+              {rows.map((entry, index) => (
+                <Cell key={entry.name} fill={DEPOSITO_COLORS[index % DEPOSITO_COLORS.length]} />
+              ))}
+            </Pie>
+            <ChartTooltip
+              formatter={(value, name) => [value, name]}
+              contentStyle={{ borderRadius: 12, borderColor: '#e2e8f0', fontSize: 12 }}
+            />
+          </PieChart>
+        </ResponsiveContainer>
+        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+          <span className="text-lg font-bold text-slate-900 tabular-nums">{depositos?.totais.inspecionados ?? 0}</span>
+          <span className="text-[10px] text-slate-400">inspec.</span>
+        </div>
+      </div>
+      <div className="space-y-2">
+        {rows.map((item, index) => (
+          <div key={item.name} className="flex items-center justify-between gap-3 text-xs">
+            <span className="flex items-center gap-2 text-slate-500">
+              <span className="h-2 w-2 rounded-full" style={{ background: DEPOSITO_COLORS[index % DEPOSITO_COLORS.length] }} />
+              {item.name}
+            </span>
+            <span className="font-semibold text-slate-700 tabular-nums">{item.value}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ResolutionGauge({ value, loading }: { value: number | null | undefined; loading?: boolean }) {
+  if (loading) return <Skeleton className="h-40 w-full rounded-xl" />;
+  if (value == null) return <p className="text-sm text-slate-400 py-6 text-center">Sem taxa calculada.</p>;
+
+  const safeValue = Math.max(0, Math.min(100, value));
+  return (
+    <div className="flex items-center gap-5">
+      <div
+        className="relative h-28 w-28 rounded-full"
+        style={{ background: `conic-gradient(#22c55e 0 ${safeValue}%, #fee2e2 ${safeValue}% 100%)` }}
+      >
+        <div className="absolute inset-3 rounded-full bg-white flex flex-col items-center justify-center shadow-inner">
+          <span className="text-3xl font-bold text-slate-900 tabular-nums">{safeValue.toFixed(0)}%</span>
+          <span className="text-[10px] text-slate-400">resolução</span>
+        </div>
+      </div>
+      <div className="space-y-2 text-sm">
+        <p className="font-semibold text-slate-800">Taxa de resolução</p>
+        <p className="text-xs text-slate-500 leading-relaxed">
+          Indicador calculado a partir dos focos resolvidos existentes no período selecionado.
+        </p>
+      </div>
     </div>
   );
 }
@@ -480,15 +586,15 @@ export default function GestorDashboardTerritorial() {
           />
         </div>
 
-        {/* ── C) Grid principal: mapa (8) + lateral (4) ── */}
-        <div className="grid grid-cols-12 gap-6">
+        {/* ── C) Grid principal inspirado no modelo: mapa amplo + cards laterais ── */}
+        <div className="grid grid-cols-12 gap-5">
 
           {/* Mapa */}
-          <Card className="col-span-12 lg:col-span-8 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <Card className="col-span-12 xl:col-span-7 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             <CardHeader className="pb-0 px-5 pt-4">
               <div className="flex items-center gap-2">
                 <Map className="h-4 w-4 text-slate-400 shrink-0" />
-                <CardTitle className="text-sm font-semibold text-slate-700 flex-1">Mapa operacional</CardTitle>
+                <CardTitle className="text-sm font-semibold text-slate-700 flex-1">Mapa operacional de risco</CardTitle>
                 {data && (
                   <span className="text-xs text-slate-400 tabular-nums">
                     {data.meta.totalPontosMapa} pontos
@@ -508,14 +614,14 @@ export default function GestorDashboardTerritorial() {
 
             <CardContent className="p-0 mt-3">
               {isLoading ? (
-                <Skeleton className="h-[520px] w-full rounded-none" />
+                <Skeleton className="h-[500px] w-full rounded-none" />
               ) : !data?.pontosMapa.length ? (
-                <div className="h-[520px] flex flex-col items-center justify-center gap-3 text-slate-400">
+                <div className="h-[500px] flex flex-col items-center justify-center gap-3 text-slate-400">
                   <Map className="h-12 w-12 opacity-10" />
                   <p className="text-sm">Sem pontos com coordenadas para o filtro selecionado.</p>
                 </div>
               ) : (
-                <div className="relative" style={{ height: '520px' }}>
+                <div className="relative" style={{ height: '500px' }}>
                   <MapContainer
                     center={mapCenter}
                     zoom={12}
@@ -589,15 +695,15 @@ export default function GestorDashboardTerritorial() {
             </CardContent>
           </Card>
 
-          {/* Coluna lateral */}
-          <div className="col-span-12 lg:col-span-4 flex flex-col gap-5">
+          {/* Painéis laterais */}
+          <div className="col-span-12 xl:col-span-5 grid grid-cols-1 md:grid-cols-2 gap-5">
 
             {/* Ranking de bairros */}
-            <Card className="bg-white rounded-2xl border border-slate-200 shadow-sm flex-1">
+            <Card className="bg-white rounded-2xl border border-slate-200 shadow-sm">
               <CardHeader className="pb-0 px-5 pt-5">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-sm font-semibold text-slate-800">Ranking de bairros</CardTitle>
-                  <span className="text-xs text-slate-400 cursor-default">ver todos</span>
+                  <span className="text-xs text-slate-400 cursor-default">focos ativos</span>
                 </div>
               </CardHeader>
               <CardContent className="px-5 pb-5 pt-3">
@@ -644,15 +750,12 @@ export default function GestorDashboardTerritorial() {
               </CardContent>
             </Card>
 
-            {/* PNCD compacto */}
-            <Card className="bg-white rounded-2xl border border-slate-200 shadow-sm flex-1">
-              <CardHeader className="pb-0 px-5 pt-5">
-                <CardTitle className="text-sm font-semibold text-slate-800 flex items-center gap-2">
-                  <Bug className="h-4 w-4 text-slate-400" />
-                  Depósitos PNCD por tipo
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="px-5 pb-5 pt-3">
+            <SectionCard title="PNCD executado">
+              <DepositosDonut depositos={data?.depositosPncd} loading={isLoading} />
+            </SectionCard>
+
+            {/* PNCD compacto por tipo */}
+            <SectionCard title="Depósitos PNCD por tipo">
                 {isLoading ? (
                   <Skeleton className="h-40 w-full rounded-xl" />
                 ) : !pncdChartData.length ? (
@@ -702,8 +805,28 @@ export default function GestorDashboardTerritorial() {
                     )}
                   </>
                 )}
-              </CardContent>
-            </Card>
+            </SectionCard>
+
+            {/* Fatores de risco */}
+            <SectionCard title="Fatores de risco predominantes">
+              {isLoading ? (
+                <Skeleton className="h-24 w-full rounded-xl" />
+              ) : !fatoresAtivos.length ? (
+                <p className="text-sm text-slate-400 py-4 text-center">Sem fatores registrados.</p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {fatoresAtivos.map(([key, count]) => (
+                    <span
+                      key={key}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs bg-orange-50 border border-orange-200 text-orange-800"
+                    >
+                      <span className="font-bold tabular-nums">{count}</span>
+                      <span className="text-orange-600">{FATOR_LABEL[key]}</span>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </SectionCard>
           </div>
         </div>
 
@@ -781,42 +904,12 @@ export default function GestorDashboardTerritorial() {
             </CardContent>
           </Card>
 
-          {/* Coluna inferior direita: fatores + vulnerabilidade */}
+          {/* Coluna inferior direita: vulnerabilidade + resolução */}
           <div className="col-span-12 lg:col-span-4 flex flex-col gap-5">
 
-            {/* Fatores de risco */}
-            <Card className="bg-white rounded-2xl border border-slate-200 shadow-sm flex-1">
-              <CardHeader className="pb-0 px-5 pt-5">
-                <CardTitle className="text-sm font-semibold text-slate-800 flex items-center gap-2">
-                  <ShieldAlert className="h-4 w-4 text-slate-400" />
-                  Fatores de risco
-                  {fatoresAtivos.length > 0 && (
-                    <span className="ml-auto text-xs font-normal text-slate-400">
-                      {fatoresAtivos.length} registrado{fatoresAtivos.length !== 1 ? 's' : ''}
-                    </span>
-                  )}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="px-5 pb-5 pt-3">
-                {isLoading ? (
-                  <Skeleton className="h-24 w-full rounded-xl" />
-                ) : !fatoresAtivos.length ? (
-                  <p className="text-sm text-slate-400 py-4 text-center">Sem fatores registrados.</p>
-                ) : (
-                  <div className="flex flex-wrap gap-2">
-                    {fatoresAtivos.map(([key, count]) => (
-                      <span
-                        key={key}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs bg-orange-50 border border-orange-200 text-orange-800"
-                      >
-                        <span className="font-bold tabular-nums">{count}</span>
-                        <span className="text-orange-600">{FATOR_LABEL[key]}</span>
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <SectionCard title="Taxa de resolução">
+              <ResolutionGauge value={data?.kpis.taxaResolucaoPct} loading={isLoading} />
+            </SectionCard>
 
             {/* Grupos vulneráveis */}
             <Card className="bg-white rounded-2xl border border-slate-200 shadow-sm flex-1">
