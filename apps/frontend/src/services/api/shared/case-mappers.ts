@@ -10,7 +10,7 @@ export function deepToCamel(obj: unknown): unknown {
   if (obj !== null && typeof obj === 'object') {
     const result: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
-      const key = k.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
+      const key = k.replace(/_([a-z0-9])/g, (_, c: string) => c.toUpperCase());
       result[key] = deepToCamel(v);
     }
     return result;

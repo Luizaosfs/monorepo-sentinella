@@ -578,12 +578,13 @@ export default function AgenteFormularioVistoria() {
             tratado: trat?.usou_larvicida ?? false,
           };
         }),
-        sintomas: algumSintoma ? [
-          etapa2.febre && { sintoma: 'febre' },
-          etapa2.manchas_vermelhas && { sintoma: 'manchas_vermelhas' },
-          etapa2.dor_articulacoes && { sintoma: 'dor_articulacoes' },
-          etapa2.dor_cabeca && { sintoma: 'dor_cabeca' },
-        ].filter(Boolean) : undefined,
+        sintomas: algumSintoma ? [{
+          febre: etapa2.febre,
+          manchas_vermelhas: etapa2.manchas_vermelhas,
+          dor_articulacoes: etapa2.dor_articulacoes,
+          dor_cabeca: etapa2.dor_cabeca,
+          moradores_sintomas_qtd: etapa2.moradores_sintomas_qtd,
+        }] : undefined,
         riscos: algumRisco ? [
           etapa5.menor_incapaz && { tipo_risco: 'menor_incapaz' },
           etapa5.idoso_incapaz && { tipo_risco: 'idoso_incapaz' },

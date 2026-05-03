@@ -20,17 +20,31 @@ const depositoSchema = z.object({
 });
 
 const sintomaSchema = z.object({
-  sintoma: z
-    .string({ required_error: 'Sintoma obrigatório' })
-    .describe('Sintoma observado'),
-  observacao: z.string().optional().describe('Observações'),
+  febre:                z.boolean().default(false),
+  manchasVermelhas:     z.boolean().default(false),
+  dorArticulacoes:      z.boolean().default(false),
+  dorCabeca:            z.boolean().default(false),
+  nausea:               z.boolean().default(false),
+  moradoresSintomasQtd: z.number().int().default(0),
 });
 
 const riscoSchema = z.object({
-  tipoRisco: z
-    .string({ required_error: 'Tipo de risco obrigatório' })
-    .describe('Tipo de risco identificado'),
-  descricao: z.string().optional().describe('Descrição do risco'),
+  menorIncapaz:            z.boolean().default(false),
+  idosoIncapaz:            z.boolean().default(false),
+  mobilidadeReduzida:      z.boolean().default(false),
+  acamado:                 z.boolean().default(false),
+  depQuimico:              z.boolean().default(false),
+  riscoAlimentar:          z.boolean().default(false),
+  riscoMoradia:            z.boolean().default(false),
+  criadouroAnimais:        z.boolean().default(false),
+  lixo:                    z.boolean().default(false),
+  residuosOrganicos:       z.boolean().default(false),
+  residuosQuimicos:        z.boolean().default(false),
+  residuosMedicos:         z.boolean().default(false),
+  acumuloMaterialOrganico: z.boolean().default(false),
+  animaisSinaisLv:         z.boolean().default(false),
+  caixaDestampada:         z.boolean().default(false),
+  outroRiscoVetorial:      z.string().optional(),
 });
 
 const calhaSchema = z.object({
