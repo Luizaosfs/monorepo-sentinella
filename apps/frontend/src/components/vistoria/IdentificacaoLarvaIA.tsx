@@ -29,20 +29,21 @@ export function IdentificacaoLarvaIA({ vistoriaId, depositoTipo, onResult }: Pro
     setState('loading');
     setErrorMsg('');
     try {
-      // Convert to base64
       const base64 = await fileToBase64(file);
 
-      const fnData = await api.identifyLarva.invoke({
-        image_base64: base64,
-        deposito_tipo: depositoTipo,
-        vistoria_id: vistoriaId ?? null,
-      });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const raw = await api.identifyLarva.invoke({
+        imageBase64: base64,
+        contentType: file.type || 'image/jpeg',
+        depositoTipo: depositoTipo,
+      } as never) as any;
 
+      // Backend retorna { classificacao, confianca, descricao }
       const res: LarvaIAResult = {
-        identified: fnData.identified,
-        confidence: fnData.confidence,
-        classe: fnData.classe ?? 'larva_aedes',
-        imageUrl: fnData.image_url ?? '',
+        identified: raw.classificacao === 'positivo',
+        confidence: raw.confianca ?? 0,
+        classe: raw.classificacao ?? 'inconclusivo',
+        imageUrl: '',
       };
 
       setResult(res);
