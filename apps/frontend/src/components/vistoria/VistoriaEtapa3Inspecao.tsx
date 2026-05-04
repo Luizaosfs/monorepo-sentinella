@@ -495,8 +495,8 @@ function DepositoAccordion({
             </div>
           </div>
 
-          {/* Foto Antes + IA — shown whenever any deposit was inspected */}
-          {dep.qtd_inspecionados > 0 && (
+          {/* Foto Antes + IA — shown when deposit has larvae */}
+          {dep.qtd_com_focos > 0 && (
             <div className="space-y-2">
               <FotoDepositoInput
                 tipoImagem="antes"
@@ -627,7 +627,7 @@ export function VistoriaEtapa3Inspecao({ data, onChange, onNext, vistoriaId }: P
   function handleNext() {
     const errors: string[] = [];
     for (const dep of data.depositos) {
-      if (dep.qtd_inspecionados > 0 && !dep.foto_antes) {
+      if (dep.qtd_com_focos > 0 && !dep.foto_antes) {
         errors.push(`${dep.tipo} — ${DEPOSITO_LABELS[dep.tipo]}: foto antes obrigatória`);
       }
       if ((dep.eliminado || dep.vedado) && !dep.foto_depois) {
