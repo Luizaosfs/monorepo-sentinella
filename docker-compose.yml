@@ -28,7 +28,7 @@
         PORT: 3000
         DATABASE_URL: ${DATABASE_URL}
         SECRET_JWT: ${SECRET_JWT}
-        CLIENT_URL: "https://sentinellamap.com.br/api"
+        CLIENT_URL: "https://sentinellamap.com.br"
         CANAL_CIDADAO_IP_SALT: ${CANAL_CIDADAO_IP_SALT}
         CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
         CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
