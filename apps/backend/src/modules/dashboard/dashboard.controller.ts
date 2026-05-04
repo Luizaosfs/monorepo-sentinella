@@ -30,6 +30,7 @@ import {
 } from './dtos/create-relatorio.body';
 import { CalcularLiraa } from './use-cases/calcular-liraa';
 import { GetCentralKpis } from './use-cases/get-central-kpis';
+import { GetRegioesSemCobertura } from './use-cases/get-regioes-sem-cobertura';
 import { ListImoveisParaHoje } from './use-cases/list-imoveis-para-hoje';
 import { ComparativoAgentes } from './use-cases/comparativo-agentes';
 import { ConsumoLarvicida } from './use-cases/consumo-larvicida';
@@ -76,6 +77,7 @@ export class DashboardController {
     private alertsFilter: FilterAlerts,
     private alertResolve: ResolverAlert,
     private getCentralKpisUc: GetCentralKpis,
+    private getRegioesSemCoberturaUc: GetRegioesSemCobertura,
     private listImoveisParaHojeUc: ListImoveisParaHoje,
     private calcularLiraaUc: CalcularLiraa,
     private comparativoAgentesUc: ComparativoAgentes,
@@ -98,6 +100,15 @@ export class DashboardController {
     const clienteId = requireTenantId(getAccessScope(this.req));
     const { kpis } = await this.getCentralKpisUc.execute(clienteId);
     return kpis;
+  }
+
+  @Get('regioes-sem-cobertura')
+  @Roles('admin', 'supervisor')
+  @ApiOperation({ summary: 'Regiões sem nenhuma vistoria registrada hoje' })
+  async regioesSemCobertura() {
+    const clienteId = requireTenantId(getAccessScope(this.req));
+    const { regioes } = await this.getRegioesSemCoberturaUc.execute(clienteId);
+    return regioes;
   }
 
   @Get('imoveis-para-hoje')

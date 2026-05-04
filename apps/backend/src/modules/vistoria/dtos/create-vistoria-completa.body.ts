@@ -2,6 +2,22 @@ import { coerceOptionalNumber } from '@shared/dtos/zod-coercion';
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 
+export const depositoEvidenciaSchema = z.object({
+  tipoImagem: z.enum(['antes', 'depois'], {
+    required_error: 'Tipo de imagem obrigatório',
+    invalid_type_error: 'tipo_imagem deve ser "antes" ou "depois"',
+  }),
+  urlOriginal: z.string().url('URL da imagem deve ser uma URL válida'),
+  urlThumbnail: z.string().url().optional(),
+  publicId: z.string().min(1, 'public_id obrigatório'),
+  tamanhoBytes: z.number().int().positive().optional(),
+  mimeType: z.string().optional(),
+  capturadaEm: z.coerce.date().optional(),
+  statusUpload: z.enum(['pendente', 'enviado', 'erro']).default('enviado'),
+});
+
+export type DepositoEvidenciaInput = z.infer<typeof depositoEvidenciaSchema>;
+
 const depositoSchema = z.object({
   tipoDeposito: z
     .string({ required_error: 'Tipo de depósito obrigatório' })
@@ -16,6 +32,10 @@ const depositoSchema = z.object({
   eliminado: z.boolean().optional().describe('Depósito eliminado'),
   tratado: z.boolean().optional().describe('Depósito tratado (atalho mobile)'),
   vedado: z.boolean().default(false).describe('Depósito vedado'),
+  evidencias: z
+    .array(depositoEvidenciaSchema)
+    .optional()
+    .describe('Evidências fotográficas do depósito (antes/depois)'),
 });
 
 const sintomaSchema = z.object({

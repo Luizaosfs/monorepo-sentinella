@@ -82,6 +82,11 @@ export class FocoRiscoViewModel {
           ? (TRANSICOES_VALIDAS[foco.status] ?? [])
           : undefined,
       ...(sla ? { sla } : {}),
+      // Campos flat para listagens (sla_operacional via attachSlaData no repositório).
+      // Quando sla snapshot completo está disponível (GET /:id), sobrepõe com valores calculados.
+      sla_status: sla ? sla.statusSla : (foco.slaStatus ?? 'sem_sla'),
+      sla_prazo_em: sla ? (sla.operacional?.prazoFinal ?? null) : (foco.slaPrazoEm ?? null),
+      sla_violado: sla ? (sla.operacional?.violado ?? null) : (foco.slaViolado ?? null),
     };
   }
 }

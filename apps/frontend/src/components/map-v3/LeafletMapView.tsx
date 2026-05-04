@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import L from "leaflet";
 import "@/lib/leaflet";
-import { MapContainer, TileLayer, useMap } from "react-leaflet";
+import { MapContainer, useMap } from "react-leaflet";
 import { LevantamentoItem, FocoRiscoAtivo } from "@/types/database";
 import { MapClusterLayer } from "./MapClusterLayer";
 import { MapPopupLayer } from "./MapPopupLayer";
@@ -47,6 +48,31 @@ function MapFitter({ items, focos = [], fallbackCenter }: { items: LevantamentoI
   return null;
 }
 
+function TileLayerManager({ tileType }: { tileType: TileLayerType }) {
+  const map = useMap();
+  const layerRef = useRef<L.TileLayer | null>(null);
+
+  useEffect(() => {
+    const cfg = TILE_LAYERS[tileType];
+    if (layerRef.current) {
+      map.removeLayer(layerRef.current);
+    }
+    layerRef.current = L.tileLayer(cfg.url, {
+      attribution: cfg.attribution,
+      maxZoom: cfg.maxZoom,
+      subdomains: cfg.subdomains ?? ['a', 'b', 'c'],
+    }).addTo(map);
+    return () => {
+      if (layerRef.current) {
+        map.removeLayer(layerRef.current);
+        layerRef.current = null;
+      }
+    };
+  }, [tileType, map]);
+
+  return null;
+}
+
 const TILE_KEYS: TileLayerType[] = ["street", "satellite", "hybrid", "terrain", "dark"];
 
 export function LeafletMapView({
@@ -68,7 +94,6 @@ export function LeafletMapView({
   const isDark = theme === "dark";
   const [tileType, setTileType] = useState<TileLayerType>(() => (isDark ? "dark" : "street"));
 
-  const tileConfig = TILE_LAYERS[tileType];
   const mapBg = isDark ? "#0f172a" : "#f1f5f9";
 
   const popupItem = popupOpenItemId != null ? (items.find((i) => i.id === popupOpenItemId) ?? null) : null;
@@ -97,12 +122,7 @@ export function LeafletMapView({
       </div>
 
       <MapContainer center={center} zoom={12} style={{ width: "100%", height: "100%" }} zoomControl={false}>
-        <TileLayer
-          key={tileType}
-          url={tileConfig.url}
-          attribution={tileConfig.attribution}
-          maxZoom={tileConfig.maxZoom}
-        />
+        <TileLayerManager tileType={tileType} />
 
         {!heatmapEnabled && (
           <MapClusterLayer

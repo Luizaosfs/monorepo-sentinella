@@ -126,10 +126,17 @@ export abstract class DashboardReadRepository {
 
   abstract listCiclosDisponiveis(clienteId: string): Promise<CicloDisponivel[]>;
 
+  abstract getRegioesSemCobertura(clienteId: string): Promise<RegiaoSemCobertura[]>;
+
   abstract listLiraaByQuarteirao(
     clienteId: string,
     ciclo?: number,
   ): Promise<LiraaQuarteiraoRow[]>;
+}
+
+export interface RegiaoSemCobertura {
+  id: string;
+  regiao: string;
 }
 
 export interface LiraaQuarteiraoRow {

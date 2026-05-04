@@ -7,7 +7,14 @@ interface TileConfig {
   url: string;
   attribution: string;
   maxZoom: number;
+  subdomains?: string[];
 }
+
+/** Mesmos endpoints públicos do proxy `/tiles/*` no backend — URLs absolutas para funcionar no app mobile (Capacitor) quando `VITE_API_URL` está vazio ou o origin não é a API. */
+const ESRI_WORLD_IMAGERY =
+  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+const ESRI_WORLD_TOPO =
+  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}';
 
 export const TILE_LAYERS: Record<TileLayerType, TileConfig> = {
   street: {
@@ -18,25 +25,25 @@ export const TILE_LAYERS: Record<TileLayerType, TileConfig> = {
   },
   satellite: {
     label: 'Satélite',
-    url: 'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
-    attribution: '&copy; Google',
-    maxZoom: 20,
+    url: ESRI_WORLD_IMAGERY,
+    attribution: '&copy; Esri, Maxar, Earthstar Geographics',
+    maxZoom: 19,
   },
   hybrid: {
     label: 'Híbrido',
-    url: 'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
-    attribution: '&copy; Google',
-    maxZoom: 20,
+    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+    attribution: '&copy; CartoDB',
+    maxZoom: 19,
   },
   terrain: {
     label: 'Relevo',
-    url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
-    attribution: '&copy; OpenTopoMap',
-    maxZoom: 17,
+    url: ESRI_WORLD_TOPO,
+    attribution: '&copy; Esri, HERE, Garmin, USGS',
+    maxZoom: 18,
   },
   dark: {
     label: 'Escuro',
-    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
     attribution: '&copy; CartoDB',
     maxZoom: 19,
   },
@@ -55,6 +62,7 @@ export function addTileLayerControl(
   let currentTile = L.tileLayer(config.url, {
     attribution: config.attribution,
     maxZoom: config.maxZoom,
+    ...(config.subdomains ? { subdomains: config.subdomains } : {}),
   }).addTo(map);
 
   let currentType = initialType;
@@ -101,6 +109,7 @@ export function addTileLayerControl(
       currentTile = L.tileLayer(cfg.url, {
         attribution: cfg.attribution,
         maxZoom: cfg.maxZoom,
+        ...(cfg.subdomains ? { subdomains: cfg.subdomains } : {}),
       }).addTo(map);
       currentType = type;
       render();
@@ -118,6 +127,7 @@ export function addTileLayerControl(
     currentTile = L.tileLayer(cfg.url, {
       attribution: cfg.attribution,
       maxZoom: cfg.maxZoom,
+      ...(cfg.subdomains ? { subdomains: cfg.subdomains } : {}),
     }).addTo(map);
     currentType = type;
   };

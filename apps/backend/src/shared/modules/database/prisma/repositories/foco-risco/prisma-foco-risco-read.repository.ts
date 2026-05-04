@@ -168,7 +168,51 @@ export class PrismaFocoRiscoReadRepository implements FocoRiscoReadRepository {
   ): Promise<FocoRisco[]> {
     const withImages = await this.attachImageUrls(focos, rows);
     await this.attachUltimaVistoriaEm(withImages);
+    await this.attachSlaData(withImages);
     return withImages;
+  }
+
+  private async attachSlaData(focos: FocoRisco[]): Promise<void> {
+    if (!focos.length) return;
+    const ids = focos.map((f) => f.id).filter((id): id is string => !!id);
+    if (!ids.length) return;
+
+    type SlaRow = { foco_risco_id: string; prazo_final: Date; violado: boolean; inicio: Date };
+    const rows = await this.prisma.client.$queryRaw<SlaRow[]>(Prisma.sql`
+      SELECT DISTINCT ON (foco_risco_id)
+        foco_risco_id,
+        prazo_final,
+        violado,
+        inicio
+      FROM sla_operacional
+      WHERE foco_risco_id IN (${Prisma.join(ids)})
+        AND deleted_at IS NULL
+      ORDER BY foco_risco_id, created_at DESC
+    `);
+
+    const now = Date.now();
+    const map = new Map(rows.map((r) => [r.foco_risco_id, r]));
+
+    for (const foco of focos) {
+      const sla = foco.id ? map.get(foco.id) : undefined;
+      if (!sla) {
+        foco.slaStatus = 'sem_sla';
+        foco.slaPrazoEm = null;
+        foco.slaViolado = null;
+        continue;
+      }
+      foco.slaPrazoEm = sla.prazo_final.toISOString();
+      foco.slaViolado = sla.violado;
+      if (sla.violado || now > sla.prazo_final.getTime()) {
+        foco.slaStatus = 'vencido';
+      } else {
+        const total = sla.prazo_final.getTime() - sla.inicio.getTime();
+        const pct = total > 0 ? ((now - sla.inicio.getTime()) / total) * 100 : 0;
+        if (pct >= 90) foco.slaStatus = 'critico';
+        else if (pct >= 70) foco.slaStatus = 'atencao';
+        else foco.slaStatus = 'ok';
+      }
+    }
   }
 
   private async attachUltimaVistoriaEm(focos: FocoRisco[]): Promise<void> {

@@ -49,6 +49,10 @@ export const central = {
     const raw = await http.get(`/dashboard/imoveis-para-hoje${qs({ limit })}`);
     return deepToSnake(raw) as Ret<typeof _sb.central.listImoveisParaHoje>;
   },
+  getRegioesSemCobertura: async (): Promise<{ id: string; regiao: string }[]> => {
+    const raw = await http.get('/dashboard/regioes-sem-cobertura');
+    return (Array.isArray(raw) ? raw : []) as { id: string; regiao: string }[];
+  },
 };
 
 export const executivo = {

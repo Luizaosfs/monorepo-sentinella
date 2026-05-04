@@ -15,6 +15,7 @@ import {
   ImovelParaHoje,
   LiraaQuarteiraoRow,
   LiraaResult,
+  RegiaoSemCobertura,
   ResumoAgenteResult,
   ResumoRegionalRow,
   ScoreSurtoRow,
@@ -609,6 +610,29 @@ export class PrismaDashboardReadRepository implements DashboardReadRepository {
       prioridadeFocoAtivo: r.prioridade_foco_ativo,
       focosAtivosCount: Number(r.focos_ativos_count),
     }));
+  }
+
+  async getRegioesSemCobertura(clienteId: string): Promise<RegiaoSemCobertura[]> {
+    type Row = { id: string; regiao: string };
+    const rows = await this.prisma.client.$queryRaw<Row[]>`
+      SELECT r.id, r.nome AS regiao
+      FROM regioes r
+      WHERE r.cliente_id = ${clienteId}::uuid
+        AND r.deleted_at IS NULL
+        AND r.ativo = true
+        AND r.id NOT IN (
+          SELECT DISTINCT i.regiao_id
+          FROM vistorias v
+          JOIN imoveis i ON i.id = v.imovel_id
+          WHERE v.cliente_id = ${clienteId}::uuid
+            AND v.deleted_at IS NULL
+            AND v.created_at >= CURRENT_DATE
+            AND i.regiao_id IS NOT NULL
+            AND i.deleted_at IS NULL
+        )
+      ORDER BY r.nome ASC
+    `;
+    return rows;
   }
 
   async listCiclosDisponiveis(clienteId: string): Promise<CicloDisponivel[]> {

@@ -887,7 +887,7 @@ export default function GestorFocos() {
             )}
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full table-fixed text-sm">
               <thead className="bg-muted/50 border-b border-border/60 sticky top-0 z-10">
                 <tr>
                   <th className="px-3 py-3 w-10">
@@ -899,10 +899,11 @@ export default function GestorFocos() {
                           : <Square className="w-4 h-4 text-muted-foreground" />}
                     </button>
                   </th>
-                  <th className="px-2 py-3 w-14 text-left text-xs font-bold text-muted-foreground uppercase tracking-wider">Img</th>
+                  <th className="px-2 py-3 w-12 text-left text-xs font-bold text-muted-foreground uppercase tracking-wider">Img</th>
                   <ListColumnHeader<TableSortKey>
                     label="Última vistoria"
                     sortKey="ultimaVistoria"
+                    className="w-28"
                     activeSort={sortKey}
                     sortDir={sortDir}
                     onSort={handleHeaderSort}
@@ -921,6 +922,7 @@ export default function GestorFocos() {
                   <ListColumnHeader<TableSortKey>
                     label="Status"
                     sortKey="status"
+                    className="w-32"
                     activeSort={sortKey}
                     sortDir={sortDir}
                     onSort={handleHeaderSort}
@@ -943,6 +945,7 @@ export default function GestorFocos() {
                     label="Prior."
                     sortKey="prioridade"
                     narrow
+                    className="w-14"
                     activeSort={sortKey}
                     sortDir={sortDir}
                     onSort={handleHeaderSort}
@@ -964,6 +967,7 @@ export default function GestorFocos() {
                   <ListColumnHeader<TableSortKey>
                     label="SLA"
                     sortKey="sla"
+                    className="w-28"
                     activeSort={sortKey}
                     sortDir={sortDir}
                     onSort={handleHeaderSort}
@@ -987,6 +991,7 @@ export default function GestorFocos() {
                     label="Cód."
                     sortKey="codigo"
                     narrow
+                    className="w-28"
                     activeSort={sortKey}
                     sortDir={sortDir}
                     onSort={handleHeaderSort}
@@ -1029,6 +1034,7 @@ export default function GestorFocos() {
                   <ListColumnHeader<TableSortKey>
                     label="Origem"
                     sortKey="origem"
+                    className="w-16"
                     activeSort={sortKey}
                     sortDir={sortDir}
                     onSort={handleHeaderSort}
@@ -1047,7 +1053,7 @@ export default function GestorFocos() {
                       </select>
                     )}
                   />
-                  <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Ações</th>
+                  <th className="text-left px-2 py-3 w-32 text-xs font-bold text-muted-foreground uppercase tracking-wider">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/40">
@@ -1096,7 +1102,7 @@ export default function GestorFocos() {
                           </div>
                         )}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-2 py-3">
                         <div className="flex flex-col gap-0.5">
                           <span className="text-xs font-semibold text-foreground tabular-nums">
                             {formatDataCurta(foco.ultima_vistoria_em)}
@@ -1106,7 +1112,7 @@ export default function GestorFocos() {
                           </span>
                         </div>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-2 py-3">
                         <div className="flex flex-col gap-0.5">
                           <StatusBadge status={foco.status as FocoRiscoStatus} />
                           <span className="text-[10px] text-muted-foreground/70">
@@ -1117,7 +1123,7 @@ export default function GestorFocos() {
                       <td className="px-3 py-3">
                         <PrioridadeBadge prioridade={foco.prioridade} />
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-2 py-3">
                         <div className="flex flex-col gap-1">
                           <div className="flex items-center gap-1">
                             <SlaBadge slaStatus={foco.sla_status} prazoEm={foco.sla_prazo_em} />
@@ -1145,12 +1151,12 @@ export default function GestorFocos() {
                           )}
                         </div>
                       </td>
-                      <td className="px-3 py-3 max-w-[120px]">
-                        <span className="font-mono text-[11px] text-muted-foreground tracking-wide break-all">
+                      <td className="px-2 py-3">
+                        <span className="font-mono text-[11px] text-muted-foreground tracking-wide whitespace-nowrap">
                           {foco.codigo_foco ?? '—'}
                         </span>
                       </td>
-                      <td className="px-4 py-3 max-w-[200px]">
+                      <td className="px-2 py-3">
                         <div className="truncate font-medium text-xs">
                           {foco.logradouro || foco.endereco_normalizado || '—'}
                         </div>
@@ -1160,7 +1166,7 @@ export default function GestorFocos() {
                           </div>
                         )}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-2 py-3">
                         <div className="flex items-center gap-1 flex-wrap">
                           {(() => {
                             const cfg: Record<string, { label: string; cls: string }> = {
@@ -1186,7 +1192,7 @@ export default function GestorFocos() {
                           )}
                         </div>
                       </td>
-                      <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                      <td className="px-2 py-3" onClick={(e) => e.stopPropagation()}>
                         <div className="flex gap-1 flex-wrap">
                           {transicoes.map((t) => {
                             const bloqueadoPorDados =

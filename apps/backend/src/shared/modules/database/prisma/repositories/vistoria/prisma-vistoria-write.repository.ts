@@ -129,6 +129,26 @@ export class PrismaVistoriaWriteRepository implements VistoriaWriteRepository {
         });
       }
 
+      const allEvidencias = (subItems.depositos ?? []).flatMap((d) =>
+        (d.evidencias ?? []).map((e) => ({
+          cliente_id: clienteId,
+          vistoria_id: raw.id,
+          tipo_deposito: d.tipoDeposito,
+          tipo_imagem: e.tipoImagem,
+          url_original: e.urlOriginal,
+          url_thumbnail: e.urlThumbnail ?? null,
+          public_id: e.publicId,
+          tamanho_bytes: e.tamanhoBytes ?? null,
+          mime_type: e.mimeType ?? null,
+          capturada_em: e.capturadaEm ?? null,
+          status_upload: e.statusUpload ?? 'enviado',
+        })),
+      );
+
+      if (allEvidencias.length) {
+        await tx.vistoria_deposito_evidencias.createMany({ data: allEvidencias });
+      }
+
       return raw.id;
     });
   }

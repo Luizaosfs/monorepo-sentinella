@@ -76,6 +76,12 @@ interface FocoRiscoProps {
   origemImageUrl?: string | null;
   /** Data da última vistoria relacionada ao foco/imóvel (campo derivado para listagens). */
   ultimaVistoriaEm?: Date | null;
+  /** Status SLA calculado para listagens (derivado de sla_operacional). */
+  slaStatus?: 'ok' | 'atencao' | 'critico' | 'vencido' | 'sem_sla';
+  /** Prazo final do SLA operacional (ISO 8601, derivado de sla_operacional). */
+  slaPrazoEm?: string | null;
+  /** Indica se o SLA foi violado (derivado de sla_operacional). */
+  slaViolado?: boolean | null;
 }
 
 export class FocoRisco extends BaseEntity<FocoRiscoProps> {
@@ -238,6 +244,24 @@ export class FocoRisco extends BaseEntity<FocoRiscoProps> {
   }
   set ultimaVistoriaEm(v: Date | null | undefined) {
     this.props.ultimaVistoriaEm = v;
+  }
+  get slaStatus() {
+    return this.props.slaStatus;
+  }
+  set slaStatus(v: 'ok' | 'atencao' | 'critico' | 'vencido' | 'sem_sla' | undefined) {
+    this.props.slaStatus = v;
+  }
+  get slaPrazoEm() {
+    return this.props.slaPrazoEm;
+  }
+  set slaPrazoEm(v: string | null | undefined) {
+    this.props.slaPrazoEm = v;
+  }
+  get slaViolado() {
+    return this.props.slaViolado;
+  }
+  set slaViolado(v: boolean | null | undefined) {
+    this.props.slaViolado = v;
   }
 
   podeTransicionar(paraStatus: FocoRiscoStatus): boolean {

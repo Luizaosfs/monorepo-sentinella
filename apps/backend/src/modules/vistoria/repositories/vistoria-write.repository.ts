@@ -8,8 +8,21 @@ import {
   VistoriaSintoma,
 } from '../entities/vistoria';
 
+export interface DepositoEvidenciaCreateInput {
+  tipoImagem: 'antes' | 'depois';
+  urlOriginal: string;
+  urlThumbnail?: string;
+  publicId: string;
+  tamanhoBytes?: number;
+  mimeType?: string;
+  capturadaEm?: Date;
+  statusUpload?: 'pendente' | 'enviado' | 'erro';
+}
+
 export interface CreateCompletaSubItems {
-  depositos?: Omit<VistoriaDeposito, 'id' | 'vistoriaId' | 'createdAt'>[];
+  depositos?: (Omit<VistoriaDeposito, 'id' | 'vistoriaId' | 'createdAt'> & {
+    evidencias?: DepositoEvidenciaCreateInput[];
+  })[];
   sintomas?: Omit<VistoriaSintoma, 'id' | 'vistoriaId' | 'createdAt'>[];
   riscos?: Omit<VistoriaRisco, 'id' | 'vistoriaId' | 'createdAt'>[];
   calhas?: Omit<VistoriaCalha, 'id' | 'vistoriaId' | 'createdAt'>[];

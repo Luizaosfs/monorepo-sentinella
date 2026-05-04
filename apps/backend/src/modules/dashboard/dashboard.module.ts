@@ -14,6 +14,7 @@ import { ReincidenciaController } from './reincidencia.controller';
 
 import { CalcularLiraa } from './use-cases/calcular-liraa';
 import { GetCentralKpis } from './use-cases/get-central-kpis';
+import { GetRegioesSemCobertura } from './use-cases/get-regioes-sem-cobertura';
 import { ListImoveisParaHoje } from './use-cases/list-imoveis-para-hoje';
 import { ComparativoAgentes } from './use-cases/comparativo-agentes';
 import { ConsumoLarvicida } from './use-cases/consumo-larvicida';
@@ -77,6 +78,7 @@ import { GerarResumoDiario } from './use-cases/gerar-resumo-diario';
 // Territorial
 import { GetDashboardTerritorial } from './use-cases/get-dashboard-territorial';
 import { TerritorialController } from './territorial.controller';
+import { TilesController } from './tiles.controller';
 
 @Module({
   providers: [
@@ -88,6 +90,7 @@ import { TerritorialController } from './territorial.controller';
     FilterAlerts,
     ResolverAlert,
     GetCentralKpis,
+    GetRegioesSemCobertura,
     ListImoveisParaHoje,
     CalcularLiraa,
     ComparativoAgentes,
@@ -151,6 +154,7 @@ import { TerritorialController } from './territorial.controller';
     ReincidenciaController,
     EficaciaController,
     TerritorialController,
+    TilesController,
   ],
   exports: [DashboardSchedulerService, HealthCheckService, LiraaExportService],
   imports: [DatabaseModule],

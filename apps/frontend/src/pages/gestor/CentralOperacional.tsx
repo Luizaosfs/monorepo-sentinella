@@ -9,7 +9,6 @@ import {
   LayoutDashboard, ArrowRight, TrendingUp, MessageSquare,
   Stethoscope, ChevronRight, GitMerge, FileText, Info, MapPinOff, ClipboardCheck,
 } from 'lucide-react';
-import { http } from '@sentinella/api-client';
 import { STALE } from '@/lib/queryConfig';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -126,21 +125,7 @@ export default function CentralOperacional() {
   // G4: Regiões sem cobertura hoje
   const { data: regioesSemCobertura = [] } = useQuery<{ id: string; regiao: string }[]>({
     queryKey: ['regioes-sem-cobertura', clienteAtivo?.id],
-    queryFn: async () => {
-      if (!clienteAtivo?.id) return [];
-      const hoje = new Date().toISOString().split('T')[0];
-      const regioes = await http.get<{ id: string; regiao: string }[]>(
-        `/regioes?clienteId=${clienteAtivo.id}`
-      ).then((r) => Array.isArray(r) ? r : (r as { data?: unknown[] }).data ?? []).catch(() => []) as { id: string; regiao: string }[];
-      if (!regioes || regioes.length === 0) return [];
-      const vistoriasHoje = await http.get<{ imovel?: { regiao_id: string } | null }[]>(
-        `/vistorias?clienteId=${clienteAtivo.id}&createdAfter=${hoje}`
-      ).then((r) => Array.isArray(r) ? r : (r as { data?: unknown[] }).data ?? []).catch(() => []) as { imovel?: { regiao_id: string } | null }[];
-      const comAtividade = new Set(
-        (vistoriasHoje ?? []).map((v: { imovel: { regiao_id: string } | null }) => v.imovel?.regiao_id).filter(Boolean),
-      );
-      return regioes.filter((r) => !comAtividade.has(r.id));
-    },
+    queryFn: () => api.central.getRegioesSemCobertura(),
     enabled: !!clienteAtivo?.id,
     staleTime: STALE.MEDIUM,
   });

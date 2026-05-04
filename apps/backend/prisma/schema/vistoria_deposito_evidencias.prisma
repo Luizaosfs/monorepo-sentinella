@@ -1,0 +1,29 @@
+model vistoria_deposito_evidencias {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cliente_id     String    @db.Uuid
+  vistoria_id    String    @db.Uuid
+  tipo_deposito  String    // A1, A2, B, C, D1, D2, E
+  tipo_imagem    String    // 'antes' | 'depois'
+  url_original   String
+  url_thumbnail  String?
+  public_id      String
+  tamanho_bytes  Int?
+  mime_type      String?
+  capturada_em   DateTime? @db.Timestamptz
+  status_upload  String    @default("enviado") // 'pendente' | 'enviado' | 'erro'
+  ia_status      String    @default("nao_analisada") // 'nao_analisada' | 'pendente' | 'analisada' | 'erro'
+  ia_resultado   Json?
+  ia_confianca   Float?
+  created_at     DateTime  @default(now()) @db.Timestamptz
+
+  vistoria vistorias @relation(fields: [vistoria_id], references: [id])
+
+  @@index([cliente_id])
+  @@index([vistoria_id])
+  @@index([tipo_deposito])
+  @@index([tipo_imagem])
+  @@index([status_upload])
+  @@index([ia_status])
+  @@map("vistoria_deposito_evidencias")
+  @@schema("public")
+}

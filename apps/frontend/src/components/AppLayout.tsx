@@ -91,7 +91,6 @@ const baseNavItems = [
   { to: '/gestor/triagem',  label: 'Triagem de Focos', icon: Filter },
   { to: '/gestor/focos',    label: 'Focos de Risco',   icon: Target },
   { to: '/gestor/mapa',     label: 'Mapa de Focos',    icon: MapIcon },
-  { to: '/levantamentos',   label: 'Levantamentos',    icon: ClipboardList },
 ];
 
 // ─── AGENTE DE ENDEMIAS ───────────────────────────────────────────────────────
@@ -127,6 +126,7 @@ const adminMonitorNavItems = [
 // ─── GRUPOS DO SIDEBAR (supervisor/admin) ─────────────────────────────────────
 const grupoPlnejamento = [
   { to: '/gestor/planejamentos',           label: 'Planejamentos',              icon: CalendarRange,  adminOnly: false },
+  { to: '/levantamentos',                 label: 'Levantamentos',              icon: ClipboardList,  adminOnly: false },
   { to: '/gestor/ciclos',                  label: 'Gestão de Ciclos',           icon: CalendarRange,  adminOnly: false },
   { to: '/gestor/distribuicao-quarteirao', label: 'Distribuição de Quarteirão', icon: MapIcon,        adminOnly: false },
   { to: '/gestor/operacoes',               label: 'Operações',                  icon: ClipboardCheck, adminOnly: false },
