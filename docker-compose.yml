@@ -28,7 +28,7 @@
         PORT: 3000
         DATABASE_URL: ${DATABASE_URL}
         SECRET_JWT: ${SECRET_JWT}
-        CLIENT_URL: "http://177.7.37.14:8080"
+        CLIENT_URL: "https://sentinellamap.com.br"
         CANAL_CIDADAO_IP_SALT: ${CANAL_CIDADAO_IP_SALT}
         CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
         CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
@@ -49,7 +49,7 @@
         context: .
         dockerfile: apps/frontend/Dockerfile
         args:
-          VITE_API_URL: "http://177.7.37.14:3000"
+          VITE_API_URL: "https://sentinellamap.com.br"
           VITE_GOOGLE_MAPS_KEY: ${VITE_GOOGLE_MAPS_KEY}
           VITE_CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
           VITE_CLOUDINARY_UPLOAD_PRESET: "levantamento_manual"
