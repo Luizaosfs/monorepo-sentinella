@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/services/api';
 import { SlaFeriado } from '@/types/database';
+import { STALE } from '@/lib/queryConfig';
 
 /**
  * Lista feriados do cliente, ordenados por data.
@@ -11,7 +12,7 @@ export function useSlaFeriados(clienteId: string | null | undefined) {
     queryKey: ['sla_feriados', clienteId],
     queryFn: () => api.slaFeriados.listByCliente(clienteId!),
     enabled: !!clienteId,
-    staleTime: 10 * 60 * 1000, // feriados mudam raramente — 10 min
+    staleTime: STALE.LONG,
   });
 }
 

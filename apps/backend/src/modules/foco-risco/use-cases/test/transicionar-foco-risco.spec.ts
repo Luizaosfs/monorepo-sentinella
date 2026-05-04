@@ -386,5 +386,87 @@ describe('TransicionarFocoRisco', () => {
 
     expect(result.foco.status).toBe('em_triagem');
   });
+
+  describe('ownership — agente só transiciona foco atribuído a si', () => {
+    async function buildWithRequest(reqOverrides: Parameters<typeof mockRequest>[0]) {
+      const module: TestingModule = await Test.createTestingModule({
+        providers: [
+          TransicionarFocoRisco,
+          { provide: PrismaService, useValue: prismaMock },
+          { provide: FocoRiscoReadRepository, useValue: readRepo },
+          { provide: FocoRiscoWriteRepository, useValue: writeRepo },
+          { provide: IniciarSlaAoConfirmarFoco, useValue: iniciarSla },
+          { provide: FecharSlaAoResolverFoco, useValue: fecharSla },
+          { provide: SlaWriteRepository, useValue: slaWriteRepo },
+          { provide: CriarReinspecaoPosTratamento, useValue: criarReinspecao },
+          { provide: CancelarReinspecoesAoFecharFoco, useValue: cancelarReinspecoes },
+          { provide: RecalcularScorePrioridadeFoco, useValue: recalcularScore },
+          { provide: EnfileirarScoreImovel, useValue: enfileirarScore },
+          { provide: REQUEST, useValue: mockRequest(reqOverrides) },
+        ],
+      }).compile();
+      return module.get<TransicionarFocoRisco>(TransicionarFocoRisco);
+    }
+
+    beforeEach(() => {
+      writeRepo.save.mockResolvedValue();
+      writeRepo.createHistorico.mockResolvedValue({ clienteId: 'cliente-uuid-1', statusNovo: 'em_triagem' });
+      recalcularScore.execute.mockResolvedValue({ score: 30 });
+    });
+
+    it('agente responsável pelo foco pode transicionar', async () => {
+      const uc = await buildWithRequest({ user: { id: 'agente-uuid', email: 'agente@test.com', nome: 'Agente', clienteId: 'test-cliente-id', papeis: ['agente'] } });
+      const foco = new FocoRiscoBuilder().withStatus('suspeita').withResponsavelId('agente-uuid').build();
+      readRepo.findById.mockResolvedValue(foco);
+
+      const result = await uc.execute(foco.id!, { statusPara: 'em_triagem' });
+
+      expect(result.foco.status).toBe('em_triagem');
+    });
+
+    it('agente bloqueado se foco.responsavelId !== user.id', async () => {
+      const uc = await buildWithRequest({ user: { id: 'agente-uuid', email: 'agente@test.com', nome: 'Agente', clienteId: 'test-cliente-id', papeis: ['agente'] } });
+      const foco = new FocoRiscoBuilder().withStatus('suspeita').withResponsavelId('outro-agente').build();
+      readRepo.findById.mockResolvedValue(foco);
+
+      await expectHttpException(
+        () => uc.execute(foco.id!, { statusPara: 'em_triagem' }),
+        FocoRiscoException.semPermissaoTransicionar(),
+      );
+      expect(writeRepo.save).not.toHaveBeenCalled();
+    });
+
+    it('agente pode transicionar foco sem responsavelId definido', async () => {
+      const uc = await buildWithRequest({ user: { id: 'agente-uuid', email: 'agente@test.com', nome: 'Agente', clienteId: 'test-cliente-id', papeis: ['agente'] } });
+      const foco = new FocoRiscoBuilder().withStatus('suspeita').build();
+      readRepo.findById.mockResolvedValue(foco);
+
+      const result = await uc.execute(foco.id!, { statusPara: 'em_triagem' });
+
+      expect(result.foco.status).toBe('em_triagem');
+    });
+
+    it('supervisor pode transicionar foco de outro agente', async () => {
+      const uc = await buildWithRequest({ user: { id: 'supervisor-uuid', email: 'sup@test.com', nome: 'Supervisor', clienteId: 'test-cliente-id', papeis: ['supervisor'] } });
+      const foco = new FocoRiscoBuilder().withStatus('suspeita').withResponsavelId('outro-agente').build();
+      readRepo.findById.mockResolvedValue(foco);
+
+      const result = await uc.execute(foco.id!, { statusPara: 'em_triagem' });
+
+      expect(result.foco.status).toBe('em_triagem');
+    });
+
+    it('admin (isPlatformAdmin) pode transicionar qualquer foco', async () => {
+      const uc = await buildWithRequest({
+        user: { id: 'admin-uuid', email: 'admin@test.com', nome: 'Admin', clienteId: 'test-cliente-id', papeis: ['admin'], isPlatformAdmin: true } as any,
+      });
+      const foco = new FocoRiscoBuilder().withStatus('suspeita').withResponsavelId('outro-agente').build();
+      readRepo.findById.mockResolvedValue(foco);
+
+      const result = await uc.execute(foco.id!, { statusPara: 'em_triagem' });
+
+      expect(result.foco.status).toBe('em_triagem');
+    });
+  });
 });
 

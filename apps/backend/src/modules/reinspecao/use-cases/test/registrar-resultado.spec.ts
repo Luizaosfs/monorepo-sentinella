@@ -1,5 +1,6 @@
 import { FocoRiscoReadRepository } from '@modules/foco-risco/repositories/foco-risco-read.repository';
 import { FocoRiscoWriteRepository } from '@modules/foco-risco/repositories/foco-risco-write.repository';
+import { REQUEST } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import { mock } from 'jest-mock-extended';
 
@@ -20,8 +21,7 @@ describe('RegistrarResultadoReinspecao', () => {
   const focoRead = mock<FocoRiscoReadRepository>();
   const focoWrite = mock<FocoRiscoWriteRepository>();
 
-  beforeEach(async () => {
-    jest.clearAllMocks();
+  async function buildWithRequest(req: ReturnType<typeof mockRequest>) {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         RegistrarResultadoReinspecao,
@@ -29,11 +29,15 @@ describe('RegistrarResultadoReinspecao', () => {
         { provide: ReinspecaoWriteRepository, useValue: writeRepo },
         { provide: FocoRiscoReadRepository, useValue: focoRead },
         { provide: FocoRiscoWriteRepository, useValue: focoWrite },
-        { provide: 'REQUEST', useValue: mockRequest() },
+        { provide: REQUEST, useValue: req },
       ],
     }).compile();
+    return module.get<RegistrarResultadoReinspecao>(RegistrarResultadoReinspecao);
+  }
 
-    useCase = module.get<RegistrarResultadoReinspecao>(RegistrarResultadoReinspecao);
+  beforeEach(async () => {
+    jest.clearAllMocks();
+    useCase = await buildWithRequest(mockRequest());
   });
 
   it('deve registrar resultado: status realizada e dataRealizada preenchida', async () => {
@@ -79,5 +83,79 @@ describe('RegistrarResultadoReinspecao', () => {
       ReinspecaoException.badRequest(),
     );
     expect(writeRepo.save).not.toHaveBeenCalled();
+  });
+
+  describe('ownership — agente só registra resultado de reinspeção atribuída a si', () => {
+    beforeEach(() => {
+      writeRepo.save.mockResolvedValue();
+      focoWrite.createHistorico.mockResolvedValue({ clienteId: 'test-cliente-id', statusNovo: 'em_tratamento' });
+    });
+
+    it('agente responsável pode registrar resultado', async () => {
+      const uc = await buildWithRequest(
+        mockRequest({ user: { id: 'agente-uuid', email: 'agente@test.com', nome: 'Agente', clienteId: 'test-cliente-id', papeis: ['agente'] } }),
+      );
+      const r = new ReinspecaoBuilder()
+        .withStatus('pendente')
+        .withFocoRiscoId('foco-1')
+        .withResponsavelId('agente-uuid')
+        .build();
+      const foco = new FocoRiscoBuilder().withId('foco-1').withClienteId(r.clienteId).build();
+      readRepo.findById.mockResolvedValue(r);
+      focoRead.findById.mockResolvedValue(foco);
+
+      const result = await uc.execute(r.id!, { resultado: 'Sem larvas' });
+
+      expect(result.reinspecao.status).toBe('realizada');
+    });
+
+    it('agente bloqueado se responsavelId !== user.id', async () => {
+      const uc = await buildWithRequest(
+        mockRequest({ user: { id: 'agente-uuid', email: 'agente@test.com', nome: 'Agente', clienteId: 'test-cliente-id', papeis: ['agente'] } }),
+      );
+      const r = new ReinspecaoBuilder()
+        .withStatus('pendente')
+        .withResponsavelId('outro-agente')
+        .build();
+      readRepo.findById.mockResolvedValue(r);
+
+      await expectHttpException(
+        () => uc.execute(r.id!, { resultado: 'ok' }),
+        ReinspecaoException.forbiddenTenant(),
+      );
+      expect(writeRepo.save).not.toHaveBeenCalled();
+    });
+
+    it('agente pode registrar em reinspeção sem responsavelId', async () => {
+      const uc = await buildWithRequest(
+        mockRequest({ user: { id: 'agente-uuid', email: 'agente@test.com', nome: 'Agente', clienteId: 'test-cliente-id', papeis: ['agente'] } }),
+      );
+      const r = new ReinspecaoBuilder().withStatus('pendente').withFocoRiscoId('foco-1').build();
+      const foco = new FocoRiscoBuilder().withId('foco-1').withClienteId(r.clienteId).build();
+      readRepo.findById.mockResolvedValue(r);
+      focoRead.findById.mockResolvedValue(foco);
+
+      const result = await uc.execute(r.id!, { resultado: 'ok' });
+
+      expect(result.reinspecao.status).toBe('realizada');
+    });
+
+    it('supervisor pode registrar resultado de reinspeção de outro agente', async () => {
+      const uc = await buildWithRequest(
+        mockRequest({ user: { id: 'supervisor-uuid', email: 'sup@test.com', nome: 'Supervisor', clienteId: 'test-cliente-id', papeis: ['supervisor'] } }),
+      );
+      const r = new ReinspecaoBuilder()
+        .withStatus('pendente')
+        .withFocoRiscoId('foco-1')
+        .withResponsavelId('outro-agente')
+        .build();
+      const foco = new FocoRiscoBuilder().withId('foco-1').withClienteId(r.clienteId).build();
+      readRepo.findById.mockResolvedValue(r);
+      focoRead.findById.mockResolvedValue(foco);
+
+      const result = await uc.execute(r.id!, { resultado: 'ok' });
+
+      expect(result.reinspecao.status).toBe('realizada');
+    });
   });
 });

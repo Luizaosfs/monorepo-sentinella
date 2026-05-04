@@ -81,7 +81,7 @@ export default function AdminSlaFeriados() {
     if (!clienteId) return;
     setSeedLoading(true);
     try {
-      await api.slaFeriados.seedNacionais(clienteId);
+      await api.slaFeriados.seedNacionais();
       queryClient.invalidateQueries({ queryKey: ['admin_sla_feriados', clienteId] });
       toast.success('Feriados nacionais importados com sucesso');
     } catch (err) {

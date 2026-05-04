@@ -4,6 +4,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
 import { getAccessScope } from '@shared/security/access-scope.helpers';
+import { AuthenticatedUser } from 'src/guards/auth.guard';
 import { ResultadoReinspecaoBody } from '../dtos/resultado-reinspecao.body';
 import { ReinspecaoException } from '../errors/reinspecao.exception';
 import { ReinspecaoReadRepository } from '../repositories/reinspecao-read.repository';
@@ -24,6 +25,12 @@ export class RegistrarResultadoReinspecao {
     const r = await this.readRepository.findById(id, tenantId);
     if (!r) {
       throw ReinspecaoException.notFound();
+    }
+
+    const user = this.req['user'] as AuthenticatedUser;
+    const isPrivileged = user.isPlatformAdmin || user.papeis.includes('supervisor');
+    if (!isPrivileged && r.responsavelId && r.responsavelId !== user.id) {
+      throw ReinspecaoException.forbiddenTenant();
     }
 
     if (r.status !== 'pendente') {

@@ -256,7 +256,8 @@
       "PowerShell(cmd /c \"cd /d D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend && npx tsc --noEmit 2>&1\" | Select-Object -First 50)",
       "PowerShell(cmd /c \"cd /d D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\frontend && npx tsc --noEmit 2>&1\" | Select-Object -First 30)",
       "Bash(cmd /c \"cd /d D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend && npx tsc --noEmit 2>&1\")",
-      "PowerShell(Stop-Process *)"
+      "PowerShell(Stop-Process *)",
+      "Bash(pnpm --filter @sentinella/api test -- --testPathPattern=\"transicionar-foco-risco|registrar-resultado|resolver-alerta|filter-foco-risco\" --no-coverage)"
     ]
   }
 }

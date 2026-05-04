@@ -25,7 +25,7 @@ export function useSincronizarCnesMutation() {
       api.cnesSync.sincronizarManual(clienteId, usuarioId),
     onSuccess: (_, { clienteId }) => {
       queryClient.invalidateQueries({ queryKey: ['cnes-sync-controle', clienteId] });
-      queryClient.invalidateQueries({ queryKey: ['admin_unidades_saude', clienteId] });
+      queryClient.invalidateQueries({ queryKey: ['unidades_saude', clienteId] });
     },
   });
 }

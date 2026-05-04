@@ -3,6 +3,7 @@ import { REQUEST } from '@nestjs/core';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 import { Request } from 'express';
 import { getAccessScope } from '@shared/security/access-scope.helpers';
+import { AuthenticatedUser } from 'src/guards/auth.guard';
 
 import { EnfileirarScoreImovel } from '../../job/enfileirar-score-imovel';
 import { CancelarReinspecoesAoFecharFoco } from '../../reinspecao/use-cases/cancelar-reinspecoes-ao-fechar-foco';
@@ -51,6 +52,12 @@ export class TransicionarFocoRisco {
     const tenantId = getAccessScope(this.req).tenantId;
     const foco = await this.readRepository.findById(id, tenantId);
     if (!foco) throw FocoRiscoException.notFound();
+
+    const user = this.req['user'] as AuthenticatedUser;
+    const isPrivileged = user.isPlatformAdmin || user.papeis.includes('supervisor');
+    if (!isPrivileged && foco.responsavelId && foco.responsavelId !== user.id) {
+      throw FocoRiscoException.semPermissaoTransicionar();
+    }
 
     const novoStatus = input.statusPara as FocoRiscoStatus;
 

@@ -129,6 +129,8 @@ type RawVistoria = {
   sintomas?: RawSintoma[];
   riscos?: RawRisco[];
   calhas?: RawCalha[];
+  agente?: { id: string; nome: string } | null;
+  imovel?: { logradouro: string | null; numero: string | null; bairro: string | null } | null;
 };
 
 export class PrismaVistoriaMapper {
@@ -261,6 +263,8 @@ export class PrismaVistoriaMapper {
         sintomas: raw.sintomas?.map(PrismaVistoriaMapper.sintomaToDomain),
         riscos: raw.riscos?.map(PrismaVistoriaMapper.riscoToDomain),
         calhas: raw.calhas?.map(PrismaVistoriaMapper.calhaToDomain),
+        agente: raw.agente ?? null,
+        imovel: raw.imovel ?? null,
       },
       {
         id: raw.id,

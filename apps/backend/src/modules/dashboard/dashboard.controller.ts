@@ -166,7 +166,7 @@ export class DashboardController {
   }
 
   @Get('resumo-agente')
-  @Roles('admin', 'supervisor')
+  @Roles('admin', 'supervisor', 'agente')
   @ApiOperation({ summary: 'Resumo de um agente no ciclo' })
   async resumoAgente(@Query() query: ResumoAgenteQuery) {
     const parsed = resumoAgenteQuerySchema.parse(query);

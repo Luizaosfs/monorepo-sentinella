@@ -131,6 +131,8 @@ export class VistoriaViewModel {
       sintomas: vistoria.sintomas?.map(VistoriaViewModel.sintomaToHttp),
       riscos: vistoria.riscos?.map(VistoriaViewModel.riscoToHttp),
       calhas: vistoria.calhas?.map(VistoriaViewModel.calhaToHttp),
+      agente: vistoria.agente,
+      imovel: vistoria.imovel,
       createdAt: vistoria.createdAt,
       updatedAt: vistoria.updatedAt,
       ...baseAuditToHttp(vistoria),

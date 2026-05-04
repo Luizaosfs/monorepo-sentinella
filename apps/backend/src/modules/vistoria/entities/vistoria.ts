@@ -119,6 +119,8 @@ interface VistoriaProps {
   sintomas?: VistoriaSintoma[];
   riscos?: VistoriaRisco[];
   calhas?: VistoriaCalha[];
+  agente?: { id: string; nome: string } | null;
+  imovel?: { logradouro: string | null; numero: string | null; bairro: string | null } | null;
 }
 
 export class Vistoria extends BaseEntity<VistoriaProps> {
@@ -480,6 +482,12 @@ export class Vistoria extends BaseEntity<VistoriaProps> {
   }
   get calhas() {
     return this.props.calhas;
+  }
+  get agente() {
+    return this.props.agente ?? null;
+  }
+  get imovel() {
+    return this.props.imovel ?? null;
   }
 }
 

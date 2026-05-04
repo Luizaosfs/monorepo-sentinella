@@ -36,6 +36,7 @@ export function useCreateImovelMutation() {
     mutationFn: api.imoveis.create,
     onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: ['imoveis', variables.cliente_id] });
+      qc.invalidateQueries({ queryKey: ['imoveis_resumo'] });
     },
   });
 }
@@ -47,6 +48,7 @@ export function useUpdateImovelMutation() {
       api.imoveis.update(id, payload),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['imoveis'] });
+      qc.invalidateQueries({ queryKey: ['imoveis_resumo'] });
     },
   });
 }

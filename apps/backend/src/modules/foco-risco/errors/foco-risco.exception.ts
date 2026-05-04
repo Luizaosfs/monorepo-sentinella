@@ -22,4 +22,8 @@ export const FocoRiscoException = createExceptionFactory({
     type: 'forbidden',
     message: 'Apenas agentes podem iniciar inspeções',
   },
+  semPermissaoTransicionar: {
+    type: 'forbidden',
+    message: 'Agente só pode transicionar focos atribuídos a si',
+  },
 });

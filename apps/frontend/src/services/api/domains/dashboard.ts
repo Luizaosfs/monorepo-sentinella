@@ -56,16 +56,15 @@ export const central = {
 };
 
 export const executivo = {
-  getKpis: (): Promise<unknown> => http.get('/dashboard/executivo/kpis'),
-  getTendencia: (): Promise<unknown> => http.get('/dashboard/executivo/tendencia'),
-  getCobertura: (): Promise<unknown> => http.get('/dashboard/executivo/cobertura'),
-  getBairrosVariacao: (): Promise<unknown> => http.get('/dashboard/executivo/bairros-variacao'),
-  getComparativoCiclos: (): Promise<unknown> => http.get('/dashboard/executivo/comparativo-ciclos'),
+  getKpis: (_clienteId?: string): Promise<unknown> => http.get('/dashboard/executivo/kpis'),
+  getTendencia: (_clienteId?: string): Promise<unknown> => http.get('/dashboard/executivo/tendencia'),
+  getCobertura: (_clienteId?: string): Promise<unknown> => http.get('/dashboard/executivo/cobertura'),
+  getBairrosVariacao: (_clienteId?: string): Promise<unknown> => http.get('/dashboard/executivo/bairros-variacao'),
+  getComparativoCiclos: (_clienteId?: string): Promise<unknown> => http.get('/dashboard/executivo/comparativo-ciclos'),
 };
 
 export const eficacia = {
-  listPorDeposito: (): Promise<unknown> => http.get('/dashboard/eficacia/tratamento'),
-  listFocosResolvidos: (): Promise<unknown> => http.get('/dashboard/eficacia/tratamento'),
+  listPorDeposito: (_clienteId?: string): Promise<unknown> => http.get('/dashboard/eficacia/tratamento'),
 };
 
 export const reincidencia = {

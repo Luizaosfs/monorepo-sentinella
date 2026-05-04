@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/services/api';
 import { PlanoAcaoCatalogo } from '@/types/database';
+import { STALE } from '@/lib/queryConfig';
 
 /**
  * Lista ações ativas do catálogo para o agente selecionar ao concluir atendimento.
@@ -11,7 +12,7 @@ export function usePlanoAcaoCatalogo(clienteId: string | null | undefined, tipoI
     queryKey: ['plano_acao_catalogo', clienteId, tipoItem ?? null],
     queryFn: () => api.planoAcaoCatalogo.listByCliente(clienteId!, tipoItem),
     enabled: !!clienteId,
-    staleTime: 5 * 60 * 1000, // catálogo muda pouco — 5 min
+    staleTime: STALE.LONG,
   });
 }
 
@@ -23,6 +24,7 @@ export function usePlanoAcaoCatalogoAdmin(clienteId: string | null | undefined) 
     queryKey: ['plano_acao_catalogo_admin', clienteId],
     queryFn: () => api.planoAcaoCatalogo.listAllByCliente(clienteId!),
     enabled: !!clienteId,
+    staleTime: STALE.LONG,
   });
 }
 

@@ -55,9 +55,9 @@ export class GetEficaciaTratamento {
         usou_larvicida,
         COUNT(*) AS total_casos,
         COUNT(*) FILTER (WHERE NOT teve_recorrencia_90d) AS sem_recorrencia,
-        ROUND(COUNT(*) FILTER (WHERE NOT teve_recorrencia_90d)::numeric / NULLIF(COUNT(*), 0) * 100, 1) AS taxa_eficacia_pct,
-        AVG(CASE WHEN usou_larvicida THEN qtd_larvicida_g END) AS larvicida_medio_g,
-        ROUND(AVG(qtd_eliminados::numeric / NULLIF(qtd_com_focos, 0)) * 100, 1) AS taxa_eliminacao_pct
+        ROUND(COUNT(*) FILTER (WHERE NOT teve_recorrencia_90d)::numeric / NULLIF(COUNT(*), 0) * 100, 1)::float AS taxa_eficacia_pct,
+        AVG(CASE WHEN usou_larvicida THEN qtd_larvicida_g END)::float AS larvicida_medio_g,
+        ROUND(AVG(qtd_eliminados::numeric / NULLIF(qtd_com_focos, 0)) * 100, 1)::float AS taxa_eliminacao_pct
       FROM depositos_na_vistoria d
       GROUP BY cliente_id, tipo_deposito, usou_larvicida
       HAVING COUNT(*) >= 5

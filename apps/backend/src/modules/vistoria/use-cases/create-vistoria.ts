@@ -42,11 +42,15 @@ export class CreateVistoria {
     const { ok, usado, limite, motivo } = await this.verificarQuota.execute(clienteId, { metrica: 'vistorias_mes' });
     if (!ok) throw QuotaException.excedida({ metrica: 'vistorias_mes', usado, limite, motivo });
 
+    const _user = this.req['user'] as any;
+    const _isPrivileged = _user?.isPlatformAdmin || _user?.papeis?.includes('supervisor');
+    const resolvedAgenteId = (_isPrivileged ? data.agenteId : null) ?? _user?.id;
+
     const vistoria = new Vistoria(
       {
         clienteId,
         imovelId: data.imovelId,
-        agenteId: (data.agenteId ?? (this.req['user'] as any)?.id) as string,
+        agenteId: resolvedAgenteId as string,
         planejamentoId: data.planejamentoId,
         ciclo: data.ciclo,
         tipoAtividade: data.tipoAtividade,

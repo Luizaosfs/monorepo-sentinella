@@ -102,6 +102,10 @@ export class PrismaVistoriaReadRepository implements VistoriaReadRepository {
     const rows = await this.prisma.client.vistorias.findMany({
       where: this.buildWhere(filters),
       orderBy: { created_at: 'desc' },
+      include: {
+        agente: { select: { id: true, nome: true } },
+        imovel: { select: { logradouro: true, numero: true, bairro: true } },
+      },
     });
     return rows.map((r) => PrismaVistoriaMapper.toDomain(r as any));
   }

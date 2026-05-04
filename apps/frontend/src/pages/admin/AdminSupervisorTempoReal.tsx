@@ -36,7 +36,7 @@ export default function AdminSupervisorTempoReal() {
 
         const byAgente = new Map<string, AgenteStatus>();
         for (const v of (vistorias ?? [])) {
-          const ag = (v.agente ?? { id: v.agente_id, nome: null }) as { id: string; nome: string } | null;
+          const ag = (v.agente ?? { id: v.agenteId, nome: null }) as { id: string; nome: string } | null;
           if (!ag?.id) continue;
           if (!byAgente.has(ag.id)) {
             byAgente.set(ag.id, { agente: ag, total: 0, ultima_lat: null, ultima_lng: null, ultima_endereco: null, ultima_em: null });

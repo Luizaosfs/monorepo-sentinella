@@ -126,9 +126,11 @@ export function classificarIIPMunicipal(
  * Refetch a cada 5 minutos — dados operacionais de alta relevância.
  */
 export function useExecutivoKpis() {
+  const { clienteId } = useClienteAtivo();
   return useQuery({
-    queryKey: ['executivo-kpis'],
+    queryKey: ['executivo-kpis', clienteId],
     queryFn: () => api.executivo.getKpis(),
+    enabled: !!clienteId,
     staleTime: STALE.SHORT,
     refetchInterval: 5 * 60 * 1000,
   });
@@ -184,9 +186,11 @@ export function useExecutivoBairrosVariacao() {
  * Retorna variações percentuais de focos, resolução, vistorias e casos.
  */
 export function useExecutivoComparativoCiclos() {
+  const { clienteId } = useClienteAtivo();
   return useQuery({
-    queryKey: ['executivo-comparativo-ciclos'],
+    queryKey: ['executivo-comparativo-ciclos', clienteId],
     queryFn: () => api.executivo.getComparativoCiclos(),
+    enabled: !!clienteId,
     staleTime: STALE.LONG,
   });
 }
