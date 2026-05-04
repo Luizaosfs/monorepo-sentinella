@@ -12,11 +12,8 @@ import {
   AlertTriangle, Map,
   Activity, RefreshCw, Filter, X, Layers, Users,
   MapPin, CheckCircle, Clock, SlidersHorizontal, ChevronDown,
+  Baby, Accessibility, Bed, UserRound, type LucideIcon,
 } from 'lucide-react';
-import { IconIdoso } from '@/components/icons/IconIdoso';
-import { IconMenorStroller } from '@/components/icons/IconMenorStroller';
-import { IconCamaAcamado } from '@/components/icons/IconCamaAcamado';
-import { IconCadeiraRodas } from '@/components/icons/IconCadeiraRodas';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -88,11 +85,60 @@ type VulnKey = 'idosoIncapaz' | 'menorIncapaz' | 'mobilidadeReduzida' | 'acamado
 const VULN_KEYS: VulnKey[] = ['idosoIncapaz', 'menorIncapaz', 'mobilidadeReduzida', 'acamado'];
 const VULN_KEY_SET = new Set<string>(VULN_KEYS);
 
-const VULN_META: Record<VulnKey, { label: string; icon: React.ComponentType<{ className?: string }>; iconCls: string }> = {
-  idosoIncapaz:       { label: 'Idosos incapazes',  icon: IconIdoso,        iconCls: 'text-green-600' },
-  menorIncapaz:       { label: 'Menores incapazes', icon: IconMenorStroller, iconCls: 'text-blue-600' },
-  mobilidadeReduzida: { label: 'Mob. reduzida',     icon: IconCadeiraRodas,  iconCls: 'text-teal-600' },
-  acamado:            { label: 'Acamado',           icon: IconCamaAcamado,    iconCls: 'text-orange-600' },
+/** Cards “Grupos vulneráveis” — ícones Lucide (mesmo estilo de traço em todos). */
+const VULN_CARD_THEME: Record<
+  VulnKey,
+  {
+    label: string;
+    description: string;
+    icon: LucideIcon;
+    accent: string;
+    bar: string;
+    surface: string;
+    iconDisc: string;
+    descMuted: string;
+  }
+> = {
+  idosoIncapaz: {
+    label: 'Idosos incapazes',
+    description: 'Pessoas que necessitam de apoio e cuidados',
+    icon: UserRound,
+    accent: 'text-[#2E7D32]',
+    bar: 'border-l-[#2E7D32]',
+    surface: 'bg-[#E8F5E9]',
+    iconDisc: 'bg-[#C8E6C9]',
+    descMuted: 'text-[#546E7A]',
+  },
+  menorIncapaz: {
+    label: 'Menores incapazes',
+    description: 'Crianças que necessitam de proteção e cuidados',
+    icon: Baby,
+    accent: 'text-[#1565C0]',
+    bar: 'border-l-[#1565C0]',
+    surface: 'bg-[#E3F2FD]',
+    iconDisc: 'bg-[#BBDEFB]',
+    descMuted: 'text-[#546E7A]',
+  },
+  mobilidadeReduzida: {
+    label: 'Mob. reduzida',
+    description: 'Pessoas com dificuldade de locomoção',
+    icon: Accessibility,
+    accent: 'text-[#673AB7]',
+    bar: 'border-l-[#673AB7]',
+    surface: 'bg-[#F3E5F5]',
+    iconDisc: 'bg-[#E1BEE7]',
+    descMuted: 'text-[#4A4A4A]',
+  },
+  acamado: {
+    label: 'Acamado',
+    description: 'Pessoas acamadas que necessitam de cuidados especiais',
+    icon: Bed,
+    accent: 'text-[#E65100]',
+    bar: 'border-l-[#E65100]',
+    surface: 'bg-[#FFF3E0]',
+    iconDisc: 'bg-[#FFE0B2]',
+    descMuted: 'text-[#4A5568]',
+  },
 };
 
 // ─── Map helpers ──────────────────────────────────────────────────────────────
@@ -153,8 +199,9 @@ function TerritorialHeatmapLayer({ points }: { points: DashboardTerritorialPonto
         gradient: { 0.2: '#4ade80', 0.5: '#facc15', 0.75: '#f97316', 1.0: '#ef4444' },
       });
       heat.addTo(map);
-      if (heat._canvas) heat._canvas.style.opacity = '0.55';
-      layerRef.current = heat;
+      const canvas = (heat as HeatLayerInstance)._canvas;
+      if (canvas) canvas.style.opacity = '0.55';
+      layerRef.current = heat as HeatLayerInstance;
     })();
 
     return () => {
@@ -922,38 +969,68 @@ export default function GestorDashboardTerritorial() {
               <ResolutionGauge value={data?.kpis.taxaResolucaoPct} loading={isLoading} />
             </SectionCard>
 
-            {/* Grupos vulneráveis */}
+            {/* Grupos vulneráveis — cartões no estilo referência (barra lateral, fundo tintado, ícone em disco) */}
             <Card className="bg-white rounded-2xl border border-slate-200 shadow-sm flex-1">
               <CardHeader className="pb-0 px-5 pt-5">
-                <CardTitle className="text-sm font-semibold text-slate-800 flex items-center gap-2">
-                  <Users className="h-4 w-4 text-slate-400" />
+                <CardTitle className="text-base font-bold text-slate-800 tracking-tight flex items-center gap-2 font-sans">
+                  <Users className="h-4 w-4 text-slate-500 shrink-0" strokeWidth={2} />
                   Grupos vulneráveis
                 </CardTitle>
               </CardHeader>
-              <CardContent className="px-5 pb-5 pt-3">
+              <CardContent className="px-5 pb-5 pt-4">
                 {isLoading ? (
                   <div className="grid grid-cols-2 gap-3">
-                    {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-14 w-full rounded-xl" />)}
+                    {[...Array(4)].map((_, i) => (
+                      <Skeleton key={i} className="h-[118px] w-full rounded-xl" />
+                    ))}
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 gap-3">
                     {VULN_KEYS.map((k) => {
-                      const meta = VULN_META[k];
+                      const theme = VULN_CARD_THEME[k];
+                      const Icon = theme.icon;
                       const value = data?.fatoresRisco?.[k] ?? 0;
+                      const numCls =
+                        value > 0 ? theme.accent : cn(theme.accent, 'opacity-40');
                       return (
                         <div
                           key={k}
-                          className="p-4 rounded-xl bg-slate-50 border border-slate-100 flex items-center gap-3"
+                          className={cn(
+                            'rounded-xl border border-black/[0.06] shadow-sm overflow-hidden flex border-l-4 bg-white',
+                            theme.bar,
+                          )}
                         >
-                          <meta.icon className={cn('h-5 w-5 shrink-0', meta.iconCls)} />
-                          <div className="min-w-0">
-                            <p className="text-sm text-muted-foreground truncate">{meta.label}</p>
-                            <p className={cn(
-                              'text-lg font-semibold tracking-tight tabular-nums leading-none mt-0.5',
-                              value > 0 ? 'text-slate-800' : 'text-slate-300',
-                            )}>
-                              {value}
-                            </p>
+                          <div
+                            className={cn(
+                              'flex gap-3 p-3 flex-1 items-center min-h-[102px] font-sans',
+                              theme.surface,
+                            )}
+                          >
+                            <div
+                              className={cn(
+                                'flex h-14 w-14 shrink-0 items-center justify-center rounded-full',
+                                theme.iconDisc,
+                              )}
+                              aria-hidden
+                            >
+                              <Icon className={cn('h-8 w-8', theme.accent)} strokeWidth={2} />
+                            </div>
+                            <div className="min-w-0 flex-1 flex flex-col justify-center gap-0.5">
+                              <p
+                                className={cn(
+                                  'text-sm font-bold leading-tight tracking-tight',
+                                  theme.accent,
+                                )}
+                              >
+                                {theme.label}
+                              </p>
+                              <p className={cn('text-[26px] font-bold tabular-nums leading-none', numCls)}>
+                                {value}
+                              </p>
+                              <p className={cn('text-[11px] leading-snug mt-1 font-normal', theme.descMuted)}>
+                                {theme.description}
+                              </p>
+                            </div>
                           </div>
                         </div>
                       );

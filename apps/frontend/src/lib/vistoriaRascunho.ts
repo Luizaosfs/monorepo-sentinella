@@ -42,7 +42,7 @@ export interface VistoriaRascunho {
 // ── IndexedDB config (compartilhado com offlineQueue.ts) ──────────────────────
 const DB_NAME      = 'sentinela-offline';
 const DRAFTS_STORE = 'drafts';
-const VERSION      = 3;
+const VERSION      = 4;
 
 function getDraftKey(imovelId: string, agenteId: string): string {
   return `${imovelId}_${agenteId}`;
@@ -72,6 +72,10 @@ function openDb(): Promise<IDBDatabase> {
       // store de rascunhos (v3)
       if (!db.objectStoreNames.contains(DRAFTS_STORE)) {
         db.createObjectStore(DRAFTS_STORE, { keyPath: 'key' });
+      }
+      // v4: store de blobs de evidências pendentes
+      if (!db.objectStoreNames.contains('evidencias_pendentes')) {
+        db.createObjectStore('evidencias_pendentes', { keyPath: 'localId' });
       }
     };
     req.onsuccess = () => resolve(req.result);

@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Layers, AlertCircle, Wrench, Mic, ChevronDown, ChevronRight, Droplets, Bug, Trash2, Shield } from 'lucide-react';
+import { Layers, AlertCircle, Wrench, Mic, ChevronDown, ChevronRight, Droplets, Bug, Trash2, Shield, Camera, Upload, Loader2 } from 'lucide-react';
 import { IdentificacaoLarvaIA, type LarvaIAResult } from './IdentificacaoLarvaIA';
 import { useVoiceInput, parseNumeroVoz } from '@/hooks/useVoiceInput';
 import { cn } from '@/lib/utils';
@@ -11,6 +11,27 @@ import {
   PosicaoCalha, CondicaoCalha,
   POSICAO_CALHA_LABELS, CONDICAO_CALHA_LABELS,
 } from '@/types/database';
+import { compressImage } from '@/lib/compressImage';
+import { invokeUploadEvidencia } from '@/lib/uploadEvidencia';
+import { generateUUID } from '@/lib/uuid';
+import {
+  salvarEvidenciaLocal,
+  carregarEvidenciaLocal,
+  removerEvidenciaLocal,
+} from '@/lib/evidenciasLocais';
+
+export interface EvidenciaFotoLocal {
+  /** IDB key — presente apenas quando statusUpload === 'pendente' */
+  localId?: string;
+  tipoImagem: 'antes' | 'depois';
+  /** Ausente quando statusUpload === 'pendente' (ainda não enviada) */
+  urlOriginal?: string;
+  publicId?: string;
+  tamanhoBytes?: number;
+  mimeType?: string;
+  capturadaEm?: string;
+  statusUpload: 'pendente' | 'enviado' | 'erro';
+}
 
 export interface DepositoRow {
   tipo: TipoDeposito;
@@ -20,6 +41,8 @@ export interface DepositoRow {
   eliminado: boolean;
   vedado: boolean;
   ia_identificacao?: LarvaIAResult | null;
+  foto_antes: EvidenciaFotoLocal | null;
+  foto_depois: EvidenciaFotoLocal | null;
 }
 
 export interface CalhaRow {
@@ -49,6 +72,8 @@ function initDepositos(): DepositoRow[] {
     eliminado: false,
     vedado: false,
     ia_identificacao: null,
+    foto_antes: null,
+    foto_depois: null,
   }));
 }
 
@@ -150,6 +175,203 @@ function SmallToggle({
         <span className="w-3 h-3 rounded-full bg-white shadow" />
       </span>
     </button>
+  );
+}
+
+function FotoDepositoInput({
+  tipoImagem,
+  value,
+  onChange,
+  depositoTipo,
+}: {
+  tipoImagem: 'antes' | 'depois';
+  value: EvidenciaFotoLocal | null;
+  onChange: (v: EvidenciaFotoLocal | null) => void;
+  depositoTipo: string;
+}) {
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState('');
+  // previewSrc é efêmero (objectURL ou urlOriginal) — não é persistido no rascunho
+  const [previewSrc, setPreviewSrc] = useState<string | null>(() =>
+    value?.statusUpload === 'enviado' ? (value.urlOriginal ?? null) : null,
+  );
+  const inputRef = useRef<HTMLInputElement>(null);
+  // Rastreia o objectURL atual para revogação (evita vazamento de memória)
+  const blobUrlRef = useRef<string | null>(null);
+
+  // Sincroniza previewSrc com mudanças em value:
+  // - 'enviado': usa urlOriginal diretamente
+  // - 'pendente': carrega blob do IDB e cria objectURL
+  useEffect(() => {
+    if (!value || value.statusUpload !== 'pendente') {
+      if (blobUrlRef.current) { URL.revokeObjectURL(blobUrlRef.current); blobUrlRef.current = null; }
+      setPreviewSrc(!value ? null : (value.urlOriginal ?? null));
+      return;
+    }
+    if (blobUrlRef.current || !value.localId) return; // já tem preview ou sem localId
+    let cancelled = false;
+    void carregarEvidenciaLocal(value.localId).then((entry) => {
+      if (cancelled || !entry) return;
+      const url = URL.createObjectURL(entry.blob);
+      blobUrlRef.current = url;
+      setPreviewSrc(url);
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [value?.localId, value?.statusUpload, value?.urlOriginal]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Revogar objectURL ao desmontar
+  useEffect(() => {
+    return () => {
+      if (blobUrlRef.current) { URL.revokeObjectURL(blobUrlRef.current); blobUrlRef.current = null; }
+    };
+  }, []);
+
+  async function handleFile(file: File) {
+    setUploading(true);
+    setError('');
+    // Limpa estado anterior
+    if (blobUrlRef.current) { URL.revokeObjectURL(blobUrlRef.current); blobUrlRef.current = null; }
+    if (value?.statusUpload === 'pendente' && value.localId) {
+      await removerEvidenciaLocal(value.localId).catch(() => {});
+    }
+    try {
+      const blob = await compressImage(file);
+      if (navigator.onLine) {
+        // Online: upload imediato para Cloudinary
+        const base64 = await new Promise<string>((res, rej) => {
+          const reader = new FileReader();
+          reader.onload = () => res((reader.result as string).split(',')[1]);
+          reader.onerror = rej;
+          reader.readAsDataURL(blob);
+        });
+        const up = await invokeUploadEvidencia({
+          fileBase64: base64,
+          filename: `${depositoTipo}_${tipoImagem}_${Date.now()}.jpg`,
+          modulo: 'vistoria_depositos',
+        });
+        if ('error' in up) { setError(up.error.message); return; }
+        onChange({
+          tipoImagem,
+          urlOriginal: up.url,
+          publicId: up.public_id ?? '',
+          tamanhoBytes: blob.size,
+          mimeType: 'image/jpeg',
+          capturadaEm: new Date().toISOString(),
+          statusUpload: 'enviado',
+        });
+      } else {
+        // Offline: salvar blob no IDB, criar objectURL para preview imediato
+        const localId = generateUUID();
+        await salvarEvidenciaLocal({
+          localId,
+          depositoTipo,
+          tipoImagem,
+          mimeType: 'image/jpeg',
+          tamanhoBytes: blob.size,
+          criadaEm: new Date().toISOString(),
+          blob,
+        });
+        const url = URL.createObjectURL(blob);
+        blobUrlRef.current = url;
+        setPreviewSrc(url);
+        onChange({
+          localId,
+          tipoImagem,
+          tamanhoBytes: blob.size,
+          mimeType: 'image/jpeg',
+          capturadaEm: new Date().toISOString(),
+          statusUpload: 'pendente',
+        });
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao processar imagem');
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function handleRemove() {
+    if (value?.statusUpload === 'pendente' && value.localId) {
+      await removerEvidenciaLocal(value.localId).catch(() => {});
+    }
+    if (blobUrlRef.current) { URL.revokeObjectURL(blobUrlRef.current); blobUrlRef.current = null; }
+    setPreviewSrc(null);
+    onChange(null);
+  }
+
+  const label = tipoImagem === 'antes' ? 'Foto Antes' : 'Foto Depois';
+  const colorClass =
+    tipoImagem === 'antes'
+      ? 'border-sky-300 bg-sky-50/50 dark:bg-sky-950/20 text-sky-700 dark:text-sky-400'
+      : 'border-emerald-300 bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400';
+  const isPending = value?.statusUpload === 'pendente';
+
+  return (
+    <div className="space-y-1.5">
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) void handleFile(file);
+          e.target.value = '';
+        }}
+      />
+      {value ? (
+        <div className="space-y-1">
+          {previewSrc ? (
+            <img
+              src={previewSrc}
+              alt={`Foto ${tipoImagem}`}
+              className="w-full h-28 object-cover rounded-xl border border-border"
+            />
+          ) : (
+            <div className="w-full h-28 rounded-xl border border-border bg-muted flex items-center justify-center">
+              <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+            </div>
+          )}
+          <div className="flex items-center justify-between px-0.5">
+            <span className="text-[11px] font-semibold uppercase tracking-wide flex items-center gap-1">
+              <span className="text-muted-foreground">{label}</span>
+              {isPending ? (
+                <span className="text-amber-500">• pendente upload</span>
+              ) : (
+                <span className="text-emerald-600">✓</span>
+              )}
+            </span>
+            <button
+              type="button"
+              onClick={() => void handleRemove()}
+              className="text-[11px] text-muted-foreground hover:text-destructive underline"
+            >
+              Remover
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          disabled={uploading}
+          className={cn(
+            'w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl border-2 border-dashed text-sm font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed',
+            colorClass,
+          )}
+        >
+          {uploading ? (
+            <Loader2 className="w-4 h-4 shrink-0 animate-spin" />
+          ) : (
+            <Camera className="w-4 h-4 shrink-0" />
+          )}
+          <span className="flex-1 text-left">{uploading ? 'Processando...' : label}</span>
+          {!uploading && <Upload className="w-3.5 h-3.5 opacity-60" />}
+        </button>
+      )}
+      {error && <p className="text-xs text-destructive font-semibold">{error}</p>}
+    </div>
   );
 }
 
@@ -273,31 +495,54 @@ function DepositoAccordion({
             </div>
           </div>
 
+          {/* Foto Antes + IA — shown whenever any deposit was inspected */}
+          {dep.qtd_inspecionados > 0 && (
+            <div className="space-y-2">
+              <FotoDepositoInput
+                tipoImagem="antes"
+                value={dep.foto_antes}
+                onChange={(v) => onUpdate({ ...dep, foto_antes: v })}
+                depositoTipo={dep.tipo}
+              />
+              {/* IA requer foto já enviada para Cloudinary — oculta quando pendente de upload */}
+              {dep.foto_antes?.statusUpload !== 'pendente' && (
+                <IdentificacaoLarvaIA
+                  depositoTipo={dep.tipo}
+                  vistoriaId={vistoriaId}
+                  onResult={(res) => onUpdate({ ...dep, ia_identificacao: res })}
+                />
+              )}
+            </div>
+          )}
+
           {/* Eliminado / Vedado — shown when há focos ou água */}
           {(dep.qtd_com_focos > 0 || dep.qtd_com_agua > 0) && (
-            <>
-              <div className="flex gap-2 pt-1">
-                <SmallToggle
-                  label="Eliminado"
-                  icon={<Trash2 className="w-3.5 h-3.5" />}
-                  checked={dep.eliminado}
-                  onChange={(v) => clampedUpdate('eliminado', v)}
-                  colorClass="border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400"
-                />
-                <SmallToggle
-                  label="Vedado"
-                  icon={<Shield className="w-3.5 h-3.5" />}
-                  checked={dep.vedado}
-                  onChange={(v) => clampedUpdate('vedado', v)}
-                  colorClass="border-blue-500 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400"
-                />
-              </div>
-              <IdentificacaoLarvaIA
-                depositoTipo={dep.tipo}
-                vistoriaId={vistoriaId}
-                onResult={(res) => onUpdate({ ...dep, ia_identificacao: res })}
+            <div className="flex gap-2 pt-1">
+              <SmallToggle
+                label="Eliminado"
+                icon={<Trash2 className="w-3.5 h-3.5" />}
+                checked={dep.eliminado}
+                onChange={(v) => clampedUpdate('eliminado', v)}
+                colorClass="border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400"
               />
-            </>
+              <SmallToggle
+                label="Vedado"
+                icon={<Shield className="w-3.5 h-3.5" />}
+                checked={dep.vedado}
+                onChange={(v) => clampedUpdate('vedado', v)}
+                colorClass="border-blue-500 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400"
+              />
+            </div>
+          )}
+
+          {/* Foto Depois — shown when eliminado or vedado */}
+          {(dep.eliminado || dep.vedado) && (
+            <FotoDepositoInput
+              tipoImagem="depois"
+              value={dep.foto_depois}
+              onChange={(v) => onUpdate({ ...dep, foto_depois: v })}
+              depositoTipo={dep.tipo}
+            />
           )}
         </div>
       )}
@@ -366,6 +611,8 @@ function AddCalhaForm({ onAdd }: { onAdd: (c: CalhaRow) => void }) {
 }
 
 export function VistoriaEtapa3Inspecao({ data, onChange, onNext, vistoriaId }: Props) {
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+
   const totalInspecionados = data.depositos.reduce((s, d) => s + d.qtd_inspecionados, 0);
   const totalComAgua = data.depositos.reduce((s, d) => s + d.qtd_com_agua, 0);
   const totalFocos = data.depositos.reduce((s, d) => s + d.qtd_com_focos, 0);
@@ -375,6 +622,24 @@ export function VistoriaEtapa3Inspecao({ data, onChange, onNext, vistoriaId }: P
       ...data,
       depositos: data.depositos.map((d) => (d.tipo === tipo ? updated : d)),
     });
+  }
+
+  function handleNext() {
+    const errors: string[] = [];
+    for (const dep of data.depositos) {
+      if (dep.qtd_inspecionados > 0 && !dep.foto_antes) {
+        errors.push(`${dep.tipo} — ${DEPOSITO_LABELS[dep.tipo]}: foto antes obrigatória`);
+      }
+      if ((dep.eliminado || dep.vedado) && !dep.foto_depois) {
+        errors.push(`${dep.tipo} — ${DEPOSITO_LABELS[dep.tipo]}: foto depois obrigatória`);
+      }
+    }
+    if (errors.length > 0) {
+      setValidationErrors(errors);
+      return;
+    }
+    setValidationErrors([]);
+    onNext();
   }
 
   return (
@@ -513,7 +778,21 @@ export function VistoriaEtapa3Inspecao({ data, onChange, onNext, vistoriaId }: P
         </CardContent>
       </Card>
 
-      <Button className="w-full h-12 rounded-xl text-base font-bold" onClick={onNext}>
+      {validationErrors.length > 0 && (
+        <div className="flex flex-col gap-1 p-3 rounded-xl border-2 border-destructive/50 bg-destructive/5">
+          <p className="text-xs font-bold text-destructive flex items-center gap-1.5">
+            <AlertCircle className="w-3.5 h-3.5" />
+            Fotos obrigatórias antes de avançar
+          </p>
+          <ul className="mt-0.5 space-y-0.5">
+            {validationErrors.map((err, i) => (
+              <li key={i} className="text-xs text-destructive">• {err}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <Button className="w-full h-12 rounded-xl text-base font-bold" onClick={handleNext}>
         Avançar
       </Button>
     </div>

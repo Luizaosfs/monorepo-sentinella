@@ -18,25 +18,49 @@ export const depositoEvidenciaSchema = z.object({
 
 export type DepositoEvidenciaInput = z.infer<typeof depositoEvidenciaSchema>;
 
-const depositoSchema = z.object({
-  tipoDeposito: z
-    .string({ required_error: 'Tipo de depósito obrigatório' })
-    .describe('Tipo do depósito (A1, A2, B, C, D1, D2, E)'),
-  quantidade: z.coerce.number().int().positive().optional().describe('Quantidade inspecionada'),
-  qtdComAgua: z.coerce.number().int().min(0).optional().describe('Quantidade com água'),
-  qtdComFocos: z.coerce.number().int().min(0).optional().describe('Quantidade com focos'),
-  qtdEliminados: z.coerce.number().int().min(0).default(0).describe('Quantidade eliminada'),
-  usouLarvicida: z.boolean().optional().describe('Usou larvicida'),
-  qtdLarvicidaG: z.coerce.number().min(0).optional().nullable().describe('Quantidade de larvicida (g)'),
-  comLarva: z.boolean().optional().describe('Presença de larvas (atalho mobile)'),
-  eliminado: z.boolean().optional().describe('Depósito eliminado'),
-  tratado: z.boolean().optional().describe('Depósito tratado (atalho mobile)'),
-  vedado: z.boolean().default(false).describe('Depósito vedado'),
-  evidencias: z
-    .array(depositoEvidenciaSchema)
-    .optional()
-    .describe('Evidências fotográficas do depósito (antes/depois)'),
-});
+const depositoSchema = z
+  .object({
+    tipoDeposito: z
+      .string({ required_error: 'Tipo de depósito obrigatório' })
+      .describe('Tipo do depósito (A1, A2, B, C, D1, D2, E)'),
+    quantidade: z.coerce.number().int().positive().optional().describe('Quantidade inspecionada'),
+    qtdComAgua: z.coerce.number().int().min(0).optional().describe('Quantidade com água'),
+    qtdComFocos: z.coerce.number().int().min(0).optional().describe('Quantidade com focos'),
+    qtdEliminados: z.coerce.number().int().min(0).default(0).describe('Quantidade eliminada'),
+    usouLarvicida: z.boolean().optional().describe('Usou larvicida'),
+    qtdLarvicidaG: z.coerce.number().min(0).optional().nullable().describe('Quantidade de larvicida (g)'),
+    comLarva: z.boolean().optional().describe('Presença de larvas (atalho mobile)'),
+    eliminado: z.boolean().optional().describe('Depósito eliminado'),
+    tratado: z.boolean().optional().describe('Depósito tratado (atalho mobile)'),
+    vedado: z.boolean().default(false).describe('Depósito vedado'),
+    evidencias: z
+      .array(depositoEvidenciaSchema)
+      .optional()
+      .describe('Evidências fotográficas do depósito (antes/depois)'),
+  })
+  .superRefine((val, ctx) => {
+    const evs = val.evidencias;
+    if (!evs || evs.length === 0) return; // backward compat: payloads sem evidências nunca são rejeitados
+
+    const qtd = val.quantidade ?? 0;
+    const hasAntes = evs.some((e) => e.tipoImagem === 'antes');
+    const hasDepois = evs.some((e) => e.tipoImagem === 'depois');
+
+    if (qtd > 0 && !hasAntes) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Foto antes obrigatória quando há inspeção',
+        path: ['evidencias'],
+      });
+    }
+    if ((val.eliminado || val.vedado) && !hasDepois) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Foto depois obrigatória quando depósito foi eliminado ou vedado',
+        path: ['evidencias'],
+      });
+    }
+  });
 
 const sintomaSchema = z.object({
   febre:                z.boolean().default(false),

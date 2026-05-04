@@ -23,9 +23,11 @@ import { generateUUID } from '@/lib/uuid';
 
 const DB_NAME = 'sentinela-offline';
 const STORE   = 'operations';
-const VERSION = 3; // v3: adiciona store 'drafts' para rascunhos de vistoria (IndexedDB > localStorage)
+const VERSION = 4; // v4: adiciona store 'evidencias_pendentes' para blobs de fotos offline
 
 export interface VistoriaPayload {
+  /** Versão do schema offline — v1 (legado) sem evidencias; v2+ suporta blobs pendentes. */
+  offlineSchemaVersion?: number;
   /** UUID gerado no frontend antes de enfileirar — garante idempotência no servidor. */
   idempotency_key?: string;
   clienteId: string;
@@ -56,6 +58,16 @@ export interface VistoriaPayload {
     usou_larvicida: boolean;
     qtd_larvicida_g: number | null;
     ia_identificacao?: Record<string, unknown> | null;
+    evidencias?: {
+      localId?: string;
+      tipo_imagem: 'antes' | 'depois';
+      url_original?: string;
+      public_id?: string;
+      tamanho_bytes?: number;
+      mime_type?: string;
+      capturada_em?: string;
+      status_upload: 'pendente' | 'enviado' | 'erro';
+    }[];
   }[];
   sintomas: {
     febre: boolean;
@@ -130,6 +142,10 @@ function openDb(): Promise<IDBDatabase> {
       // v3: store de rascunhos de vistoria (chave = imovelId_agenteId)
       if (!db.objectStoreNames.contains('drafts')) {
         db.createObjectStore('drafts', { keyPath: 'key' });
+      }
+      // v4: store de blobs de evidências pendentes
+      if (!db.objectStoreNames.contains('evidencias_pendentes')) {
+        db.createObjectStore('evidencias_pendentes', { keyPath: 'localId' });
       }
     };
     req.onsuccess = () => resolve(req.result);
@@ -265,9 +281,74 @@ async function _drainQueueInternal(): Promise<{
   let vistoriasPendentes = 0;
 
   // Processar em ordem de criação
-  const sorted = [...ops].sort((a, b) => a.createdAt - b.createdAt);
+  let sortedOps = [...ops].sort((a, b) => a.createdAt - b.createdAt);
 
-  for (const op of sorted) {
+  // ── FASE A: upload de blobs de evidências pendentes ─────────────────────────
+  const hasPendingEvidencias = sortedOps.some(
+    (op) =>
+      op.type === 'save_vistoria' &&
+      (op.payload.offlineSchemaVersion ?? 1) >= 2 &&
+      op.payload.depositos.some((dep) =>
+        dep.evidencias?.some((ev) => ev.status_upload === 'pendente'),
+      ),
+  );
+  if (hasPendingEvidencias) {
+    const { carregarEvidenciaLocal, removerEvidenciaLocal } = await import('@/lib/evidenciasLocais');
+    const { invokeUploadEvidencia } = await import('@/lib/uploadEvidencia');
+    for (const op of sortedOps) {
+      if (op.type !== 'save_vistoria') continue;
+      const p = op.payload;
+      if ((p.offlineSchemaVersion ?? 1) < 2) continue;
+      const depositos = [...p.depositos];
+      let opDirty = false;
+      for (let di = 0; di < depositos.length; di++) {
+        const dep = depositos[di];
+        if (!dep.evidencias?.length) continue;
+        const evidencias = [...dep.evidencias];
+        let depDirty = false;
+        for (let ei = 0; ei < evidencias.length; ei++) {
+          const ev = evidencias[ei];
+          if (ev.status_upload !== 'pendente' || !ev.localId) continue;
+          try {
+            const entry = await carregarEvidenciaLocal(ev.localId);
+            if (!entry) {
+              evidencias[ei] = { ...ev, status_upload: 'erro' };
+              depDirty = true; opDirty = true;
+              continue;
+            }
+            const base64 = await new Promise<string>((res, rej) => {
+              const reader = new FileReader();
+              reader.onload = () => res((reader.result as string).split(',')[1]);
+              reader.onerror = rej;
+              reader.readAsDataURL(entry.blob);
+            });
+            const up = await invokeUploadEvidencia({
+              fileBase64: base64,
+              filename: `${dep.tipo}_${ev.tipo_imagem}_${ev.localId}.jpg`,
+              modulo: 'vistoria_depositos',
+            });
+            if ('url' in up) {
+              evidencias[ei] = { ...ev, url_original: up.url, public_id: up.public_id ?? '', status_upload: 'enviado' };
+              await removerEvidenciaLocal(ev.localId).catch(() => {});
+            } else {
+              evidencias[ei] = { ...ev, status_upload: 'erro' };
+            }
+            depDirty = true; opDirty = true;
+          } catch {
+            evidencias[ei] = { ...ev, status_upload: 'erro' };
+            depDirty = true; opDirty = true;
+          }
+        }
+        if (depDirty) depositos[di] = { ...dep, evidencias };
+      }
+      if (opDirty) await updateItem({ ...op, payload: { ...p, depositos } });
+    }
+    const opsAtualizados = await listAll();
+    sortedOps = opsAtualizados.sort((a, b) => a.createdAt - b.createdAt);
+  }
+
+  // ── FASE B: envio das operações ───────────────────────────────────────────
+  for (const op of sortedOps) {
     // Aguardar janela de retry (backoff exponencial)
     if (op.nextRetryAt && op.nextRetryAt > Date.now()) {
       failed++;
@@ -353,7 +434,10 @@ async function _drainQueueInternal(): Promise<{
           origem_visita: p.origem_visita ?? null,
           habitat_selecionado: p.habitat_selecionado ?? null,
           condicao_habitat: p.condicao_habitat ?? null,
-          depositos: p.depositos,
+          depositos: p.depositos.map((dep) => ({
+              ...dep,
+              evidencias: dep.evidencias?.filter((ev) => !!ev.url_original),
+            })),
           sintomas: p.sintomas ? [p.sintomas] : undefined,
           riscos: p.riscos ? [p.riscos] : undefined,
           tem_calha: p.tem_calha,

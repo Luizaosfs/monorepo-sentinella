@@ -145,8 +145,13 @@ export class PrismaVistoriaWriteRepository implements VistoriaWriteRepository {
         })),
       );
 
-      if (allEvidencias.length) {
-        await tx.vistoria_deposito_evidencias.createMany({ data: allEvidencias });
+      // Dedupe: keep last occurrence per (tipo_deposito, tipo_imagem) — prevents duplicate-key errors on retries
+      const deduped = [
+        ...new Map(allEvidencias.map((e) => [`${e.tipo_deposito}:${e.tipo_imagem}`, e])).values(),
+      ];
+
+      if (deduped.length) {
+        await tx.vistoria_deposito_evidencias.createMany({ data: deduped });
       }
 
       return raw.id;

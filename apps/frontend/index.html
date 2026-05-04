@@ -11,11 +11,12 @@
     <meta name="twitter:card" content="summary_large_image" />
 
     <!--
-      Content Security Policy — ajustar APP_ORIGIN em produção se necessário.
+      Content Security Policy — ajustar origens em produção quando mudar API/host.
       'unsafe-inline' em script-src e style-src é necessário para Vite (HMR em dev)
       e para bibliotecas de UI que injetam estilos em runtime (shadcn/Radix).
-      connect-src cobre Supabase REST + Realtime (WSS) + Google Maps Geocoding + Sentry error reporting.
-      img-src inclui data: e blob: para assinatura digital e pré-visualização de fotos.
+      connect-src: API ('self'), Supabase, Sentry, Google Maps geocode, Open-Meteo (forecast + geocoding),
+      Nominatim (reverse/search em lib/geo e importação), upload direto Cloudinary.
+      img-src: fotos Cloudinary/OSM/Carto, tiles Esri (satélite/relevo), Google Maps estáticos, QR externo.
     -->
     <meta http-equiv="Content-Security-Policy" content="
       default-src 'self';
@@ -23,7 +24,7 @@
       style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
       font-src 'self' https://fonts.gstatic.com data:;
       img-src 'self' data: blob: https://*.cloudinary.com https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com https://server.arcgisonline.com https://services.arcgisonline.com https://maps.gstatic.com https://maps.googleapis.com https://api.qrserver.com;
-      connect-src 'self' http://localhost:3333 http://177.7.37.14:3000 http://177.7.37.14:8080 https://sentinellamap.com.br https://www.sentinellamap.com.br http://177.7.37.14:3333  https://*.supabase.co wss://*.supabase.co https://maps.googleapis.com https://*.sentry.io https://o4511116110528512.ingest.us.sentry.io https://api.open-meteo.com;
+      connect-src 'self' http://localhost:3333 http://177.7.37.14:3000 http://177.7.37.14:8080 https://sentinellamap.com.br https://www.sentinellamap.com.br http://177.7.37.14:3333  https://*.supabase.co wss://*.supabase.co https://maps.googleapis.com https://*.sentry.io https://o4511116110528512.ingest.us.sentry.io https://api.open-meteo.com https://geocoding-api.open-meteo.com https://nominatim.openstreetmap.org https://api.cloudinary.com;
       worker-src 'self' blob:;
       child-src 'none';
       frame-src 'none';

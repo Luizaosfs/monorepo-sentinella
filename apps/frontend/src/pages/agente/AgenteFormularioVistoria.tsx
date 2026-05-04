@@ -428,6 +428,7 @@ export default function AgenteFormularioVistoria() {
         type: 'save_vistoria',
         createdAt: Date.now(),
         payload: {
+          offlineSchemaVersion: 2,
           clienteId,
           imovelId,
           agenteId,
@@ -447,6 +448,28 @@ export default function AgenteFormularioVistoria() {
           observacao: etapa5.observacao || null,
           depositos: depositosAtivos.map((dep) => {
             const trat = etapa4.tratamentos.find((t) => t.tipo === dep.tipo);
+            const evidencias = [
+              ...(dep.foto_antes ? [{
+                localId: dep.foto_antes.localId,
+                tipo_imagem: 'antes' as const,
+                url_original: dep.foto_antes.urlOriginal,
+                public_id: dep.foto_antes.publicId,
+                tamanho_bytes: dep.foto_antes.tamanhoBytes,
+                mime_type: dep.foto_antes.mimeType,
+                capturada_em: dep.foto_antes.capturadaEm,
+                status_upload: dep.foto_antes.statusUpload,
+              }] : []),
+              ...(dep.foto_depois ? [{
+                localId: dep.foto_depois.localId,
+                tipo_imagem: 'depois' as const,
+                url_original: dep.foto_depois.urlOriginal,
+                public_id: dep.foto_depois.publicId,
+                tamanho_bytes: dep.foto_depois.tamanhoBytes,
+                mime_type: dep.foto_depois.mimeType,
+                capturada_em: dep.foto_depois.capturadaEm,
+                status_upload: dep.foto_depois.statusUpload,
+              }] : []),
+            ];
             return {
               tipo: dep.tipo,
               qtd_inspecionados: dep.qtd_inspecionados,
@@ -458,6 +481,7 @@ export default function AgenteFormularioVistoria() {
               usou_larvicida: trat?.usou_larvicida ?? false,
               qtd_larvicida_g: trat?.qtd_larvicida_g ?? null,
               ia_identificacao: dep.ia_identificacao ?? null,
+              ...(evidencias.length > 0 && { evidencias }),
             };
           }),
           sintomas: algumSintoma ? {
@@ -574,6 +598,26 @@ export default function AgenteFormularioVistoria() {
         idempotency_key: idempotencyKey,
         depositos: depositosAtivos.map((dep) => {
           const trat = etapa4.tratamentos.find((t) => t.tipo === dep.tipo);
+          const evidencias = [
+            ...(dep.foto_antes?.statusUpload === 'enviado' ? [{
+              tipo_imagem: 'antes' as const,
+              url_original: dep.foto_antes.urlOriginal ?? '',
+              public_id: dep.foto_antes.publicId ?? '',
+              tamanho_bytes: dep.foto_antes.tamanhoBytes,
+              mime_type: dep.foto_antes.mimeType,
+              capturada_em: dep.foto_antes.capturadaEm,
+              status_upload: 'enviado' as const,
+            }] : []),
+            ...(dep.foto_depois?.statusUpload === 'enviado' ? [{
+              tipo_imagem: 'depois' as const,
+              url_original: dep.foto_depois.urlOriginal ?? '',
+              public_id: dep.foto_depois.publicId ?? '',
+              tamanho_bytes: dep.foto_depois.tamanhoBytes,
+              mime_type: dep.foto_depois.mimeType,
+              capturada_em: dep.foto_depois.capturadaEm,
+              status_upload: 'enviado' as const,
+            }] : []),
+          ];
           return {
             tipo_deposito: dep.tipo,
             quantidade: dep.qtd_inspecionados,
@@ -584,6 +628,7 @@ export default function AgenteFormularioVistoria() {
             vedado: dep.vedado,
             tratado: trat?.usou_larvicida ?? false,
             qtd_larvicida_g: trat?.usou_larvicida ? (trat.qtd_larvicida_g ?? null) : null,
+            ...(evidencias.length > 0 && { evidencias }),
           };
         }),
         sintomas: algumSintoma ? [{

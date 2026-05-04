@@ -84,7 +84,7 @@ export function IdentificacaoLarvaIA({ vistoriaId, depositoTipo, onResult }: Pro
           className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl border-2 border-dashed border-violet-300 dark:border-violet-700 bg-violet-50/50 dark:bg-violet-950/20 text-violet-700 dark:text-violet-400 text-sm font-semibold hover:bg-violet-100/50 dark:hover:bg-violet-900/30 transition-colors"
         >
           <Camera className="w-4 h-4 shrink-0" />
-          <span className="flex-1 text-left">Identificar larva por foto (IA)</span>
+          <span className="flex-1 text-left">Análise por IA (opcional)</span>
           <Upload className="w-3.5 h-3.5 opacity-60" />
         </button>
         {state === 'error' && (
