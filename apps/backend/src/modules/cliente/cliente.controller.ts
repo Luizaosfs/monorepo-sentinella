@@ -51,6 +51,7 @@ import { GetIntegracoes } from './use-cases/get-integracoes';
 import { PaginationCliente } from './use-cases/pagination-cliente';
 import { ResolverPorCoordenada } from './use-cases/resolver-por-coordenada';
 import { SaveCliente } from './use-cases/save-cliente';
+import { SeedSlaFocoConfigRetroativo } from './use-cases/seed-sla-foco-config-retroativo';
 import { TestarIntegracao } from './use-cases/testar-integracao';
 import { UpdateIntegracaoMeta } from './use-cases/update-integracao-meta';
 import { UpsertIntegracao } from './use-cases/upsert-integracao';
@@ -74,6 +75,7 @@ export class ClienteController {
     private upsertIntegracaoUc: UpsertIntegracao,
     private updateIntegracaoMetaUc: UpdateIntegracaoMeta,
     private testarIntegracaoUc: TestarIntegracao,
+    private seedSlaFocoConfigRetroativoUc: SeedSlaFocoConfigRetroativo,
     private prisma: PrismaService,
     @Inject(REQUEST) private req: Request,
   ) {}
@@ -201,6 +203,13 @@ export class ClienteController {
     if (!user.clienteId) return null;
     const { cliente } = await this.getCliente.execute(user.clienteId);
     return ClienteViewModel.toHttp(cliente);
+  }
+
+  @Post('seed-sla-foco-config')
+  @Roles('admin')
+  @ApiOperation({ summary: 'Seed retroativo de sla_foco_config para clientes sem configuração de SLA de foco' })
+  async seedSlaFocoConfig(@Body() body: { clienteId?: string }) {
+    return this.seedSlaFocoConfigRetroativoUc.execute(body?.clienteId);
   }
 
   @Get(':id')

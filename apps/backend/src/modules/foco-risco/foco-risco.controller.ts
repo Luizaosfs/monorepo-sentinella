@@ -69,6 +69,7 @@ import { GetFocoHistorico } from './use-cases/get-foco-historico';
 import { GetFocoTimeline } from './use-cases/get-foco-timeline';
 import { GetFocoRisco } from './use-cases/get-foco-risco';
 import { GetFocoDetalhes } from './use-cases/get-foco-detalhes';
+import { GetFocosAgrupados } from './use-cases/get-focos-agrupados';
 import { GetResumoVisualVistoriaPorFoco } from './use-cases/get-resumo-visual-vistoria-por-foco';
 import { IniciarInspecao } from './use-cases/iniciar-inspecao';
 import { ListFocosByIds } from './use-cases/list-focos-by-ids';
@@ -100,6 +101,7 @@ export class FocoRiscoController {
     private listFocosByIdsUc: ListFocosByIds,
     private updateFocoRiscoUc: UpdateFocoRisco,
     private getFocoDetalhesUc: GetFocoDetalhes,
+    private getFocosAgrupadosUc: GetFocosAgrupados,
     private getResumoVisualVistoriaPorFocoUc: GetResumoVisualVistoriaPorFoco,
     private prisma: PrismaService,
     @Inject(REQUEST) private req: Request,
@@ -184,6 +186,14 @@ export class FocoRiscoController {
     // MT-03: clienteId vem do TenantGuard, não de query param
     const clienteId = requireTenantId(getAccessScope(this.req));
     return this.contagemPorStatusUc.execute(clienteId);
+  }
+
+  @Get('agrupados')
+  @Roles('admin', 'supervisor', 'agente')
+  @ApiOperation({ summary: 'Focos ativos agrupados por território (quadra › bairro › região › item) para o mapa de triagem' })
+  async agrupados() {
+    const clienteId = requireTenantId(getAccessScope(this.req));
+    return this.getFocosAgrupadosUc.execute(clienteId);
   }
 
   @Get('by-ids')

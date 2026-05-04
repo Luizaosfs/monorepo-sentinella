@@ -14,6 +14,7 @@ import { PaginationCliente } from './use-cases/pagination-cliente';
 import { ResolverPorCoordenada } from './use-cases/resolver-por-coordenada';
 import { SaveCliente } from './use-cases/save-cliente';
 import { SeedClienteNovo } from './use-cases/seed-cliente-novo';
+import { SeedSlaFocoConfigRetroativo } from './use-cases/seed-sla-foco-config-retroativo';
 import { TestarIntegracao } from './use-cases/testar-integracao';
 import { UpdateIntegracaoMeta } from './use-cases/update-integracao-meta';
 import { UpsertIntegracao } from './use-cases/upsert-integracao';
@@ -27,6 +28,7 @@ import { UpsertIntegracao } from './use-cases/upsert-integracao';
     PaginationCliente,
     SaveCliente,
     SeedClienteNovo,
+    SeedSlaFocoConfigRetroativo,
     ResolverPorCoordenada,
     GetIntegracaoApiKey,
     GetIntegracoes,

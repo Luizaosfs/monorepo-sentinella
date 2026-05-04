@@ -45,7 +45,7 @@ describe('SeedClienteNovo', () => {
   let tx: ReturnType<typeof makeTx>;
 
   beforeEach(() => {
-    useCase = new SeedClienteNovo();
+    useCase = new SeedClienteNovo({} as never);
     tx = makeTx();
   });
 

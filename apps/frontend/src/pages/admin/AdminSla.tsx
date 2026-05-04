@@ -29,6 +29,7 @@ import MobileListCard from '@/components/admin/MobileListCard';
 import { exportSlaPdf } from '@/lib/slaPdf';
 import SlaConfigTab from '@/components/sla/SlaConfigTab';
 import SlaAuditLog from '@/components/sla/SlaAuditLog';
+import SlaFocoConfigTab from '@/components/sla/SlaFocoConfigTab';
 import SlaRegioesTab from '@/components/sla/SlaRegioesTab';
 
 /* ── Visual helpers ── */
@@ -317,12 +318,15 @@ const AdminSla = () => {
       )}
 
       <Tabs defaultValue="gestao" className="space-y-5">
-        <TabsList className="grid w-full max-w-2xl grid-cols-4">
+        <TabsList className="grid w-full max-w-3xl grid-cols-5">
           <TabsTrigger value="gestao" className="gap-1.5 text-xs">
             <Timer className="w-3.5 h-3.5" /> Gestão
           </TabsTrigger>
           <TabsTrigger value="config" className="gap-1.5 text-xs">
             <Settings2 className="w-3.5 h-3.5" /> Configuração
+          </TabsTrigger>
+          <TabsTrigger value="fases" className="gap-1.5 text-xs">
+            <TrendingUp className="w-3.5 h-3.5" /> Fases (ISTI)
           </TabsTrigger>
           <TabsTrigger value="regioes" className="gap-1.5 text-xs">
             <MapPin className="w-3.5 h-3.5" /> Por Região
@@ -718,6 +722,11 @@ const AdminSla = () => {
         {/* ── Tab: Configuração ── */}
         <TabsContent value="config">
           <SlaConfigTab clienteId={clienteId} />
+        </TabsContent>
+
+        {/* ── Tab: Fases ISTI ── */}
+        <TabsContent value="fases">
+          <SlaFocoConfigTab clienteId={clienteId} />
         </TabsContent>
 
         {/* ── Tab: Por Região ── */}

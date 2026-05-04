@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 
 export interface SeedClienteNovoResult {
   clientePlano: 'criado' | 'pulado_sem_plano_basico' | 'ja_existente';
@@ -259,6 +260,13 @@ type TxClient = {
 @Injectable()
 export class SeedClienteNovo {
   private readonly logger = new Logger(SeedClienteNovo.name);
+
+  constructor(private prisma: PrismaService) {}
+
+  /** Seed retroativo (fora de transação) — idempotente, best-effort por cliente. */
+  async executeRetroativo(clienteId: string): Promise<SeedClienteNovoResult> {
+    return this.execute(clienteId, this.prisma.client);
+  }
 
   async execute(clienteId: string, tx: unknown): Promise<SeedClienteNovoResult> {
     const client = tx as TxClient;

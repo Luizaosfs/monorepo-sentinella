@@ -29,6 +29,7 @@ import { CriarFocoDeVistoriaDeposito } from './use-cases/auto-criacao/criar-foco
 import { NormalizarCicloFoco } from './use-cases/normalizar-ciclo-foco';
 import { RecalcularScorePrioridadeFoco } from './use-cases/recalcular-score-prioridade-foco';
 import { GetFocoDetalhes } from './use-cases/get-foco-detalhes';
+import { GetFocosAgrupados } from './use-cases/get-focos-agrupados';
 import { GetResumoVisualVistoriaPorFoco } from './use-cases/get-resumo-visual-vistoria-por-foco';
 
 @Module({
@@ -55,6 +56,7 @@ import { GetResumoVisualVistoriaPorFoco } from './use-cases/get-resumo-visual-vi
     NormalizarCicloFoco,
     RecalcularScorePrioridadeFoco,
     GetFocoDetalhes,
+    GetFocosAgrupados,
     GetResumoVisualVistoriaPorFoco,
     JwtService,
     PrismaService,
