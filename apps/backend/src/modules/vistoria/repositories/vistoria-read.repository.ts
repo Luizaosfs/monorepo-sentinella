@@ -140,6 +140,13 @@ export interface VistoriaResumoVisual {
     acamado: boolean;
     outro_risco_vetorial: string | null;
   }>;
+  evidencias_depositos: Array<{
+    id: string;
+    tipo_deposito: string;
+    tipo_imagem: string;
+    url_original: string;
+    created_at: Date | null;
+  }>;
 }
 
 @Injectable()

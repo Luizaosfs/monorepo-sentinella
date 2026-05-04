@@ -344,6 +344,17 @@ export class GetResumoVisualVistoriaPorFoco {
       }
     }
 
+    for (const ev of (vistoria?.evidencias_depositos ?? [])) {
+      const tipoLabel = ev.tipo_imagem === 'antes' ? 'antes' : 'depois';
+      evidencias.push({
+        tipo: 'foto',
+        url: ev.url_original,
+        legenda: `Depósito ${ev.tipo_deposito} — ${tipoLabel}`,
+        origem: 'vistoria',
+        createdAt: ev.created_at ? ev.created_at.toISOString() : null,
+      });
+    }
+
     for (const op of operacoes) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       for (const ev of (op.evidencias ?? []) as any[]) {

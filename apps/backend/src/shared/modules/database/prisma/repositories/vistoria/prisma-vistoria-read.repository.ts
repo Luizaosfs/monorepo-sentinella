@@ -62,7 +62,14 @@ const RESUMO_INCLUDE = {
       acamado: true, outro_risco_vetorial: true,
     },
   },
-} as const;
+  evidencias_depositos: {
+    where: { status_upload: 'enviado' },
+    select: {
+      id: true, tipo_deposito: true, tipo_imagem: true,
+      url_original: true, created_at: true,
+    },
+  },
+};
 
 @PrismaRepository(VistoriaReadRepository)
 @Injectable()
@@ -410,6 +417,13 @@ export class PrismaVistoriaReadRepository implements VistoriaReadRepository {
         mobilidade_reduzida: r.mobilidade_reduzida,
         acamado: r.acamado,
         outro_risco_vetorial: r.outro_risco_vetorial ?? null,
+      })),
+      evidencias_depositos: (raw.evidencias_depositos ?? []).map((e: any) => ({
+        id: e.id as string,
+        tipo_deposito: e.tipo_deposito as string,
+        tipo_imagem: e.tipo_imagem as string,
+        url_original: e.url_original as string,
+        created_at: e.created_at as Date | null,
       })),
     };
   }
