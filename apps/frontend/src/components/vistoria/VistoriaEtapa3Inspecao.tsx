@@ -504,14 +504,6 @@ function DepositoAccordion({
                 onChange={(v) => onUpdate({ ...dep, foto_antes: v })}
                 depositoTipo={dep.tipo}
               />
-              {/* IA requer foto já enviada para Cloudinary — oculta quando pendente de upload */}
-              {dep.foto_antes?.statusUpload !== 'pendente' && (
-                <IdentificacaoLarvaIA
-                  depositoTipo={dep.tipo}
-                  vistoriaId={vistoriaId}
-                  onResult={(res) => onUpdate({ ...dep, ia_identificacao: res })}
-                />
-              )}
             </div>
           )}
 
