@@ -9,10 +9,14 @@ import {
   ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell,
 } from 'recharts';
 import {
-  AlertTriangle, Map, ShieldAlert,
+  AlertTriangle, Map,
   Activity, RefreshCw, Filter, X, Layers, Users,
   MapPin, CheckCircle, Clock, SlidersHorizontal, ChevronDown,
 } from 'lucide-react';
+import { IconIdoso } from '@/components/icons/IconIdoso';
+import { IconMenorStroller } from '@/components/icons/IconMenorStroller';
+import { IconCamaAcamado } from '@/components/icons/IconCamaAcamado';
+import { IconCadeiraRodas } from '@/components/icons/IconCadeiraRodas';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -85,10 +89,10 @@ const VULN_KEYS: VulnKey[] = ['idosoIncapaz', 'menorIncapaz', 'mobilidadeReduzid
 const VULN_KEY_SET = new Set<string>(VULN_KEYS);
 
 const VULN_META: Record<VulnKey, { label: string; icon: React.ComponentType<{ className?: string }>; iconCls: string }> = {
-  idosoIncapaz:       { label: 'Idosos incapazes',  icon: Users,       iconCls: 'text-blue-500' },
-  menorIncapaz:       { label: 'Menores incapazes', icon: Users,       iconCls: 'text-purple-500' },
-  mobilidadeReduzida: { label: 'Mob. reduzida',     icon: Activity,    iconCls: 'text-orange-500' },
-  acamado:            { label: 'Acamado',           icon: ShieldAlert, iconCls: 'text-red-500' },
+  idosoIncapaz:       { label: 'Idosos incapazes',  icon: IconIdoso,        iconCls: 'text-green-600' },
+  menorIncapaz:       { label: 'Menores incapazes', icon: IconMenorStroller, iconCls: 'text-blue-600' },
+  mobilidadeReduzida: { label: 'Mob. reduzida',     icon: IconCadeiraRodas,  iconCls: 'text-teal-600' },
+  acamado:            { label: 'Acamado',           icon: IconCamaAcamado,    iconCls: 'text-orange-600' },
 };
 
 // ─── Map helpers ──────────────────────────────────────────────────────────────
@@ -939,18 +943,18 @@ export default function GestorDashboardTerritorial() {
                       return (
                         <div
                           key={k}
-                          className="p-3 rounded-xl bg-slate-50 border border-slate-100 flex flex-col gap-1"
+                          className="p-4 rounded-xl bg-slate-50 border border-slate-100 flex items-center gap-3"
                         >
-                          <div className="flex items-center gap-1.5">
-                            <meta.icon className={cn('h-3.5 w-3.5', meta.iconCls)} />
+                          <meta.icon className={cn('h-5 w-5 shrink-0', meta.iconCls)} />
+                          <div className="min-w-0">
+                            <p className="text-sm text-muted-foreground truncate">{meta.label}</p>
+                            <p className={cn(
+                              'text-lg font-semibold tracking-tight tabular-nums leading-none mt-0.5',
+                              value > 0 ? 'text-slate-800' : 'text-slate-300',
+                            )}>
+                              {value}
+                            </p>
                           </div>
-                          <p className={cn(
-                            'text-xl font-bold tabular-nums leading-none',
-                            value > 0 ? 'text-slate-800' : 'text-slate-300',
-                          )}>
-                            {value}
-                          </p>
-                          <p className="text-[10px] text-slate-400 leading-tight">{meta.label}</p>
                         </div>
                       );
                     })}
