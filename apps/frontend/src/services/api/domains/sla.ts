@@ -38,6 +38,30 @@ export const sla = {
     const raw = await http.get(`/sla/erros${qs({ clienteId })}`);
     return deepToSnake(raw) as Ret<typeof _sb.sla.errosCriacao>;
   },
+
+  /** Retorna lista de SLAs com campos em snake_case (compatível com AdminSla.tsx). */
+  listWithJoins: async (clienteId: string | null): Promise<unknown[]> => {
+    if (!clienteId) return [];
+    const raw = await http.get(`/sla${qs({ clienteId })}`);
+    return deepToSnake(raw) as unknown[];
+  },
+
+  /** Lista runs pluviométricos do cliente — usado em "Gerar SLAs a partir de run". */
+  listRunsByCliente: async (clienteId: string): Promise<Array<{ id: string; dt_ref: string; [k: string]: unknown }>> => {
+    const raw = await http.get(`/pluvio/runs${qs({ clienteId })}`);
+    return deepToSnake(raw) as Array<{ id: string; dt_ref: string; [k: string]: unknown }>;
+  },
+
+  /** Gera SLAs a partir de um run pluviométrico — POST /pluvio/runs/:runId/gerar-slas. */
+  gerarSlas: async (runId: string): Promise<number> => {
+    const raw = await http.post(`/pluvio/runs/${runId}/gerar-slas`, {});
+    const r = raw as { count?: number; gerados?: number };
+    return r.count ?? r.gerados ?? 0;
+  },
+
+  /** Conclui SLA manualmente. O backend calcula `violado` internamente via prazo_final. */
+  concluirManualmente: (slaId: string, _violado?: boolean): Promise<void> =>
+    http.post(`/sla/${slaId}/concluir`, {}),
 };
 
 export const slaFeriados = {
@@ -94,7 +118,10 @@ export const slaErros = {
 };
 
 export const slaConfigAudit = {
-  listByCliente: (): Promise<unknown> => http.get('/sla/config/audit'),
+  listByCliente: async (_clienteId?: string): Promise<unknown> => {
+    const raw = await http.get('/sla/config/audit');
+    return deepToSnake(raw);
+  },
 };
 
 export const slaInteligente = {

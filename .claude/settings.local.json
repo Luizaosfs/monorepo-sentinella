@@ -255,7 +255,8 @@
       "Bash(Select-String \"DATABASE_URL\")",
       "PowerShell(cmd /c \"cd /d D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend && npx tsc --noEmit 2>&1\" | Select-Object -First 50)",
       "PowerShell(cmd /c \"cd /d D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\frontend && npx tsc --noEmit 2>&1\" | Select-Object -First 30)",
-      "Bash(cmd /c \"cd /d D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend && npx tsc --noEmit 2>&1\")"
+      "Bash(cmd /c \"cd /d D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend && npx tsc --noEmit 2>&1\")",
+      "PowerShell(Stop-Process *)"
     ]
   }
 }

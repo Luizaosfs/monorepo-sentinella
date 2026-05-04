@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 
-interface FocoAgrupadoRow {
+export interface FocoAgrupadoRow {
   cliente_id: string;
   agrupador_tipo: 'quadra' | 'bairro' | 'regiao' | 'item';
   agrupador_valor: string;

@@ -325,11 +325,30 @@ export class SlaController {
 
   @Get('config/audit')
   @Roles('admin', 'supervisor')
-  @ApiOperation({ summary: 'Configuração de prazos SLA por fase (sla_foco_config)' })
+  @ApiOperation({ summary: 'Histórico de alterações de configuração SLA (audit_log)' })
   async listConfigAuditRoute() {
     const clienteId = requireTenantId(getAccessScope(this.req));
     return this.prisma.client.$queryRaw(
-      Prisma.sql`SELECT * FROM sla_foco_config WHERE cliente_id = ${clienteId}::uuid AND ativo = true ORDER BY fase`,
+      Prisma.sql`
+        SELECT
+          al.id,
+          al.cliente_id,
+          al.usuario_id                                                          AS changed_by,
+          al.created_at                                                          AS changed_at,
+          al.operacao                                                            AS action,
+          al.dados_antes                                                         AS config_before,
+          al.dados_depois                                                        AS config_after,
+          CASE WHEN u.id IS NOT NULL
+            THEN json_build_object('nome', u.nome, 'email', u.email)
+            ELSE NULL
+          END                                                                    AS usuario
+        FROM audit_log al
+        LEFT JOIN usuarios u ON u.id = al.usuario_id
+        WHERE al.cliente_id = ${clienteId}::uuid
+          AND al.tabela IN ('sla_config', 'sla_foco_config', 'sla_config_regiao')
+        ORDER BY al.created_at DESC
+        LIMIT 50
+      `,
     );
   }
 

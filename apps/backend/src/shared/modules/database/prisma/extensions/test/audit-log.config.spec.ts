@@ -25,19 +25,16 @@ describe('audit-log.config', () => {
   });
 
   describe('AUDIT_CONFIG map', () => {
-    it('tem exatamente 4 entradas (escopo fechado da Fase B.3)', () => {
-      expect(AUDIT_CONFIG.size).toBe(4);
+    it('tem exatamente 5 entradas (4 administrativas/LGPD + sla_config)', () => {
+      expect(AUDIT_CONFIG.size).toBe(5);
     });
 
-    it('cobre papeis_usuarios, cliente_plano, cliente_integracoes, usuarios', () => {
+    it('cobre papeis_usuarios, cliente_plano, cliente_integracoes, usuarios, sla_config', () => {
       expect(AUDIT_CONFIG.has('papeis_usuarios')).toBe(true);
       expect(AUDIT_CONFIG.has('cliente_plano')).toBe(true);
       expect(AUDIT_CONFIG.has('cliente_integracoes')).toBe(true);
       expect(AUDIT_CONFIG.has('usuarios')).toBe(true);
-    });
-
-    it('NÃO inclui sla_config (escopo próprio com versionamento dedicado)', () => {
-      expect(AUDIT_CONFIG.has('sla_config')).toBe(false);
+      expect(AUDIT_CONFIG.has('sla_config')).toBe(true);
     });
 
     it('NÃO inclui modelos fora de escopo (focos_risco, vistorias)', () => {
@@ -279,6 +276,27 @@ describe('audit-log.config', () => {
       expect(cfg?.resolveAction?.({ tipo: 'esus' }, null, 'DELETE')).toBe(
         'integracao_removida',
       );
+    });
+  });
+
+  describe('sla_config.resolveAction', () => {
+    const cfg = AUDIT_CONFIG.get('sla_config');
+
+    it('INSERT → sla_config_criada', () => {
+      expect(cfg?.resolveAction?.(null, { cliente_id: 'c1', config: {} }, 'INSERT')).toBe('sla_config_criada');
+    });
+
+    it('UPDATE → sla_config_alterada', () => {
+      expect(cfg?.resolveAction?.({ config: {} }, { config: { p1: 4 } }, 'UPDATE')).toBe('sla_config_alterada');
+    });
+
+    it('DELETE → sla_config_removida', () => {
+      expect(cfg?.resolveAction?.({ config: {} }, null, 'DELETE')).toBe('sla_config_removida');
+    });
+
+    it('projeta apenas id, cliente_id e config', () => {
+      expect(cfg?.columns).toEqual(expect.arrayContaining(['id', 'cliente_id', 'config']));
+      expect(cfg?.columns).toHaveLength(3);
     });
   });
 

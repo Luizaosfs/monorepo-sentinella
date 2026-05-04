@@ -3,7 +3,7 @@ import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 import { SeedClienteNovoResult } from './seed-cliente-novo';
 import { SeedClienteNovo } from './seed-cliente-novo';
 
-interface RetroativoResult {
+export interface RetroativoResult {
   totalClientes: number;
   seeded: number;
   skipped: number;

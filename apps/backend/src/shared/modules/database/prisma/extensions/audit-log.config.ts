@@ -128,10 +128,8 @@ function directClienteId(record: Record<string, unknown>): string | null {
 /**
  * Mapa MODELO → configuração de auditoria.
  *
- * Escopo fechado (4 tabelas administrativas/LGPD). Ampliar aqui exige adicionar
- * testes correspondentes em `audit-log.config.spec.ts`.
- *
- * ⚠️ `sla_config` FICA DE FORA (tem modelo dedicado e motor próprio de versionamento).
+ * Escopo: 5 tabelas — 4 administrativas/LGPD + sla_config (configuração de prazos).
+ * Ampliar aqui exige adicionar testes correspondentes em `audit-log.config.spec.ts`.
  */
 export const AUDIT_CONFIG = new Map<string, AuditTableConfig>([
   [
@@ -301,6 +299,21 @@ export const AUDIT_CONFIG = new Map<string, AuditTableConfig>([
           }
         }
         return null; // INSERT e UPDATEs sem mudança de ativo → fallback
+      },
+    },
+  ],
+  [
+    'sla_config',
+    {
+      model: 'sla_config',
+      tabela: 'sla_config',
+      operations: ['INSERT', 'UPDATE', 'DELETE'],
+      columns: ['id', 'cliente_id', 'config'],
+      resolveClienteId: async (record) => directClienteId(record),
+      resolveAction: (_before, _after, operation) => {
+        if (operation === 'INSERT') return 'sla_config_criada';
+        if (operation === 'UPDATE') return 'sla_config_alterada';
+        return 'sla_config_removida';
       },
     },
   ],

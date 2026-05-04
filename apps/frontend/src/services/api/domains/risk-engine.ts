@@ -135,12 +135,14 @@ export const score = {
 
   listBairros: (): Promise<unknown> => http.get('/risk-engine/score/bairros'),
 
-  getConfig: (_clienteId: string): Promise<Ret<typeof _sb.score.getConfig>> =>
-    http.get('/risk-engine/score/config'),
+  getConfig: async (_clienteId: string): Promise<Ret<typeof _sb.score.getConfig>> => {
+    const raw = await http.get('/risk-engine/score/config');
+    return deepToSnake(raw) as Ret<typeof _sb.score.getConfig>;
+  },
 
   forcarRecalculo: (_clienteId: string): Promise<Ret<typeof _sb.score.forcarRecalculo>> =>
     http.post('/risk-engine/score/recalcular', {}),
 
   upsertConfig: (_clienteId: string, config: unknown): Promise<Ret<typeof _sb.score.upsertConfig>> =>
-    http.put('/risk-engine/score/config', config as Record<string, unknown>),
+    http.put('/risk-engine/score/config', deepToCamel(config) as Record<string, unknown>),
 };
