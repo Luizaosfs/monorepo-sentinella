@@ -253,7 +253,8 @@
       "PowerShell(cd \"D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\frontend\"; & node \"C:\\\\Program Files\\\\nodejs\\\\node_modules\\\\npm\\\\bin\\\\npx-cli.js\" tsc --noEmit --project tsconfig.app.json 2>&1 | Where-Object { $_ -match \"GestorFocoRelatorio|GestorFocos\\\\.tsx\" })",
       "Bash(Get-Content \"D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend\\\\.env\")",
       "Bash(Select-String \"DATABASE_URL\")",
-      "PowerShell(cmd /c \"cd /d D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend && npx tsc --noEmit 2>&1\" | Select-Object -First 50)"
+      "PowerShell(cmd /c \"cd /d D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend && npx tsc --noEmit 2>&1\" | Select-Object -First 50)",
+      "PowerShell(cmd /c \"cd /d D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\frontend && npx tsc --noEmit 2>&1\" | Select-Object -First 30)"
     ]
   }
 }

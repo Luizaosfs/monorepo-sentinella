@@ -345,13 +345,15 @@ export class GetResumoVisualVistoriaPorFoco {
     }
 
     for (const ev of (vistoria?.evidencias_depositos ?? [])) {
-      const tipoLabel = ev.tipo_imagem === 'antes' ? 'antes' : 'depois';
+      const momento = ev.tipo_imagem === 'antes' ? 'antes' : 'depois';
       evidencias.push({
         tipo: 'foto',
         url: ev.url_original,
-        legenda: `Depósito ${ev.tipo_deposito} — ${tipoLabel}`,
+        legenda: `Depósito ${ev.tipo_deposito} — ${momento}`,
         origem: 'vistoria',
         createdAt: ev.created_at ? ev.created_at.toISOString() : null,
+        depositoTipo: ev.tipo_deposito,
+        depositoMomento: momento,
       });
     }
 

@@ -163,6 +163,8 @@ export interface ResumoVisualVistoriaResponse {
     legenda: string | null;
     origem: string;
     createdAt: string | null;
+    depositoTipo?: string;
+    depositoMomento?: 'antes' | 'depois';
   }>;
 
   historico: Array<{

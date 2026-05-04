@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState, type ReactNode } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { MapContainer, TileLayer, CircleMarker, Tooltip } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -28,6 +28,7 @@ import {
   ClipboardCheck,
   Clock,
   Building2,
+  Camera,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -774,11 +775,74 @@ function ExplicabilidadeCard({ explicabilidade }: { explicabilidade: Resumo['exp
 
 // ── Evidências tab ────────────────────────────────────────────────────────────
 
-const ORIGEM_LABEL: Record<string, string> = {
-  vistoria: 'Vistoria', calha: 'Calha', operacao: 'Operação',
+type FiltroEv = 'todos' | 'deposito' | 'fachada' | 'calha' | 'operacao';
+
+const DEPOSITO_TIPO_LABEL: Record<string, string> = {
+  A1: 'Caixa d\'água (solo)', A2: 'Reservatório elevado',
+  B: 'Depósito móvel', C: 'Depósito fixo (piscina)',
+  D1: 'Pneus', D2: 'Lixo / entulho', E: 'Natural',
 };
 
+function FotoCard({ ev }: { ev: Evidencia }) {
+  return (
+    <a
+      href={ev.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="group relative overflow-hidden rounded-sm border border-border/60 block"
+    >
+      <img
+        src={ev.url}
+        alt={ev.legenda ?? 'Evidência'}
+        className="h-28 w-full object-cover transition-opacity group-hover:opacity-90"
+      />
+      {(ev.legenda || ev.createdAt) && (
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 to-transparent px-2 py-1.5">
+          {ev.legenda && <p className="line-clamp-2 text-[10px] font-medium leading-snug text-white">{ev.legenda}</p>}
+          {ev.createdAt && <p className="mt-0.5 text-[9px] text-white/65">{formatDate(ev.createdAt)}</p>}
+        </div>
+      )}
+    </a>
+  );
+}
+
+function SecaoEvidencias({ titulo, count, children }: { titulo: string; count: number; children: ReactNode }) {
+  return (
+    <section className="space-y-2.5">
+      <div className="flex items-center gap-2">
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{titulo}</p>
+        <span className="rounded-sm bg-muted px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-muted-foreground">{count}</span>
+      </div>
+      {children}
+    </section>
+  );
+}
+
 function EvidenciasTab({ evidencias }: { evidencias: Evidencia[] }) {
+  const [filtro, setFiltro] = useState<FiltroEv>('todos');
+
+  const fachada   = evidencias.filter(e => e.origem === 'vistoria' && !e.depositoTipo);
+  const depositos = evidencias.filter(e => !!e.depositoTipo);
+  const calhas    = evidencias.filter(e => e.origem === 'calha');
+  const operacoes = evidencias.filter(e => e.origem === 'operacao');
+
+  const depositosPorTipo: Record<string, { antes?: Evidencia; depois?: Evidencia }> = {};
+  for (const ev of depositos) {
+    const t = ev.depositoTipo!;
+    if (!depositosPorTipo[t]) depositosPorTipo[t] = {};
+    if (ev.depositoMomento === 'antes')  depositosPorTipo[t].antes  = ev;
+    else                                  depositosPorTipo[t].depois = ev;
+  }
+  const tiposComFotos = DEPOSITO_TIPOS.filter(t => depositosPorTipo[t]);
+
+  const chips: Array<{ key: FiltroEv; label: string; count: number }> = [
+    { key: 'todos',    label: 'Todos',          count: evidencias.length },
+    { key: 'deposito', label: 'Depósitos PNCD', count: depositos.length },
+    { key: 'fachada',  label: 'Fachada',         count: fachada.length },
+    { key: 'calha',    label: 'Calhas',           count: calhas.length },
+    { key: 'operacao', label: 'Operações',        count: operacoes.length },
+  ].filter(c => c.key === 'todos' || c.count > 0);
+
   if (evidencias.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -788,41 +852,124 @@ function EvidenciasTab({ evidencias }: { evidencias: Evidencia[] }) {
     );
   }
 
-  const byOrigem = evidencias.reduce<Record<string, Evidencia[]>>((acc, ev) => {
-    const key = ev.origem;
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(ev);
-    return acc;
-  }, {});
+  const show = (key: FiltroEv) => filtro === 'todos' || filtro === key;
 
   return (
-    <div className="space-y-4">
-      {Object.entries(byOrigem).map(([origem, evs]) => (
-        <Card key={origem} className="border-border/60">
-          <CardHeader className="pb-2 pt-4 px-4">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Image className="w-4 h-4" aria-hidden />
-              {ORIGEM_LABEL[origem] ?? origem}
-              <span className="text-[10px] text-muted-foreground font-normal">({evs.length})</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 pb-4">
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-              {evs.map((ev, i) => (
-                <a key={i} href={ev.url} target="_blank" rel="noopener noreferrer" className="group relative overflow-hidden rounded-sm border border-border/60 block">
-                  <img src={ev.url} alt={ev.legenda ?? 'Evidência'} className="w-full h-28 object-cover group-hover:opacity-90 transition-opacity" />
-                  {(ev.legenda || ev.createdAt) && (
-                    <div className="absolute bottom-0 left-0 right-0 bg-black/60 px-1.5 py-0.5">
-                      {ev.legenda && <p className="text-white text-[10px] truncate">{ev.legenda}</p>}
-                      {ev.createdAt && <p className="text-white/70 text-[9px]">{formatDate(ev.createdAt)}</p>}
+    <div className="space-y-5">
+
+      {/* Filter chips */}
+      {chips.length > 1 && (
+        <div className="flex flex-wrap gap-1.5">
+          {chips.map(c => (
+            <button
+              key={c.key}
+              type="button"
+              onClick={() => setFiltro(c.key)}
+              className={cn(
+                'inline-flex items-center gap-1.5 rounded-sm border px-2.5 py-1 text-[11px] font-semibold transition-colors',
+                filtro === c.key
+                  ? 'border-primary bg-primary/10 text-primary'
+                  : 'border-border/70 bg-background text-muted-foreground hover:border-muted-foreground/40 hover:text-foreground',
+              )}
+            >
+              {c.label}
+              <span className={cn(
+                'rounded-[3px] px-1 text-[10px] font-bold tabular-nums',
+                filtro === c.key ? 'bg-primary/15 text-primary' : 'bg-muted text-muted-foreground',
+              )}>
+                {c.count}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Depósitos PNCD — comparação antes × depois */}
+      {show('deposito') && tiposComFotos.length > 0 && (
+        <SecaoEvidencias titulo="Depósitos PNCD" count={depositos.length}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {tiposComFotos.map(tipo => {
+              const { antes, depois } = depositosPorTipo[tipo];
+              return (
+                <div key={tipo} className="overflow-hidden rounded-sm border border-border/70 bg-card">
+                  <div className="flex items-center gap-2 border-b border-border/50 bg-muted/30 px-3 py-2">
+                    <span className="text-xs font-bold text-foreground">{tipo}</span>
+                    <span className="text-[10px] text-muted-foreground">{DEPOSITO_TIPO_LABEL[tipo] ?? tipo}</span>
+                    <div className="ml-auto flex items-center gap-1">
+                      {antes  && <span className="rounded-sm bg-sky-100 px-1.5 py-0.5 text-[9px] font-semibold text-sky-700 dark:bg-sky-950/50 dark:text-sky-300">antes</span>}
+                      {depois && <span className="rounded-sm bg-emerald-100 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">depois</span>}
                     </div>
-                  )}
-                </a>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+                  </div>
+                  <div className="grid grid-cols-2 divide-x divide-border/50">
+                    {(['antes', 'depois'] as const).map(momento => {
+                      const ev = momento === 'antes' ? antes : depois;
+                      return (
+                        <div key={momento} className="relative">
+                          {ev ? (
+                            <a href={ev.url} target="_blank" rel="noopener noreferrer" className="group block">
+                              <img
+                                src={ev.url}
+                                alt={`Depósito ${tipo} ${momento}`}
+                                className="h-36 w-full object-cover transition-opacity group-hover:opacity-90"
+                              />
+                              {ev.createdAt && (
+                                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-2 py-1.5">
+                                  <p className="text-[9px] text-white/75">{formatDate(ev.createdAt)}</p>
+                                </div>
+                              )}
+                            </a>
+                          ) : (
+                            <div className="flex h-36 flex-col items-center justify-center gap-1.5 bg-muted/40">
+                              <Camera className="h-5 w-5 text-muted-foreground/30" aria-hidden />
+                              <p className="text-[9px] text-muted-foreground/50">Sem foto {momento}</p>
+                            </div>
+                          )}
+                          <div className="absolute left-1.5 top-1.5">
+                            <span className={cn(
+                              'rounded-sm px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white',
+                              momento === 'antes' ? 'bg-sky-500/90' : 'bg-emerald-500/90',
+                            )}>
+                              {momento}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </SecaoEvidencias>
+      )}
+
+      {/* Fachada */}
+      {show('fachada') && fachada.length > 0 && (
+        <SecaoEvidencias titulo="Fachada" count={fachada.length}>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+            {fachada.map((ev, i) => <FotoCard key={i} ev={ev} />)}
+          </div>
+        </SecaoEvidencias>
+      )}
+
+      {/* Calhas */}
+      {show('calha') && calhas.length > 0 && (
+        <SecaoEvidencias titulo="Calhas" count={calhas.length}>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+            {calhas.map((ev, i) => <FotoCard key={i} ev={ev} />)}
+          </div>
+        </SecaoEvidencias>
+      )}
+
+      {/* Operações */}
+      {show('operacao') && operacoes.length > 0 && (
+        <SecaoEvidencias titulo="Operações de campo" count={operacoes.length}>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+            {operacoes.map((ev, i) => <FotoCard key={i} ev={ev} />)}
+          </div>
+        </SecaoEvidencias>
+      )}
+
     </div>
   );
 }
