@@ -51,7 +51,12 @@
 
     --card-border: 161 20% 90%;
 
-    --radius: 1rem;
+    /* ── Cantos (design system) ─────────────────────────────────────────────
+     * --radius: base shadcn → rounded-lg; derivados md/sm (ver tailwind.config).
+     * Padrão único para UI densa: botões, inputs, selects, badges, chips, cards,
+     * painéis, modais e superfícies → use Tailwind **rounded-sm** (exceto círculos: rounded-full).
+     */
+    --radius: 0.5rem;
 
     /* Sidebar light (modo claro) */
     --sidebar-background: 210 30% 96%;
@@ -169,7 +174,7 @@
 }
 
 .page-area {
-  @apply premium-mesh-bg rounded-[2rem] min-h-[60vh] p-6 lg:p-8;
+  @apply premium-mesh-bg min-h-[60vh] p-6 lg:p-8 rounded-sm;
 }
 
 /* Legacy aliases for compatibility */

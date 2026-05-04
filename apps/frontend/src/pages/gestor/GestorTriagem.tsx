@@ -95,7 +95,7 @@ function TriagemFiltroDataButton({
           type="button"
           variant="outline"
           className={cn(
-            'h-8 min-w-0 flex-1 justify-start px-2 text-left font-normal text-xs',
+            'h-8 min-w-0 flex-1 justify-start px-2 text-left font-normal text-xs rounded-sm',
             !valueYmd && 'text-muted-foreground',
           )}
         >
@@ -232,8 +232,8 @@ function TriagemSheet({
       <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto space-y-5 pb-10">
         <SheetHeader>
           <SheetTitle className="flex flex-wrap items-center gap-1.5 text-sm font-semibold">
-            <StatusBadge status={displayFoco.status as FocoRiscoStatus} />
-            <PrioridadeBadge prioridade={displayFoco.prioridade} />
+            <StatusBadge status={displayFoco.status as FocoRiscoStatus} className="rounded-sm" />
+            <PrioridadeBadge prioridade={displayFoco.prioridade} className="rounded-sm" />
           </SheetTitle>
         </SheetHeader>
 
@@ -241,7 +241,7 @@ function TriagemSheet({
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
             <Building2 className="w-3.5 h-3.5" /> Imóvel
           </p>
-          <div className="rounded-lg border border-border/60 p-3 space-y-1 text-sm">
+          <div className="rounded-sm border border-border/60 p-3 space-y-1 text-sm">
             <p className="font-semibold">{displayFoco.logradouro ?? displayFoco.bairro ?? displayFoco.endereco_normalizado ?? 'Endereço não informado'}</p>
             {displayFoco.bairro && <p className="text-muted-foreground">{displayFoco.bairro}{displayFoco.quarteirao ? ` · Qd. ${displayFoco.quarteirao}` : ''}</p>}
             {displayFoco.tipo_imovel && <p className="text-muted-foreground capitalize">{displayFoco.tipo_imovel.replace(/_/g, ' ')}</p>}
@@ -260,7 +260,7 @@ function TriagemSheet({
             ) : !analiseIa ? (
               <p className="text-xs text-muted-foreground">Análise IA ainda não gerada para este levantamento.</p>
             ) : (
-              <div className="rounded-lg border border-border/60 p-3 space-y-2 text-sm">
+              <div className="rounded-sm border border-border/60 p-3 space-y-2 text-sm">
                 <p className="text-foreground">{analiseIa.sumario}</p>
                 <div className="flex gap-4 text-xs text-muted-foreground">
                   <span>Focos detectados: <strong>{analiseIa.total_focos}</strong></span>
@@ -337,7 +337,7 @@ function TriagemSheet({
                     if (!res.ok) toast.error(res.error ?? 'Erro ao atualizar classificação.');
                     else toast.success('Classificação atualizada.');
                   }}
-                  className={`px-2.5 py-1 rounded-full text-xs font-semibold border transition-all ${
+                  className={`px-2.5 py-1 rounded-sm text-xs font-semibold border transition-all ${
                     isCurrent
                       ? 'ring-2 ring-primary ring-offset-1 border-primary opacity-100'
                       : 'border-border opacity-60 hover:opacity-100'
@@ -720,7 +720,7 @@ export default function GestorTriagem() {
       {/* ── Header ── */}
       <div className="flex items-start justify-between gap-3 absolute top-1">
         <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+          <div className="w-9 h-9 rounded-sm bg-primary/10 flex items-center justify-center shrink-0">
             <Filter className="w-4 h-4 text-primary" />
           </div>
           <div>
@@ -729,7 +729,7 @@ export default function GestorTriagem() {
           </div>
         </div>
         {total > 0 && (
-          <span className="inline-flex items-center rounded-full bg-muted px-3 py-1 text-sm font-semibold text-foreground shrink-0 mt-0.5">
+          <span className="inline-flex items-center rounded-sm bg-muted px-3 py-1 text-sm font-semibold text-foreground shrink-0 mt-0.5">
             {total} foco{total !== 1 ? 's' : ''}
           </span>
         )}
@@ -737,66 +737,66 @@ export default function GestorTriagem() {
 
       {/* ── KPIs (agregados no servidor, mesmos filtros da lista) ── */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        <Card className="rounded-xl bg-amber-50 dark:bg-amber-950/20 border-amber-100 dark:border-amber-900/30">
+        <Card className="rounded-sm bg-amber-50 dark:bg-amber-950/20 border-amber-100 dark:border-amber-900/30">
           <CardContent className="pt-4 pb-3 text-center space-y-1">
             <Eye className="w-4 h-4 text-amber-500 mx-auto" />
             {kpisLoading ? (
-              <Skeleton className="h-8 w-12 mx-auto rounded-md" />
+              <Skeleton className="h-8 w-12 mx-auto rounded-sm" />
             ) : (
               <p className="text-2xl font-black text-foreground">{suspeitas}</p>
             )}
             <p className="text-xs text-muted-foreground">Suspeitas</p>
           </CardContent>
         </Card>
-        <Card className="rounded-xl bg-blue-50 dark:bg-blue-950/20 border-blue-100 dark:border-blue-900/30">
+        <Card className="rounded-sm bg-blue-50 dark:bg-blue-950/20 border-blue-100 dark:border-blue-900/30">
           <CardContent className="pt-4 pb-3 text-center space-y-1">
             <Filter className="w-4 h-4 text-blue-500 mx-auto" />
             {kpisLoading ? (
-              <Skeleton className="h-8 w-12 mx-auto rounded-md" />
+              <Skeleton className="h-8 w-12 mx-auto rounded-sm" />
             ) : (
               <p className="text-2xl font-black text-blue-600">{emTriagem}</p>
             )}
             <p className="text-xs text-muted-foreground">Em triagem</p>
           </CardContent>
         </Card>
-        <Card className="rounded-xl bg-violet-50 dark:bg-violet-950/20 border-violet-100 dark:border-violet-900/30">
+        <Card className="rounded-sm bg-violet-50 dark:bg-violet-950/20 border-violet-100 dark:border-violet-900/30">
           <CardContent className="pt-4 pb-3 text-center space-y-1">
             <ClipboardList className="w-4 h-4 text-violet-500 mx-auto" />
             {kpisLoading ? (
-              <Skeleton className="h-8 w-12 mx-auto rounded-md" />
+              <Skeleton className="h-8 w-12 mx-auto rounded-sm" />
             ) : (
               <p className="text-2xl font-black text-violet-700 dark:text-violet-400">{aguardaInspecao}</p>
             )}
             <p className="text-xs text-muted-foreground">Aguarda inspeção</p>
           </CardContent>
         </Card>
-        <Card className="rounded-xl bg-indigo-50 dark:bg-indigo-950/20 border-indigo-100 dark:border-indigo-900/30">
+        <Card className="rounded-sm bg-indigo-50 dark:bg-indigo-950/20 border-indigo-100 dark:border-indigo-900/30">
           <CardContent className="pt-4 pb-3 text-center space-y-1">
             <PlayCircle className="w-4 h-4 text-indigo-500 mx-auto" />
             {kpisLoading ? (
-              <Skeleton className="h-8 w-12 mx-auto rounded-md" />
+              <Skeleton className="h-8 w-12 mx-auto rounded-sm" />
             ) : (
               <p className="text-2xl font-black text-indigo-600 dark:text-indigo-400">{emInspecao}</p>
             )}
             <p className="text-xs text-muted-foreground">Em inspeção</p>
           </CardContent>
         </Card>
-        <Card className="rounded-xl bg-red-50 dark:bg-red-950/20 border-red-100 dark:border-red-900/30">
+        <Card className="rounded-sm bg-red-50 dark:bg-red-950/20 border-red-100 dark:border-red-900/30">
           <CardContent className="pt-4 pb-3 text-center space-y-1">
             <AlertTriangle className="w-4 h-4 text-red-500 mx-auto" />
             {kpisLoading ? (
-              <Skeleton className="h-8 w-12 mx-auto rounded-md" />
+              <Skeleton className="h-8 w-12 mx-auto rounded-sm" />
             ) : (
               <p className="text-2xl font-black text-red-500">{p1p2}</p>
             )}
             <p className="text-xs text-muted-foreground">Críticos P1/P2</p>
           </CardContent>
         </Card>
-        <Card className="rounded-xl col-span-2 sm:col-span-1 lg:col-span-1">
+        <Card className="rounded-sm col-span-2 sm:col-span-1 lg:col-span-1">
           <CardContent className="pt-4 pb-3 text-center space-y-1">
             <User className="w-4 h-4 text-muted-foreground mx-auto" />
             {kpisLoading ? (
-              <Skeleton className="h-8 w-12 mx-auto rounded-md" />
+              <Skeleton className="h-8 w-12 mx-auto rounded-sm" />
             ) : (
               <p className="text-2xl font-black text-foreground">{semResponsavel}</p>
             )}
@@ -810,7 +810,7 @@ export default function GestorTriagem() {
         <button
           type="button"
           onClick={() => handleSetModoViz('item')}
-          className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
+          className={`px-3 py-1.5 rounded-sm text-xs font-semibold border transition-colors ${
             modoViz === 'item'
               ? 'bg-primary text-primary-foreground border-primary'
               : 'border-border bg-background text-muted-foreground hover:bg-muted'
@@ -821,7 +821,7 @@ export default function GestorTriagem() {
         <button
           type="button"
           onClick={() => handleSetModoViz('territorio')}
-          className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
+          className={`px-3 py-1.5 rounded-sm text-xs font-semibold border transition-colors ${
             modoViz === 'territorio'
               ? 'bg-primary text-primary-foreground border-primary'
               : 'border-border bg-background text-muted-foreground hover:bg-muted'
@@ -838,7 +838,7 @@ export default function GestorTriagem() {
 
       {/* ── Filtros ── */}
       {modoViz === 'item' && (<>
-      <div className="rounded-xl border border-border/60 bg-muted/30 p-3 space-y-3">
+      <div className="rounded-sm border border-border/60 bg-muted/30 p-3 space-y-3">
         {/* Linha 1: Status · Prioridade · Origem · Classificação */}
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
           <div className="space-y-1.5">
@@ -853,7 +853,7 @@ export default function GestorTriagem() {
                 <button
                   key={v}
                   onClick={() => setFiltroStatus(v)}
-                  className={`px-2.5 py-1 rounded-full text-xs font-semibold border transition-colors ${
+                  className={`px-2.5 py-1 rounded-sm text-xs font-semibold border transition-colors ${
                     filtroStatus === v
                       ? 'bg-primary text-primary-foreground border-primary'
                       : 'border-border bg-background text-muted-foreground hover:bg-muted'
@@ -872,7 +872,7 @@ export default function GestorTriagem() {
                 <button
                   key={p}
                   onClick={() => setFiltroPrioridade(p)}
-                  className={`px-2.5 py-1 rounded-full text-xs font-semibold border transition-colors ${
+                  className={`px-2.5 py-1 rounded-sm text-xs font-semibold border transition-colors ${
                     filtroPrioridade === p
                       ? 'bg-primary text-primary-foreground border-primary'
                       : 'border-border bg-background text-muted-foreground hover:bg-muted'
@@ -891,7 +891,7 @@ export default function GestorTriagem() {
                 <button
                   key={o}
                   onClick={() => setFiltroOrigem(o)}
-                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border transition-colors ${
+                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-sm text-xs font-semibold border transition-colors ${
                     filtroOrigem === o
                       ? 'bg-primary text-primary-foreground border-primary'
                       : 'border-border bg-background text-muted-foreground hover:bg-muted'
@@ -911,7 +911,7 @@ export default function GestorTriagem() {
                 <button
                   key={c}
                   onClick={() => setFiltroClassificacao(c)}
-                  className={`px-2.5 py-1 rounded-full text-xs font-semibold border transition-colors ${
+                  className={`px-2.5 py-1 rounded-sm text-xs font-semibold border transition-colors ${
                     filtroClassificacao === c
                       ? 'bg-primary text-primary-foreground border-primary'
                       : 'border-border bg-background text-muted-foreground hover:bg-muted'
@@ -931,7 +931,7 @@ export default function GestorTriagem() {
               <MapPin className="w-3 h-3" /> Região
             </p>
             <Select value={filtroRegiao} onValueChange={setFiltroRegiao}>
-              <SelectTrigger className="h-8 text-xs">
+              <SelectTrigger className="h-8 text-xs rounded-sm">
                 <SelectValue placeholder="Todas as regiões" />
               </SelectTrigger>
               <SelectContent>
@@ -948,7 +948,7 @@ export default function GestorTriagem() {
               <User className="w-3 h-3" /> Agente atribuído
             </p>
             <Select value={filtroResponsavel} onValueChange={setFiltroResponsavel}>
-              <SelectTrigger className="h-8 text-xs">
+              <SelectTrigger className="h-8 text-xs rounded-sm">
                 <SelectValue placeholder="Todos os agentes" />
               </SelectTrigger>
               <SelectContent>
@@ -974,7 +974,7 @@ export default function GestorTriagem() {
         <div className="flex items-center justify-between gap-2 pt-0.5 flex-wrap">
           <div className="flex items-center gap-2">
             <Select value={ordenacao} onValueChange={(v) => setOrdenacao(v as typeof ordenacao)}>
-              <SelectTrigger className="h-8 text-xs w-44">
+              <SelectTrigger className="h-8 text-xs w-44 rounded-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -988,7 +988,7 @@ export default function GestorTriagem() {
                 setFiltroStatus('em_triagem');
                 setFiltroResponsavel('__sem__');
               }}
-              className="inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-md bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-colors"
+              className="inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-sm bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-colors"
             >
               Prontos para despacho
             </button>
@@ -1008,7 +1008,7 @@ export default function GestorTriagem() {
 
       {/* ── Lista ── */}
       {isError ? (
-        <Card className="rounded-xl border-destructive/40 bg-destructive/5">
+        <Card className="rounded-sm border-destructive/40 bg-destructive/5">
           <CardContent className="py-8 flex flex-col items-center gap-3 text-center">
             <AlertTriangle className="w-8 h-8 text-destructive" />
             <div className="space-y-1">
@@ -1025,14 +1025,14 @@ export default function GestorTriagem() {
       ) : isLoading ? (
         <div className="space-y-3">
           {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="rounded-xl border border-border/60 border-l-[3px] border-l-muted p-4">
+            <div key={i} className="rounded-sm border border-border/60 border-l-[3px] border-l-muted p-4">
               <div className="flex gap-3 items-start">
                 <Skeleton className="w-4 h-4 rounded mt-0.5 shrink-0" />
                 <div className="flex-1 space-y-2">
                   <div className="flex gap-1.5">
-                    <Skeleton className="h-5 w-16 rounded-full" />
-                    <Skeleton className="h-5 w-8 rounded-full" />
-                    <Skeleton className="h-5 w-14 rounded-full" />
+                    <Skeleton className="h-5 w-16 rounded-sm" />
+                    <Skeleton className="h-5 w-8 rounded-sm" />
+                    <Skeleton className="h-5 w-14 rounded-sm" />
                   </div>
                   <Skeleton className="h-4 w-3/4 rounded" />
                   <Skeleton className="h-3 w-1/2 rounded" />
@@ -1041,15 +1041,15 @@ export default function GestorTriagem() {
                     <Skeleton className="h-7 w-20 rounded" />
                   </div>
                 </div>
-                <Skeleton className="w-16 h-16 rounded-lg shrink-0" />
+                <Skeleton className="w-16 h-16 rounded-sm shrink-0" />
               </div>
             </div>
           ))}
         </div>
       ) : focos.length === 0 ? (
-        <Card className="rounded-xl border-dashed">
+        <Card className="rounded-sm border-dashed">
           <CardContent className="py-14 flex flex-col items-center gap-3 text-center">
-            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+            <div className="w-12 h-12 rounded-sm bg-muted flex items-center justify-center">
               <Filter className="w-5 h-5 text-muted-foreground" />
             </div>
             <div className="space-y-1">
@@ -1109,7 +1109,7 @@ export default function GestorTriagem() {
             return (
               <Card
                 key={foco.id}
-                className={`rounded-xl border transition-all cursor-pointer overflow-hidden ${
+                className={`rounded-sm border transition-all cursor-pointer overflow-hidden ${
                   BORDER_PRIORIDADE[foco.prioridade ?? ''] ?? 'border-l-[3px] border-l-transparent'
                 } ${
                   isSelecionado
@@ -1130,12 +1130,18 @@ export default function GestorTriagem() {
                     <div className="flex-1 min-w-0 space-y-2">
                       {/* Linha 1 — status + prioridade + classificação + alertas */}
                       <div className="flex flex-wrap items-center gap-1.5">
-                        <StatusBadge status={foco.status as FocoRiscoStatus} />
-                        <PrioridadeBadge prioridade={foco.prioridade} />
-                        <ClassificacaoBadge classificacao={foco.classificacao_inicial as FocoRiscoClassificacao} size="sm" />
-                        {showSla && <SlaBadge slaStatus={foco.sla_status} prazoEm={foco.sla_prazo_em} />}
+                        <StatusBadge status={foco.status as FocoRiscoStatus} className="rounded-sm" />
+                        <PrioridadeBadge prioridade={foco.prioridade} className="rounded-sm" />
+                        <ClassificacaoBadge
+                          classificacao={foco.classificacao_inicial as FocoRiscoClassificacao}
+                          size="sm"
+                          className="rounded-sm"
+                        />
+                        {showSla && (
+                          <SlaBadge slaStatus={foco.sla_status} prazoEm={foco.sla_prazo_em} className="rounded-sm" />
+                        )}
                         {temIa && (
-                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400">
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm text-[10px] font-semibold bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400">
                             <Bot className="w-3 h-3" /> IA
                           </span>
                         )}
@@ -1152,7 +1158,7 @@ export default function GestorTriagem() {
                           if (!c) return null;
                           const Icon = c.icon;
                           return (
-                            <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded border text-[10px] font-semibold ${c.cls}`}>
+                            <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm border text-[10px] font-semibold ${c.cls}`}>
                               <Icon className="w-3 h-3" />
                               {c.label}
                             </span>
@@ -1166,7 +1172,7 @@ export default function GestorTriagem() {
                               sem_descricao: 'sem descrição',
                               sem_evidencia: 'sem evidência',
                             }[p] ?? p)).join(', ')}`}
-                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 cursor-help"
+                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm text-[10px] font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 cursor-help"
                           >
                             <AlertTriangle className="w-3 h-3" /> Incompleto
                           </span>
@@ -1178,14 +1184,14 @@ export default function GestorTriagem() {
                           return (
                             <>
                               {confirmacoes > 1 && (
-                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400">
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm text-[10px] font-semibold bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400">
                                   <MessageSquare className="w-3 h-3" />{confirmacoes} denúncias
                                 </span>
                               )}
                               {temFoto && (
                                 <span
                                   title="Foto enviada pelo cidadão"
-                                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-600 dark:bg-slate-800/50 dark:text-slate-400"
+                                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm text-[10px] font-semibold bg-slate-100 text-slate-600 dark:bg-slate-800/50 dark:text-slate-400"
                                 >
                                   <Camera className="w-3 h-3" />
                                 </span>
@@ -1229,7 +1235,7 @@ export default function GestorTriagem() {
                                   prioridade: foco.prioridade,
                                 })
                               }
-                              className="!w-14 !h-14 !max-w-none p-0 rounded-lg border-border/50"
+                              className="!w-14 !h-14 !max-w-none p-0 rounded-sm border-border/50"
                             />
                           </div>
                         )}
@@ -1359,11 +1365,11 @@ export default function GestorTriagem() {
                   <Users className="w-4 h-4 text-primary shrink-0" />
                   <span className="text-sm font-semibold">{selecionados.size} selecionado(s)</span>
                   {naoElegiveisLote > 0 ? (
-                    <span className="text-xs bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 px-2 py-0.5 rounded-full font-medium">
+                    <span className="text-xs bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 px-2 py-0.5 rounded-sm font-medium">
                       {elegiveisLote.length} elegível(is) · {naoElegiveisLote} incompatível(is)
                     </span>
                   ) : (
-                    <span className="text-xs bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400 px-2 py-0.5 rounded-full font-medium">
+                    <span className="text-xs bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400 px-2 py-0.5 rounded-sm font-medium">
                       {elegiveisLote.length} pronto(s) para despacho
                     </span>
                   )}
@@ -1375,7 +1381,7 @@ export default function GestorTriagem() {
 
               <div className="flex gap-2">
                 <Select value={loteAgente || undefined} onValueChange={setLoteAgente} disabled={loteLoading}>
-                  <SelectTrigger className="h-9 text-sm flex-1">
+                  <SelectTrigger className="h-9 text-sm flex-1 rounded-sm">
                     <SelectValue placeholder="Selecionar agente…" />
                   </SelectTrigger>
                   <SelectContent position="popper" className="z-[2100]">
@@ -1495,7 +1501,7 @@ export default function GestorTriagem() {
           </DialogHeader>
           <div className="space-y-3 py-2">
             {elegiveisPorLoteStatus.length < selecionados.size && (
-              <p className="text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 rounded-md px-3 py-2">
+              <p className="text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 rounded-sm px-3 py-2">
                 <strong>{elegiveisPorLoteStatus.length}</strong> de {selecionados.size} foco(s) selecionados podem ser movidos para este status.
                 Os demais serão ignorados (status incompatível).
               </p>

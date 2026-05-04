@@ -53,7 +53,7 @@ export function ListColumnHeader<TSortKey extends string>({
           <button
             type="button"
             onClick={() => onSort(sortKey)}
-            className="inline-flex max-w-[min(100%,11rem)] items-center gap-1 rounded-md px-1.5 py-1 text-left transition-colors hover:bg-background hover:text-foreground"
+            className="inline-flex max-w-[min(100%,11rem)] items-center gap-1 rounded-sm px-1.5 py-1 text-left transition-colors hover:bg-background hover:text-foreground"
             title="Ordenar por esta coluna"
           >
             <span className="truncate">{label}</span>
@@ -76,7 +76,7 @@ export function ListColumnHeader<TSortKey extends string>({
             <button
               type="button"
               onClick={onClearFilter}
-              className="inline-flex h-7 w-7 items-center justify-center rounded-md text-primary transition-colors hover:bg-primary/10"
+              className="inline-flex h-7 w-7 items-center justify-center rounded-sm text-primary transition-colors hover:bg-primary/10"
               title={`Limpar filtro de ${label}`}
               aria-label={`Limpar filtro de ${label}`}
             >
@@ -87,7 +87,7 @@ export function ListColumnHeader<TSortKey extends string>({
               <PopoverTrigger asChild>
                 <button
                   type="button"
-                  className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
                   title={`Filtrar ${label}`}
                   aria-label={`Filtrar ${label}`}
                 >

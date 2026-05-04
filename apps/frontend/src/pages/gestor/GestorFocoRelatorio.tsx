@@ -108,7 +108,7 @@ function RelatorioStatusStepper({ currentStatus }: { currentStatus: string }) {
             <div key={step.id} className="flex items-start">
               <div className="flex flex-col items-center w-[76px] sm:w-[88px] shrink-0">
                 <div className={cn(
-                  'w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-colors',
+                  'w-8 h-8 rounded-sm border-2 flex items-center justify-center text-xs font-bold transition-colors',
                   done && 'bg-green-500 border-green-500 text-white',
                   current && !done && 'bg-green-600 border-green-600 text-white shadow-sm',
                   pending && 'bg-muted/80 border-muted-foreground/25 text-muted-foreground',
@@ -131,7 +131,7 @@ function RelatorioStatusStepper({ currentStatus }: { currentStatus: string }) {
               </div>
               {idx < RELATORIO_STEPS.length - 1 && (
                 <div className={cn(
-                  'h-0.5 w-5 sm:w-8 mt-4 shrink-0 self-start rounded-full',
+                  'h-0.5 w-5 sm:w-8 mt-4 shrink-0 self-start rounded-sm',
                   idx < effectiveIdx || (isResolvido && idx === RELATORIO_STEPS.length - 2)
                     ? 'bg-green-500'
                     : 'bg-[repeating-linear-gradient(90deg,hsl(var(--border))_0px,hsl(var(--border))_4px,transparent_4px,transparent_8px)]',
@@ -207,13 +207,13 @@ function MapaSimples({ lat, lng, className }: { lat: number; lng: number; classN
   const center: [number, number] = [lat, lng];
   if (!mounted) {
     return (
-      <div className={cn('relative flex min-h-[200px] items-center justify-center overflow-hidden rounded-xl border border-border/60 bg-muted', className)}>
+      <div className={cn('relative flex min-h-[200px] items-center justify-center overflow-hidden rounded-sm border border-border/60 bg-muted', className)}>
         <span className="text-xs text-muted-foreground">Carregando mapa…</span>
       </div>
     );
   }
   return (
-    <div className={cn('relative isolate z-0 min-h-[200px] overflow-hidden rounded-xl border border-border/60 bg-muted [&_.leaflet-container]:font-sans', className)}>
+    <div className={cn('relative isolate z-0 min-h-[200px] overflow-hidden rounded-sm border border-border/60 bg-muted [&_.leaflet-container]:font-sans', className)}>
       <MapContainer key={`${lat},${lng}`} center={center} zoom={16} className="z-0 h-full w-full min-h-[200px]" style={{ height: '100%', width: '100%', minHeight: 200 }} scrollWheelZoom zoomControl>
         <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" maxZoom={19} />
         <CircleMarker center={center} radius={11} pathOptions={{ color: '#b91c1c', fillColor: '#ef4444', fillOpacity: 0.9, weight: 2 }}>
@@ -250,7 +250,7 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 function TabCountBadge({ count }: { count: number }) {
   if (count < 1) return null;
   return (
-    <span className="ml-1 inline-flex h-[1.125rem] min-w-[1.125rem] items-center justify-center rounded-full bg-muted px-1 text-[10px] font-semibold tabular-nums text-muted-foreground">
+    <span className="ml-1 inline-flex h-[1.125rem] min-w-[1.125rem] items-center justify-center rounded-sm bg-muted px-1 text-[10px] font-semibold tabular-nums text-muted-foreground">
       {count > 99 ? '99+' : count}
     </span>
   );
@@ -269,7 +269,7 @@ const TILE_STYLES: Record<TileVariant, string> = {
 
 function EstrategicoTile({ value, label, variant }: { value: string | number; label: string; variant: TileVariant }) {
   return (
-    <div className={cn('flex min-w-0 flex-1 flex-col items-center justify-center rounded-lg border px-1.5 py-3 text-center', TILE_STYLES[variant])}>
+    <div className={cn('flex min-w-0 flex-1 flex-col items-center justify-center rounded-sm border px-1.5 py-3 text-center', TILE_STYLES[variant])}>
       <p className="text-xl font-bold tabular-nums leading-none tracking-tight sm:text-2xl">{value}</p>
       <p className="mt-2 max-w-[7.5rem] text-[10px] font-medium leading-tight text-foreground/80 dark:text-foreground/75">{label}</p>
     </div>
@@ -304,7 +304,7 @@ function MoradoresCard({ moradores }: { moradores: Moradores | null }) {
                 { label: 'Idosos', value: moradores.idosos, activeColor: 'text-amber-600', activeBg: 'bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:border-amber-800' },
                 { label: 'Gestantes', value: moradores.gestantes, activeColor: 'text-rose-600', activeBg: 'bg-rose-50 border-rose-200 dark:bg-rose-950/30 dark:border-rose-800' },
               ].map((item) => (
-                <div key={item.label} className={cn('rounded-lg border px-2 py-2.5 text-center transition-colors', item.value > 0 ? item.activeBg : 'border-border/80 bg-background')}>
+                <div key={item.label} className={cn('rounded-sm border px-2 py-2.5 text-center transition-colors', item.value > 0 ? item.activeBg : 'border-border/80 bg-background')}>
                   <p className={cn('text-lg font-bold tabular-nums leading-tight', item.value > 0 ? item.activeColor : 'text-muted-foreground')}>
                     {item.value > 0 ? item.value : '—'}
                   </p>
@@ -322,16 +322,17 @@ function MoradoresCard({ moradores }: { moradores: Moradores | null }) {
 // ── Grupos Vulneráveis card ───────────────────────────────────────────────────
 
 function Tag({ label, active, tone = 'success' }: { label: string; active: boolean; tone?: 'success' | 'warning' | 'danger' }) {
+  const chip = 'rounded-sm';
   if (!active) {
     return (
-      <span className="inline-flex items-center rounded-full border border-border/90 bg-background px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
+      <span className={cn('inline-flex items-center border border-border/90 bg-background px-2.5 py-1 text-[11px] font-semibold text-muted-foreground', chip)}>
         {label}
       </span>
     );
   }
   if (tone === 'danger') {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full border border-red-200/90 bg-red-50 px-2.5 py-1 text-[11px] font-semibold text-red-800 dark:border-red-800/50 dark:bg-red-950/40 dark:text-red-200">
+      <span className={cn('inline-flex items-center gap-1.5 border border-red-200/90 bg-red-50 px-2.5 py-1 text-[11px] font-semibold text-red-800 dark:border-red-800/50 dark:bg-red-950/40 dark:text-red-200', chip)}>
         <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-red-500" aria-hidden />
         {label}
       </span>
@@ -339,14 +340,14 @@ function Tag({ label, active, tone = 'success' }: { label: string; active: boole
   }
   if (tone === 'warning') {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full border border-orange-200/90 bg-orange-50 px-2.5 py-1 text-[11px] font-semibold text-orange-800 dark:border-orange-800/50 dark:bg-orange-950/40 dark:text-orange-200">
+      <span className={cn('inline-flex items-center gap-1.5 border border-orange-200/90 bg-orange-50 px-2.5 py-1 text-[11px] font-semibold text-orange-800 dark:border-orange-800/50 dark:bg-orange-950/40 dark:text-orange-200', chip)}>
         <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-orange-500" aria-hidden />
         {label}
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200/90 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-900 dark:border-emerald-800/50 dark:bg-emerald-950/40 dark:text-emerald-100">
+    <span className={cn('inline-flex items-center gap-1.5 border border-emerald-200/90 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-900 dark:border-emerald-800/50 dark:bg-emerald-950/40 dark:text-emerald-100', chip)}>
       <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" aria-hidden />
       {label}
     </span>
@@ -482,11 +483,11 @@ function DepositosCard({ depositosPncd }: { depositosPncd: Resumo['depositosPncd
                     <span className={cn('text-[10px] font-semibold tabular-nums', hasFoco ? 'text-orange-600 dark:text-orange-400' : 'text-muted-foreground')}>
                       {tipo}
                     </span>
-                    <div className="flex h-16 w-full flex-col justify-end rounded-md border border-border/70 bg-muted/50 p-0.5 dark:bg-muted/30">
+                    <div className="flex h-16 w-full flex-col justify-end rounded-[2px] border border-border/70 bg-muted/50 p-px dark:bg-muted/30">
                       {total > 0 ? (
-                        <div className={cn('w-full rounded-sm transition-colors', hasFoco ? 'bg-orange-400 dark:bg-orange-500' : 'bg-emerald-500 dark:bg-emerald-600')} style={{ height: `${fillPct}%` }} />
+                        <div className={cn('w-full rounded-[1px] transition-colors', hasFoco ? 'bg-orange-400 dark:bg-orange-500' : 'bg-emerald-500 dark:bg-emerald-600')} style={{ height: `${fillPct}%` }} />
                       ) : (
-                        <div className="mx-auto h-1 w-3/4 rounded-full bg-muted-foreground/15" />
+                        <div className="mx-auto h-1 w-3/4 rounded-[1px] bg-muted-foreground/15" />
                       )}
                     </div>
                   </div>
@@ -539,9 +540,9 @@ function CalhasCard({ calhas }: { calhas: Resumo['calhas'] }) {
         ) : (
           <>
             <div className="flex flex-wrap gap-1.5">
-              {resumo.possuiCalhaComFoco && <Badge variant="outline" className="text-[10px] border-orange-200 text-orange-800 bg-orange-50/80">Com foco ativo</Badge>}
-              {resumo.possuiAguaParada && <Badge variant="outline" className="text-[10px] border-red-200 text-red-800 bg-red-50/80">Água parada</Badge>}
-              {resumo.possuiCalhaTratada && <Badge variant="outline" className="text-[10px] border-emerald-200 text-emerald-800 bg-emerald-50/80">Tratamento realizado</Badge>}
+              {resumo.possuiCalhaComFoco && <Badge variant="outline" className="rounded-sm text-[10px] border-orange-200 text-orange-800 bg-orange-50/80">Com foco ativo</Badge>}
+              {resumo.possuiAguaParada && <Badge variant="outline" className="rounded-sm text-[10px] border-red-200 text-red-800 bg-red-50/80">Água parada</Badge>}
+              {resumo.possuiCalhaTratada && <Badge variant="outline" className="rounded-sm text-[10px] border-emerald-200 text-emerald-800 bg-emerald-50/80">Tratamento realizado</Badge>}
             </div>
             {resumo.condicoesCriticas.length > 0 && (
               <div>
@@ -679,7 +680,7 @@ function ConsolidacaoCard({ consolidacao }: { consolidacao: Consolidacao | null 
             <CardTitle className="text-sm font-semibold text-indigo-600">Consolidação da vistoria</CardTitle>
           </div>
           {consolidacao.consolidacaoIncompleta && (
-            <Badge variant="outline" className="text-[10px] border-amber-200 text-amber-700 bg-amber-50/80">Incompleta</Badge>
+            <Badge variant="outline" className="rounded-sm text-[10px] border-amber-200 text-amber-700 bg-amber-50/80">Incompleta</Badge>
           )}
         </div>
       </CardHeader>
@@ -746,7 +747,7 @@ function ExplicabilidadeCard({ explicabilidade }: { explicabilidade: Resumo['exp
             <ul className="space-y-1">
               {alertas.map((a, i) => (
                 <li key={i} className="flex items-start gap-1.5 text-xs text-amber-700 dark:text-amber-400">
-                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" aria-hidden />
+                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-sm bg-amber-500" aria-hidden />
                   {a}
                 </li>
               ))}
@@ -759,7 +760,7 @@ function ExplicabilidadeCard({ explicabilidade }: { explicabilidade: Resumo['exp
             <ul className="space-y-1">
               {pendencias.map((p, i) => (
                 <li key={i} className="flex items-start gap-1.5 text-xs text-red-700 dark:text-red-400">
-                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-red-500" aria-hidden />
+                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-sm bg-red-500" aria-hidden />
                   {p}
                 </li>
               ))}
@@ -808,7 +809,7 @@ function EvidenciasTab({ evidencias }: { evidencias: Evidencia[] }) {
           <CardContent className="px-4 pb-4">
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
               {evs.map((ev, i) => (
-                <a key={i} href={ev.url} target="_blank" rel="noopener noreferrer" className="group relative overflow-hidden rounded-lg border border-border/60 block">
+                <a key={i} href={ev.url} target="_blank" rel="noopener noreferrer" className="group relative overflow-hidden rounded-sm border border-border/60 block">
                   <img src={ev.url} alt={ev.legenda ?? 'Evidência'} className="w-full h-28 object-cover group-hover:opacity-90 transition-opacity" />
                   {(ev.legenda || ev.createdAt) && (
                     <div className="absolute bottom-0 left-0 right-0 bg-black/60 px-1.5 py-0.5">
@@ -860,8 +861,8 @@ function HistoricoTab({ historico }: { historico: HistoricoItem[] }) {
       <div className="space-y-3">
         {historico.map((h, i) => (
           <div key={i} className="relative">
-            <span className={cn('absolute -left-[1.125rem] top-1.5 h-2.5 w-2.5 rounded-full border-2 border-background', HISTORICO_ORIGEM_COLOR[h.origem] ?? 'bg-muted-foreground')} aria-hidden />
-            <div className="rounded-lg border border-border/60 bg-background px-3 py-2">
+            <span className={cn('absolute -left-[1.125rem] top-1.5 h-2.5 w-2.5 rounded-sm border-2 border-background', HISTORICO_ORIGEM_COLOR[h.origem] ?? 'bg-muted-foreground')} aria-hidden />
+            <div className="rounded-sm border border-border/60 bg-background px-3 py-2">
               <div className="flex items-start justify-between gap-2">
                 <span className="text-[11px] font-semibold text-foreground">
                   {HISTORICO_TIPO_LABEL[h.tipo] ?? h.tipo}
@@ -994,7 +995,7 @@ export default function GestorFocoRelatorio() {
             <div className="absolute top-3 right-4 sm:top-3.5 sm:right-5 flex items-center gap-1 z-10">
               <Button
                 variant="outline" size="icon"
-                className="h-8 w-8 shrink-0 rounded-lg border-border/80"
+                className="h-8 w-8 shrink-0 rounded-sm border-border/80"
                 disabled={!prevId}
                 onClick={() => prevId && navegarParaFoco(prevId, navCtx!.index - 1)}
                 aria-label="Foco anterior"
@@ -1003,7 +1004,7 @@ export default function GestorFocoRelatorio() {
               </Button>
               <Button
                 variant="outline" size="icon"
-                className="h-8 w-8 shrink-0 rounded-lg border-border/80"
+                className="h-8 w-8 shrink-0 rounded-sm border-border/80"
                 disabled={!nextId}
                 onClick={() => nextId && navegarParaFoco(nextId, navCtx!.index + 1)}
                 aria-label="Próximo foco"
@@ -1032,7 +1033,7 @@ export default function GestorFocoRelatorio() {
                     )}
                     <button type="button" title="Copiar código"
                       onClick={() => { navigator.clipboard.writeText(codigoStr); toast.success('Código copiado'); }}
-                      className="p-1.5 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                      className="p-1.5 rounded-sm hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
                     >
                       <Copy className="w-4 h-4" />
                     </button>
@@ -1041,7 +1042,7 @@ export default function GestorFocoRelatorio() {
               </div>
               {mostrarEncaminhar && (
                 <div className="flex items-center gap-2 shrink-0">
-                  <Button className="rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm gap-2 px-4" onClick={() => navigate(`/gestor/focos/${id}`)}>
+                  <Button className="rounded-sm bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm gap-2 px-4" onClick={() => navigate(`/gestor/focos/${id}`)}>
                     {foco.status === 'em_triagem' ? 'Encaminhar para inspeção' : 'Re-atribuir agente'}
                     <ArrowRight className="w-4 h-4" />
                   </Button>
@@ -1053,7 +1054,7 @@ export default function GestorFocoRelatorio() {
               <div className="space-y-1">
                 <p className="text-[11px] text-muted-foreground font-medium">Prioridade</p>
                 {foco.prioridade ? (
-                  <PrioridadeBadge prioridade={foco.prioridade as never} className="rounded-md px-2.5 py-0.5 text-xs font-bold" />
+                  <PrioridadeBadge prioridade={foco.prioridade as never} className="rounded-sm px-2.5 py-0.5 text-xs font-bold" />
                 ) : (
                   <span className="text-sm text-muted-foreground">—</span>
                 )}
@@ -1061,7 +1062,7 @@ export default function GestorFocoRelatorio() {
               <div className="space-y-1">
                 <p className="text-[11px] text-muted-foreground font-medium">Status atual</p>
                 <div className="flex items-center gap-2 min-h-[24px]">
-                  <span className="w-2 h-2 rounded-full shrink-0 ring-2 ring-white shadow" style={{ backgroundColor: statusHex }} />
+                  <span className="w-2 h-2 rounded-sm shrink-0 ring-2 ring-white shadow" style={{ backgroundColor: statusHex }} />
                   <span className="text-sm font-semibold" style={{ color: statusHex }}>{statusLabel}</span>
                 </div>
               </div>
@@ -1118,7 +1119,7 @@ export default function GestorFocoRelatorio() {
       {/* ── Resumo estratégico (tiles superiores) ──────────────────────── */}
       {resumoLoading ? (
         <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
-          {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-20 rounded-lg" />)}
+          {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-20 rounded-sm" />)}
         </div>
       ) : resumo ? (
         <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
@@ -1159,7 +1160,7 @@ export default function GestorFocoRelatorio() {
                 <IstiGauge score={scoreOperacional} />
                 <div className="mt-1 flex items-center justify-between gap-3 border-t border-border/50 pt-3">
                   <span className="text-xs text-muted-foreground">Classificação</span>
-                  <span className={cn('inline-flex shrink-0 rounded-md px-2.5 py-1 text-xs font-bold', istiInfo.badgeClass)}>
+                  <span className={cn('inline-flex shrink-0 rounded-sm px-2.5 py-1 text-xs font-bold', istiInfo.badgeClass)}>
                     {istiInfo.label}
                   </span>
                 </div>
@@ -1214,7 +1215,7 @@ export default function GestorFocoRelatorio() {
           </CardHeader>
           <CardContent className="px-4 pb-4">
             {resumo?.vistoria?.fotoExternaUrl && (
-              <div className="mb-3 overflow-hidden rounded-lg border border-border/60">
+              <div className="mb-3 overflow-hidden rounded-sm border border-border/60">
                 <img src={resumo.vistoria.fotoExternaUrl} alt="Foto da fachada" className="w-full max-h-40 object-cover" />
                 <p className="px-2 py-1 text-[10px] text-muted-foreground bg-muted/40">Foto da fachada</p>
               </div>
@@ -1222,7 +1223,7 @@ export default function GestorFocoRelatorio() {
             {lat && lng ? (
               <MapaSimples lat={lat} lng={lng} className="h-full min-h-[200px]" />
             ) : (
-              <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-muted/50 py-10">
+              <div className="flex flex-col items-center justify-center rounded-sm border border-dashed border-border bg-muted/50 py-10">
                 <MapPin className="mb-1 h-6 w-6 text-muted-foreground" />
                 <p className="text-xs text-muted-foreground">Coordenadas não disponíveis</p>
               </div>
@@ -1281,7 +1282,7 @@ export default function GestorFocoRelatorio() {
         <TabsContent value="evidencias" className="mt-4">
           {resumoLoading ? (
             <div className="grid grid-cols-3 gap-2">
-              {[1, 2, 3].map((i) => <Skeleton key={i} className="h-28 rounded-lg" />)}
+              {[1, 2, 3].map((i) => <Skeleton key={i} className="h-28 rounded-sm" />)}
             </div>
           ) : (
             <EvidenciasTab evidencias={resumo?.evidencias ?? []} />
@@ -1291,7 +1292,7 @@ export default function GestorFocoRelatorio() {
         <TabsContent value="historico" className="mt-4">
           {resumoLoading ? (
             <div className="space-y-3">
-              {[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 w-full rounded-lg" />)}
+              {[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 w-full rounded-sm" />)}
             </div>
           ) : (
             <HistoricoTab historico={resumo?.historico ?? []} />

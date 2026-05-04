@@ -4,10 +4,10 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 export const DashboardSkeleton = () => {
   return (
     <div className="space-y-4 lg:space-y-6">
-      <Skeleton className="h-16 w-full rounded-xl" />
+      <Skeleton className="h-16 w-full rounded-sm" />
       <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
         {[1, 2, 3, 4].map((i) => (
-          <Card key={i} className="rounded-xl border">
+          <Card key={i} className="rounded-sm border">
             <CardHeader className="p-4 pb-2">
               <Skeleton className="h-4 w-24" />
             </CardHeader>
@@ -18,13 +18,13 @@ export const DashboardSkeleton = () => {
         ))}
       </div>
       <div className="grid gap-4 lg:gap-6 lg:grid-cols-3">
-        <Skeleton className="h-64 lg:col-span-2 rounded-xl" />
-        <Skeleton className="h-64 rounded-xl" />
+        <Skeleton className="h-64 lg:col-span-2 rounded-sm" />
+        <Skeleton className="h-64 rounded-sm" />
       </div>
-      <Card className="rounded-xl border">
+      <Card className="rounded-sm border">
         <CardHeader><Skeleton className="h-5 w-40" /></CardHeader>
         <CardContent className="space-y-2">
-          {[1, 2, 3].map((i) => <Skeleton key={i} className="h-12 w-full rounded-lg" />)}
+          {[1, 2, 3].map((i) => <Skeleton key={i} className="h-12 w-full rounded-sm" />)}
         </CardContent>
       </Card>
     </div>
@@ -34,14 +34,14 @@ export const DashboardSkeleton = () => {
 export const LevantamentoListSkeleton = () => {
   return (
     <div className="space-y-4">
-      <Skeleton className="h-16 w-full rounded-xl" />
+      <Skeleton className="h-16 w-full rounded-sm" />
       <div className="flex gap-4">
-        <Skeleton className="h-9 flex-1 rounded-md" />
-        <Skeleton className="h-9 w-[220px] rounded-md" />
+        <Skeleton className="h-9 flex-1 rounded-sm" />
+        <Skeleton className="h-9 w-[220px] rounded-sm" />
       </div>
       <div className="space-y-3">
         {[1, 2, 3, 4, 5].map((i) => (
-          <Skeleton key={i} className="h-20 w-full rounded-xl" />
+          <Skeleton key={i} className="h-20 w-full rounded-sm" />
         ))}
       </div>
     </div>

@@ -286,8 +286,8 @@ function DepositosDonut({
   if (!total) return <p className="text-sm text-slate-400 py-6 text-center">Sem dados PNCD no período.</p>;
 
   return (
-    <div className="grid grid-cols-[120px_1fr] gap-4 items-center min-h-[150px]">
-      <div className="relative h-[120px]">
+    <div className="grid w-full min-w-0 grid-cols-[minmax(0,120px)_minmax(0,1fr)] gap-3 sm:gap-4 items-center min-h-[150px]">
+      <div className="relative h-[120px] min-w-0 shrink-0">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie data={rows} dataKey="value" nameKey="name" innerRadius={38} outerRadius={56} paddingAngle={3}>
@@ -306,14 +306,14 @@ function DepositosDonut({
           <span className="text-[10px] text-slate-400">inspec.</span>
         </div>
       </div>
-      <div className="space-y-2">
+      <div className="min-w-0 space-y-2">
         {rows.map((item, index) => (
-          <div key={item.name} className="flex items-center justify-between gap-3 text-xs">
-            <span className="flex items-center gap-2 text-slate-500">
-              <span className="h-2 w-2 rounded-full" style={{ background: DEPOSITO_COLORS[index % DEPOSITO_COLORS.length] }} />
-              {item.name}
+          <div key={item.name} className="flex min-w-0 items-center justify-between gap-2 text-xs">
+            <span className="flex min-w-0 items-center gap-2 text-slate-500">
+              <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: DEPOSITO_COLORS[index % DEPOSITO_COLORS.length] }} />
+              <span className="truncate">{item.name}</span>
             </span>
-            <span className="font-semibold text-slate-700 tabular-nums">{item.value}</span>
+            <span className="shrink-0 font-semibold text-slate-700 tabular-nums">{item.value}</span>
           </div>
         ))}
       </div>
@@ -327,14 +327,16 @@ function ResolutionGauge({ value, loading }: { value: number | null | undefined;
 
   const safeValue = Math.max(0, Math.min(100, value));
   return (
-    <div className="flex items-center gap-5">
+    <div className="flex items-center gap-5 min-w-0">
       <div
-        className="relative h-28 w-28 rounded-full"
+        className="relative h-28 w-28 shrink-0 rounded-full"
         style={{ background: `conic-gradient(#22c55e 0 ${safeValue}%, #fee2e2 ${safeValue}% 100%)` }}
       >
-        <div className="absolute inset-3 rounded-full bg-white flex flex-col items-center justify-center shadow-inner">
-          <span className="text-3xl font-bold text-slate-900 tabular-nums">{safeValue.toFixed(0)}%</span>
-          <span className="text-[10px] text-slate-400">resolução</span>
+        <div className="absolute inset-2 flex flex-col items-center justify-center rounded-full bg-white px-1 text-center shadow-inner">
+          <span className="whitespace-nowrap text-2xl font-bold leading-none tabular-nums text-slate-900">
+            {safeValue.toFixed(0)}%
+          </span>
+          <span className="mt-0.5 whitespace-nowrap text-[9px] leading-tight text-slate-400">resolução</span>
         </div>
       </div>
       <div className="space-y-2 text-sm">

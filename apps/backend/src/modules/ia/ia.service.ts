@@ -28,8 +28,9 @@ export class IaService {
           'content-type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'claude-haiku-4-5-20251001',
+          model: 'claude-sonnet-4-6',
           max_tokens: 300,
+          system: `Você é um especialista em entomologia vetorial com foco em Aedes aegypti. Sua tarefa é analisar imagens de campo capturadas por agentes de vigilância sanitária para detectar larvas do mosquito. Larvas de Aedes aegypti são filiformes, de coloração escura (marrom a preta), medem entre 1 e 10mm dependendo do estágio larval, ficam suspensas próximas à superfície da água em ângulo de aproximadamente 45°, e apresentam movimento de serpentina quando perturbadas. São comuns em recipientes com água parada: pneus, caixas d'água, calhas, vasos, tambores e qualquer acúmulo de água. A água pode ser turva ou com sedimentos — isso não invalida a análise. Seja criterioso: prefira "inconclusivo" a falsos negativos quando a imagem não tiver qualidade suficiente para confirmação.`,
           messages: [
             {
               role: 'user',
@@ -44,7 +45,7 @@ export class IaService {
                 },
                 {
                   type: 'text',
-                  text: `Analise esta imagem de depósito em inspeção entomológica${params.depositoTipo ? ` (tipo: ${params.depositoTipo})` : ''}. Identifique se há larvas de Aedes aegypti presentes. Responda APENAS em JSON válido: {"classificacao": "positivo" | "negativo" | "inconclusivo", "confianca": 0.0-1.0, "descricao": "breve descrição do que foi observado"}`,
+                  text: `Analise esta imagem de inspeção entomológica${params.depositoTipo ? ` (tipo de depósito: ${params.depositoTipo})` : ''}. Verifique se há larvas de Aedes aegypti visíveis — procure por filamentos escuros, suspensão na superfície ou próximo a ela, e posição angular característica. Considere a qualidade da imagem ao definir sua confiança. Responda APENAS em JSON válido, sem texto adicional: {"classificacao": "positivo" | "negativo" | "inconclusivo", "confianca": 0.0-1.0, "descricao": "breve descrição do que foi observado na imagem"}`,
                 },
               ],
             },

@@ -137,7 +137,7 @@ function GrupoCard({
   const todosSelecionados = elegiveisList.length > 0 && selecionados.size === elegiveisList.length;
 
   return (
-    <Card className={`rounded-xl border border-border/60 border-l-[3px] ${config.borderClass}`}>
+    <Card className={`rounded-sm border border-border/60 border-l-[3px] ${config.borderClass}`}>
       <CardContent className="p-4 space-y-3">
 
         {/* ── Linha principal ── */}
@@ -150,7 +150,7 @@ function GrupoCard({
                   {LABEL_AGRUPADOR[grupo.agrupador_tipo]}
                 </span>
                 {prioridade && (
-                  <PrioridadeBadge prioridade={prioridade as 'P1'|'P2'|'P3'|'P4'|'P5'} />
+                  <PrioridadeBadge prioridade={prioridade as 'P1'|'P2'|'P3'|'P4'|'P5'} className="rounded-sm" />
                 )}
               </div>
               <p className="text-sm font-semibold text-foreground leading-tight truncate">
@@ -181,22 +181,22 @@ function GrupoCard({
         {/* ── Status pills ── */}
         <div className="flex flex-wrap gap-1.5">
           {grupo.ct_em_triagem > 0 && (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-sm text-[10px] font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
               {grupo.ct_em_triagem} em triagem
             </span>
           )}
           {grupo.ct_aguarda_inspecao > 0 && (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-sm text-[10px] font-semibold bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400">
               {grupo.ct_aguarda_inspecao} aguardando inspeção
             </span>
           )}
           {grupo.ct_sem_responsavel > 0 && (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-sm text-[10px] font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
               {grupo.ct_sem_responsavel} sem responsável
             </span>
           )}
           {grupo.quantidade_elegivel === 0 && (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-500 dark:bg-gray-800/30">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-sm text-[10px] font-semibold bg-gray-100 text-gray-500 dark:bg-gray-800/30">
               Todos em execução
             </span>
           )}
@@ -206,7 +206,7 @@ function GrupoCard({
         {grupo.quantidade_elegivel > 0 && (
           <div className="flex gap-2 pt-1">
             <Select value={agenteId} onValueChange={setAgenteId}>
-              <SelectTrigger className="flex-1 h-8 text-xs">
+              <SelectTrigger className="flex-1 h-8 text-xs rounded-sm">
                 <SelectValue placeholder="Selecionar agente..." />
               </SelectTrigger>
               <SelectContent>
@@ -248,7 +248,7 @@ function GrupoCard({
           <div className="space-y-1.5 pt-1">
             {focosLoading ? (
               <div className="space-y-1.5">
-                {[0, 1, 2].map((i) => <Skeleton key={i} className="h-12 w-full rounded-lg" />)}
+                {[0, 1, 2].map((i) => <Skeleton key={i} className="h-12 w-full rounded-sm" />)}
               </div>
             ) : (
               <>
@@ -278,7 +278,7 @@ function GrupoCard({
                   return (
                     <div
                       key={foco.id}
-                      className={`flex items-start gap-2.5 p-2.5 rounded-lg transition-colors ${
+                      className={`flex items-start gap-2.5 p-2.5 rounded-sm transition-colors ${
                         selecionado
                           ? 'bg-primary/8 border border-primary/20'
                           : 'bg-muted/40 border border-transparent'
@@ -320,9 +320,9 @@ function GrupoCard({
 
                       {/* Badges */}
                       <div className="flex flex-col items-end gap-1 shrink-0">
-                        <StatusBadge status={foco.status as FocoRiscoStatus} />
+                        <StatusBadge status={foco.status as FocoRiscoStatus} className="rounded-sm" />
                         {foco.prioridade && (
-                          <PrioridadeBadge prioridade={foco.prioridade as 'P1'|'P2'|'P3'|'P4'|'P5'} />
+                          <PrioridadeBadge prioridade={foco.prioridade as 'P1'|'P2'|'P3'|'P4'|'P5'} className="rounded-sm" />
                         )}
                       </div>
                     </div>
@@ -360,7 +360,7 @@ export function TriagemTerritorial({ clienteId, agentes }: Props) {
   if (isLoading) {
     return (
       <div className="space-y-3">
-        {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-28 w-full rounded-xl" />)}
+        {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-28 w-full rounded-sm" />)}
       </div>
     );
   }
@@ -396,7 +396,7 @@ export function TriagemTerritorial({ clienteId, agentes }: Props) {
             key={label}
             type="button"
             onClick={() => setFiltroPrioridadeOrd(ord)}
-            className={`px-2.5 py-1 rounded-full text-xs font-semibold border transition-colors ${
+            className={`px-2.5 py-1 rounded-sm text-xs font-semibold border transition-colors ${
               filtroPrioridadeOrd === ord
                 ? 'bg-primary text-primary-foreground border-primary'
                 : 'border-border bg-background text-muted-foreground hover:bg-muted'
@@ -412,7 +412,7 @@ export function TriagemTerritorial({ clienteId, agentes }: Props) {
         <button
           type="button"
           onClick={() => setSomenteElegiveis((v) => !v)}
-          className={`px-2.5 py-1 rounded-full text-xs font-semibold border transition-colors ${
+          className={`px-2.5 py-1 rounded-sm text-xs font-semibold border transition-colors ${
             somenteElegiveis
               ? 'bg-primary text-primary-foreground border-primary'
               : 'border-border bg-background text-muted-foreground hover:bg-muted'
@@ -425,7 +425,7 @@ export function TriagemTerritorial({ clienteId, agentes }: Props) {
         <button
           type="button"
           onClick={() => setSomentesSemResponsavel((v) => !v)}
-          className={`px-2.5 py-1 rounded-full text-xs font-semibold border transition-colors ${
+          className={`px-2.5 py-1 rounded-sm text-xs font-semibold border transition-colors ${
             somentesSemResponsavel
               ? 'bg-amber-500 text-white border-amber-500'
               : 'border-border bg-background text-muted-foreground hover:bg-muted'

@@ -636,7 +636,7 @@ export default function CentralOperacional() {
               key={key || 'todas'}
               onClick={() => setFiltroVstPrioridade(key)}
               className={cn(
-                'px-2.5 py-1 text-xs rounded-full border transition-colors',
+                'px-2.5 py-1 text-xs rounded-sm border transition-colors',
                 filtroVstPrioridade === key
                   ? 'bg-primary text-primary-foreground border-primary'
                   : 'border-border/60 text-muted-foreground hover:border-primary/40 hover:text-foreground',
@@ -648,7 +648,7 @@ export default function CentralOperacional() {
           <button
             onClick={() => setFiltroVstIncompleto((v) => !v)}
             className={cn(
-              'flex items-center gap-1 px-2.5 py-1 text-xs rounded-full border transition-colors',
+              'flex items-center gap-1 px-2.5 py-1 text-xs rounded-sm border transition-colors',
               filtroVstIncompleto
                 ? 'bg-amber-100 text-amber-800 border-amber-400 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-700'
                 : 'border-border/60 text-muted-foreground hover:border-amber-400/60',
