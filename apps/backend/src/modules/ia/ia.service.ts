@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadGatewayException, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 
 @Injectable()
@@ -14,40 +14,53 @@ export class IaService {
     vistoriaId?: string;
     clienteId: string;
   }): Promise<{ classificacao: string; confianca: number; descricao: string }> {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': process.env.ANTHROPIC_API_KEY ?? '',
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 300,
-        messages: [
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'image',
-                source: {
-                  type: 'base64',
-                  media_type: params.contentType,
-                  data: params.imageBase64,
+    // Anthropic only supports jpeg/png/gif/webp — normalize unknown types to jpeg
+    const SUPPORTED = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    const mediaType = SUPPORTED.includes(params.contentType) ? params.contentType : 'image/jpeg';
+
+    let response: Response;
+    try {
+      response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'x-api-key': process.env.ANTHROPIC_API_KEY ?? '',
+          'anthropic-version': '2023-06-01',
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 300,
+          messages: [
+            {
+              role: 'user',
+              content: [
+                {
+                  type: 'image',
+                  source: {
+                    type: 'base64',
+                    media_type: mediaType,
+                    data: params.imageBase64,
+                  },
                 },
-              },
-              {
-                type: 'text',
-                text: `Analise esta imagem de depósito em inspeção entomológica${params.depositoTipo ? ` (tipo: ${params.depositoTipo})` : ''}. Identifique se há larvas de Aedes aegypti presentes. Responda APENAS em JSON válido: {"classificacao": "positivo" | "negativo" | "inconclusivo", "confianca": 0.0-1.0, "descricao": "breve descrição do que foi observado"}`,
-              },
-            ],
-          },
-        ],
-      }),
-    });
+                {
+                  type: 'text',
+                  text: `Analise esta imagem de depósito em inspeção entomológica${params.depositoTipo ? ` (tipo: ${params.depositoTipo})` : ''}. Identifique se há larvas de Aedes aegypti presentes. Responda APENAS em JSON válido: {"classificacao": "positivo" | "negativo" | "inconclusivo", "confianca": 0.0-1.0, "descricao": "breve descrição do que foi observado"}`,
+                },
+              ],
+            },
+          ],
+        }),
+      });
+    } catch (err) {
+      this.logger.error('Falha ao conectar na API Anthropic', err);
+      throw new BadGatewayException('Serviço de IA indisponível');
+    }
 
     if (!response.ok) {
-      throw new Error(`Anthropic API error: ${response.status}`);
+      let body = '';
+      try { body = await response.text(); } catch {}
+      this.logger.error(`Anthropic API ${response.status}: ${body}`);
+      throw new BadGatewayException(`Erro na API de IA: ${response.status}`);
     }
 
     const data = (await response.json()) as any;
