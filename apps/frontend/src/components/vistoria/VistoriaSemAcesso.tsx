@@ -137,9 +137,9 @@ export function VistoriaSemAcesso({
             reader.readAsDataURL(fotoFile);
           });
           const up = await invokeUploadEvidencia({
-            file_base64: base64,
+            fileBase64: base64,
             filename: filenameSemAcessoComExtensao(fotoFile),
-            folder: 'sem_acesso',
+            modulo: 'sem_acesso',
           });
           if ('url' in up) {
             fotoUrlFinal = up.url;
