@@ -4,6 +4,7 @@ import { Request } from 'express';
 import { getAccessScope } from '@shared/security/access-scope.helpers';
 import type { AuthenticatedUser } from 'src/guards/auth.guard';
 
+import { RecalcularScorePrioridadeFoco } from '../../foco-risco/use-cases/recalcular-score-prioridade-foco';
 import { FocoRiscoReadRepository } from '../../foco-risco/repositories/foco-risco-read.repository';
 import { FocoRiscoWriteRepository } from '../../foco-risco/repositories/foco-risco-write.repository';
 import { VistoriaException } from '../errors/vistoria.exception';
@@ -15,29 +16,14 @@ const MAX_TENTATIVAS = 3;
 
 /** Dias úteis a aguardar por motivo antes de nova tentativa (sem_previsao não agenda). */
 const DIAS_ESPERA: Partial<Record<MotivoSemAcesso, number>> = {
-  fechado:   1,
-  recusa:    2,
+  fechado:    1,
+  recusa:     2,
   desocupado: 3,
-};
-
-/**
- * Incremento de score por motivo.
- * PENDÊNCIA TÉCNICA: RecalcularScorePrioridadeFoco sobrescreve este valor na
- * próxima transição de status (calcularScorePrioridadeFoco não inclui
- * tentativas_sem_acesso como input). O incremento persiste até a próxima
- * transição via TransicionarFocoRisco. Considerar adicionar tentativas_sem_acesso
- * a ScoreInputs em iteração futura.
- */
-const SCORE_DELTA: Record<MotivoSemAcesso, number> = {
-  recusa:      10,
-  fechado:     5,
-  desocupado:  0,
-  sem_previsao: 5,
 };
 
 function calcularProximaTentativa(motivo: MotivoSemAcesso): Date | null {
   const dias = DIAS_ESPERA[motivo];
-  if (!dias) return null; // sem_previsao não agenda data
+  if (!dias) return null;
 
   const data = new Date();
   let adicionados = 0;
@@ -47,15 +33,6 @@ function calcularProximaTentativa(motivo: MotivoSemAcesso): Date | null {
     if (diaSemana !== 0 && diaSemana !== 6) adicionados++;
   }
   return data;
-}
-
-function calcularScoreDelta(motivo: MotivoSemAcesso, tentativa: number): number {
-  let delta = SCORE_DELTA[motivo];
-  // Fechado: só aplica incremento a partir da 2ª tentativa
-  if (motivo === 'fechado' && tentativa < 2) delta = 0;
-  // 3ª tentativa: acréscimo adicional independente do motivo
-  if (tentativa >= MAX_TENTATIVAS) delta += 10;
-  return delta;
 }
 
 function montarMotivoHistorico(
@@ -80,6 +57,7 @@ export class RegistrarSemAcessoVistoria {
     private vistoriaWriteRepository: VistoriaWriteRepository,
     private focoRiscoReadRepository: FocoRiscoReadRepository,
     private focoRiscoWriteRepository: FocoRiscoWriteRepository,
+    private recalcularScore: RecalcularScorePrioridadeFoco,
     @Inject(REQUEST) private req: Request,
   ) {}
 
@@ -140,17 +118,11 @@ export class RegistrarSemAcessoVistoria {
       // pendente_decisao_supervisor=true e sem data de retorno calculada.
       foco.status = 'aguardando_nova_tentativa';
 
-      // Score: aplica incremento controlado (cap 100).
-      // PENDÊNCIA: será sobrescrito por RecalcularScorePrioridadeFoco na próxima
-      // transição via TransicionarFocoRisco, pois calcularScorePrioridadeFoco
-      // não recebe tentativas_sem_acesso como input.
-      const delta = calcularScoreDelta(input.motivo, tentativaNumero);
-      if (delta > 0) {
-        const novoScore = Math.min(100, foco.scorePrioridade + delta);
-        await this.focoRiscoWriteRepository.updateScorePrioridade(foco.id!, novoScore);
-      }
-
+      // Persiste tentativasSemAcesso antes de recalcular score (query lê do banco).
       await this.focoRiscoWriteRepository.save(foco);
+
+      // Score oficial recalculado incluindo tentativas_sem_acesso como fator permanente.
+      await this.recalcularScore.execute(foco.id!);
 
       await this.focoRiscoWriteRepository.createHistorico({
         focoRiscoId: foco.id,
@@ -161,6 +133,19 @@ export class RegistrarSemAcessoVistoria {
         motivo: montarMotivoHistorico(input.motivo, tentativaNumero, proximaTentativa, input.observacao),
         tipoEvento: escaladoSupervisor ? 'escalado_supervisor' : 'sem_acesso_registrado',
       });
+
+      // Rastreabilidade operacional: evento distinto quando há data de retorno planejada.
+      if (proximaTentativa != null) {
+        await this.focoRiscoWriteRepository.createHistorico({
+          focoRiscoId: foco.id,
+          clienteId: foco.clienteId,
+          statusAnterior: foco.status,
+          statusNovo: foco.status,
+          alteradoPor: user.id,
+          tipoEvento: 'retorno_planejado',
+          motivo: `Retorno planejado para ${proximaTentativa.toLocaleDateString('pt-BR')}. Tentativa ${tentativaNumero}/${MAX_TENTATIVAS}.${input.observacao ? ` Obs: ${input.observacao}` : ''}`,
+        });
+      }
     } catch (err) {
       this.logger.error(`Erro ao atualizar foco ${focoId} no sem-acesso: ${err}`);
     }

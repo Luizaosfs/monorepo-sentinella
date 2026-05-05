@@ -414,7 +414,8 @@ export class PrismaFocoRiscoReadRepository implements FocoRiscoReadRepository {
               ST_SetSRID(ST_MakePoint(f.longitude, f.latitude), 4326)::geography,
               300
             )
-        ) AS "casosProximosCount"
+        ) AS "casosProximosCount",
+        f.tentativas_sem_acesso AS "tentativasSemAcesso"
       FROM focos_risco f
       LEFT JOIN sla_foco_config sfc
         ON sfc.cliente_id = f.cliente_id
@@ -431,7 +432,7 @@ export class PrismaFocoRiscoReadRepository implements FocoRiscoReadRepository {
       LEFT JOIN foco_risco_historico frh ON frh.foco_risco_id = f.id
       WHERE f.id = ${focoId}::uuid
         AND f.deleted_at IS NULL
-      GROUP BY f.id, f.cliente_id, f.status, f.foco_anterior_id, f.latitude, f.longitude, sfc.prazo_minutos
+      GROUP BY f.id, f.cliente_id, f.status, f.foco_anterior_id, f.latitude, f.longitude, sfc.prazo_minutos, f.tentativas_sem_acesso
     `);
     return rows[0] ?? null;
   }

@@ -99,4 +99,34 @@ describe('calcularScorePrioridadeFoco', () => {
     });
     expect(result).toBe(100);
   });
+
+  it('1 tentativa sem acesso → +5', () => {
+    expect(calcularScorePrioridadeFoco({ ...base(), tentativasSemAcesso: 1 })).toBe(15); // 10+5
+  });
+
+  it('2 tentativas sem acesso → +10', () => {
+    expect(calcularScorePrioridadeFoco({ ...base(), tentativasSemAcesso: 2 })).toBe(20); // 10+10
+  });
+
+  it('3 tentativas sem acesso → +20', () => {
+    expect(calcularScorePrioridadeFoco({ ...base(), tentativasSemAcesso: 3 })).toBe(30); // 10+20
+  });
+
+  it('tentativasSemAcesso=undefined → sem bônus (backward compat)', () => {
+    expect(calcularScorePrioridadeFoco({ ...base() })).toBe(10);
+  });
+
+  it('tentativas + outros fatores respeita cap 100', () => {
+    const result = calcularScorePrioridadeFoco({
+      status: 'em_tratamento',
+      focoAnteriorId: 'anterior',
+      latitude: -15.0,
+      longitude: -47.0,
+      prazoMinutos: 60,
+      tempoNoEstadoMinutos: 70,
+      casosProximosCount: 10,
+      tentativasSemAcesso: 3, // 50+20+30+20=120 → cap 100
+    });
+    expect(result).toBe(100);
+  });
 });

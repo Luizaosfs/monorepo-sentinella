@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { Home, Plane, ShieldOff, Dog, Wrench, FileText, ChevronLeft, AlertTriangle, Camera, Loader2, Upload, UserCheck, CalendarClock, Info } from 'lucide-react';
+import { Home, Plane, ShieldOff, Dog, Wrench, FileText, ChevronLeft, AlertTriangle, Camera, Loader2, Upload, UserCheck, CalendarClock, Info, Ban } from 'lucide-react';
 import { invokeUploadEvidencia } from '@/lib/uploadEvidencia';
 import {
   MotivoSemAcesso, HorarioSugerido,
@@ -542,10 +542,16 @@ export function VistoriaSemAcesso({
                     <span className="font-semibold">Próxima tentativa sugerida:</span> {proxData.toLocaleDateString('pt-BR')}
                   </p>
                 ) : (
-                  <p className="text-amber-700 font-semibold">Sem previsão de retorno</p>
+                  <div className="flex items-start gap-2 p-2 rounded-lg bg-rose-50/80 border border-rose-200 dark:bg-rose-950/30 dark:border-rose-800">
+                    <Ban className="w-3.5 h-3.5 text-rose-600 mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-rose-700 dark:text-rose-400 font-semibold text-xs">Este caso NÃO será reagendado automaticamente</p>
+                      <p className="text-rose-600 dark:text-rose-500 text-xs mt-0.5">O supervisor deverá decidir o próximo passo</p>
+                    </div>
+                  </div>
                 )}
-                <p className={`font-semibold mt-1 ${vaiEscalar ? 'text-rose-600' : 'text-emerald-700'}`}>
-                  Próxima ação: {vaiEscalar ? 'Supervisor deverá decidir' : 'Voltará para fila de inspeção'}
+                <p className={`font-semibold mt-1 ${vaiEscalar ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-700 dark:text-emerald-400'}`}>
+                  Próxima ação: {vaiEscalar ? 'Aguarda decisão do supervisor' : 'Voltará para fila de inspeção'}
                 </p>
               </div>
             </CardContent>

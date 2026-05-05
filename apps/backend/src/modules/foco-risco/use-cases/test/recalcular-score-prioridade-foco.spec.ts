@@ -41,6 +41,7 @@ describe('RecalcularScorePrioridadeFoco', () => {
       prazoMinutos: 60,
       tempoNoEstadoMinutos: 70, // vencido → 50
       casosProximosCount: 0,
+      tentativasSemAcesso: 0,
     });
     writeRepo.updateScorePrioridade.mockResolvedValue();
 
@@ -60,6 +61,7 @@ describe('RecalcularScorePrioridadeFoco', () => {
       prazoMinutos: null,
       tempoNoEstadoMinutos: null,
       casosProximosCount: 0,
+      tentativasSemAcesso: 0,
     });
     writeRepo.updateScorePrioridade.mockResolvedValue();
 
@@ -79,6 +81,7 @@ describe('RecalcularScorePrioridadeFoco', () => {
       prazoMinutos: 120,
       tempoNoEstadoMinutos: 130, // vencido → 50
       casosProximosCount: 3,     // 15 pts
+      tentativasSemAcesso: 0,
     });
     writeRepo.updateScorePrioridade.mockResolvedValue();
 
@@ -86,5 +89,25 @@ describe('RecalcularScorePrioridadeFoco', () => {
 
     expect(result).toEqual({ score: 85 }); // 50 + 20 + 15
     expect(writeRepo.updateScorePrioridade).toHaveBeenCalledWith('foco-2', 85);
+  });
+
+  it('tentativas_sem_acesso incluídas como fator permanente', async () => {
+    readRepo.findInputsParaScorePrioridade.mockResolvedValue({
+      clienteId: 'c1',
+      status: 'aguardando_nova_tentativa',
+      focoAnteriorId: null,
+      latitude: null,
+      longitude: null,
+      prazoMinutos: null, // sem SLA nesse status → 10
+      tempoNoEstadoMinutos: null,
+      casosProximosCount: 0,
+      tentativasSemAcesso: 3, // +20
+    });
+    writeRepo.updateScorePrioridade.mockResolvedValue();
+
+    const result = await useCase.execute('foco-3');
+
+    expect(result).toEqual({ score: 30 }); // 10 + 20
+    expect(writeRepo.updateScorePrioridade).toHaveBeenCalledWith('foco-3', 30);
   });
 });

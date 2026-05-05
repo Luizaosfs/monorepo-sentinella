@@ -13,6 +13,7 @@ export interface ScoreInputsRow {
   prazoMinutos: number | null;
   tempoNoEstadoMinutos: number | null;
   casosProximosCount: number;
+  tentativasSemAcesso: number;
 }
 
 export interface ContagemTriagemResult {

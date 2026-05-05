@@ -7,6 +7,7 @@ import { BillingModule } from '../billing/billing.module';
 import { CloudinaryModule } from '../cloudinary/cloudinary.module';
 import { FocoRiscoModule } from '../foco-risco/foco-risco.module';
 import { IniciarInspecao } from '../foco-risco/use-cases/iniciar-inspecao';
+import { RecalcularScorePrioridadeFoco } from '../foco-risco/use-cases/recalcular-score-prioridade-foco';
 import { JobModule } from '../job/job.module';
 import { BackfillConsolidacaoService } from './services/backfill-consolidacao.service';
 import { RegistrarSemAcessoVistoria } from './use-cases/registrar-sem-acesso';
@@ -45,6 +46,7 @@ import { VistoriaController } from './vistoria.controller';
     SaveVistoria,
     ValidarCicloVistoria,
     IniciarInspecao,
+    RecalcularScorePrioridadeFoco,
     RegistrarSemAcessoVistoria,
     SoftDeleteVistoria,
     JwtService,

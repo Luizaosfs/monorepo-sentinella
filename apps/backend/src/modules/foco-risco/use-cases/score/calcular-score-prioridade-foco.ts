@@ -6,6 +6,7 @@ export interface ScoreInputs {
   prazoMinutos: number | null;
   tempoNoEstadoMinutos: number | null;
   casosProximosCount: number;
+  tentativasSemAcesso?: number;
 }
 
 const TERMINAIS = new Set(['resolvido', 'descartado']);
@@ -16,6 +17,13 @@ function scoreSla(prazoMinutos: number | null, tempoNoEstadoMinutos: number | nu
   if (tempoNoEstadoMinutos >= prazoMinutos * 0.9) return 40;
   if (tempoNoEstadoMinutos >= prazoMinutos * 0.7) return 20;
   return 10;
+}
+
+function scoreTentativas(n: number | undefined): number {
+  if (!n) return 0;
+  if (n >= 3) return 20;
+  if (n === 2) return 10;
+  return 5;
 }
 
 /**
@@ -33,5 +41,7 @@ export function calcularScorePrioridadeFoco(inputs: ScoreInputs): number {
     score += Math.min(inputs.casosProximosCount * 5, 30);
   }
 
-  return score;
+  score += scoreTentativas(inputs.tentativasSemAcesso);
+
+  return Math.min(100, score);
 }
