@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Scope } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
 import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
@@ -7,7 +7,7 @@ import { CicloException } from '../errors/ciclo.exception';
 import { CicloReadRepository } from '../repositories/ciclo-read.repository';
 import { CicloWriteRepository } from '../repositories/ciclo-write.repository';
 
-@Injectable()
+@Injectable({ scope: Scope.REQUEST })
 export class AtivarCiclo {
   constructor(
     private readRepository: CicloReadRepository,

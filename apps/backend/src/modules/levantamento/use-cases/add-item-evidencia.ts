@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Scope } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
 import { getAccessScope } from '@shared/security/access-scope.helpers';
@@ -11,7 +11,7 @@ import {
 } from '../repositories/levantamento-read.repository';
 import { LevantamentoWriteRepository } from '../repositories/levantamento-write.repository';
 
-@Injectable()
+@Injectable({ scope: Scope.REQUEST })
 export class AddItemEvidencia {
   constructor(
     private readRepository: LevantamentoReadRepository,

@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, Scope } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
 import { getAccessScope } from '@shared/security/access-scope.helpers';
@@ -7,7 +7,7 @@ import { LevantamentoException } from '../errors/levantamento.exception';
 import { LevantamentoReadRepository } from '../repositories/levantamento-read.repository';
 import { LevantamentoWriteRepository } from '../repositories/levantamento-write.repository';
 
-@Injectable()
+@Injectable({ scope: Scope.REQUEST })
 export class DeleteItem {
   private readonly logger = new Logger(DeleteItem.name);
 

@@ -1,4 +1,5 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, Scope } from '@nestjs/common';
+import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
 import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 
@@ -11,7 +12,7 @@ import { LevantamentoException } from '../errors/levantamento.exception';
 import { LevantamentoReadRepository } from '../repositories/levantamento-read.repository';
 import { LevantamentoWriteRepository } from '../repositories/levantamento-write.repository';
 
-@Injectable()
+@Injectable({ scope: Scope.REQUEST })
 export class CriarItemManual {
   private readonly logger = new Logger(CriarItemManual.name);
 
@@ -19,7 +20,7 @@ export class CriarItemManual {
     private readRepository: LevantamentoReadRepository,
     private writeRepository: LevantamentoWriteRepository,
     private criarFocoDeLevantamentoItem: CriarFocoDeLevantamentoItem,
-    @Inject('REQUEST') private req: Request,
+    @Inject(REQUEST) private req: Request,
     private verificarQuota: VerificarQuota,
   ) {}
 

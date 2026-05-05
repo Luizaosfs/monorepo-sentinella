@@ -17,8 +17,7 @@ export class ListItensPorPeriodo {
         li.prioridade,
         li.endereco_curto,
         li.data_hora,
-        li.levantamento_id,
-        li.status_atendimento
+        li.levantamento_id
       FROM levantamento_itens li
       WHERE li.cliente_id = ${clienteId}::uuid
         AND li.latitude   IS NOT NULL
