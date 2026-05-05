@@ -102,6 +102,36 @@ describe('useFocosRisco', () => {
     expect(result.current.data).toHaveLength(2);
     expect(result.current.data?.[0].id).toBe('f1');
   });
+
+  it('passa pendente_decisao_supervisor=true para api.focosRisco.list', async () => {
+    const filtros = { pendente_decisao_supervisor: true as const };
+    renderHook(() => useFocosRisco('cli-1', filtros), { wrapper: makeWrapper() });
+    await waitFor(() => expect(mockList).toHaveBeenCalled());
+    expect(mockList).toHaveBeenCalledWith('cli-1', filtros);
+  });
+
+  it('queryKey diferencia quando pendente_decisao_supervisor muda', async () => {
+    const focosPendentes = [{ id: 'fp1', pendente_decisao_supervisor: true }];
+    const focosNormais   = [{ id: 'f1' }];
+    mockList
+      .mockResolvedValueOnce(focosPendentes)
+      .mockResolvedValueOnce(focosNormais);
+
+    const wrapper = makeWrapper();
+    const { result: r1 } = renderHook(
+      () => useFocosRisco('cli-1', { pendente_decisao_supervisor: true }),
+      { wrapper },
+    );
+    const { result: r2 } = renderHook(
+      () => useFocosRisco('cli-1', {}),
+      { wrapper },
+    );
+
+    await waitFor(() => expect(r1.current.isSuccess).toBe(true));
+    await waitFor(() => expect(r2.current.isSuccess).toBe(true));
+    expect(r1.current.data?.[0]).toMatchObject({ id: 'fp1' });
+    expect(r2.current.data?.[0]).toMatchObject({ id: 'f1' });
+  });
 });
 
 // ── useFocoRisco (single) ─────────────────────────────────────────────────────

@@ -1,12 +1,13 @@
 import { useState, useMemo, useEffect } from 'react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Filter, ChevronRight, ChevronLeft, Loader2, Bot, User, MapPin, Building2,
   CheckSquare, Square, X, Users, AlertTriangle, Eye, ClipboardList, PlayCircle,
   Radio, MessageSquare, CloudRain, Edit2, Camera, Calendar as CalendarIcon,
+  ShieldAlert,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -383,6 +384,7 @@ function TriagemSheet({
 
 export default function GestorTriagem() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { clienteId } = useClienteAtivo();
   const qc = useQueryClient();
 
@@ -396,6 +398,9 @@ export default function GestorTriagem() {
   const [filtroDataDe, setFiltroDataDe] = useState<string>('');
   const [filtroDataAte, setFiltroDataAte] = useState<string>('');
   const [ordenacao, setOrdenacao] = useState<'suspeita_em_asc' | 'suspeita_em_desc' | 'score_prioridade_desc'>('suspeita_em_asc');
+  const [filtroPendenteSupervisor, setFiltroPendenteSupervisor] = useState(
+    () => searchParams.get('pendente_supervisor') === '1',
+  );
 
   const [focoSheet, setFocoSheet] = useState<FocoRiscoAtivo | null>(null);
   const [transDialog, setTransDialog] = useState<{ focoId: string; status: FocoRiscoStatus } | null>(null);
@@ -446,13 +451,14 @@ export default function GestorTriagem() {
       regiao_id: filtroRegiao !== 'todos' ? filtroRegiao : undefined,
       responsavel_id: filtroResponsavel !== 'todos' && filtroResponsavel !== '__sem__' ? filtroResponsavel : undefined,
       semResponsavel: filtroResponsavel === '__sem__' ? true : undefined,
+      pendente_decisao_supervisor: filtroPendenteSupervisor || undefined,
       de: filtroDataDe ? startLocalDayFromYmd(filtroDataDe) : undefined,
       ate: filtroDataAte ? endLocalDayFromYmd(filtroDataAte) : undefined,
       orderBy: ordenacao,
       page,
       pageSize: PAGE_SIZE,
     }),
-    [statusFiltro, filtroPrioridade, filtroOrigem, filtroClassificacao, filtroRegiao, filtroResponsavel, filtroDataDe, filtroDataAte, ordenacao, page],
+    [statusFiltro, filtroPrioridade, filtroOrigem, filtroClassificacao, filtroRegiao, filtroResponsavel, filtroPendenteSupervisor, filtroDataDe, filtroDataAte, ordenacao, page],
   );
 
   const {
@@ -493,7 +499,7 @@ export default function GestorTriagem() {
   useEffect(() => {
     setPage(1);
     setSelecionados(new Set());
-  }, [filtroStatus, filtroPrioridade, filtroOrigem, filtroClassificacao, filtroRegiao, filtroResponsavel, filtroDataDe, filtroDataAte, ordenacao]);
+  }, [filtroStatus, filtroPrioridade, filtroOrigem, filtroClassificacao, filtroRegiao, filtroResponsavel, filtroPendenteSupervisor, filtroDataDe, filtroDataAte, ordenacao]);
 
   useEffect(() => {
     // Avisa visualmente ao trocar página com seleção ativa — não bloqueia, só informa.
@@ -589,6 +595,7 @@ export default function GestorTriagem() {
     setFiltroClassificacao('todos');
     setFiltroRegiao('todos');
     setFiltroResponsavel('todos');
+    setFiltroPendenteSupervisor(false);
     setFiltroDataDe('');
     setFiltroDataAte('');
     setOrdenacao('suspeita_em_asc');
@@ -992,10 +999,22 @@ export default function GestorTriagem() {
             >
               Prontos para despacho
             </button>
+            <button
+              onClick={() => setFiltroPendenteSupervisor((v) => !v)}
+              className={cn(
+                'inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-sm border transition-colors',
+                filtroPendenteSupervisor
+                  ? 'bg-rose-600 text-white border-rose-600'
+                  : 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100',
+              )}
+            >
+              <ShieldAlert className="w-3 h-3" />
+              Pendências supervisor
+            </button>
           </div>
           {(filtroStatus !== 'todos' || filtroPrioridade !== 'todos' || filtroOrigem !== 'todos' ||
             filtroClassificacao !== 'todos' || filtroRegiao !== 'todos' || filtroResponsavel !== 'todos' ||
-            filtroDataDe || filtroDataAte || ordenacao !== 'suspeita_em_asc') && (
+            filtroPendenteSupervisor || filtroDataDe || filtroDataAte || ordenacao !== 'suspeita_em_asc') && (
             <button
               onClick={limparFiltros}
               className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
@@ -1110,11 +1129,15 @@ export default function GestorTriagem() {
               <Card
                 key={foco.id}
                 className={`rounded-sm border transition-all cursor-pointer overflow-hidden ${
-                  BORDER_PRIORIDADE[foco.prioridade ?? ''] ?? 'border-l-[3px] border-l-transparent'
+                  foco.pendente_decisao_supervisor
+                    ? 'border-l-[3px] border-l-rose-500'
+                    : (BORDER_PRIORIDADE[foco.prioridade ?? ''] ?? 'border-l-[3px] border-l-transparent')
                 } ${
                   isSelecionado
                     ? 'border-primary/40 bg-primary/5'
-                    : 'border-border/60 hover:border-border/80 hover:shadow-sm'
+                    : foco.pendente_decisao_supervisor
+                      ? 'border-rose-200 bg-rose-50/40 dark:bg-rose-950/10 hover:shadow-sm'
+                      : 'border-border/60 hover:border-border/80 hover:shadow-sm'
                 }`}
                 onClick={() => setFocoSheet(foco)}
               >
@@ -1164,6 +1187,16 @@ export default function GestorTriagem() {
                             </span>
                           );
                         })()}
+                        {foco.pendente_decisao_supervisor && (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm text-[10px] font-bold bg-rose-100 text-rose-700 border border-rose-300 dark:bg-rose-900/30 dark:text-rose-300 dark:border-rose-800">
+                            <ShieldAlert className="w-3 h-3" /> Aguarda supervisor
+                          </span>
+                        )}
+                        {(foco.tentativas_sem_acesso ?? 0) >= 3 && (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm text-[10px] font-bold bg-orange-100 text-orange-700 border border-orange-300 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800">
+                            <AlertTriangle className="w-3 h-3" /> {foco.tentativas_sem_acesso}× sem acesso
+                          </span>
+                        )}
                         {!foco.tem_dados_minimos && foco.status === 'suspeita' && (
                           <span
                             title={`Dados incompletos: ${(foco.pendencias ?? []).map((p: string) => ({

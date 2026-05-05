@@ -40,6 +40,8 @@ export const filterFocoRiscoSchema = z.object({
   pageSize: z.coerce.number().int().positive().max(5000).optional(),
   /** Ordem combinada (?orderBy=suspeita_em_asc | suspeita_em_desc). */
   orderBy: z.string().optional(),
+  /** Filtrar apenas focos aguardando decisão do supervisor (sem_previsao ou 3ª tentativa). */
+  pendente_decisao_supervisor: z.coerce.boolean().optional(),
 });
 
 export class FilterFocoRiscoInput extends createZodDto(filterFocoRiscoSchema) {}

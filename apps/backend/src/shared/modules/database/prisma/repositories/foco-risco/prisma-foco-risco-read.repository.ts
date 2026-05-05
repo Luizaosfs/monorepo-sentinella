@@ -456,6 +456,7 @@ export class PrismaFocoRiscoReadRepository implements FocoRiscoReadRepository {
       ...(filters.regiaoId && { regiao_id: filters.regiaoId }),
       ...(filters.responsavelId && { responsavel_id: filters.responsavelId }),
       ...(filters.origemTipo && { origem_tipo: filters.origemTipo }),
+      ...(filters.pendente_decisao_supervisor && { pendente_decisao_supervisor: true }),
     };
   }
 
@@ -486,6 +487,9 @@ export class PrismaFocoRiscoReadRepository implements FocoRiscoReadRepository {
     }
     if (filters.origemTipo) {
       clauses.push(Prisma.sql`f.origem_tipo = ${filters.origemTipo}`);
+    }
+    if (filters.pendente_decisao_supervisor) {
+      clauses.push(Prisma.sql`f.pendente_decisao_supervisor = true`);
     }
     return Prisma.join(clauses, ' AND ');
   }

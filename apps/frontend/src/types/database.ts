@@ -1860,6 +1860,7 @@ export interface FocoRiscoFiltros {
   imovel_id?: string;
   responsavel_id?: string;
   semResponsavel?: boolean;
+  pendente_decisao_supervisor?: boolean;
   de?: Date;
   ate?: Date;
   page?: number;

@@ -25,6 +25,7 @@ export function useFocosRisco(
       f.orderBy ?? null,
       f.de?.toISOString() ?? null,
       f.ate?.toISOString() ?? null,
+      f.pendente_decisao_supervisor ?? null,
     ],
     queryFn:  () => api.focosRisco.list(clienteId!, filtros),
     enabled:  !!clienteId,

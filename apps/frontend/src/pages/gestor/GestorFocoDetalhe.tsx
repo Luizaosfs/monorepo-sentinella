@@ -396,6 +396,20 @@ export default function GestorFocoDetalhe() {
           {[foco.logradouro, foco.bairro].filter(Boolean).join(', ') || 'Endereço não informado'}
         </p>
 
+        {/* Alerta sem acesso recorrente */}
+        {foco.pendente_decisao_supervisor && (
+          <div className="flex items-start gap-2 rounded-lg border border-rose-300 bg-rose-50 dark:bg-rose-950/20 dark:border-rose-800/40 px-3 py-2 text-xs">
+            <AlertTriangle className="w-3.5 h-3.5 text-rose-600 shrink-0 mt-0.5" />
+            <div className="space-y-0.5">
+              <p className="font-bold text-rose-800 dark:text-rose-300">Sem acesso recorrente</p>
+              <p className="text-rose-700/80 dark:text-rose-400/80">
+                Tentativas: <strong>{foco.tentativas_sem_acesso ?? 0}</strong>
+                {' · '}Próxima ação: <strong>Supervisor decidir operação</strong>
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* State machine timeline */}
         <StateMachineTimeline currentStatus={foco.status} />
 

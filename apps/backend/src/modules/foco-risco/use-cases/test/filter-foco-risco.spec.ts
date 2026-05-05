@@ -117,4 +117,39 @@ describe('FilterFocoRisco', () => {
       );
     });
   });
+
+  describe('filtro pendente_decisao_supervisor', () => {
+    it('supervisor: pendente_decisao_supervisor=true é repassado ao repositório', async () => {
+      readRepo.findAll.mockResolvedValue([]);
+
+      await useCase.execute({ clienteId: 'cliente-uuid-1', pendente_decisao_supervisor: true });
+
+      expect(readRepo.findAll).toHaveBeenCalledWith(
+        expect.objectContaining({ pendente_decisao_supervisor: true }),
+      );
+    });
+
+    it('supervisor: sem filtro pendente_decisao_supervisor não injeta o campo', async () => {
+      readRepo.findAll.mockResolvedValue([]);
+
+      await useCase.execute({ clienteId: 'cliente-uuid-1' });
+
+      expect(readRepo.findAll).toHaveBeenCalledWith(
+        expect.not.objectContaining({ pendente_decisao_supervisor: expect.anything() }),
+      );
+    });
+
+    it('retorna focos com pendente_decisao_supervisor=true quando repositório retorna', async () => {
+      const focos = [
+        new FocoRiscoBuilder().withId('f-pend-1').withStatus('aguarda_inspecao').build(),
+        new FocoRiscoBuilder().withId('f-pend-2').withStatus('em_inspecao').build(),
+      ];
+      readRepo.findAll.mockResolvedValue(focos);
+
+      const result = await useCase.execute({ clienteId: 'cliente-uuid-1', pendente_decisao_supervisor: true });
+
+      expect(result.focos).toHaveLength(2);
+      expect(result.focos[0].id).toBe('f-pend-1');
+    });
+  });
 });

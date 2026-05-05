@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '@/services/api';
 import { STALE } from '@/lib/queryConfig';
 import { useClienteAtivo } from '@/hooks/useClienteAtivo';
+import type { FocoRiscoAtivo } from '@/types/database';
 
 export interface CentralOperacionalKpis {
   cliente_id: string;
@@ -58,5 +59,22 @@ export function useImoveisParaHoje(limit = 30) {
     queryFn:  () => api.central.listImoveisParaHoje(clienteId!, limit),
     enabled:  !!clienteId,
     staleTime: STALE.MEDIUM,
+  });
+}
+
+/** Focos aguardando decisão do supervisor: pendente_decisao_supervisor=true. */
+export function useFocosPendentesSupervisor() {
+  const { clienteId } = useClienteAtivo();
+  return useQuery<{ data: FocoRiscoAtivo[]; count: number }>({
+    queryKey: ['focos-pendentes-supervisor', clienteId],
+    queryFn:  () =>
+      api.focosRisco.list(clienteId!, {
+        pendente_decisao_supervisor: true,
+        page: 1,
+        pageSize: 5,
+      }) as Promise<{ data: FocoRiscoAtivo[]; count: number }>,
+    enabled:  !!clienteId,
+    staleTime: STALE.SHORT,
+    refetchInterval: 60_000,
   });
 }

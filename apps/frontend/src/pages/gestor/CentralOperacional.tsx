@@ -8,6 +8,7 @@ import {
   AlertTriangle, Clock, MapPin, Users, Radio, RefreshCw,
   LayoutDashboard, ArrowRight, TrendingUp, MessageSquare,
   Stethoscope, ChevronRight, GitMerge, FileText, Info, MapPinOff, ClipboardCheck,
+  ShieldAlert,
 } from 'lucide-react';
 import { STALE } from '@/lib/queryConfig';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,7 +20,7 @@ import { ScoreBadge } from '@/components/foco/ScoreBadge';
 import { AgentesHojeWidget } from '@/components/dashboard/AgentesHojeWidget';
 import { ResumoIAWidget } from '@/components/dashboard/ResumoIAWidget';
 import { PainelPilotoFunilCard } from '@/components/dashboard/PainelPilotoFunil';
-import { useCentralKpis, useImoveisParaHoje } from '@/hooks/queries/useCentralOperacional';
+import { useCentralKpis, useImoveisParaHoje, useFocosPendentesSupervisor } from '@/hooks/queries/useCentralOperacional';
 import { gerarRelatorioPdf } from '@/lib/gestorRelatorioPdf';
 import { useClienteAtivo } from '@/hooks/useClienteAtivo';
 import { useCasosCruzadosHoje } from '@/hooks/queries/useCasosNotificados';
@@ -104,6 +105,7 @@ export default function CentralOperacional() {
   }, [clienteAtivo?.id]);
 
   const { data: kpis, isLoading: kpisLoading, refetch } = useCentralKpis();
+  const { data: pendentesSupervisor } = useFocosPendentesSupervisor();
   const { data: imoveisParaHoje = [], isLoading: imoveisLoading } = useImoveisParaHoje(15);
   const { data: topCriticos = [] } = useScoreTopCriticos(5);
   const { data: casosCruzados = 0 } = useCasosCruzadosHoje();
@@ -243,6 +245,59 @@ export default function CentralOperacional() {
               {a.msg}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Pendências do Supervisor */}
+      {pendentesSupervisor && pendentesSupervisor.count > 0 && (
+        <div className="rounded-xl border border-rose-300 bg-rose-50/60 dark:bg-rose-950/20 dark:border-rose-800/40 px-4 py-3">
+          <div className="flex items-start gap-3">
+            <ShieldAlert className="h-5 w-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0 space-y-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="text-sm font-bold text-rose-800 dark:text-rose-300">
+                  Pendências do Supervisor
+                </p>
+                <span className="inline-flex items-center rounded-sm bg-rose-600 text-white text-xs font-bold px-2 py-0.5 tabular-nums">
+                  {pendentesSupervisor.count}
+                </span>
+              </div>
+              <p className="text-xs text-rose-700/80 dark:text-rose-400/80 leading-snug">
+                {pendentesSupervisor.count === 1
+                  ? 'Foco aguardando decisão operacional — sem previsão de acesso ou 3ª tentativa atingida.'
+                  : `${pendentesSupervisor.count} focos aguardando decisão operacional — sem previsão de acesso ou 3ª tentativa atingida.`}
+              </p>
+              {pendentesSupervisor.data.length > 0 && (
+                <div className="space-y-1">
+                  {pendentesSupervisor.data.slice(0, 3).map((f) => (
+                    <div
+                      key={f.id}
+                      className="flex items-center gap-2 text-xs cursor-pointer hover:underline text-rose-800 dark:text-rose-300"
+                      onClick={() => navigate(`/gestor/focos/${f.id}`)}
+                    >
+                      <ChevronRight className="h-3 w-3 shrink-0" />
+                      <span className="truncate">
+                        {f.logradouro ?? f.bairro ?? f.endereco_normalizado ?? 'Endereço não informado'}
+                      </span>
+                      {(f.tentativas_sem_acesso ?? 0) >= 3 && (
+                        <span className="shrink-0 font-semibold text-rose-700 dark:text-rose-400">
+                          · {f.tentativas_sem_acesso} tentativas
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 text-xs text-rose-700 hover:bg-rose-100 dark:text-rose-400 dark:hover:bg-rose-900/30 shrink-0 font-semibold"
+              onClick={() => navigate('/gestor/triagem?pendente_supervisor=1')}
+            >
+              Ver focos <ChevronRight className="h-3.5 w-3.5 ml-0.5" />
+            </Button>
+          </div>
         </div>
       )}
 
