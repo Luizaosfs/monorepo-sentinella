@@ -1417,6 +1417,14 @@ export default function GestorFocoRelatorio() {
                 <InfoRow label="Data da visita" value={formatDate(resumo.vistoria.dataVisita)} />
                 <InfoRow label="Status" value={resumo.vistoria.status} />
                 <InfoRow label="Acesso realizado" value={resumo.vistoria.acessoRealizado ? 'Sim' : 'Não'} />
+                {!resumo.vistoria.acessoRealizado && (
+                  <div className="col-span-2">
+                    <InfoRow
+                      label="Motivo da recusa"
+                      value={resumo.vistoria.motivoSemAcesso ?? 'Não informado'}
+                    />
+                  </div>
+                )}
                 {resumo.vistoria.habitatSelecionado && <InfoRow label="Habitat" value={resumo.vistoria.habitatSelecionado} />}
                 {resumo.vistoria.condicaoHabitat && <InfoRow label="Condição" value={resumo.vistoria.condicaoHabitat} />}
                 {resumo.vistoria.origemVisita && <InfoRow label="Origem da visita" value={resumo.vistoria.origemVisita} />}

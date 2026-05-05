@@ -400,12 +400,21 @@ export class GetResumoVisualVistoriaPorFoco {
           origem: 'vistoria',
         });
       }
-      historico.push({
-        tipo: 'vistoria_realizada',
-        descricao: 'Visita ao imóvel realizada',
-        createdAt: vistoria.data_visita.toISOString(),
-        origem: 'vistoria',
-      });
+      if (!vistoria.acesso_realizado) {
+        historico.push({
+          tipo: 'sem_acesso',
+          descricao: `Acesso recusado${vistoria.motivo_sem_acesso ? `: ${vistoria.motivo_sem_acesso}` : ''}`,
+          createdAt: vistoria.data_visita.toISOString(),
+          origem: 'vistoria',
+        });
+      } else {
+        historico.push({
+          tipo: 'vistoria_realizada',
+          descricao: 'Visita ao imóvel realizada',
+          createdAt: vistoria.data_visita.toISOString(),
+          origem: 'vistoria',
+        });
+      }
       if (vistoria.consolidado_em) {
         historico.push({
           tipo: 'vistoria_consolidada',
