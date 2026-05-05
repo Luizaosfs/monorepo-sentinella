@@ -28,13 +28,20 @@ export const filterFocoRiscoSchema = z.object({
       z.array(z.enum(['P1', 'P2', 'P3', 'P4', 'P5'])).optional(),
     )
     .describe('Filtrar por prioridade (múltiplos permitidos)'),
-  regiaoId: z.string().uuid().describe('Filtrar por região').optional(),
-  responsavelId: z
+  regiao_id: z.string().uuid().describe('Filtrar por região').optional(),
+  responsavel_id: z
     .string()
     .uuid()
     .describe('Filtrar por responsável')
     .optional(),
-  origemTipo: z.string().describe('Filtrar por origem').optional(),
+  /** true → WHERE responsavel_id IS NULL */
+  semResponsavel: z.coerce.boolean().optional(),
+  origem_tipo: z.string().describe('Filtrar por origem').optional(),
+  classificacao_inicial: z.string().optional(),
+  /** Intervalo de data — suspeita_em >= de */
+  de: z.coerce.date().optional(),
+  /** Intervalo de data — suspeita_em <= ate */
+  ate: z.coerce.date().optional(),
   /** Paginação inline — compatibilidade com frontend (?page=1&pageSize=30). */
   page: z.coerce.number().int().positive().optional(),
   pageSize: z.coerce.number().int().positive().max(5000).optional(),

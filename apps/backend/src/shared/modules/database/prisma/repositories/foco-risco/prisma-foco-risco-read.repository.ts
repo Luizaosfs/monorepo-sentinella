@@ -271,14 +271,16 @@ export class PrismaFocoRiscoReadRepository implements FocoRiscoReadRepository {
       return { total: 0, suspeita: 0, em_triagem: 0, aguarda_inspecao: 0, em_inspecao: 0, p1p2: 0, sem_responsavel: 0 };
     }
 
-    const regiaoFilter = filters.regiaoId
-      ? Prisma.sql`AND regiao_id = ${filters.regiaoId}::uuid`
+    const regiaoFilter = filters.regiao_id
+      ? Prisma.sql`AND regiao_id = ${filters.regiao_id}::uuid`
       : Prisma.empty;
-    const responsavelFilter = filters.responsavelId
-      ? Prisma.sql`AND responsavel_id = ${filters.responsavelId}::uuid`
-      : Prisma.empty;
-    const origemFilter = filters.origemTipo
-      ? Prisma.sql`AND origem_tipo = ${filters.origemTipo}`
+    const responsavelFilter = filters.responsavel_id
+      ? Prisma.sql`AND responsavel_id = ${filters.responsavel_id}::uuid`
+      : filters.semResponsavel
+        ? Prisma.sql`AND responsavel_id IS NULL`
+        : Prisma.empty;
+    const origemFilter = filters.origem_tipo
+      ? Prisma.sql`AND origem_tipo = ${filters.origem_tipo}`
       : Prisma.empty;
 
     const [row] = await this.prisma.client.$queryRaw<Row[]>`
@@ -453,9 +455,17 @@ export class PrismaFocoRiscoReadRepository implements FocoRiscoReadRepository {
           ? filters.prioridade[0]
           : { in: filters.prioridade },
       }),
-      ...(filters.regiaoId && { regiao_id: filters.regiaoId }),
-      ...(filters.responsavelId && { responsavel_id: filters.responsavelId }),
-      ...(filters.origemTipo && { origem_tipo: filters.origemTipo }),
+      ...(filters.regiao_id && { regiao_id: filters.regiao_id }),
+      ...(filters.responsavel_id && { responsavel_id: filters.responsavel_id }),
+      ...(filters.semResponsavel && { responsavel_id: null }),
+      ...(filters.origem_tipo && { origem_tipo: filters.origem_tipo }),
+      ...(filters.classificacao_inicial && { classificacao_inicial: filters.classificacao_inicial }),
+      ...((filters.de || filters.ate) && {
+        suspeita_em: {
+          ...(filters.de && { gte: filters.de }),
+          ...(filters.ate && { lte: filters.ate }),
+        },
+      }),
       ...(filters.pendente_decisao_supervisor && { pendente_decisao_supervisor: true }),
     };
   }
@@ -479,14 +489,26 @@ export class PrismaFocoRiscoReadRepository implements FocoRiscoReadRepository {
           : Prisma.sql`f.prioridade IN (${Prisma.join(filters.prioridade)})`,
       );
     }
-    if (filters.regiaoId) {
-      clauses.push(Prisma.sql`f.regiao_id = ${filters.regiaoId}::uuid`);
+    if (filters.regiao_id) {
+      clauses.push(Prisma.sql`f.regiao_id = ${filters.regiao_id}::uuid`);
     }
-    if (filters.responsavelId) {
-      clauses.push(Prisma.sql`f.responsavel_id = ${filters.responsavelId}::uuid`);
+    if (filters.responsavel_id) {
+      clauses.push(Prisma.sql`f.responsavel_id = ${filters.responsavel_id}::uuid`);
     }
-    if (filters.origemTipo) {
-      clauses.push(Prisma.sql`f.origem_tipo = ${filters.origemTipo}`);
+    if (filters.semResponsavel) {
+      clauses.push(Prisma.sql`f.responsavel_id IS NULL`);
+    }
+    if (filters.origem_tipo) {
+      clauses.push(Prisma.sql`f.origem_tipo = ${filters.origem_tipo}`);
+    }
+    if (filters.classificacao_inicial) {
+      clauses.push(Prisma.sql`f.classificacao_inicial = ${filters.classificacao_inicial}`);
+    }
+    if (filters.de) {
+      clauses.push(Prisma.sql`f.suspeita_em >= ${filters.de}`);
+    }
+    if (filters.ate) {
+      clauses.push(Prisma.sql`f.suspeita_em <= ${filters.ate}`);
     }
     if (filters.pendente_decisao_supervisor) {
       clauses.push(Prisma.sql`f.pendente_decisao_supervisor = true`);

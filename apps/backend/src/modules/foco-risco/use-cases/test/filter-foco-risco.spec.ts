@@ -58,10 +58,10 @@ describe('FilterFocoRisco', () => {
       );
       readRepo.findAll.mockResolvedValue([]);
 
-      await uc.execute({ clienteId: 'cliente-uuid-1', responsavelId: 'outro-uuid' });
+      await uc.execute({ clienteId: 'cliente-uuid-1', responsavel_id: 'outro-uuid' });
 
       expect(readRepo.findAll).toHaveBeenCalledWith(
-        expect.objectContaining({ responsavelId: 'agente-uuid' }),
+        expect.objectContaining({ responsavel_id: 'agente-uuid' }),
       );
     });
 
@@ -74,7 +74,7 @@ describe('FilterFocoRisco', () => {
       await uc.execute({ clienteId: 'cliente-uuid-1' });
 
       expect(readRepo.findAll).toHaveBeenCalledWith(
-        expect.objectContaining({ responsavelId: 'agente-uuid' }),
+        expect.objectContaining({ responsavel_id: 'agente-uuid' }),
       );
     });
 
@@ -84,10 +84,10 @@ describe('FilterFocoRisco', () => {
       );
       readRepo.findAll.mockResolvedValue([]);
 
-      await uc.execute({ clienteId: 'cliente-uuid-1', responsavelId: 'agente-especifico' });
+      await uc.execute({ clienteId: 'cliente-uuid-1', responsavel_id: 'agente-especifico' });
 
       expect(readRepo.findAll).toHaveBeenCalledWith(
-        expect.objectContaining({ responsavelId: 'agente-especifico' }),
+        expect.objectContaining({ responsavel_id: 'agente-especifico' }),
       );
     });
 

@@ -19,7 +19,7 @@ export class FilterFocoRisco {
 
     const effectiveFilters: FilterFocoRiscoInput = isPrivileged
       ? filters
-      : { ...filters, responsavelId: user.id };
+      : { ...filters, responsavel_id: user.id };
 
     const focos = await this.repository.findAll(effectiveFilters);
     return { focos };
