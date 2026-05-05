@@ -1058,7 +1058,10 @@ export default function GestorFocos() {
               </thead>
               <tbody className="divide-y divide-border/40">
                 {focosOrdenados.map((foco) => {
-                  const transicoes = getTransicoesPermitidas(foco.status as FocoRiscoStatus);
+                  // em_inspecao: ações dependem de pendente_decisao_supervisor — forçar detalhe
+                  const transicoes = foco.status === 'em_inspecao'
+                    ? []
+                    : getTransicoesPermitidas(foco.status as FocoRiscoStatus);
                   const isSelecionado = selecionados.has(foco.id);
                   const borderClass = BORDER_PRIORIDADE[foco.prioridade ?? ''] ?? '';
                   const slaVencido = foco.sla_status === 'vencido';
