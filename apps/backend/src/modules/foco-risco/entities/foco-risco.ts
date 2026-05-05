@@ -21,7 +21,7 @@ export const TRANSICOES_VALIDAS: Record<FocoRiscoStatus, FocoRiscoStatus[]> = {
   suspeita: ['em_triagem'],
   em_triagem: ['aguarda_inspecao', 'descartado'],
   aguarda_inspecao: ['descartado'],
-  em_inspecao: ['confirmado', 'descartado'],
+  em_inspecao: ['confirmado', 'aguarda_inspecao', 'descartado'],
   aguardando_nova_tentativa: ['descartado'],
   confirmado: ['em_tratamento'],
   em_tratamento: ['resolvido', 'descartado'],

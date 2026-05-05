@@ -89,6 +89,14 @@ export class TransicionarFocoRisco {
     await this.prisma.client.$transaction(async (tx) => {
       await this.writeRepository.save(foco, tx);
 
+      // Supervisor reagenda inspeção após recusa de acesso — limpa flag
+      if (novoStatus === 'aguarda_inspecao' && statusAnterior === 'em_inspecao') {
+        await tx.focos_risco.update({
+          where: { id: foco.id! },
+          data: { pendente_decisao_supervisor: false },
+        });
+      }
+
       // Hook SLA + reinspeção:
       //   confirmado          → inicia SLA
       //   em_tratamento       → cria reinspeção pós-tratamento

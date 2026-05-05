@@ -87,6 +87,8 @@ export class GetFocoDetalhes {
         observacao: foco.observacao,
         casosIds: foco.casos_ids ?? [],
         ciclo: foco.ciclo,
+        tentativasSemAcesso: foco.tentativas_sem_acesso ?? 0,
+        pendenteSemAcesso: foco.pendente_decisao_supervisor ?? false,
         createdAt: foco.created_at,
         responsavel: foco.responsavel
           ? { id: foco.responsavel.id, nome: foco.responsavel.nome, email: foco.responsavel.email }

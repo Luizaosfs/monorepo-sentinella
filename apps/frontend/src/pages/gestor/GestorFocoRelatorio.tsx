@@ -985,6 +985,8 @@ const HISTORICO_ORIGEM_COLOR: Record<string, string> = {
 const HISTORICO_TIPO_LABEL: Record<string, string> = {
   transicao_status: 'Transição de status',
   inicio_inspecao: 'Início da inspeção',
+  sem_acesso: 'Acesso recusado',
+  vistoria_sem_acesso: 'Acesso recusado',
   vistoria_criada: 'Vistoria criada',
   vistoria_realizada: 'Visita realizada',
   vistoria_consolidada: 'Vistoria consolidada',
@@ -1252,6 +1254,24 @@ export default function GestorFocoRelatorio() {
         </CardContent>
       </Card>
 
+      {/* ── Alerta recusa de acesso ─────────────────────────────────────── */}
+      {foco.tentativasSemAcesso > 0 && (
+        <Card className={foco.pendenteSemAcesso ? 'border-rose-300 bg-rose-50 dark:bg-rose-950/20 dark:border-rose-800/40' : 'border-amber-300 bg-amber-50/60 dark:bg-amber-950/20 dark:border-amber-800/40'}>
+          <CardContent className="px-4 py-3 flex items-start gap-3">
+            <AlertTriangle className={`h-4 w-4 shrink-0 mt-0.5 ${foco.pendenteSemAcesso ? 'text-rose-600' : 'text-amber-600'}`} aria-hidden />
+            <div className="space-y-1 min-w-0">
+              <p className={`text-sm font-bold ${foco.pendenteSemAcesso ? 'text-rose-800 dark:text-rose-300' : 'text-amber-800 dark:text-amber-300'}`}>
+                {foco.pendenteSemAcesso ? 'Acesso recusado — aguardando decisão do supervisor' : 'Histórico de acesso recusado'}
+              </p>
+              <p className={`text-xs ${foco.pendenteSemAcesso ? 'text-rose-700/80 dark:text-rose-400/80' : 'text-amber-700/80 dark:text-amber-400/80'}`}>
+                {foco.tentativasSemAcesso} tentativa{foco.tentativasSemAcesso !== 1 ? 's' : ''} sem acesso registrada{foco.tentativasSemAcesso !== 1 ? 's' : ''}.
+                {foco.pendenteSemAcesso && ' Supervisor deve reagendar a inspeção ou encerrar o foco.'}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* ── Estado vazio: sem vistoria ──────────────────────────────────── */}
       {!resumoLoading && resumo?.vistoria === null && (
         <Card className="border-border/60 border-dashed">
@@ -1458,6 +1478,7 @@ export default function GestorFocoRelatorio() {
               <InfoRow label="Resolvido em" value={formatDatetime(foco.resolvidoEm)} />
               <InfoRow label="Ciclo" value={foco.ciclo?.toString() ?? '—'} />
               <InfoRow label="Casos vinculados" value={casosCount.toString()} />
+              {foco.tentativasSemAcesso > 0 && <InfoRow label="Tentativas sem acesso" value={foco.tentativasSemAcesso.toString()} />}
             </div>
             <div className="space-y-3 md:border-r md:border-border/50 md:pr-4">
               <h3 className="font-semibold text-xs uppercase text-muted-foreground tracking-wide">Dados do imóvel</h3>

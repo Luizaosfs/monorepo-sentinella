@@ -339,7 +339,12 @@ export default function GestorFocoDetalhe() {
         statusNovo: transDialog,
         motivo: motivo || undefined,
       });
-      toast.success('Foco descartado.');
+      toast.success(
+        transDialog === 'descartado' ? 'Foco descartado.' :
+        transDialog === 'confirmado' ? 'Foco confirmado.' :
+        transDialog === 'aguarda_inspecao' ? 'Inspeção reagendada.' :
+        'Status atualizado.',
+      );
       setTransDialog(null);
       setMotivo('');
     } catch (err) {
@@ -425,6 +430,48 @@ export default function GestorFocoDetalhe() {
               <UserCheck className="w-3.5 h-3.5 mr-1" />
               {foco.status === 'em_triagem' ? 'Encaminhar para inspeção' : 'Re-atribuir agente'}
             </Button>
+          </div>
+        )}
+
+        {/* Ações do supervisor para foco em inspeção */}
+        {foco.status === 'em_inspecao' && (
+          <div className="flex flex-wrap gap-1.5">
+            {foco.pendente_decisao_supervisor ? (
+              <>
+                <Button size="sm" variant="default"
+                  className="h-7 px-3 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white"
+                  disabled={atualizar.isPending}
+                  onClick={() => { setTransDialog('aguarda_inspecao'); setResponsavelSelecionado(''); }}
+                >
+                  <UserCheck className="w-3.5 h-3.5 mr-1" />
+                  Reagendar inspeção
+                </Button>
+                <Button size="sm" variant="outline"
+                  className="h-7 px-3 text-xs font-semibold border-destructive text-destructive hover:bg-destructive/10"
+                  disabled={atualizar.isPending}
+                  onClick={() => { setTransDialog('descartado'); setMotivo(''); }}
+                >
+                  Encerrar por recusa
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button size="sm" variant="default"
+                  className="h-7 px-3 text-xs font-semibold bg-green-600 hover:bg-green-700 text-white"
+                  disabled={atualizar.isPending}
+                  onClick={() => setTransDialog('confirmado')}
+                >
+                  Confirmar foco
+                </Button>
+                <Button size="sm" variant="outline"
+                  className="h-7 px-3 text-xs font-semibold border-destructive text-destructive hover:bg-destructive/10"
+                  disabled={atualizar.isPending}
+                  onClick={() => { setTransDialog('descartado'); setMotivo(''); }}
+                >
+                  Descartar
+                </Button>
+              </>
+            )}
           </div>
         )}
       </div>

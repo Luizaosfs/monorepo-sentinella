@@ -25,6 +25,8 @@ export interface FocoDetalhes {
     observacao: string | null;
     casosIds: string[];
     ciclo: number | null;
+    tentativasSemAcesso: number;
+    pendenteSemAcesso: boolean;
     createdAt: string;
     responsavel: { id: string; nome: string | null; email: string } | null;
   };
