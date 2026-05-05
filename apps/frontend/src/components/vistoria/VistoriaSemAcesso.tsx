@@ -198,10 +198,6 @@ export function VistoriaSemAcesso({
       toast.error('Descreva o motivo no campo de observação ao selecionar "Outro".');
       return;
     }
-    if (motivo === 'recusa_entrada' && !etapa1.lat_chegada) {
-      toast.error('Localização GPS necessária para registrar recusa. Aguarde o GPS ou ative-o nas configurações do celular.');
-      return;
-    }
 
     // Path offline: enfileira na IndexedDB (foto e upload ignorados sem rede)
     if (!navigator.onLine) {
