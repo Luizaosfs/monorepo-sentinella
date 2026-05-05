@@ -12,12 +12,12 @@ export class GetReincidenciaImoveis {
         SELECT
           fr.cliente_id,
           fr.imovel_id,
-          COUNT(fr.id)                                                                       AS total_focos_historico,
-          COUNT(fr.id) FILTER (WHERE fr.foco_anterior_id IS NOT NULL)                       AS focos_reincidentes,
+          COUNT(fr.id)::int                                                                   AS total_focos_historico,
+          COUNT(fr.id) FILTER (WHERE fr.foco_anterior_id IS NOT NULL)::int                  AS focos_reincidentes,
           MAX(fr.created_at)                                                                 AS ultimo_foco_em,
           MIN(fr.created_at)                                                                 AS primeiro_foco_em,
-          COUNT(fr.id) FILTER (WHERE fr.status NOT IN ('resolvido','descartado'))            AS focos_ativos,
-          COUNT(DISTINCT fr.ciclo)                                                           AS ciclos_com_foco,
+          COUNT(fr.id) FILTER (WHERE fr.status NOT IN ('resolvido','descartado'))::int       AS focos_ativos,
+          COUNT(DISTINCT fr.ciclo)::int                                                      AS ciclos_com_foco,
           ROUND(EXTRACT(EPOCH FROM (NOW() - MAX(fr.created_at))) / 86400.0)                 AS dias_desde_ultimo_foco,
           ROUND(COUNT(fr.id) FILTER (WHERE fr.status = 'resolvido')::numeric
             / NULLIF(COUNT(fr.id), 0) * 100, 1)                                             AS taxa_resolucao_pct,
@@ -41,7 +41,7 @@ export class GetReincidenciaImoveis {
       acesso AS (
         SELECT
           v.imovel_id,
-          COUNT(*) FILTER (WHERE v.acesso_realizado = false)                     AS tentativas_sem_acesso,
+          COUNT(*) FILTER (WHERE v.acesso_realizado = false)::int                 AS tentativas_sem_acesso,
           MAX(v.checkin_em) FILTER (WHERE v.acesso_realizado = true)             AS ultima_vistoria_com_acesso
         FROM vistorias v
         WHERE v.cliente_id = ${clienteId}::uuid AND v.deleted_at IS NULL

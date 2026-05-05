@@ -13,9 +13,9 @@ export class GetReincidenciaSazonalidade {
         im.bairro,
         im.regiao_id,
         fr.ciclo,
-        COUNT(fr.id) AS focos_total,
-        COUNT(fr.id) FILTER (WHERE fr.foco_anterior_id IS NOT NULL) AS focos_reincidentes,
-        COUNT(fr.id) FILTER (WHERE fr.status = 'resolvido') AS focos_resolvidos,
+        COUNT(fr.id)::int AS focos_total,
+        COUNT(fr.id) FILTER (WHERE fr.foco_anterior_id IS NOT NULL)::int AS focos_reincidentes,
+        COUNT(fr.id) FILTER (WHERE fr.status = 'resolvido')::int AS focos_resolvidos,
         ROUND(COUNT(fr.id) FILTER (WHERE fr.foco_anterior_id IS NOT NULL)::numeric / NULLIF(COUNT(fr.id), 0) * 100, 1) AS taxa_reincidencia_pct
       FROM focos_risco fr
       JOIN imoveis im ON im.id = fr.imovel_id AND im.deleted_at IS NULL

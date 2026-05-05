@@ -1,4 +1,4 @@
-import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable, Scope } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
 import { AuthenticatedUser } from 'src/guards/auth.guard';
@@ -16,7 +16,7 @@ import { GetAnaliticoAlertaSaude } from './get-analitico-alerta-saude';
 import { GetAnaliticoResultadoOperacional } from './get-analitico-resultado-operacional';
 import { GetAnaliticoImoveisCriticos } from './get-analitico-imoveis-criticos';
 
-@Injectable()
+@Injectable({ scope: Scope.REQUEST })
 export class GerarRelatorioAnalitico {
   constructor(
     private readRepository: DashboardReadRepository,

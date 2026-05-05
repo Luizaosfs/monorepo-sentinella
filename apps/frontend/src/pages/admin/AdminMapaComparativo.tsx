@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { GitCompare, Layers } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { STALE } from '@/lib/queryConfig';
 
 type ActiveView = 'A' | 'B' | 'split';
 
@@ -86,15 +87,17 @@ export default function AdminMapaComparativo() {
   }, [isMobile, activeView]);
 
   const { data: itensA = [] } = useQuery<LevantamentoItem[]>({
-    queryKey: ['itens_comparativo_a', levAId],
+    queryKey: ['itens_comparativo_a', clienteId, levAId],
     queryFn: () => api.itens.listByLevantamento(levAId!),
-    enabled: !!levAId,
+    enabled: !!clienteId && !!levAId,
+    staleTime: STALE.MEDIUM,
   });
 
   const { data: itensB = [] } = useQuery<LevantamentoItem[]>({
-    queryKey: ['itens_comparativo_b', levBId],
+    queryKey: ['itens_comparativo_b', clienteId, levBId],
     queryFn: () => api.itens.listByLevantamento(levBId!),
-    enabled: !!levBId,
+    enabled: !!clienteId && !!levBId,
+    staleTime: STALE.MEDIUM,
   });
 
   const center: [number, number] =

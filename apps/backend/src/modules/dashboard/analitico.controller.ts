@@ -1,4 +1,4 @@
-import { Controller, Get, Inject, UseInterceptors, UsePipes } from '@nestjs/common';
+import { Controller, Get, Inject, Query, UseInterceptors, UsePipes } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
@@ -48,35 +48,35 @@ export class AnaliticoController {
   @Get('risco-territorial')
   @Roles('admin', 'supervisor', 'analista_regional')
   @ApiOperation({ summary: 'Risco por bairro' })
-  riscoTerritorial() {
-    return this.getAnaliticoRiscoTerritorial.execute(requireTenantId(getAccessScope(this.req)));
+  riscoTerritorial(@Query('bairro') bairro?: string) {
+    return this.getAnaliticoRiscoTerritorial.execute(requireTenantId(getAccessScope(this.req)), bairro);
   }
 
   @Get('vulnerabilidade')
   @Roles('admin', 'supervisor', 'analista_regional')
   @ApiOperation({ summary: 'Vulnerabilidade domiciliar por bairro' })
-  vulnerabilidade() {
-    return this.getAnaliticoVulnerabilidade.execute(requireTenantId(getAccessScope(this.req)));
+  vulnerabilidade(@Query('bairro') bairro?: string) {
+    return this.getAnaliticoVulnerabilidade.execute(requireTenantId(getAccessScope(this.req)), bairro);
   }
 
   @Get('alerta-saude')
   @Roles('admin', 'supervisor', 'analista_regional')
   @ApiOperation({ summary: 'Distribuição de alerta de saúde' })
-  alertaSaude() {
-    return this.getAnaliticoAlertaSaude.execute(requireTenantId(getAccessScope(this.req)));
+  alertaSaude(@Query('bairro') bairro?: string) {
+    return this.getAnaliticoAlertaSaude.execute(requireTenantId(getAccessScope(this.req)), bairro);
   }
 
   @Get('resultado-operacional')
   @Roles('admin', 'supervisor', 'analista_regional')
   @ApiOperation({ summary: 'Resultado operacional por bairro' })
-  resultadoOperacional() {
-    return this.getAnaliticoResultadoOperacional.execute(requireTenantId(getAccessScope(this.req)));
+  resultadoOperacional(@Query('bairro') bairro?: string) {
+    return this.getAnaliticoResultadoOperacional.execute(requireTenantId(getAccessScope(this.req)), bairro);
   }
 
   @Get('imoveis-criticos')
   @Roles('admin', 'supervisor', 'analista_regional')
   @ApiOperation({ summary: 'Imóveis P1/P2 críticos' })
-  imoveisCriticos() {
-    return this.getAnaliticoImoveisCriticos.execute(requireTenantId(getAccessScope(this.req)));
+  imoveisCriticos(@Query('bairro') bairro?: string, @Query('prioridade') prioridade?: string) {
+    return this.getAnaliticoImoveisCriticos.execute(requireTenantId(getAccessScope(this.req)), bairro, prioridade);
   }
 }

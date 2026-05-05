@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { http } from '@sentinella/api-client';
+import { STALE } from '@/lib/queryConfig';
 import { api } from '@/services/api';
 import { useClienteAtivo } from '@/hooks/useClienteAtivo';
 import { usePagination } from '@/hooks/usePagination';
@@ -83,7 +84,7 @@ const AdminPluvioRisco = () => {
     queryKey: ['admin_regioes', clienteId],
     queryFn: () => api.regioes.listByCliente(clienteId!),
     enabled: !!clienteId,
-    staleTime: 0,
+    staleTime: STALE.LIVE,
   });
 
   const regIds = regioes.map((r) => r.id);
@@ -92,7 +93,7 @@ const AdminPluvioRisco = () => {
     queryKey: ['admin_pluvio_risco', clienteId],
     queryFn: () => api.pluvioRisco.listByRegioes(regIds) as Promise<(PluvioRisco & { regiao?: Regiao })[]>,
     enabled: regIds.length > 0,
-    staleTime: 0,
+    staleTime: STALE.LIVE,
   });
 
   const saveMutation = useMutation({

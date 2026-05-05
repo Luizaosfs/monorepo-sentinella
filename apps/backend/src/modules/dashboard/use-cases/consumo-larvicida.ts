@@ -1,7 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { REQUEST } from '@nestjs/core';
-import { Request } from 'express';
-import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
+import { Injectable } from '@nestjs/common';
 
 import { ConsumoLarvicidaQuery } from '../dtos/dashboard-analytics.input';
 import {
@@ -11,14 +8,9 @@ import {
 
 @Injectable()
 export class ConsumoLarvicida {
-  constructor(
-    private readRepository: DashboardReadRepository,
-    @Inject(REQUEST) private req: Request,
-  ) {}
+  constructor(private readRepository: DashboardReadRepository) {}
 
-  async execute(query: ConsumoLarvicidaQuery): Promise<ConsumoLarvicidaRow[]> {
-    // MT-02: tenantId do guard sempre vence — nunca aceita clienteId do frontend
-    const clienteId = requireTenantId(getAccessScope(this.req));
+  execute(clienteId: string, query: ConsumoLarvicidaQuery): Promise<ConsumoLarvicidaRow[]> {
     return this.readRepository.consumoLarvicida(clienteId, query.ciclo);
   }
 }

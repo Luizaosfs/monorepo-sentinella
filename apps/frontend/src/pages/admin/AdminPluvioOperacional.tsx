@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
+import { STALE } from '@/lib/queryConfig';
 import { api } from '@/services/api';
 import { useClienteAtivo } from '@/hooks/useClienteAtivo';
 import { usePagination } from '@/hooks/usePagination';
@@ -111,12 +112,13 @@ const AdminPluvioOperacional = () => {
     queryKey: ['admin_pluvio_operacional_runs', clienteId],
     queryFn: async () => {
       const [runs, regioes] = await Promise.all([
-        api.pluvioOperacional.listRuns(clienteId ?? undefined),
-        clienteId ? api.regioes.listByCliente(clienteId) : Promise.resolve([]),
+        api.pluvioOperacional.listRuns(clienteId!),
+        api.regioes.listByCliente(clienteId!),
       ]);
       return { runs: runs as PluvioOperacionalRun[], regioes: regioes as Regiao[] };
     },
-    staleTime: 0,
+    enabled: !!clienteId,
+    staleTime: STALE.LIVE,
   });
 
   const runs = runsData?.runs ?? [];
@@ -129,7 +131,7 @@ const AdminPluvioOperacional = () => {
       return api.pluvioOperacional.listItems(selectedRun.id) as Promise<PluvioOperacionalItem[]>;
     },
     enabled: !!selectedRun?.id,
-    staleTime: 0,
+    staleTime: STALE.LIVE,
   });
 
   /* ── Mutations ── */

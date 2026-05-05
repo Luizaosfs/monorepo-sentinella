@@ -60,8 +60,6 @@ import {
   resumoAgenteQuerySchema,
   ResumoRegionalQuery,
   resumoRegionalQuerySchema,
-  ScoreSurtoQuery,
-  scoreSurtoQuerySchema,
 } from './dtos/dashboard-analytics.input';
 
 @UseInterceptors(PrismaInterceptor)
@@ -130,7 +128,7 @@ export class DashboardController {
   @ApiOperation({ summary: 'Calcula LIRAa (IIP e IBP) do ciclo' })
   async liraa(@Query() query: LiraaQuery) {
     const parsed = liraaQuerySchema.parse(query);
-    return this.calcularLiraaUc.execute(parsed);
+    return this.calcularLiraaUc.execute(requireTenantId(getAccessScope(this.req)), parsed);
   }
 
   @Get('comparativo-agentes')
@@ -138,7 +136,7 @@ export class DashboardController {
   @ApiOperation({ summary: 'Tabela comparativa de desempenho dos agentes' })
   async comparativoAgentes(@Query() query: ComparativoAgentesQuery) {
     const parsed = comparativoAgentesQuerySchema.parse(query);
-    return this.comparativoAgentesUc.execute(parsed);
+    return this.comparativoAgentesUc.execute(requireTenantId(getAccessScope(this.req)), parsed);
   }
 
   @Get('consumo-larvicida')
@@ -146,7 +144,7 @@ export class DashboardController {
   @ApiOperation({ summary: 'Consumo de larvicida por agente e tipo de depósito' })
   async consumoLarvicida(@Query() query: ConsumoLarvicidaQuery) {
     const parsed = consumoLarvicidaQuerySchema.parse(query);
-    return this.consumoLarvicidaUc.execute(parsed);
+    return this.consumoLarvicidaUc.execute(requireTenantId(getAccessScope(this.req)), parsed);
   }
 
   @Get('resumo-regional')
@@ -154,15 +152,14 @@ export class DashboardController {
   @ApiOperation({ summary: 'Resumo de métricas agregadas por região' })
   async resumoRegional(@Query() query: ResumoRegionalQuery) {
     const parsed = resumoRegionalQuerySchema.parse(query);
-    return this.resumoRegionalUc.execute(parsed);
+    return this.resumoRegionalUc.execute(requireTenantId(getAccessScope(this.req)), parsed);
   }
 
   @Get('score-surto')
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Score de risco de surto por região (pluvio + focos)' })
-  async scoreSurto(@Query() query: ScoreSurtoQuery) {
-    const parsed = scoreSurtoQuerySchema.parse(query);
-    return this.scoreSurtoRegioesUc.execute(parsed);
+  async scoreSurto() {
+    return this.scoreSurtoRegioesUc.execute(requireTenantId(getAccessScope(this.req)));
   }
 
   @Get('resumo-agente')
@@ -170,7 +167,7 @@ export class DashboardController {
   @ApiOperation({ summary: 'Resumo de um agente no ciclo' })
   async resumoAgente(@Query() query: ResumoAgenteQuery) {
     const parsed = resumoAgenteQuerySchema.parse(query);
-    return this.resumoAgenteUc.execute(parsed);
+    return this.resumoAgenteUc.execute(requireTenantId(getAccessScope(this.req)), parsed);
   }
 
   @Post('relatorio-analitico')

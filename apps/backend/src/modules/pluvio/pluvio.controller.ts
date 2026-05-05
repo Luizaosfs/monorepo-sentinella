@@ -91,7 +91,8 @@ export class PluvioController {
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Última run pluviométrica do cliente' })
   async latestRun() {
-    const { run } = await this.latestRunUC.execute();
+    const clienteId = requireTenantId(getAccessScope(this.req));
+    const { run } = await this.latestRunUC.execute(clienteId);
     return PluvioRunViewModel.toHttp(run);
   }
 
@@ -100,7 +101,8 @@ export class PluvioController {
   @ApiOperation({ summary: 'Listar runs pluviométricas' })
   async filterRuns(@Query() filters: FilterPluvioRunInput) {
     const parsed = filterPluvioRunSchema.parse(filters);
-    const { runs } = await this.filterRunsUC.execute(parsed);
+    const clienteId = getAccessScope(this.req).tenantId ?? undefined;
+    const { runs } = await this.filterRunsUC.execute(parsed, clienteId);
     return runs.map(PluvioRunViewModel.toHttp);
   }
 
@@ -109,7 +111,9 @@ export class PluvioController {
   @ApiOperation({ summary: 'Criar run pluviométrica' })
   async createRun(@Body() body: CreatePluvioRunBody) {
     const parsed = createPluvioRunSchema.parse(body);
-    const { run } = await this.createRunUC.execute(parsed);
+    // MT-02: tenantId do guard sempre vence — nunca aceita clienteId do frontend
+    const clienteId = requireTenantId(getAccessScope(this.req));
+    const { run } = await this.createRunUC.execute(parsed, clienteId);
     return PluvioRunViewModel.toHttp(run);
   }
 

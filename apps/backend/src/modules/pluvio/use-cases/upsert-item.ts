@@ -1,4 +1,5 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Scope } from '@nestjs/common';
+import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
 
 import { UpsertPluvioItemInput } from '../dtos/upsert-pluvio-item.body';
@@ -7,12 +8,12 @@ import { PluvioException } from '../errors/pluvio.exception';
 import { PluvioReadRepository } from '../repositories/pluvio-read.repository';
 import { PluvioWriteRepository } from '../repositories/pluvio-write.repository';
 
-@Injectable()
+@Injectable({ scope: Scope.REQUEST })
 export class UpsertItem {
   constructor(
     private readRepository: PluvioReadRepository,
     private writeRepository: PluvioWriteRepository,
-    @Inject('REQUEST') private req: Request,
+    @Inject(REQUEST) private req: Request,
   ) {}
 
   async execute(input: UpsertPluvioItemInput) {

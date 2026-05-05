@@ -343,11 +343,12 @@ export class PrismaDashboardReadRepository implements DashboardReadRepository {
       ) DESC
     `);
 
+    const round1 = (n: number) => Math.round(n * 10) / 10;
     return rows.map((r) => {
-      const p = Number(r.contrib_pluvio);
-      const rc = Number(r.contrib_recorrencia);
-      const c = Number(r.contrib_casos_14d);
-      const s = Number(r.contrib_sla_vencido);
+      const p = round1(Number(r.contrib_pluvio));
+      const rc = round1(Number(r.contrib_recorrencia));
+      const c = round1(Number(r.contrib_casos_14d));
+      const s = round1(Number(r.contrib_sla_vencido));
       return {
         regiao_id: r.regiao_id,
         regiao_nome: r.regiao_nome,
@@ -355,7 +356,7 @@ export class PrismaDashboardReadRepository implements DashboardReadRepository {
         contrib_recorrencia: rc,
         contrib_casos_14d: c,
         contrib_sla_vencido: s,
-        score_total: p + rc + c + s,
+        score_total: round1(p + rc + c + s),
       };
     });
   }

@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Scope } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
 import { assertTenantOwnership } from 'src/shared/security/tenant-ownership.util';
@@ -7,7 +7,7 @@ import { PluvioException } from '../errors/pluvio.exception';
 import { PluvioReadRepository } from '../repositories/pluvio-read.repository';
 import { PluvioWriteRepository } from '../repositories/pluvio-write.repository';
 
-@Injectable()
+@Injectable({ scope: Scope.REQUEST })
 export class DeleteRun {
   constructor(
     private readRepository: PluvioReadRepository,

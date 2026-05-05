@@ -146,7 +146,7 @@ export function useReincidenciaSazonalidade() {
 export function useRiscoReincidenciaImovel(imovelId: string | undefined) {
   const { clienteId } = useClienteAtivo();
   return useQuery({
-    queryKey: ['risco-reincidencia-imovel', imovelId],
+    queryKey: ['risco-reincidencia-imovel', clienteId, imovelId],
     queryFn: () => api.reincidencia.scoreImovel(clienteId!, imovelId!),
     enabled: !!clienteId && !!imovelId,
     staleTime: STALE.MEDIUM,
@@ -156,7 +156,7 @@ export function useRiscoReincidenciaImovel(imovelId: string | undefined) {
 export function useHistoricoCiclosImovel(imovelId: string | undefined) {
   const { clienteId } = useClienteAtivo();
   return useQuery({
-    queryKey: ['historico-ciclos-imovel', imovelId],
+    queryKey: ['historico-ciclos-imovel', clienteId, imovelId],
     queryFn: () => api.reincidencia.historicoCiclosImovel(clienteId!, imovelId!),
     enabled: !!clienteId && !!imovelId,
     staleTime: STALE.MEDIUM,

@@ -67,6 +67,7 @@ import { ListHistoricoPorCliente } from './use-cases/list-historico-por-cliente'
 import { ListHistoricoPorLocalizacao } from './use-cases/list-historico-por-localizacao';
 import { ListItensMapa } from './use-cases/list-itens-mapa';
 import { ListItensPorAgente } from './use-cases/list-itens-por-agente';
+import { ListItensPorPeriodo } from './use-cases/list-itens-por-periodo';
 import { RegistrarCheckin } from './use-cases/registrar-checkin';
 import { UpdateItem } from './use-cases/update-item';
 import { GetLevantamento } from './use-cases/get-levantamento';
@@ -90,6 +91,7 @@ export class LevantamentoController {
     private getItem: GetItem,
     private listItensMapa: ListItensMapa,
     private listItensPorAgente: ListItensPorAgente,
+    private listItensPorPeriodoUc: ListItensPorPeriodo,
     private registrarCheckin: RegistrarCheckin,
     private getLevantamento: GetLevantamento,
     private paginationLevantamento: PaginationLevantamento,
@@ -143,6 +145,17 @@ export class LevantamentoController {
   async listItensMapaRoute() {
     const clienteId = requireTenantId(getAccessScope(this.req));
     return this.listItensMapa.execute(clienteId);
+  }
+
+  @Get('itens/por-periodo')
+  @Roles('admin', 'supervisor', 'agente')
+  @ApiOperation({ summary: 'Listar itens com coordenadas em um intervalo de datas (heatmap temporal)' })
+  async listItensPorPeriodoRoute(
+    @Query('from') from: string,
+    @Query('to') to: string,
+  ) {
+    const clienteId = requireTenantId(getAccessScope(this.req));
+    return this.listItensPorPeriodoUc.execute(clienteId, from, to);
   }
 
   @Get('historico-atendimento/por-localizacao')

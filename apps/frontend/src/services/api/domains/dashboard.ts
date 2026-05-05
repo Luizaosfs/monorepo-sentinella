@@ -20,11 +20,11 @@ export const scoreSurto = {
 
 export const dashboardAnalitico = {
   getResumo: (clienteId?: string): Promise<unknown> => http.get(`/dashboard/analitico/resumo${qs({ clienteId })}`),
-  getRiscoTerritorial: (clienteId?: string): Promise<unknown> => http.get(`/dashboard/analitico/risco-territorial${qs({ clienteId })}`),
-  getVulnerabilidade: (clienteId?: string): Promise<unknown> => http.get(`/dashboard/analitico/vulnerabilidade${qs({ clienteId })}`),
-  getAlertaSaude: (clienteId?: string): Promise<unknown> => http.get(`/dashboard/analitico/alerta-saude${qs({ clienteId })}`),
-  getResultadoOperacional: (clienteId?: string): Promise<unknown> => http.get(`/dashboard/analitico/resultado-operacional${qs({ clienteId })}`),
-  getImoveisCriticos: (clienteId?: string): Promise<unknown> => http.get(`/dashboard/analitico/imoveis-criticos${qs({ clienteId })}`),
+  getRiscoTerritorial: (clienteId?: string, bairro?: string): Promise<unknown> => http.get(`/dashboard/analitico/risco-territorial${qs({ clienteId, bairro })}`),
+  getVulnerabilidade: (clienteId?: string, bairro?: string): Promise<unknown> => http.get(`/dashboard/analitico/vulnerabilidade${qs({ clienteId, bairro })}`),
+  getAlertaSaude: (clienteId?: string, bairro?: string): Promise<unknown> => http.get(`/dashboard/analitico/alerta-saude${qs({ clienteId, bairro })}`),
+  getResultadoOperacional: (clienteId?: string, bairro?: string): Promise<unknown> => http.get(`/dashboard/analitico/resultado-operacional${qs({ clienteId, bairro })}`),
+  getImoveisCriticos: (clienteId?: string, bairro?: string, prioridade?: string): Promise<unknown> => http.get(`/dashboard/analitico/imoveis-criticos${qs({ clienteId, bairro, prioridade })}`),
   getBairros: async (clienteId?: string): Promise<string[]> =>
     http.get(`/dashboard/analitico/bairros${qs({ clienteId })}`),
   relatorio: async (clienteId: string, periodoInicio: string, periodoFim: string): Promise<unknown> =>
@@ -68,11 +68,17 @@ export const eficacia = {
 };
 
 export const reincidencia = {
-  listImoveisReincidentes: (): Promise<unknown> => http.get('/dashboard/reincidencia/imoveis'),
-  listPorDeposito: (): Promise<unknown> => http.get('/dashboard/reincidencia/por-deposito'),
-  listSazonalidade: (): Promise<unknown> => http.get('/dashboard/reincidencia/sazonalidade'),
-  scoreImovel: (imovelId: string): Promise<unknown> => http.get(`/risk-engine/score/imovel/${imovelId}`),
-  historicoCiclosImovel: (imovelId: string): Promise<unknown> =>
+  listImoveisReincidentes: (
+    _clienteId: string,
+    filtros?: { padrao?: string; bairro?: string; limit?: number },
+  ): Promise<unknown> => http.get('/dashboard/reincidencia/imoveis', { params: filtros }),
+  listPorDeposito: (_clienteId: string, bairro?: string): Promise<unknown> =>
+    http.get('/dashboard/reincidencia/por-deposito', { params: bairro ? { bairro } : undefined }),
+  listSazonalidade: (_clienteId: string): Promise<unknown> =>
+    http.get('/dashboard/reincidencia/sazonalidade'),
+  scoreImovel: (_clienteId: string, imovelId: string): Promise<unknown> =>
+    http.get(`/risk-engine/score/imovel/${imovelId}`),
+  historicoCiclosImovel: (_clienteId: string, imovelId: string): Promise<unknown> =>
     http.get(`/dashboard/reincidencia/historico-ciclos${qs({ imovelId })}`),
 };
 

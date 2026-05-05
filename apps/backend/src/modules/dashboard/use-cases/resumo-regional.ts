@@ -1,7 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { REQUEST } from '@nestjs/core';
-import { Request } from 'express';
-import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
+import { Injectable } from '@nestjs/common';
 
 import { ResumoRegionalQuery } from '../dtos/dashboard-analytics.input';
 import {
@@ -11,19 +8,9 @@ import {
 
 @Injectable()
 export class ResumoRegional {
-  constructor(
-    private readRepository: DashboardReadRepository,
-    @Inject(REQUEST) private req: Request,
-  ) {}
+  constructor(private readRepository: DashboardReadRepository) {}
 
-  async execute(query: ResumoRegionalQuery): Promise<ResumoRegionalRow[]> {
-    // MT-02: tenantId do guard sempre vence — nunca aceita clienteId do frontend
-    const clienteId = requireTenantId(getAccessScope(this.req));
-    return this.readRepository.resumoRegional(
-      clienteId,
-      query.ciclo,
-      query.de,
-      query.ate,
-    );
+  execute(clienteId: string, query: ResumoRegionalQuery): Promise<ResumoRegionalRow[]> {
+    return this.readRepository.resumoRegional(clienteId, query.ciclo, query.de, query.ate);
   }
 }

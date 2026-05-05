@@ -55,9 +55,9 @@ export class ReincidenciaController {
     return this.prisma.client.$queryRaw(Prisma.sql`
       SELECT
         ciclo,
-        COUNT(*) AS focos_total,
-        COUNT(*) FILTER (WHERE status = 'resolvido') AS focos_resolvidos,
-        COUNT(*) FILTER (WHERE foco_anterior_id IS NOT NULL) AS focos_reincidentes,
+        COUNT(*)::int AS focos_total,
+        COUNT(*) FILTER (WHERE status = 'resolvido')::int AS focos_resolvidos,
+        COUNT(*) FILTER (WHERE foco_anterior_id IS NOT NULL)::int AS focos_reincidentes,
         MIN(suspeita_em) AS primeiro_foco_ciclo,
         MAX(suspeita_em) AS ultimo_foco_ciclo
       FROM focos_risco

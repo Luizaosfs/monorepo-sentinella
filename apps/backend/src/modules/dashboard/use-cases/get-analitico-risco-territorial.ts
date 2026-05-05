@@ -6,7 +6,10 @@ import { PrismaService } from '@shared/modules/database/prisma/prisma.service'
 export class GetAnaliticoRiscoTerritorial {
   constructor(private prisma: PrismaService) {}
 
-  execute(clienteId: string) {
+  execute(clienteId: string, bairroFilter?: string) {
+    const bairroClause = bairroFilter
+      ? Prisma.sql`AND COALESCE(im.bairro, r.nome, '(sem bairro)') = ${bairroFilter}`
+      : Prisma.sql``;
     return this.prisma.client.$queryRaw(Prisma.sql`
       SELECT
         v.cliente_id,
@@ -28,6 +31,7 @@ export class GetAnaliticoRiscoTerritorial {
       JOIN imoveis im ON im.id = v.imovel_id AND im.deleted_at IS NULL
       LEFT JOIN regioes r ON r.id = im.regiao_id AND r.deleted_at IS NULL
       WHERE v.cliente_id = ${clienteId}::uuid AND v.deleted_at IS NULL
+      ${bairroClause}
       GROUP BY v.cliente_id, im.bairro, r.nome, im.regiao_id
       ORDER BY total_vistorias DESC
     `)

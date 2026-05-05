@@ -87,5 +87,8 @@ export const itens = {
     http.get('/levantamentos/itens/mapa'),
   updateObservacaoAtendimento: async () => { throw new Error('[sem endpoint NestJS] itens.updateObservacaoAtendimento'); },
   listStatusHistorico: async () => { throw new Error('[sem endpoint NestJS] itens.listStatusHistorico'); },
-  listByClienteAndPeriod: async () => { throw new Error('[sem endpoint NestJS] itens.listByClienteAndPeriod'); },
+  listByClienteAndPeriod: async (clienteId: string, from: string, to: string): Promise<Ret<typeof _sb.itens.listByLevantamento>> => {
+    const raw = await http.get(`/levantamentos/itens/por-periodo${qs({ clienteId, from, to })}`);
+    return deepToSnake(raw) as Ret<typeof _sb.itens.listByLevantamento>;
+  },
 };

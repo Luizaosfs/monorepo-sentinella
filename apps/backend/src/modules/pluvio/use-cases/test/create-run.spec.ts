@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { REQUEST } from '@nestjs/core';
 import { mock } from 'jest-mock-extended';
 
 import { mockRequest } from '@test/utils/user-helpers';
@@ -18,7 +19,7 @@ describe('CreateRun', () => {
       providers: [
         CreateRun,
         { provide: PluvioWriteRepository, useValue: writeRepo },
-        { provide: 'REQUEST', useValue: mockRequest({ tenantId: 'test-cliente-id' }) },
+        { provide: REQUEST, useValue: mockRequest({ tenantId: 'test-cliente-id' }) },
       ],
     }).compile();
 
@@ -35,7 +36,7 @@ describe('CreateRun', () => {
       totalBairros: 10,
       status: 'pendente',
     } as CreatePluvioRunInput;
-    await useCase.execute(explicit);
+    await useCase.execute(explicit, 'test-cliente-id');
 
     expect(writeRepo.createRun).toHaveBeenCalledWith(
       expect.objectContaining({ clienteId: 'test-cliente-id' }),
@@ -49,7 +50,7 @@ describe('CreateRun', () => {
       status: 'pendente',
     } as CreatePluvioRunInput;
 
-    await useCase.execute(fallbackInput);
+    await useCase.execute(fallbackInput, 'test-cliente-id');
 
     expect(writeRepo.createRun).toHaveBeenCalledWith(
       expect.objectContaining({ clienteId: 'test-cliente-id' }),
@@ -65,7 +66,7 @@ describe('CreateRun', () => {
       dtRef: new Date('2024-06-15'),
       totalBairros: 0,
       status: 'pendente',
-    } as CreatePluvioRunInput);
+    } as CreatePluvioRunInput, 'test-cliente-id');
 
     expect(writeRepo.createRun).toHaveBeenCalledWith(
       expect.objectContaining({ status: 'pendente' }),

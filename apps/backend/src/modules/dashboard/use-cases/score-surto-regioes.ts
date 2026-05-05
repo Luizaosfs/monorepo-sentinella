@@ -1,9 +1,5 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { REQUEST } from '@nestjs/core';
-import { Request } from 'express';
-import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
+import { Injectable } from '@nestjs/common';
 
-import { ScoreSurtoQuery } from '../dtos/dashboard-analytics.input';
 import {
   DashboardReadRepository,
   ScoreSurtoRow,
@@ -11,14 +7,9 @@ import {
 
 @Injectable()
 export class ScoreSurtoRegioes {
-  constructor(
-    private readRepository: DashboardReadRepository,
-    @Inject(REQUEST) private req: Request,
-  ) {}
+  constructor(private readRepository: DashboardReadRepository) {}
 
-  async execute(query: ScoreSurtoQuery): Promise<ScoreSurtoRow[]> {
-    // MT-02: tenantId do guard sempre vence — nunca aceita clienteId do frontend
-    const clienteId = requireTenantId(getAccessScope(this.req));
+  execute(clienteId: string): Promise<ScoreSurtoRow[]> {
     return this.readRepository.scoreSurtoRegioes(clienteId);
   }
 }

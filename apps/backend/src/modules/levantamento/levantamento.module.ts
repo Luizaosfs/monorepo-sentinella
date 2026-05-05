@@ -20,6 +20,7 @@ import { ListHistoricoPorLocalizacao } from './use-cases/list-historico-por-loca
 import { GetLevantamento } from './use-cases/get-levantamento';
 import { ListItensMapa } from './use-cases/list-itens-mapa';
 import { ListItensPorAgente } from './use-cases/list-itens-por-agente';
+import { ListItensPorPeriodo } from './use-cases/list-itens-por-periodo';
 import { PaginationLevantamento } from './use-cases/pagination-levantamento';
 import { RegistrarCheckin } from './use-cases/registrar-checkin';
 import { SaveLevantamento } from './use-cases/save-levantamento';
@@ -40,6 +41,7 @@ import { ItemStatusesByCliente } from './use-cases/item-statuses-by-cliente';
     GetLevantamento,
     ListItensMapa,
     ListItensPorAgente,
+    ListItensPorPeriodo,
     PaginationLevantamento,
     RegistrarCheckin,
     SaveLevantamento,

@@ -1,22 +1,20 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { Scope } from '@nestjs/common';
+import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
-import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 
 import { CreatePluvioRunInput } from '../dtos/create-pluvio-run.body';
 import { PluvioRun } from '../entities/pluvio';
 import { PluvioWriteRepository } from '../repositories/pluvio-write.repository';
 
-@Injectable()
+@Injectable({ scope: Scope.REQUEST })
 export class CreateRun {
   constructor(
     private repository: PluvioWriteRepository,
-    @Inject('REQUEST') private req: Request,
+    @Inject(REQUEST) private req: Request,
   ) {}
 
-  async execute(input: CreatePluvioRunInput) {
-    // MT-02: tenantId do guard sempre vence — nunca aceita clienteId do frontend
-    const clienteId = requireTenantId(getAccessScope(this.req));
-
+  async execute(input: CreatePluvioRunInput, clienteId: string) {
     const run = new PluvioRun(
       {
         clienteId,

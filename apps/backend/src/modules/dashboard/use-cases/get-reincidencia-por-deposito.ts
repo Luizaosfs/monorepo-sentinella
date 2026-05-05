@@ -14,14 +14,14 @@ export class GetReincidenciaPorDeposito {
           im.bairro,
           im.regiao_id,
           vd.tipo AS tipo_deposito,
-          COUNT(DISTINCT v.imovel_id) AS imoveis_afetados,
-          SUM(vd.qtd_com_focos) AS total_focos_deposito,
-          SUM(vd.qtd_eliminados) AS total_eliminados,
+          COUNT(DISTINCT v.imovel_id)::int AS imoveis_afetados,
+          SUM(vd.qtd_com_focos)::int AS total_focos_deposito,
+          SUM(vd.qtd_eliminados)::int AS total_eliminados,
           COUNT(DISTINCT v.imovel_id) FILTER (WHERE EXISTS (
             SELECT 1 FROM focos_risco fr2
             WHERE fr2.imovel_id = v.imovel_id AND fr2.foco_anterior_id IS NOT NULL
               AND fr2.cliente_id = ${clienteId}::uuid AND fr2.deleted_at IS NULL
-          )) AS imoveis_multiciclo,
+          ))::int AS imoveis_multiciclo,
           ROUND(AVG(CASE WHEN vd.usou_larvicida THEN 100.0 ELSE 0 END), 1) AS uso_larvicida_pct,
           ROUND(SUM(vd.qtd_eliminados)::numeric / NULLIF(SUM(vd.qtd_com_focos), 0) * 100, 1) AS taxa_eliminacao_pct
         FROM vistorias v
