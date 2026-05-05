@@ -46,14 +46,12 @@ export class AuthController {
     private resetPasswordUseCase: ResetPasswordUseCase,
   ) {}
 
-  /** Opções do cookie do refresh_token. path: '/auth' limita o envio automático
-   *  apenas para os endpoints de autenticação — não polui requests operacionais. */
   private refreshCookieOptions() {
     return {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict' as const,
-      path: '/auth',
+      path: '/',
       maxAge: REFRESH_COOKIE_MAX_AGE,
     };
   }
@@ -103,7 +101,7 @@ export class AuthController {
       await this.logoutUseCase.execute(refreshToken);
     }
     // Limpa o cookie com o mesmo path em que foi criado
-    res.clearCookie(REFRESH_COOKIE, { path: '/auth' });
+    res.clearCookie(REFRESH_COOKIE, { path: '/' });
     return { ok: true };
   }
 

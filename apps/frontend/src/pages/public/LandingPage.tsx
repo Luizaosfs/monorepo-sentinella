@@ -179,7 +179,7 @@ function HeroSection() {
 
           {/* Trust badges */}
           <div className="flex flex-wrap gap-x-6 gap-y-2 mt-10">
-            {['Supabase + PostgreSQL', 'YOLO + Drone', 'PWA Offline'].map((item) => (
+            {['NestJS + PostgreSQL', 'YOLO + Drone', 'PWA Offline'].map((item) => (
               <span
                 key={item}
                 className="flex items-center gap-1.5 text-xs text-white/50 font-medium"

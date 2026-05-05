@@ -1,6 +1,16 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Loader2, LocateFixed, Users, Baby, HeartHandshake, PersonStanding, Mic, CheckCheck, DoorClosed, ShieldAlert, House } from 'lucide-react';
 import { useVoiceInput, parseNumeroVoz } from '@/hooks/useVoiceInput';
 import { cn } from '@/lib/utils';
@@ -118,6 +128,8 @@ export function VistoriaEtapa1Responsavel({ data, onChange, onNext, onSemAcesso 
   const [statusAcesso, setStatusAcesso] = useState<StatusAcesso>(null);
   const [gettingLocation, setGettingLocation] = useState(false);
   const [gpsError, setGpsError] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingStatus, setPendingStatus] = useState<Exclude<StatusAcesso, null> | null>(null);
 
   // GPS automático quando "Tratado" é selecionado
   useEffect(() => {
@@ -140,17 +152,26 @@ export function VistoriaEtapa1Responsavel({ data, onChange, onNext, onSemAcesso 
   }, [statusAcesso]);
 
   function handleSelectStatus(key: Exclude<StatusAcesso, null>) {
-    setStatusAcesso(key);
     if (key !== 'tratado' && onSemAcesso) {
-      const confirmado = window.confirm(
-        'Você está registrando uma tentativa SEM ACESSO ao imóvel.\n\nIsso contará como tentativa no histórico e pode ativar prioridade de drone após 3 tentativas.\n\nConfirma?'
-      );
-      if (!confirmado) {
-        setStatusAcesso(null);
-        return;
-      }
-      onSemAcesso();
+      setPendingStatus(key);
+      setConfirmOpen(true);
+      return;
     }
+    setStatusAcesso(key);
+  }
+
+  function handleConfirmSemAcesso() {
+    if (pendingStatus) {
+      setStatusAcesso(pendingStatus);
+      onSemAcesso?.();
+    }
+    setPendingStatus(null);
+    setConfirmOpen(false);
+  }
+
+  function handleCancelSemAcesso() {
+    setPendingStatus(null);
+    setConfirmOpen(false);
   }
 
   const setMoradores = (delta: number) =>
@@ -315,6 +336,24 @@ export function VistoriaEtapa1Responsavel({ data, onChange, onNext, onSemAcesso 
           </Button>
         </>
       )}
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Registrar tentativa sem acesso</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-sm text-muted-foreground">
+                <p>Você está registrando uma tentativa <strong className="text-foreground">SEM ACESSO</strong> ao imóvel.</p>
+                <p>Isso contará como tentativa no histórico e pode ativar prioridade de drone após <strong className="text-foreground">3 tentativas</strong>.</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelSemAcesso}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmSemAcesso}>Confirmar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

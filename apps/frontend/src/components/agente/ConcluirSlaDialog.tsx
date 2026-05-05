@@ -106,9 +106,9 @@ export function ConcluirSlaDialog({
         reader.readAsDataURL(file);
       });
       const result = await invokeUploadEvidencia({
-        file_base64,
+        fileBase64: file_base64,
         filename: file.name,
-        folder: operacaoId,
+        modulo: 'operacoes',
       });
       if ('error' in result) throw result.error;
       await api.operacoesSla.addEvidencia(operacaoId, result.url, legenda || null);

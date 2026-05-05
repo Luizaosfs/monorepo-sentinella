@@ -119,13 +119,6 @@ export function VistoriaSemAcesso({
     mutationFn: async () => {
       if (!motivo) throw new Error('Selecione o motivo');
 
-      // GPS obrigatório para recusa
-      if (motivo === 'recusa_entrada' && !etapa1.lat_chegada) {
-        throw new Error(
-          'Localização GPS é necessária para registrar recusa. Aguarde a obtenção do GPS ou ative-o nas configurações.',
-        );
-      }
-
       // Upload da foto via Edge Function (F-05: sem credenciais hardcoded)
       let fotoUrlFinal: string | null = null;
       if (fotoFile) {
@@ -196,13 +189,17 @@ export function VistoriaSemAcesso({
       }
       onRegistered();
     },
-    onError: () => toast.error('Erro ao registrar tentativa. Tente novamente.'),
+    onError: (err) => toast.error(err instanceof Error ? err.message : 'Erro ao registrar tentativa. Tente novamente.'),
   });
 
   async function handleSubmit() {
     if (!motivo) return;
     if (motivo === 'outro' && !observacao.trim()) {
       toast.error('Descreva o motivo no campo de observação ao selecionar "Outro".');
+      return;
+    }
+    if (motivo === 'recusa_entrada' && !etapa1.lat_chegada) {
+      toast.error('Localização GPS necessária para registrar recusa. Aguarde o GPS ou ative-o nas configurações do celular.');
       return;
     }
 
