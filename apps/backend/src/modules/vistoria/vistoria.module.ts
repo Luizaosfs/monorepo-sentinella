@@ -9,6 +9,7 @@ import { FocoRiscoModule } from '../foco-risco/foco-risco.module';
 import { IniciarInspecao } from '../foco-risco/use-cases/iniciar-inspecao';
 import { JobModule } from '../job/job.module';
 import { BackfillConsolidacaoService } from './services/backfill-consolidacao.service';
+import { RegistrarSemAcessoVistoria } from './use-cases/registrar-sem-acesso';
 import { AddDeposito } from './use-cases/add-deposito';
 import { AtualizarPerfilImovel } from './use-cases/atualizar-perfil-imovel';
 import { ValidarCicloVistoria } from './use-cases/validar-ciclo-vistoria';
@@ -44,6 +45,7 @@ import { VistoriaController } from './vistoria.controller';
     SaveVistoria,
     ValidarCicloVistoria,
     IniciarInspecao,
+    RegistrarSemAcessoVistoria,
     SoftDeleteVistoria,
     JwtService,
     PrismaService,

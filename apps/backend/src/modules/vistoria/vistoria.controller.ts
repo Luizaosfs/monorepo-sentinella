@@ -64,8 +64,13 @@ import { GetVistoria } from './use-cases/get-vistoria';
 import { ListVistoriasConsolidadas } from './use-cases/list-vistorias-consolidadas';
 import { PaginationVistoria } from './use-cases/pagination-vistoria';
 import { SaveVistoria } from './use-cases/save-vistoria';
+import { RegistrarSemAcessoVistoria } from './use-cases/registrar-sem-acesso';
 import { SoftDeleteVistoria } from './use-cases/soft-delete-vistoria';
 import { VistoriaViewModel } from './view-model/vistoria';
+import {
+  RegistrarSemAcessoBody,
+  registrarSemAcessoSchema,
+} from './dtos/registrar-sem-acesso.body';
 
 @UseInterceptors(PrismaInterceptor)
 @UsePipes(MyZodValidationPipe)
@@ -85,6 +90,7 @@ export class VistoriaController {
     private addSintomasUc: AddSintomas,
     private addRiscosUc: AddRiscos,
     private softDeleteVistoria: SoftDeleteVistoria,
+    private registrarSemAcesso: RegistrarSemAcessoVistoria,
     @Inject(REQUEST) private req: Request,
   ) {}
 
@@ -199,6 +205,14 @@ export class VistoriaController {
     const parsed = saveVistoriaSchema.parse(body);
     const { vistoria } = await this.saveVistoria.execute(id, parsed);
     return VistoriaViewModel.toHttp(vistoria);
+  }
+
+  @Post(':id/sem-acesso')
+  @Roles('admin', 'supervisor', 'agente')
+  @ApiOperation({ summary: 'Registrar sem acesso a imóvel (recusa/fechado/desocupado)' })
+  async semAcesso(@Param('id') id: string, @Body() body: RegistrarSemAcessoBody) {
+    const parsed = registrarSemAcessoSchema.parse(body);
+    return this.registrarSemAcesso.execute(id, parsed);
   }
 
   @Delete(':id')

@@ -44,7 +44,7 @@ export class IniciarInspecao {
       return { foco, jaEmInspecao: true };
     }
 
-    if (foco.status !== 'aguarda_inspecao') {
+    if (foco.status !== 'aguarda_inspecao' && foco.status !== 'aguardando_nova_tentativa') {
       throw FocoRiscoException.statusInvalido();
     }
 

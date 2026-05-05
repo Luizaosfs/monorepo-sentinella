@@ -35,6 +35,7 @@ const STATUS_PARA_FASE: Record<
   em_triagem: 'triagem',
   aguarda_inspecao: 'triagem',
   em_inspecao: 'inspecao',
+  aguardando_nova_tentativa: 'inspecao',
   confirmado: 'confirmacao',
   em_tratamento: 'tratamento',
   resolvido: null,

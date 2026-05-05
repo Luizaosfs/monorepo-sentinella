@@ -66,6 +66,17 @@ export const vistorias = {
   ): Promise<void> =>
     http.put(`/vistorias/${vistoriaId}`, deepToCamel(payload) as Record<string, unknown>),
 
+  registrarSemAcessoFluxo: (
+    vistoriaId: string,
+    payload: {
+      motivo: 'recusa' | 'fechado' | 'desocupado' | 'sem_previsao';
+      observacao?: string;
+      proximoHorarioSugerido?: string;
+      focoRiscoId?: string;
+    },
+  ): Promise<{ vistoria: Record<string, unknown>; escaladoSupervisor: boolean }> =>
+    http.post(`/vistorias/${vistoriaId}/sem-acesso`, payload),
+
   addDeposito: (vistoriaId: string, payload: Record<string, unknown>): Promise<Record<string, unknown>> =>
     http.post(`/vistorias/${vistoriaId}/depositos`, deepToCamel(payload) as Record<string, unknown>),
 

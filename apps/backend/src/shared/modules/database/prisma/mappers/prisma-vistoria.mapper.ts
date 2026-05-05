@@ -125,6 +125,8 @@ type RawVistoria = {
   consolidado_em: Date | null;
   reprocessado_em: Date | null;
   reprocessado_por: string | null;
+  tentativa_numero: number;
+  proxima_tentativa_sugerida: Date | null;
   depositos?: RawDeposito[];
   sintomas?: RawSintoma[];
   riscos?: RawRisco[];
@@ -259,6 +261,8 @@ export class PrismaVistoriaMapper {
         consolidadoEm: raw.consolidado_em ?? undefined,
         reprocessadoEm: raw.reprocessado_em ?? undefined,
         reprocessadoPor: raw.reprocessado_por ?? undefined,
+        tentativaNumero: raw.tentativa_numero,
+        proximaTentativaSugerida: raw.proxima_tentativa_sugerida ?? undefined,
         depositos: raw.depositos?.map(PrismaVistoriaMapper.depositoToDomain),
         sintomas: raw.sintomas?.map(PrismaVistoriaMapper.sintomaToDomain),
         riscos: raw.riscos?.map(PrismaVistoriaMapper.riscoToDomain),
@@ -328,6 +332,8 @@ export class PrismaVistoriaMapper {
       consolidado_em: entity.consolidadoEm ?? null,
       reprocessado_em: entity.reprocessadoEm ?? null,
       reprocessado_por: entity.reprocessadoPor ?? null,
+      tentativa_numero: entity.tentativaNumero,
+      proxima_tentativa_sugerida: entity.proximaTentativaSugerida ?? null,
       created_by: entity.createdBy ?? null,
       updated_at: new Date(),
     };

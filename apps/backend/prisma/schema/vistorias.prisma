@@ -54,6 +54,8 @@ model vistorias {
   consolidado_em                DateTime? @db.Timestamptz
   reprocessado_em               DateTime? @db.Timestamptz
   reprocessado_por              String?   @db.Uuid
+  tentativa_numero              Int       @default(1)
+  proxima_tentativa_sugerida    DateTime? @db.Timestamptz
 
   cliente      clientes      @relation(fields: [cliente_id], references: [id])
   imovel       imoveis?      @relation(fields: [imovel_id], references: [id])

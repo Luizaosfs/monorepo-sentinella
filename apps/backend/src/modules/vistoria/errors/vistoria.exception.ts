@@ -6,6 +6,14 @@ export const VistoriaException = createExceptionFactory({
     type: 'badRequest',
     message: 'Imóvel é obrigatório para este tipo de vistoria',
   },
+  semPermissao: {
+    type: 'forbidden',
+    message: 'Usuário sem permissão para esta operação',
+  },
+  focoStatusInvalido: {
+    type: 'badRequest',
+    message: 'Foco não está em inspeção — sem-acesso só pode ser registrado durante a inspeção',
+  },
   /** Hard delete LGPD — usar soft delete (C.5) */
   deleteBloqueado: {
     type: 'badRequest',

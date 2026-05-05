@@ -115,6 +115,8 @@ interface VistoriaProps {
   consolidadoEm?: Date;
   reprocessadoEm?: Date;
   reprocessadoPor?: string;
+  tentativaNumero?: number;
+  proximaTentativaSugerida?: Date;
   depositos?: VistoriaDeposito[];
   sintomas?: VistoriaSintoma[];
   riscos?: VistoriaRisco[];
@@ -469,6 +471,20 @@ export class Vistoria extends BaseEntity<VistoriaProps> {
   }
   set reprocessadoPor(v: string | undefined) {
     this.props.reprocessadoPor = v;
+  }
+
+  get tentativaNumero() {
+    return this.props.tentativaNumero ?? 1;
+  }
+  set tentativaNumero(v: number) {
+    this.props.tentativaNumero = v;
+  }
+
+  get proximaTentativaSugerida() {
+    return this.props.proximaTentativaSugerida;
+  }
+  set proximaTentativaSugerida(v: Date | undefined) {
+    this.props.proximaTentativaSugerida = v;
   }
 
   get depositos() {

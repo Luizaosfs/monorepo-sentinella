@@ -9,6 +9,8 @@ import {
 type FocoRiscoRaw = PrismaFocoRiscoModel & {
   historico?: PrismaFocoRiscoHistoricoModel[];
   ultima_vistoria_em?: Date | null;
+  tentativas_sem_acesso?: number;
+  pendente_decisao_supervisor?: boolean;
 };
 
 export class PrismaFocoRiscoMapper {
@@ -57,6 +59,8 @@ export class PrismaFocoRiscoMapper {
         classificacaoInicial: raw.classificacao_inicial,
         scorePrioridade: raw.score_prioridade,
         codigoFoco: raw.codigo_foco || undefined,
+        tentativasSemAcesso: raw.tentativas_sem_acesso ?? 0,
+        pendentDecisaoSupervisor: raw.pendente_decisao_supervisor ?? false,
         payload: raw.payload ?? undefined,
         historico: raw.historico?.map(PrismaFocoRiscoMapper.historicToDomain),
         ultimaVistoriaEm: raw.ultima_vistoria_em ?? null,
@@ -100,6 +104,8 @@ export class PrismaFocoRiscoMapper {
       classificacao_inicial: entity.classificacaoInicial,
       score_prioridade: entity.scorePrioridade,
       codigo_foco: entity.codigoFoco || null,
+      tentativas_sem_acesso: entity.tentativasSemAcesso,
+      pendente_decisao_supervisor: entity.pendentDecisaoSupervisor,
       payload: entity.payload !== undefined ? (entity.payload as Prisma.InputJsonValue) : undefined,
       created_by: entity.createdBy || null,
       updated_at: new Date(),

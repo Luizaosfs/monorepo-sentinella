@@ -127,6 +127,8 @@ export class VistoriaViewModel {
       consolidadoEm: vistoria.consolidadoEm,
       reprocessadoEm: vistoria.reprocessadoEm,
       reprocessadoPor: vistoria.reprocessadoPor,
+      tentativaNumero: vistoria.tentativaNumero,
+      proximaTentativaSugerida: vistoria.proximaTentativaSugerida,
       depositos: vistoria.depositos?.map(VistoriaViewModel.depositoToHttp),
       sintomas: vistoria.sintomas?.map(VistoriaViewModel.sintomaToHttp),
       riscos: vistoria.riscos?.map(VistoriaViewModel.riscoToHttp),

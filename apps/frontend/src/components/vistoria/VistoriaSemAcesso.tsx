@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { Home, Plane, ShieldOff, Dog, Wrench, FileText, ChevronLeft, AlertTriangle, Camera, Loader2, Upload } from 'lucide-react';
+import { Home, Plane, ShieldOff, Dog, Wrench, FileText, ChevronLeft, AlertTriangle, Camera, Loader2, Upload, UserCheck } from 'lucide-react';
 import { invokeUploadEvidencia } from '@/lib/uploadEvidencia';
 import {
   MotivoSemAcesso, HorarioSugerido,
@@ -20,6 +20,17 @@ import { api } from '@/services/api';
 import { enqueue } from '@/lib/offlineQueue';
 import { useClienteAtivo } from '@/hooks/useClienteAtivo';
 import type { Etapa1Data } from './VistoriaEtapa1Responsavel';
+
+const MAX_TENTATIVAS = 3;
+
+const UI_TO_BACKEND_MOTIVO: Record<MotivoSemAcesso, 'recusa' | 'fechado' | 'desocupado' | 'sem_previsao'> = {
+  fechado_ausente:   'fechado',
+  fechado_viagem:    'fechado',
+  recusa_entrada:    'recusa',
+  cachorro_bravo:    'recusa',
+  calha_inacessivel: 'sem_previsao',
+  outro:             'sem_previsao',
+};
 
 const MOTIVO_ICONS: Record<MotivoSemAcesso, React.ReactNode> = {
   fechado_ausente:   <Home className="w-5 h-5" />,
@@ -57,6 +68,7 @@ interface Props {
   atividade: TipoAtividade;
   ciclo: number;
   etapa1: Etapa1Data;
+  focoRiscoId?: string;
   onRegistered: () => void;
   onCancel: () => void;
 }
@@ -68,6 +80,7 @@ export function VistoriaSemAcesso({
   atividade,
   ciclo,
   etapa1,
+  focoRiscoId,
   onRegistered,
   onCancel,
 }: Props) {
@@ -119,7 +132,6 @@ export function VistoriaSemAcesso({
     mutationFn: async () => {
       if (!motivo) throw new Error('Selecione o motivo');
 
-      // Upload da foto via Edge Function (F-05: sem credenciais hardcoded)
       let fotoUrlFinal: string | null = null;
       if (fotoFile) {
         try {
@@ -145,10 +157,7 @@ export function VistoriaSemAcesso({
         }
       }
 
-      // Persistência transacional via RPC (M-01/F-06)
-      // Alerta de retorno criado automaticamente pelo trigger trg_criar_alerta_retorno (F-03)
-      // recusa_entrada não gera alerta (F-08)
-      await api.vistorias.createCompleta({
+      const vistoriaId = await api.vistorias.createCompleta({
         cliente_id: clienteId,
         imovel_id: imovelId,
         agente_id: agenteId,
@@ -176,16 +185,36 @@ export function VistoriaSemAcesso({
           observacao: undefined,
         }] : [],
       });
+
+      let escaladoSupervisor = false;
+      if (focoRiscoId) {
+        try {
+          const result = await api.vistorias.registrarSemAcessoFluxo(vistoriaId, {
+            motivo: UI_TO_BACKEND_MOTIVO[motivo],
+            observacao: observacao.trim() || undefined,
+            proximoHorarioSugerido: horario ?? undefined,
+            focoRiscoId,
+          });
+          escaladoSupervisor = result.escaladoSupervisor;
+        } catch (err) {
+          console.error('[VistoriaSemAcesso] falha ao transicionar foco:', err);
+        }
+      }
+
+      return { escaladoSupervisor };
     },
-    onSuccess: () => {
+    onSuccess: ({ escaladoSupervisor }) => {
       queryClient.invalidateQueries({ queryKey: ['imoveis_problematicos'] });
       queryClient.invalidateQueries({ queryKey: ['vistorias'] });
       queryClient.invalidateQueries({ queryKey: ['imoveis_resumo'] });
+      queryClient.invalidateQueries({ queryKey: ['focos-risco'] });
       const novasTentativas = contadorTentativas + 1;
-      if (novasTentativas >= 3) {
+      if (escaladoSupervisor) {
+        toast.warning('Limite de tentativas atingido — supervisor notificado para decisão.', { duration: 6000 });
+      } else if (novasTentativas >= MAX_TENTATIVAS) {
         toast.warning('Imóvel marcado para sobrevoo de drone — 3ª tentativa registrada!', { duration: 5000 });
       } else {
-        toast.success(`Tentativa registrada. ${novasTentativas} tentativa${novasTentativas !== 1 ? 's' : ''} neste imóvel.`);
+        toast.success(`Tentativa ${novasTentativas}/${MAX_TENTATIVAS} registrada. Nova visita sugerida em breve.`);
       }
       onRegistered();
     },
@@ -238,7 +267,7 @@ export function VistoriaSemAcesso({
             assinatura_responsavel_url: null,
           },
         });
-        toast.success('Sem conexão — registro salvo localmente. Foto não incluída (requer conexão).');
+        toast.success('Sem conexão — tentativa salva localmente. Foco de risco será atualizado ao sincronizar.');
         queryClient.invalidateQueries({ queryKey: ['imoveis_problematicos'] });
         queryClient.invalidateQueries({ queryKey: ['vistorias'] });
         queryClient.invalidateQueries({ queryKey: ['imoveis_resumo'] });
@@ -254,15 +283,31 @@ export function VistoriaSemAcesso({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-start gap-3 p-4 rounded-2xl border-2 border-amber-400/50 bg-amber-50/60 dark:bg-amber-950/20">
-        <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-        <div>
-          <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">Acesso não realizado</p>
-          <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
-            Registre o motivo para rastreabilidade. Após 3 tentativas, o imóvel é marcado para sobrevoo.
-          </p>
+      {contadorTentativas >= MAX_TENTATIVAS ? (
+        <div className="flex items-start gap-3 p-4 rounded-2xl border-2 border-rose-400/60 bg-rose-50/60 dark:bg-rose-950/20">
+          <UserCheck className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-semibold text-rose-800 dark:text-rose-300">
+              {contadorTentativas}ª tentativa — supervisão necessária
+            </p>
+            <p className="text-xs text-rose-700 dark:text-rose-400 mt-0.5">
+              Limite atingido. O supervisor será notificado para decidir o próximo passo (vistoria especial ou descarte).
+            </p>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="flex items-start gap-3 p-4 rounded-2xl border-2 border-amber-400/50 bg-amber-50/60 dark:bg-amber-950/20">
+          <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
+              Acesso não realizado — tentativa {contadorTentativas + 1}/{MAX_TENTATIVAS}
+            </p>
+            <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
+              Registre o motivo para rastreabilidade. Após {MAX_TENTATIVAS} tentativas, o supervisor é acionado.
+            </p>
+          </div>
+        </div>
+      )}
 
       <Card className="rounded-2xl border-border">
         <CardContent className="p-4 space-y-2">

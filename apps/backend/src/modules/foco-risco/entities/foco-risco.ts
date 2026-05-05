@@ -6,17 +6,23 @@ export type FocoRiscoStatus =
   | 'em_triagem'
   | 'aguarda_inspecao'
   | 'em_inspecao'
+  | 'aguardando_nova_tentativa'
   | 'confirmado'
   | 'em_tratamento'
   | 'resolvido'
   | 'descartado';
 
-/** `aguarda_inspecao` → `em_inspecao` não entra aqui: use o caso de uso IniciarInspecao (evento operacional + histórico inicio_inspecao). */
+/**
+ * `aguarda_inspecao` → `em_inspecao`: use IniciarInspecao (evento operacional).
+ * `em_inspecao` → `aguardando_nova_tentativa`: use RegistrarSemAcesso (endpoint próprio).
+ * `aguardando_nova_tentativa` → `em_inspecao`: use IniciarInspecao (endpoint próprio).
+ */
 export const TRANSICOES_VALIDAS: Record<FocoRiscoStatus, FocoRiscoStatus[]> = {
   suspeita: ['em_triagem'],
   em_triagem: ['aguarda_inspecao', 'descartado'],
   aguarda_inspecao: ['descartado'],
   em_inspecao: ['confirmado', 'descartado'],
+  aguardando_nova_tentativa: ['descartado'],
   confirmado: ['em_tratamento'],
   em_tratamento: ['resolvido', 'descartado'],
   resolvido: [],
@@ -66,6 +72,8 @@ interface FocoRiscoProps {
   classificacaoInicial: string;
   scorePrioridade: number;
   codigoFoco?: string;
+  tentativasSemAcesso?: number;
+  pendentDecisaoSupervisor?: boolean;
   /**
    * JSON livre no banco (consolidação, flags analíticas, classificação derivada legada).
    * Não substitui colunas reais; ver `classificacaoInicial`.
@@ -223,6 +231,18 @@ export class FocoRisco extends BaseEntity<FocoRiscoProps> {
   }
   set codigoFoco(v: string | undefined) {
     this.props.codigoFoco = v;
+  }
+  get tentativasSemAcesso() {
+    return this.props.tentativasSemAcesso ?? 0;
+  }
+  set tentativasSemAcesso(v: number) {
+    this.props.tentativasSemAcesso = v;
+  }
+  get pendentDecisaoSupervisor() {
+    return this.props.pendentDecisaoSupervisor ?? false;
+  }
+  set pendentDecisaoSupervisor(v: boolean) {
+    this.props.pendentDecisaoSupervisor = v;
   }
   get payload() {
     return this.props.payload;

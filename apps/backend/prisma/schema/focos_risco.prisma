@@ -33,6 +33,8 @@ model focos_risco {
   score_prioridade                Int       @default(0)
   codigo_foco                     String?
   protocolo_publico               String?   @unique
+  tentativas_sem_acesso           Int       @default(0)
+  pendente_decisao_supervisor     Boolean   @default(false)
 
   cliente       clientes   @relation(fields: [cliente_id], references: [id])
   imovel        imoveis?   @relation(fields: [imovel_id], references: [id])
