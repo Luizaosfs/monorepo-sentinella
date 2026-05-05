@@ -14,6 +14,7 @@ import { GetAnaliticoVulnerabilidade } from './use-cases/get-analitico-vulnerabi
 import { GetAnaliticoAlertaSaude } from './use-cases/get-analitico-alerta-saude';
 import { GetAnaliticoResultadoOperacional } from './use-cases/get-analitico-resultado-operacional';
 import { GetAnaliticoImoveisCriticos } from './use-cases/get-analitico-imoveis-criticos';
+import { GetAnaliticoSemAcesso } from './use-cases/get-analitico-sem-acesso';
 
 @UseInterceptors(PrismaInterceptor)
 @UsePipes(MyZodValidationPipe)
@@ -28,6 +29,7 @@ export class AnaliticoController {
     private getAnaliticoAlertaSaude: GetAnaliticoAlertaSaude,
     private getAnaliticoResultadoOperacional: GetAnaliticoResultadoOperacional,
     private getAnaliticoImoveisCriticos: GetAnaliticoImoveisCriticos,
+    private getAnaliticoSemAcesso: GetAnaliticoSemAcesso,
     @Inject(REQUEST) private req: Request,
   ) {}
 
@@ -78,5 +80,12 @@ export class AnaliticoController {
   @ApiOperation({ summary: 'Imóveis P1/P2 críticos' })
   imoveisCriticos(@Query('bairro') bairro?: string, @Query('prioridade') prioridade?: string) {
     return this.getAnaliticoImoveisCriticos.execute(requireTenantId(getAccessScope(this.req)), bairro, prioridade);
+  }
+
+  @Get('sem-acesso')
+  @Roles('admin', 'supervisor', 'analista_regional')
+  @ApiOperation({ summary: 'Métricas operacionais do fluxo de sem acesso' })
+  semAcesso() {
+    return this.getAnaliticoSemAcesso.execute(requireTenantId(getAccessScope(this.req)));
   }
 }

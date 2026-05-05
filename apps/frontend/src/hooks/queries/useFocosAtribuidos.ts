@@ -16,7 +16,7 @@ export function useFocosAtribuidos(
     queryKey: ['focos_atribuidos', clienteId, responsavelId],
     queryFn: async () => {
       const result = await api.focosRisco.list(clienteId!, {
-        status: ['aguarda_inspecao', 'em_inspecao', 'confirmado', 'em_tratamento'],
+        status: ['aguarda_inspecao', 'em_inspecao', 'aguardando_nova_tentativa', 'confirmado', 'em_tratamento'],
         responsavel_id: responsavelId!,
         pageSize: 50,
       });

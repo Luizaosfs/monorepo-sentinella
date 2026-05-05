@@ -217,6 +217,7 @@ export function VistoriaSemAcesso({
           escaladoSupervisor = result.escaladoSupervisor;
         } catch (err) {
           console.error('[VistoriaSemAcesso] falha ao transicionar foco:', err);
+          throw err;
         }
       }
 
@@ -226,7 +227,10 @@ export function VistoriaSemAcesso({
       queryClient.invalidateQueries({ queryKey: ['imoveis_problematicos'] });
       queryClient.invalidateQueries({ queryKey: ['vistorias'] });
       queryClient.invalidateQueries({ queryKey: ['imoveis_resumo'] });
-      queryClient.invalidateQueries({ queryKey: ['focos-risco'] });
+      queryClient.invalidateQueries({ queryKey: ['focos_risco'] });
+      queryClient.invalidateQueries({ queryKey: ['focos_atribuidos'] });
+      queryClient.invalidateQueries({ queryKey: ['foco-detalhes'] });
+      queryClient.invalidateQueries({ queryKey: ['focos_risco_kpi'] });
       const novasTentativas = contadorTentativas + 1;
       if (escaladoSupervisor) {
         toast.warning('Limite de tentativas atingido — supervisor notificado para decisão.', { duration: 6000 });

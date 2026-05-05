@@ -3,6 +3,7 @@ export type FocoStatus =
   | 'em_triagem'
   | 'aguarda_inspecao'
   | 'em_inspecao'
+  | 'aguardando_nova_tentativa'
   | 'confirmado'
   | 'em_tratamento'
   | 'resolvido'
@@ -29,6 +30,7 @@ export function mapFocoToStatusOperacional(
       return 'pendente';
 
     case 'em_inspecao':
+    case 'aguardando_nova_tentativa':
     case 'confirmado':
     case 'em_tratamento':
       return 'em_atendimento';

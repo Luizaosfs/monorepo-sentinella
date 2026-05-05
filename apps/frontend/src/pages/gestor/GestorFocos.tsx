@@ -62,7 +62,7 @@ const LABEL_SLA_FILTRO: Record<Exclude<FiltroSla, 'todos'>, string> = {
 
 const STATUS_FILTROS: FiltroStatus[] = [
   'todos', 'suspeita', 'em_triagem', 'aguarda_inspecao', 'em_inspecao',
-  'confirmado', 'em_tratamento', 'resolvido', 'descartado',
+  'aguardando_nova_tentativa', 'confirmado', 'em_tratamento', 'resolvido', 'descartado',
 ];
 
 const LABEL_FILTRO_STATUS: Record<string, string> = {
@@ -71,6 +71,7 @@ const LABEL_FILTRO_STATUS: Record<string, string> = {
   em_triagem: 'Em triagem',
   aguarda_inspecao: 'Aguarda inspeção',
   em_inspecao: 'Em inspeção',
+  aguardando_nova_tentativa: 'Sem acesso',
   confirmado: 'Confirmado',
   em_tratamento: 'Em tratamento',
   resolvido: 'Resolvido',
@@ -82,6 +83,7 @@ const STATUS_DOT: Record<string, string> = {
   em_triagem: 'bg-blue-500',
   aguarda_inspecao: 'bg-purple-500',
   em_inspecao: 'bg-indigo-500',
+  aguardando_nova_tentativa: 'bg-rose-500',
   confirmado: 'bg-red-500',
   em_tratamento: 'bg-orange-500',
   resolvido: 'bg-emerald-500',
@@ -99,7 +101,7 @@ type TableSortKey = 'ultimaVistoria' | 'score' | 'status' | 'prioridade' | 'sla'
 
 const STATUS_SORT_ORDER: FocoRiscoStatus[] = [
   'suspeita', 'em_triagem', 'aguarda_inspecao', 'em_inspecao',
-  'confirmado', 'em_tratamento', 'resolvido', 'descartado',
+  'aguardando_nova_tentativa', 'confirmado', 'em_tratamento', 'resolvido', 'descartado',
 ];
 
 const PRIORIDADE_SORT_VAL: Record<string, number> = { P1: 1, P2: 2, P3: 3, P4: 4, P5: 5 };
@@ -1058,8 +1060,8 @@ export default function GestorFocos() {
               </thead>
               <tbody className="divide-y divide-border/40">
                 {focosOrdenados.map((foco) => {
-                  // em_inspecao: ações dependem de pendente_decisao_supervisor — forçar detalhe
-                  const transicoes = foco.status === 'em_inspecao'
+                  // em_inspecao / aguardando_nova_tentativa: contexto obrigatório — forçar detalhe
+                  const transicoes = (foco.status === 'em_inspecao' || foco.status === 'aguardando_nova_tentativa')
                     ? []
                     : getTransicoesPermitidas(foco.status as FocoRiscoStatus);
                   const isSelecionado = selecionados.has(foco.id);
@@ -1121,6 +1123,16 @@ export default function GestorFocos() {
                           <span className="text-[10px] text-muted-foreground/70">
                             {LABEL_STATUS_OPERACIONAL[mapFocoToStatusOperacional(foco.status as FocoStatus)]}
                           </span>
+                          {foco.status === 'aguardando_nova_tentativa' && (
+                            <span className="inline-flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400 w-fit">
+                              Sem acesso {(foco.tentativas_sem_acesso ?? 0) > 0 ? `${foco.tentativas_sem_acesso}/3` : ''}
+                            </span>
+                          )}
+                          {foco.pendente_decisao_supervisor && (
+                            <span className="inline-flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 w-fit">
+                              Aguarda supervisor
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td className="px-3 py-3">

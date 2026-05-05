@@ -6,6 +6,7 @@ const FOCO_STATUS = [
   'em_triagem',
   'aguarda_inspecao',
   'em_inspecao',
+  'aguardando_nova_tentativa',
   'confirmado',
   'em_tratamento',
   'resolvido',
@@ -45,8 +46,21 @@ export const filterFocoRiscoSchema = z.object({
   /** Paginação inline — compatibilidade com frontend (?page=1&pageSize=30). */
   page: z.coerce.number().int().positive().optional(),
   pageSize: z.coerce.number().int().positive().max(5000).optional(),
-  /** Ordem combinada (?orderBy=suspeita_em_asc | suspeita_em_desc). */
-  orderBy: z.string().optional(),
+  /** Ordem combinada (?orderBy=suspeita_em_asc | suspeita_em_desc). Valores fora da lista são ignorados pelo repositório (fallback created_at). */
+  orderBy: z
+    .enum([
+      'created_at_asc',       'created_at_desc',
+      'updated_at_asc',       'updated_at_desc',
+      'suspeita_em_asc',      'suspeita_em_desc',
+      'score_prioridade_asc', 'score_prioridade_desc',
+      'status_asc',           'status_desc',
+      'prioridade_asc',       'prioridade_desc',
+      'codigo_foco_asc',      'codigo_foco_desc',
+      'origem_tipo_asc',      'origem_tipo_desc',
+      'inspecao_em_asc',      'inspecao_em_desc',
+      'ultima_vistoria_em_asc', 'ultima_vistoria_em_desc',
+    ])
+    .optional(),
   /** Filtrar apenas focos aguardando decisão do supervisor (sem_previsao ou 3ª tentativa). */
   pendente_decisao_supervisor: z.coerce.boolean().optional(),
 });

@@ -942,6 +942,7 @@ export default function AgenteFormularioVistoria() {
             atividade={atividade}
             ciclo={currentCiclo}
             etapa1={etapa1}
+            focoRiscoId={focoId ?? undefined}
             onRegistered={() => { setWasSemAcesso(true); setDone(true); }}
             onCancel={() => setSemAcessoMode(false)}
           />

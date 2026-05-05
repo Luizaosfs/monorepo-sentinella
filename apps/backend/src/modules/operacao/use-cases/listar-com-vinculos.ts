@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Prisma } from '@prisma/client';
 import { getAccessScope, getClienteIdsPermitidos } from '@shared/security/access-scope.helpers';
+import { assertOperacaoStatus, assertTipoVinculo } from '@shared/security/sql-whitelists';
 import { Request } from 'express';
 
 import { PrismaService } from 'src/shared/modules/database/prisma/prisma.service';
@@ -33,9 +34,11 @@ export class ListarComVinculos {
     }
 
     if (filters.status) {
+      assertOperacaoStatus(filters.status);
       conditions.push(Prisma.sql`o.status = ${filters.status}`);
     }
     if (filters.tipoVinculo) {
+      assertTipoVinculo(filters.tipoVinculo);
       conditions.push(Prisma.sql`o.tipo_vinculo = ${filters.tipoVinculo}`);
     }
     if (filters.focoRiscoId) {

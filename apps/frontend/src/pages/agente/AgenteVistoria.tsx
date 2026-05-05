@@ -70,12 +70,14 @@ function SemAcessoWrapper({
   clienteId,
   agenteId,
   ciclo,
+  focoRiscoId,
   onDone,
 }: {
   imovelId: string;
   clienteId: string;
   agenteId: string;
   ciclo: number;
+  focoRiscoId?: string;
   onDone: () => void;
 }) {
   const [coords, setCoords] = useState<{ lat: number | null; lng: number | null }>({
@@ -130,6 +132,7 @@ function SemAcessoWrapper({
           atividade={atividade}
           ciclo={ciclo}
           etapa1={etapa1}
+          focoRiscoId={focoRiscoId}
           onRegistered={onDone}
           onCancel={onDone}
         />
@@ -165,6 +168,7 @@ export default function AgenteVistoria() {
         clienteId={clienteId}
         agenteId={usuario.id}
         ciclo={ciclo}
+        focoRiscoId={focoId ?? undefined}
         onDone={() => navigate('/agente/hoje')}
       />
     );

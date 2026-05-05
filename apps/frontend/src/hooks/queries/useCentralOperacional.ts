@@ -3,6 +3,7 @@ import { api } from '@/services/api';
 import { STALE } from '@/lib/queryConfig';
 import { useClienteAtivo } from '@/hooks/useClienteAtivo';
 import type { FocoRiscoAtivo } from '@/types/database';
+import type { AnaliticoSemAcesso } from '@/services/api/domains/dashboard';
 
 export interface CentralOperacionalKpis {
   cliente_id: string;
@@ -59,6 +60,18 @@ export function useImoveisParaHoje(limit = 30) {
     queryFn:  () => api.central.listImoveisParaHoje(clienteId!, limit),
     enabled:  !!clienteId,
     staleTime: STALE.MEDIUM,
+  });
+}
+
+/** Métricas agregadas do fluxo de sem acesso (aguardando_nova_tentativa). */
+export function useAnaliticoSemAcesso() {
+  const { clienteId } = useClienteAtivo();
+  return useQuery<AnaliticoSemAcesso | null>({
+    queryKey: ['analitico-sem-acesso', clienteId],
+    queryFn: () => api.dashboardAnalitico.getSemAcesso(),
+    enabled: !!clienteId,
+    staleTime: STALE.SHORT,
+    refetchInterval: 120_000,
   });
 }
 

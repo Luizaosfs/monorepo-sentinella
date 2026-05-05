@@ -18,8 +18,20 @@ export const scoreSurto = {
     http.get(`/dashboard/score-surto${qs({ clienteId })}`),
 };
 
+export interface AnaliticoSemAcesso {
+  focos_aguardando: number
+  aguardando_decisao_supervisor: number
+  tentativa_1: number
+  tentativa_2: number
+  tentativa_3_mais: number
+  novos_7d: number
+  novos_30d: number
+}
+
 export const dashboardAnalitico = {
   getResumo: (clienteId?: string): Promise<unknown> => http.get(`/dashboard/analitico/resumo${qs({ clienteId })}`),
+  getSemAcesso: (): Promise<AnaliticoSemAcesso | null> =>
+    http.get('/dashboard/analitico/sem-acesso'),
   getRiscoTerritorial: (clienteId?: string, bairro?: string): Promise<unknown> => http.get(`/dashboard/analitico/risco-territorial${qs({ clienteId, bairro })}`),
   getVulnerabilidade: (clienteId?: string, bairro?: string): Promise<unknown> => http.get(`/dashboard/analitico/vulnerabilidade${qs({ clienteId, bairro })}`),
   getAlertaSaude: (clienteId?: string, bairro?: string): Promise<unknown> => http.get(`/dashboard/analitico/alerta-saude${qs({ clienteId, bairro })}`),

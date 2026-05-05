@@ -148,6 +148,7 @@ export class RegistrarSemAcessoVistoria {
       }
     } catch (err) {
       this.logger.error(`Erro ao atualizar foco ${focoId} no sem-acesso: ${err}`);
+      throw err;
     }
 
     return { vistoria, escaladoSupervisor, tentativaNumero, proximaTentativa };

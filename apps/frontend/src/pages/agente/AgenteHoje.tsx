@@ -729,11 +729,15 @@ export default function AgenteHoje() {
             ) : (
               focosAtribuidos.map((foco) => {
                 const endereco = [foco.logradouro, foco.numero].filter(Boolean).join(', ') || 'Endereço não informado';
+                const tentativasLabel = foco.status === 'aguardando_nova_tentativa' && (foco.tentativas_sem_acesso ?? 0) > 0
+                  ? ` · tentativa ${foco.tentativas_sem_acesso}/3`
+                  : '';
                 const statusCfg = {
-                  aguarda_inspecao: { border: 'border-l-blue-500',   icon: 'text-blue-600',   label: 'Aguarda inspeção',   btn: 'bg-blue-600 hover:bg-blue-700',     cta: 'Iniciar inspeção' },
-                  em_inspecao:      { border: 'border-l-indigo-500', icon: 'text-indigo-600', label: 'Em inspeção',         btn: 'bg-indigo-600 hover:bg-indigo-700', cta: 'Retomar inspeção' },
-                  confirmado:       { border: 'border-l-amber-500',  icon: 'text-amber-600',  label: 'Confirmado',          btn: 'bg-amber-600 hover:bg-amber-700',   cta: 'Iniciar tratamento' },
-                  em_tratamento:    { border: 'border-l-purple-500', icon: 'text-purple-600', label: 'Em tratamento',       btn: 'bg-purple-600 hover:bg-purple-700', cta: 'Registrar resolução' },
+                  aguarda_inspecao:         { border: 'border-l-blue-500',   icon: 'text-blue-600',   label: 'Aguarda inspeção',   btn: 'bg-blue-600 hover:bg-blue-700',     cta: 'Iniciar inspeção' },
+                  em_inspecao:              { border: 'border-l-indigo-500', icon: 'text-indigo-600', label: 'Em inspeção',         btn: 'bg-indigo-600 hover:bg-indigo-700', cta: 'Retomar inspeção' },
+                  aguardando_nova_tentativa: { border: 'border-l-rose-500',  icon: 'text-rose-600',   label: `Sem acesso${tentativasLabel}`, btn: 'bg-rose-600 hover:bg-rose-700', cta: 'Nova tentativa' },
+                  confirmado:               { border: 'border-l-amber-500',  icon: 'text-amber-600',  label: 'Confirmado',          btn: 'bg-amber-600 hover:bg-amber-700',   cta: 'Iniciar tratamento' },
+                  em_tratamento:            { border: 'border-l-purple-500', icon: 'text-purple-600', label: 'Em tratamento',       btn: 'bg-purple-600 hover:bg-purple-700', cta: 'Registrar resolução' },
                 }[foco.status] ?? { border: 'border-l-gray-400', icon: 'text-gray-500', label: foco.status, btn: 'bg-gray-600 hover:bg-gray-700', cta: 'Ver detalhes' };
                 return (
                   <Card

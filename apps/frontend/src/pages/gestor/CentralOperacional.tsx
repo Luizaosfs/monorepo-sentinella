@@ -20,7 +20,7 @@ import { ScoreBadge } from '@/components/foco/ScoreBadge';
 import { AgentesHojeWidget } from '@/components/dashboard/AgentesHojeWidget';
 import { ResumoIAWidget } from '@/components/dashboard/ResumoIAWidget';
 import { PainelPilotoFunilCard } from '@/components/dashboard/PainelPilotoFunil';
-import { useCentralKpis, useImoveisParaHoje, useFocosPendentesSupervisor } from '@/hooks/queries/useCentralOperacional';
+import { useCentralKpis, useImoveisParaHoje, useFocosPendentesSupervisor, useAnaliticoSemAcesso } from '@/hooks/queries/useCentralOperacional';
 import { gerarRelatorioPdf } from '@/lib/gestorRelatorioPdf';
 import { useClienteAtivo } from '@/hooks/useClienteAtivo';
 import { useCasosCruzadosHoje } from '@/hooks/queries/useCasosNotificados';
@@ -106,6 +106,7 @@ export default function CentralOperacional() {
 
   const { data: kpis, isLoading: kpisLoading, refetch } = useCentralKpis();
   const { data: pendentesSupervisor } = useFocosPendentesSupervisor();
+  const { data: semAcessoMetrics } = useAnaliticoSemAcesso();
   const { data: imoveisParaHoje = [], isLoading: imoveisLoading } = useImoveisParaHoje(15);
   const { data: topCriticos = [] } = useScoreTopCriticos(5);
   const { data: casosCruzados = 0 } = useCasosCruzadosHoje();
@@ -297,6 +298,52 @@ export default function CentralOperacional() {
             >
               Ver focos <ChevronRight className="h-3.5 w-3.5 ml-0.5" />
             </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Métricas de sem acesso */}
+      {semAcessoMetrics && semAcessoMetrics.focos_aguardando > 0 && (
+        <div className="rounded-xl border border-rose-200/70 bg-rose-50/40 dark:bg-rose-950/10 dark:border-rose-800/30 px-4 py-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            <MapPinOff className="h-4 w-4 text-rose-500 dark:text-rose-400 shrink-0" />
+            <span className="text-sm font-semibold text-rose-800 dark:text-rose-300">
+              Sem acesso
+            </span>
+            <span className="text-2xl font-bold tabular-nums text-rose-700 dark:text-rose-300 leading-none">
+              {semAcessoMetrics.focos_aguardando}
+            </span>
+            <span className="text-xs text-rose-600/70 dark:text-rose-400/70">aguardando</span>
+            <span className="ml-auto flex items-center gap-1.5 flex-wrap justify-end">
+              {semAcessoMetrics.tentativa_1 > 0 && (
+                <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300 tabular-nums">
+                  1ª: {semAcessoMetrics.tentativa_1}
+                </span>
+              )}
+              {semAcessoMetrics.tentativa_2 > 0 && (
+                <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-rose-200/80 text-rose-800 dark:bg-rose-900/50 dark:text-rose-200 tabular-nums">
+                  2ª: {semAcessoMetrics.tentativa_2}
+                </span>
+              )}
+              {semAcessoMetrics.tentativa_3_mais > 0 && (
+                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-rose-600 text-white tabular-nums">
+                  3ª+: {semAcessoMetrics.tentativa_3_mais}
+                </span>
+              )}
+              {semAcessoMetrics.novos_7d > 0 && (
+                <span className="text-[11px] text-rose-500/80 dark:text-rose-400/60 tabular-nums">
+                  +{semAcessoMetrics.novos_7d} esta semana
+                </span>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 text-[11px] text-rose-700 hover:bg-rose-100 dark:text-rose-400 dark:hover:bg-rose-900/30 shrink-0 px-2"
+                onClick={() => navigate('/gestor/focos?status=aguardando_nova_tentativa')}
+              >
+                Ver <ChevronRight className="h-3 w-3 ml-0.5" />
+              </Button>
+            </span>
           </div>
         </div>
       )}

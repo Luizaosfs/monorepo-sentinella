@@ -1706,6 +1706,7 @@ export type FocoRiscoStatus =
   | 'em_triagem'
   | 'aguarda_inspecao'
   | 'em_inspecao'
+  | 'aguardando_nova_tentativa'
   | 'confirmado'
   | 'em_tratamento'
   | 'resolvido'
@@ -1896,14 +1897,15 @@ export interface FocoRiscoFiltros {
  *   em_tratamento ──(agente)──► resolvido | descartado
  */
 export const TRANSICOES_PERMITIDAS: Record<FocoRiscoStatus, FocoRiscoStatus[]> = {
-  suspeita:          [],                           // auto-triagem via trigger; nenhuma transição manual
-  em_triagem:        ['aguarda_inspecao'],               // descartado removido: supervisor não descarta
-  aguarda_inspecao:  ['em_inspecao', 'descartado'],
-  em_inspecao:       ['confirmado', 'aguarda_inspecao', 'descartado'],
-  confirmado:        ['em_tratamento'],            // obrigatório passar por em_tratamento
-  em_tratamento:     ['resolvido', 'descartado'],
-  resolvido:         [],
-  descartado:        [],
+  suspeita:                   [],
+  em_triagem:                 ['aguarda_inspecao'],
+  aguarda_inspecao:           ['em_inspecao', 'descartado'],
+  em_inspecao:                ['confirmado', 'aguarda_inspecao', 'descartado'],
+  aguardando_nova_tentativa:  ['aguarda_inspecao', 'descartado'],
+  confirmado:                 ['em_tratamento'],
+  em_tratamento:              ['resolvido', 'descartado'],
+  resolvido:                  [],
+  descartado:                 [],
 };
 
 export function getTransicoesPermitidas(status: FocoRiscoStatus): FocoRiscoStatus[] {

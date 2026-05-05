@@ -10,6 +10,7 @@ import {
   TimelineItem,
 } from '@modules/foco-risco/repositories/foco-risco-read.repository';
 import { Injectable } from '@nestjs/common';
+import { assertFocoStatus, assertPrioridade } from '@shared/security/sql-whitelists';
 import { Prisma, type focos_risco as PrismaFocoRiscoModel } from '@prisma/client';
 import { PaginationProps } from 'src/shared/dtos/pagination-body';
 import { Paginate } from 'src/utils/pagination';
@@ -476,17 +477,19 @@ export class PrismaFocoRiscoReadRepository implements FocoRiscoReadRepository {
       clauses.push(Prisma.sql`f.cliente_id = ${filters.clienteId}::uuid`);
     }
     if (filters.status?.length) {
+      assertFocoStatus(filters.status);
       clauses.push(
         filters.status.length === 1
           ? Prisma.sql`f.status = ${filters.status[0]}`
-          : Prisma.sql`f.status IN (${Prisma.join(filters.status)})`,
+          : Prisma.sql`f.status = ANY(${filters.status}::text[])`,
       );
     }
     if (filters.prioridade?.length) {
+      assertPrioridade(filters.prioridade);
       clauses.push(
         filters.prioridade.length === 1
           ? Prisma.sql`f.prioridade = ${filters.prioridade[0]}`
-          : Prisma.sql`f.prioridade IN (${Prisma.join(filters.prioridade)})`,
+          : Prisma.sql`f.prioridade = ANY(${filters.prioridade}::text[])`,
       );
     }
     if (filters.regiao_id) {

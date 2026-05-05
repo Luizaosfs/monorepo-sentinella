@@ -4,6 +4,7 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 import { Request } from 'express';
 import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
+import { assertPrioridadeVistoria } from '@shared/security/sql-whitelists';
 
 import { FilterVistoriaConsolidadasInput } from '../dtos/filter-vistoria-consolidadas.input';
 
@@ -25,6 +26,7 @@ export class ListVistoriasConsolidadas {
     ];
 
     if (filters.prioridade_final?.length) {
+      assertPrioridadeVistoria(filters.prioridade_final);
       conditions.push(
         Prisma.sql`v.prioridade_final = ANY(${filters.prioridade_final}::text[])`,
       );

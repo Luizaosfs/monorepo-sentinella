@@ -59,6 +59,7 @@ import { GetAnaliticoVulnerabilidade } from './use-cases/get-analitico-vulnerabi
 import { GetAnaliticoAlertaSaude } from './use-cases/get-analitico-alerta-saude';
 import { GetAnaliticoResultadoOperacional } from './use-cases/get-analitico-resultado-operacional';
 import { GetAnaliticoImoveisCriticos } from './use-cases/get-analitico-imoveis-criticos';
+import { GetAnaliticoSemAcesso } from './use-cases/get-analitico-sem-acesso';
 
 // Piloto
 import { GetPilotoFunilHoje } from './use-cases/get-piloto-funil-hoje';
@@ -129,6 +130,7 @@ import { TilesController } from './tiles.controller';
     GetAnaliticoAlertaSaude,
     GetAnaliticoResultadoOperacional,
     GetAnaliticoImoveisCriticos,
+    GetAnaliticoSemAcesso,
     // Piloto
     GetPilotoFunilHoje,
     GetPilotoDespachosSupervisor,

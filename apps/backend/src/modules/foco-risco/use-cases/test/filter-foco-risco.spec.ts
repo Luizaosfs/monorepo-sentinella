@@ -8,6 +8,11 @@ import { FocoRiscoReadRepository } from '../../repositories/foco-risco-read.repo
 import { FilterFocoRisco } from '../filter-foco-risco';
 import { FocoRiscoBuilder } from './builders/foco-risco.builder';
 
+// Nota: a whitelist de status/prioridade é aplicada no PrismaFocoRiscoReadRepository
+// (camada de implementação). Os testes abaixo validam que o use-case repassa os filtros
+// ao repositório sem alteração — o repositório é responsável por rejeitar valores inválidos.
+// Veja: src/shared/security/sql-whitelists.spec.ts para os testes de validação direta.
+
 describe('FilterFocoRisco', () => {
   let useCase: FilterFocoRisco;
   const readRepo = mock<FocoRiscoReadRepository>();
@@ -114,6 +119,41 @@ describe('FilterFocoRisco', () => {
 
       expect(readRepo.findAll).toHaveBeenCalledWith(
         expect.not.objectContaining({ responsavelId: expect.anything() }),
+      );
+    });
+  });
+
+  describe('filtros de status e prioridade — repasse ao repositório', () => {
+    it('status válido aguardando_nova_tentativa é repassado ao repositório', async () => {
+      readRepo.findAll.mockResolvedValue([]);
+
+      await useCase.execute({ clienteId: 'cliente-uuid-1', status: ['aguardando_nova_tentativa'] as any });
+
+      expect(readRepo.findAll).toHaveBeenCalledWith(
+        expect.objectContaining({ status: ['aguardando_nova_tentativa'] }),
+      );
+    });
+
+    it('array de status múltiplos válidos é repassado integralmente', async () => {
+      readRepo.findAll.mockResolvedValue([]);
+
+      await useCase.execute({
+        clienteId: 'cliente-uuid-1',
+        status: ['suspeita', 'em_triagem', 'aguarda_inspecao'] as any,
+      });
+
+      expect(readRepo.findAll).toHaveBeenCalledWith(
+        expect.objectContaining({ status: ['suspeita', 'em_triagem', 'aguarda_inspecao'] }),
+      );
+    });
+
+    it('prioridade válida P1 é repassada ao repositório', async () => {
+      readRepo.findAll.mockResolvedValue([]);
+
+      await useCase.execute({ clienteId: 'cliente-uuid-1', prioridade: ['P1'] as any });
+
+      expect(readRepo.findAll).toHaveBeenCalledWith(
+        expect.objectContaining({ prioridade: ['P1'] }),
       );
     });
   });
