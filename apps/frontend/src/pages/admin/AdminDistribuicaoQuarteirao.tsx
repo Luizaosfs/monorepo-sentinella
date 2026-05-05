@@ -267,7 +267,7 @@ export default function AdminDistribuicaoQuarteirao() {
 
       await Promise.all([
         api.distribuicaoQuarteirao.upsert(toUpsert),
-        api.distribuicaoQuarteirao.deletar(clienteId, ciclo, toDelete),
+        api.distribuicaoQuarteirao.deletar(ciclo, toDelete),
       ]);
     },
     onSuccess: () => {

@@ -115,7 +115,7 @@ export const liraa = {
     http.get(`/dashboard/consumo-larvicida${qs({ clienteId, ciclo })}`),
 
   listPorQuarteirao: (clienteId: string, ciclo?: number): Promise<Ret<typeof _sb.liraa.listPorQuarteirao>> =>
-    http.get(`/dashboard/liraa/quarteirao${qs({ ciclo })}`),
+    http.get(`/dashboard/liraa/quarteirao${qs({ clienteId, ciclo })}`),
 
   listCiclosDisponiveis: (_clienteId: string): Promise<Ret<typeof _sb.liraa.listCiclosDisponiveis>> =>
     http.get('/dashboard/ciclos-disponiveis'),

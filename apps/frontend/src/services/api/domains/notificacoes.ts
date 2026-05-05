@@ -50,8 +50,8 @@ export const casosNotificados = {
   listCasoIdsComCruzamento: (casoIds: string[]): Promise<string[]> =>
     http.post('/notificacoes/cruzamentos/caso-ids', { casoIds }),
 
-  listCruzamentos: (): Promise<Record<string, unknown>[]> =>
-    http.get('/notificacoes/cruzamentos'),
+  listCruzamentos: (clienteId: string): Promise<Record<string, unknown>[]> =>
+    http.get(`/notificacoes/cruzamentos${qs({ clienteId })}`),
 };
 
 export const unidadesSaude = {

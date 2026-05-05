@@ -1,4 +1,5 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Scope } from '@nestjs/common';
+import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
 import { getAccessScope } from '@shared/security/access-scope.helpers';
 
@@ -6,11 +7,11 @@ import { FilterDistribuicaoInput } from '../dtos/filter-distribuicao.input';
 import { QuarteiraoException } from '../errors/quarteirao.exception';
 import { QuarteiraoReadRepository } from '../repositories/quarteirao-read.repository';
 
-@Injectable()
+@Injectable({ scope: Scope.REQUEST })
 export class FilterDistribuicoes {
   constructor(
     private repository: QuarteiraoReadRepository,
-    @Inject('REQUEST') private req: Request,
+    @Inject(REQUEST) private req: Request,
   ) {}
 
   async execute(filters: FilterDistribuicaoInput) {

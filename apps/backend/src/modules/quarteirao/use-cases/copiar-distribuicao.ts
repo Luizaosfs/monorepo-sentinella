@@ -1,4 +1,5 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Scope } from '@nestjs/common';
+import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
 import { getAccessScope } from '@shared/security/access-scope.helpers';
 import { assertTenantOwnership } from 'src/shared/security/tenant-ownership.util';
@@ -7,11 +8,11 @@ import { CopiarDistribuicaoBody } from '../dtos/create-distribuicao.body';
 import { QuarteiraoException } from '../errors/quarteirao.exception';
 import { QuarteiraoWriteRepository } from '../repositories/quarteirao-write.repository';
 
-@Injectable()
+@Injectable({ scope: Scope.REQUEST })
 export class CopiarDistribuicao {
   constructor(
     private repository: QuarteiraoWriteRepository,
-    @Inject('REQUEST') private req: Request,
+    @Inject(REQUEST) private req: Request,
   ) {}
 
   async execute(input: CopiarDistribuicaoBody) {

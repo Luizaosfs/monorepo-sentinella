@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Scope } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
 import { getAccessScope } from '@shared/security/access-scope.helpers';
@@ -7,7 +7,7 @@ import { NotificacaoException } from '../errors/notificacao.exception';
 import { NotificacaoReadRepository } from '../repositories/notificacao-read.repository';
 import { NotificacaoWriteRepository } from '../repositories/notificacao-write.repository';
 
-@Injectable()
+@Injectable({ scope: Scope.REQUEST })
 export class DeleteUnidade {
   constructor(
     private readRepository: NotificacaoReadRepository,

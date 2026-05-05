@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/services/api';
+import { STALE } from '@/lib/queryConfig';
 import { useClienteAtivo } from '@/hooks/useClienteAtivo';
 import { usePagination } from '@/hooks/usePagination';
 import AdminPageHeader from '@/components/AdminPageHeader';
@@ -96,12 +97,9 @@ const AdminHistoricoAtendimento = () => {
 
   const { data: rows = [], isLoading, refetch } = useQuery<HistoricoRow[]>({
     queryKey: ['historico_atendimento', clienteId],
-    queryFn: async () => {
-      if (!clienteId) return [];
-      const data = await api.historicoAtendimento.listByCliente(clienteId);
-      return (data as HistoricoRow[]) ?? [];
-    },
-    staleTime: 2 * 60 * 1000,
+    queryFn: () => api.historicoAtendimento.listByCliente(clienteId!) as Promise<HistoricoRow[]>,
+    enabled: !!clienteId,
+    staleTime: STALE.MEDIUM,
   });
 
   const filtered = useMemo(() => {
