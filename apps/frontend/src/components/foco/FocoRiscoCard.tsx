@@ -1,6 +1,6 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MapPin, User, Hash, Radio, MessageSquare, CloudRain, Edit2 } from 'lucide-react';
+import { MapPin, User, Hash, Radio, MessageSquare, CloudRain, Edit2, ShieldAlert, RotateCcw } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { FocoRiscoAtivo } from '@/types/database';
@@ -60,6 +60,16 @@ export function FocoRiscoCard({
           <PrioridadeBadge prioridade={foco.prioridade} />
           <SlaBadge slaStatus={foco.sla_status} prazoEm={foco.sla_prazo_em} />
           <RecorrenciaBadge focoAnteriorId={foco.foco_anterior_id} />
+          {foco.pendente_decisao_supervisor === true && (
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border text-[10px] font-semibold bg-rose-100 text-rose-700 border-rose-300 dark:bg-rose-900/30 dark:text-rose-300 dark:border-rose-800" title="Aguarda decisão do supervisor">
+              <ShieldAlert className="w-3 h-3" />Supervisor
+            </span>
+          )}
+          {foco.status === 'aguardando_nova_tentativa' && !!foco.tentativas_sem_acesso && (
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border text-[10px] font-semibold bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800" title="Tentativas sem acesso">
+              <RotateCcw className="w-3 h-3" />{foco.tentativas_sem_acesso}/3
+            </span>
+          )}
           {(() => {
             const cfg: Record<string, { label: string; icon: React.ElementType; cls: string }> = {
               cidadao: { label: 'Cidadão', icon: MessageSquare, cls: 'bg-violet-100 text-violet-700 border-violet-200 dark:bg-violet-900/30 dark:text-violet-300 dark:border-violet-800' },

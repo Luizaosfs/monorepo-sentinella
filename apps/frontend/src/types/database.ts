@@ -1762,6 +1762,10 @@ export interface FocoRisco {
   codigo_foco?: string | null;
   /** Campo derivado na listagem: última vistoria relacionada ao foco/imóvel. */
   ultima_vistoria_em?: string | null;
+  /** Contador de tentativas sem acesso ao imóvel. */
+  tentativas_sem_acesso?: number;
+  /** Flag: aguarda decisão do supervisor (sem_previsao ou 3ª tentativa). */
+  pendente_decisao_supervisor?: boolean;
 }
 
 export interface FocoRiscoHistorico {

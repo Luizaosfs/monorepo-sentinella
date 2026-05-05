@@ -212,7 +212,14 @@ export class VistoriaController {
   @ApiOperation({ summary: 'Registrar sem acesso a imóvel (recusa/fechado/desocupado)' })
   async semAcesso(@Param('id') id: string, @Body() body: RegistrarSemAcessoBody) {
     const parsed = registrarSemAcessoSchema.parse(body);
-    return this.registrarSemAcesso.execute(id, parsed);
+    const { vistoria, escaladoSupervisor, tentativaNumero, proximaTentativa } =
+      await this.registrarSemAcesso.execute(id, parsed);
+    return {
+      vistoria: VistoriaViewModel.toHttp(vistoria),
+      escaladoSupervisor,
+      tentativaNumero,
+      proximaTentativa,
+    };
   }
 
   @Delete(':id')

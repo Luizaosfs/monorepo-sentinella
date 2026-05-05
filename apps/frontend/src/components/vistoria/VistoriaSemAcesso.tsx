@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { Home, Plane, ShieldOff, Dog, Wrench, FileText, ChevronLeft, AlertTriangle, Camera, Loader2, Upload, UserCheck } from 'lucide-react';
+import { Home, Plane, ShieldOff, Dog, Wrench, FileText, ChevronLeft, AlertTriangle, Camera, Loader2, Upload, UserCheck, CalendarClock, Info } from 'lucide-react';
 import { invokeUploadEvidencia } from '@/lib/uploadEvidencia';
 import {
   MotivoSemAcesso, HorarioSugerido,
@@ -31,6 +31,24 @@ const UI_TO_BACKEND_MOTIVO: Record<MotivoSemAcesso, 'recusa' | 'fechado' | 'deso
   calha_inacessivel: 'sem_previsao',
   outro:             'sem_previsao',
 };
+
+const DIAS_UTEIS: Partial<Record<ReturnType<typeof UI_TO_BACKEND_MOTIVO_fn>, number>> = {
+  fechado: 1, recusa: 2, desocupado: 3,
+};
+function UI_TO_BACKEND_MOTIVO_fn(m: MotivoSemAcesso) { return UI_TO_BACKEND_MOTIVO[m]; }
+
+function calcularProximaTentativaFrontend(backendMotivo: 'recusa'|'fechado'|'desocupado'|'sem_previsao'): Date | null {
+  const dias = DIAS_UTEIS[backendMotivo];
+  if (!dias) return null;
+  const data = new Date();
+  let adicionados = 0;
+  while (adicionados < dias) {
+    data.setDate(data.getDate() + 1);
+    const diaSemana = data.getDay();
+    if (diaSemana !== 0 && diaSemana !== 6) adicionados++;
+  }
+  return data;
+}
 
 const MOTIVO_ICONS: Record<MotivoSemAcesso, React.ReactNode> = {
   fechado_ausente:   <Home className="w-5 h-5" />,
@@ -127,6 +145,7 @@ export function VistoriaSemAcesso({
   const [calhaPos, setCalhaPos] = useState<PosicaoCalha>('frente');
   const [calhaCond, setCalhaCondicao] = useState<CondicaoCalha>('entupida');
   const [calhaFoco, setCalhaFoco] = useState(false);
+  const [showConfirmacao, setShowConfirmacao] = useState(false);
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -501,24 +520,69 @@ export function VistoriaSemAcesso({
         </CardContent>
       </Card>
 
+      {showConfirmacao && motivo && (() => {
+        const backendMotivo = UI_TO_BACKEND_MOTIVO[motivo];
+        const proxData = calcularProximaTentativaFrontend(backendMotivo);
+        const proxAtual = contadorTentativas + 1;
+        const vaiEscalar = proxAtual >= MAX_TENTATIVAS || backendMotivo === 'sem_previsao';
+        return (
+          <Card className="rounded-2xl border-2 border-primary/30 bg-primary/5">
+            <CardContent className="p-4 space-y-2">
+              <div className="flex items-center gap-2 mb-1">
+                <Info className="w-4 h-4 text-primary" />
+                <p className="text-xs font-semibold text-primary uppercase tracking-wider">Confirmar registro</p>
+              </div>
+              <div className="text-xs text-foreground space-y-1">
+                <p><span className="font-semibold">Motivo:</span> {MOTIVO_LABELS[motivo]}</p>
+                <p><span className="font-semibold">Tentativa:</span> {proxAtual}/{MAX_TENTATIVAS}</p>
+                {horario && <p><span className="font-semibold">Melhor horário:</span> {HORARIO_LABELS[horario]}</p>}
+                {proxData ? (
+                  <p className="flex items-center gap-1">
+                    <CalendarClock className="w-3.5 h-3.5 text-muted-foreground" />
+                    <span className="font-semibold">Próxima tentativa sugerida:</span> {proxData.toLocaleDateString('pt-BR')}
+                  </p>
+                ) : (
+                  <p className="text-amber-700 font-semibold">Sem previsão de retorno</p>
+                )}
+                <p className={`font-semibold mt-1 ${vaiEscalar ? 'text-rose-600' : 'text-emerald-700'}`}>
+                  Próxima ação: {vaiEscalar ? 'Supervisor deverá decidir' : 'Voltará para fila de inspeção'}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })()}
+
       <div className="flex gap-3">
-        <Button variant="outline" className="flex-1 h-12 rounded-xl" onClick={onCancel}>
+        <Button variant="outline" className="flex-1 h-12 rounded-xl" onClick={showConfirmacao ? () => setShowConfirmacao(false) : onCancel}>
           <ChevronLeft className="w-4 h-4 mr-1" />
-          Voltar
+          {showConfirmacao ? 'Editar' : 'Voltar'}
         </Button>
-        <Button
-          className="flex-1 h-12 rounded-xl font-bold bg-amber-500 hover:bg-amber-600 text-white"
-          disabled={!motivo || mutation.isPending || (isRecusa && !fotoFile && !fotoPreview) || (motivo === 'outro' && !observacao.trim()) || !!tenantStatus?.isBlocked}
-          onClick={() => void handleSubmit()}
-        >
-          {mutation.isPending ? (
-            <span className="flex items-center gap-2">
-              <Loader2 className="w-5 h-5 animate-spin" /> Registrando...
-            </span>
-          ) : (
-            'Registrar sem acesso'
-          )}
-        </Button>
+        {!showConfirmacao ? (
+          <Button
+            className="flex-1 h-12 rounded-xl font-bold bg-amber-500 hover:bg-amber-600 text-white"
+            disabled={!motivo || (isRecusa && !fotoFile && !fotoPreview) || (motivo === 'outro' && !observacao.trim()) || !!tenantStatus?.isBlocked}
+            onClick={() => setShowConfirmacao(true)}
+          >
+            {motivo && UI_TO_BACKEND_MOTIVO[motivo] === 'sem_previsao'
+              ? 'Registrar — sem previsão de retorno'
+              : 'Registrar e solicitar retorno'}
+          </Button>
+        ) : (
+          <Button
+            className="flex-1 h-12 rounded-xl font-bold bg-amber-500 hover:bg-amber-600 text-white"
+            disabled={mutation.isPending || !!tenantStatus?.isBlocked}
+            onClick={() => void handleSubmit()}
+          >
+            {mutation.isPending ? (
+              <span className="flex items-center gap-2">
+                <Loader2 className="w-5 h-5 animate-spin" /> Registrando...
+              </span>
+            ) : (
+              'Confirmar'
+            )}
+          </Button>
+        )}
       </div>
     </div>
   );

@@ -74,7 +74,12 @@ export const vistorias = {
       proximoHorarioSugerido?: string;
       focoRiscoId?: string;
     },
-  ): Promise<{ vistoria: Record<string, unknown>; escaladoSupervisor: boolean }> =>
+  ): Promise<{
+    vistoria: Record<string, unknown>;
+    escaladoSupervisor: boolean;
+    tentativaNumero: number;
+    proximaTentativa: string | null;
+  }> =>
     http.post(`/vistorias/${vistoriaId}/sem-acesso`, payload),
 
   addDeposito: (vistoriaId: string, payload: Record<string, unknown>): Promise<Record<string, unknown>> =>
