@@ -1767,6 +1767,8 @@ export interface FocoRisco {
   tentativas_sem_acesso?: number;
   /** Flag: aguarda decisão do supervisor (sem_previsao ou 3ª tentativa). */
   pendente_decisao_supervisor?: boolean;
+  /** Motivo do último sem-acesso registrado (campo derivado para listagens). */
+  motivo_ultimo_sem_acesso?: string | null;
 }
 
 export interface FocoRiscoHistorico {

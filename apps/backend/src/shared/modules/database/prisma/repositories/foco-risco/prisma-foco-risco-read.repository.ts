@@ -170,7 +170,32 @@ export class PrismaFocoRiscoReadRepository implements FocoRiscoReadRepository {
     const withImages = await this.attachImageUrls(focos, rows);
     await this.attachUltimaVistoriaEm(withImages);
     await this.attachSlaData(withImages);
+    await this.attachMotivoUltimoSemAcesso(withImages);
     return withImages;
+  }
+
+  private async attachMotivoUltimoSemAcesso(focos: FocoRisco[]): Promise<void> {
+    if (!focos.length) return;
+    const ids = focos.map((f) => f.id).filter((id): id is string => !!id);
+    if (!ids.length) return;
+
+    type Row = { foco_risco_id: string; motivo_sem_acesso: string | null };
+    const rows = await this.prisma.client.$queryRaw<Row[]>(Prisma.sql`
+      SELECT DISTINCT ON (foco_risco_id)
+        foco_risco_id,
+        motivo_sem_acesso
+      FROM public.vistorias
+      WHERE foco_risco_id IN (${Prisma.join(ids)})
+        AND deleted_at IS NULL
+        AND acesso_realizado = false
+        AND motivo_sem_acesso IS NOT NULL
+      ORDER BY foco_risco_id, COALESCE(data_visita, checkin_em, created_at) DESC
+    `);
+
+    const map = new Map(rows.map((r) => [r.foco_risco_id, r.motivo_sem_acesso]));
+    for (const foco of focos) {
+      foco.motivoUltimoSemAcesso = foco.id ? (map.get(foco.id) ?? null) : null;
+    }
   }
 
   private async attachSlaData(focos: FocoRisco[]): Promise<void> {

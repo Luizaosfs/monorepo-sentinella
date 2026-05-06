@@ -90,6 +90,8 @@ interface FocoRiscoProps {
   slaPrazoEm?: string | null;
   /** Indica se o SLA foi violado (derivado de sla_operacional). */
   slaViolado?: boolean | null;
+  /** Motivo do último sem-acesso registrado para o foco (campo derivado para listagens). */
+  motivoUltimoSemAcesso?: string | null;
 }
 
 export class FocoRisco extends BaseEntity<FocoRiscoProps> {
@@ -282,6 +284,12 @@ export class FocoRisco extends BaseEntity<FocoRiscoProps> {
   }
   set slaViolado(v: boolean | null | undefined) {
     this.props.slaViolado = v;
+  }
+  get motivoUltimoSemAcesso() {
+    return this.props.motivoUltimoSemAcesso;
+  }
+  set motivoUltimoSemAcesso(v: string | null | undefined) {
+    this.props.motivoUltimoSemAcesso = v;
   }
 
   podeTransicionar(paraStatus: FocoRiscoStatus): boolean {

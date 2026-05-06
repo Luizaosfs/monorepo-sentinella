@@ -277,7 +277,10 @@
       "PowerShell(Get-NetTCPConnection *)",
       "PowerShell(Get-WmiObject *)",
       "PowerShell($env:PGPASSWORD = \"Sentinella147852369\"; & \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -h 177.7.37.14 -p 5432 -U luizAntonio -d sentinella -f \"D:\\\\sentinella\\\\monorepo-sentinella\\\\fix_focos_sem_acesso.sql\")",
-      "PowerShell($env:PGPASSWORD = \"Sentinella147852369\"; & \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -h 177.7.37.14 -p 5432 -U luizAntonio -d sentinella -c \"SELECT codigo_foco, status, tentativas_sem_acesso, pendente_decisao_supervisor FROM focos_risco WHERE id IN \\('831b6ceb-b3fa-4c1e-95ae-952f4caf8592','0fba5b4f-4d5a-4b39-b63e-0aa8d6af7c57','9d19712e-2986-49f9-866e-364c35a61a08'\\) ORDER BY codigo_foco;\")"
+      "PowerShell($env:PGPASSWORD = \"Sentinella147852369\"; & \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -h 177.7.37.14 -p 5432 -U luizAntonio -d sentinella -c \"SELECT codigo_foco, status, tentativas_sem_acesso, pendente_decisao_supervisor FROM focos_risco WHERE id IN \\('831b6ceb-b3fa-4c1e-95ae-952f4caf8592','0fba5b4f-4d5a-4b39-b63e-0aa8d6af7c57','9d19712e-2986-49f9-866e-364c35a61a08'\\) ORDER BY codigo_foco;\")",
+      "Bash(cmd /c \"pnpm build 2>&1 | tail -20\")",
+      "PowerShell(cd \"D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend\"; $result = cmd /c \"pnpm build 2>&1\"; $result | Select-Object -Last 10; Write-Host \"Exit: $LASTEXITCODE\")",
+      "PowerShell(netstat *)"
     ]
   }
 }

@@ -1,6 +1,6 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MapPin, User, Hash, Radio, MessageSquare, CloudRain, Edit2, ShieldAlert, RotateCcw } from 'lucide-react';
+import { MapPin, User, Hash, Radio, MessageSquare, CloudRain, Edit2, ShieldAlert, RotateCcw, Clock, AlertCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { FocoRiscoAtivo } from '@/types/database';
@@ -50,6 +50,23 @@ export function FocoRiscoCard({
       suspeitaRelativa = null;
     }
   }
+
+  let ultimaVistoriaRelativa: string | null = null;
+  if (foco.ultima_vistoria_em) {
+    try {
+      ultimaVistoriaRelativa = formatDistanceToNow(new Date(foco.ultima_vistoria_em), { locale: ptBR, addSuffix: true });
+    } catch {
+      ultimaVistoriaRelativa = null;
+    }
+  }
+
+  const motivoSemAcesso = foco.motivo_ultimo_sem_acesso;
+  const LABEL_MOTIVO: Record<string, string> = {
+    fechado_ausente: 'Fechado/ausente',
+    recusou_acesso: 'Recusou acesso',
+    calha_inacessivel: 'Calha inacessível',
+    outro: 'Outro motivo',
+  };
 
   return (
     <Card className="rounded-xl border border-border/60 shadow-sm bg-card overflow-hidden">
@@ -122,7 +139,23 @@ export function FocoRiscoCard({
               <User className="w-3 h-3 shrink-0" />
               <span className="truncate">{responsavelText}</span>
             </div>
-            {suspeitaRelativa && <span>{suspeitaRelativa}</span>}
+            {foco.status === 'aguardando_nova_tentativa' && ultimaVistoriaRelativa ? (
+              <span className="flex items-center gap-1 text-orange-600 dark:text-orange-400 shrink-0">
+                <Clock className="w-3 h-3" />
+                última tentativa {ultimaVistoriaRelativa}
+              </span>
+            ) : (
+              suspeitaRelativa && <span className="shrink-0">{suspeitaRelativa}</span>
+            )}
+          </div>
+        )}
+
+        {/* Motivo sem acesso (expanded, quando houver) */}
+        {!compact && motivoSemAcesso && (
+          <div className="flex items-center gap-1.5 text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded px-2 py-1">
+            <AlertCircle className="w-3 h-3 shrink-0" />
+            <span className="font-medium">Motivo recusa:</span>
+            <span>{LABEL_MOTIVO[motivoSemAcesso] ?? motivoSemAcesso}</span>
           </div>
         )}
 

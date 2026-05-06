@@ -62,7 +62,8 @@ export class FocoRiscoViewModel {
       tentativas_sem_acesso: foco.tentativasSemAcesso,
       pendente_decisao_supervisor: foco.pendentDecisaoSupervisor,
       origemImageUrl: foco.origemImageUrl ?? null,
-      ultimaVistoriaEm: foco.ultimaVistoriaEm ?? null,
+      ultima_vistoria_em: foco.ultimaVistoriaEm ?? null,
+      motivo_ultimo_sem_acesso: foco.motivoUltimoSemAcesso ?? null,
       // JSON operacional/analítico; classificação atual legada pode existir em payload; coluna canônica de rótulo é classificacaoInicial.
       // prioridade + scorePrioridade: operacionais no foco; prioridadeFinal analítica vem em `consolidacao` (vistorias).
       payload: foco.payload,
