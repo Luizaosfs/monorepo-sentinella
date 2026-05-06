@@ -68,7 +68,12 @@ const SM_LABELS: Record<string, string> = {
 
 function StateMachineTimeline({ currentStatus }: { currentStatus: string }) {
   const isDescartado = currentStatus === 'descartado';
-  const currentIdx = SM_MAIN_STATES.indexOf(currentStatus as FocoRiscoStatus);
+  // em_inspecao e aguardando_nova_tentativa são fases de inspeção — mapeiam para aguarda_inspecao
+  const timelineStatus =
+    currentStatus === 'em_inspecao' || currentStatus === 'aguardando_nova_tentativa'
+      ? 'aguarda_inspecao'
+      : currentStatus;
+  const currentIdx = SM_MAIN_STATES.indexOf(timelineStatus as FocoRiscoStatus);
   // If descartado, treat as if we reached "confirmado" branch then went to descartado
   const effectiveIdx = isDescartado
     ? SM_MAIN_STATES.indexOf('confirmado')
@@ -700,6 +705,18 @@ export default function GestorFocoDetalhe() {
                         </div>
                         <PrioridadeConsolidacaoBadge prioridade={v.prioridade_final} size="sm" />
                       </div>
+
+                      {/* Foto de fachada (sem acesso) */}
+                      {!v.acesso_realizado && v.foto_externa_url && (
+                        <div className="px-3 py-2 border-t border-border/30">
+                          <img
+                            src={v.foto_externa_url}
+                            alt="Fachada registrada na tentativa"
+                            className="w-full h-28 object-cover rounded-lg border border-border"
+                          />
+                          <p className="text-[10px] text-muted-foreground mt-1">Foto da fachada — tentativa sem acesso</p>
+                        </div>
+                      )}
 
                       {/* dimensões analíticas + resultado operacional + motivo */}
                       {(v.resultado_operacional || v.vulnerabilidade_domiciliar || v.alerta_saude || v.risco_socioambiental || v.risco_vetorial || v.consolidacao_incompleta) && (

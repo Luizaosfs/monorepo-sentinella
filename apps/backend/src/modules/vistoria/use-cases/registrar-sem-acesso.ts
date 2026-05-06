@@ -74,15 +74,19 @@ export class RegistrarSemAcessoVistoria {
 
     const proximaTentativa = calcularProximaTentativa(input.motivo);
 
+    const focoId = input.focoRiscoId ?? vistoria.focoRiscoId;
+
     vistoria.acessoRealizado = false;
     vistoria.motivoSemAcesso = input.motivo;
     vistoria.proximoHorarioSugerido = input.proximoHorarioSugerido;
     vistoria.observacaoAcesso = input.observacao;
     vistoria.proximaTentativaSugerida = proximaTentativa ?? undefined;
+    if (focoId && !vistoria.focoRiscoId) {
+      vistoria.focoRiscoId = focoId;
+    }
 
     await this.vistoriaWriteRepository.save(vistoria);
 
-    const focoId = input.focoRiscoId ?? vistoria.focoRiscoId;
     if (!focoId) {
       return { vistoria, escaladoSupervisor: false, tentativaNumero: 1, proximaTentativa };
     }
