@@ -56,7 +56,7 @@ export class ReincidenciaController {
       SELECT
         ciclo,
         COUNT(*)::int AS focos_total,
-        COUNT(*) FILTER (WHERE status = 'resolvido')::int AS focos_resolvidos,
+        COUNT(*) FILTER (WHERE status IN ('resolvido', 'encaminhado_administrativo', 'acionado_juridico'))::int AS focos_resolvidos,
         COUNT(*) FILTER (WHERE foco_anterior_id IS NOT NULL)::int AS focos_reincidentes,
         MIN(suspeita_em) AS primeiro_foco_ciclo,
         MAX(suspeita_em) AS ultimo_foco_ciclo

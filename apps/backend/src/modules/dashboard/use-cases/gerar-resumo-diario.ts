@@ -23,7 +23,7 @@ export class GerarResumoDiario {
         (SELECT COUNT(*)::int FROM vistorias WHERE cliente_id = ${clienteId}::uuid AND data_vistoria::date = ${hoje}::date AND deleted_at IS NULL) AS total_vistorias,
         (SELECT COUNT(*)::int FROM focos_risco WHERE cliente_id = ${clienteId}::uuid AND created_at::date = ${hoje}::date AND deleted_at IS NULL) AS total_focos,
         (SELECT COUNT(*)::int FROM focos_risco WHERE cliente_id = ${clienteId}::uuid AND status = 'confirmado' AND deleted_at IS NULL) AS focos_confirmados,
-        (SELECT COUNT(*)::int FROM focos_risco WHERE cliente_id = ${clienteId}::uuid AND status = 'resolvido' AND updated_at::date = ${hoje}::date AND deleted_at IS NULL) AS focos_resolvidos,
+        (SELECT COUNT(*)::int FROM focos_risco WHERE cliente_id = ${clienteId}::uuid AND status IN ('resolvido', 'encaminhado_administrativo', 'acionado_juridico') AND updated_at::date = ${hoje}::date AND deleted_at IS NULL) AS focos_resolvidos,
         (SELECT COUNT(DISTINCT agente_id)::int FROM vistorias WHERE cliente_id = ${clienteId}::uuid AND data_vistoria::date = ${hoje}::date AND deleted_at IS NULL) AS agentes_ativos
     `);
 

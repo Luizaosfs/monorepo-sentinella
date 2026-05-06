@@ -120,12 +120,12 @@ export class GetDashboardTerritorial {
         this.prisma.client.$queryRaw<KpiRow[]>(Prisma.sql`
           SELECT
             COUNT(DISTINCT f.id) AS total_focos,
-            COUNT(DISTINCT f.id) FILTER (WHERE f.status NOT IN ('suspeita', 'descartado', 'resolvido')) AS focos_ativos,
-            COUNT(DISTINCT f.id) FILTER (WHERE f.status = 'resolvido') AS focos_resolvidos,
+            COUNT(DISTINCT f.id) FILTER (WHERE f.status NOT IN ('suspeita', 'descartado', 'resolvido', 'encaminhado_administrativo', 'acionado_juridico')) AS focos_ativos,
+            COUNT(DISTINCT f.id) FILTER (WHERE f.status IN ('resolvido', 'encaminhado_administrativo', 'acionado_juridico')) AS focos_resolvidos,
             COUNT(DISTINCT f.id) FILTER (WHERE f.status = 'descartado') AS focos_descartados,
             ROUND(CASE
               WHEN COUNT(DISTINCT f.id) FILTER (WHERE f.status NOT IN ('suspeita','descartado')) > 0
-              THEN COUNT(DISTINCT f.id) FILTER (WHERE f.status = 'resolvido')::numeric
+              THEN COUNT(DISTINCT f.id) FILTER (WHERE f.status IN ('resolvido', 'encaminhado_administrativo', 'acionado_juridico'))::numeric
                  / COUNT(DISTINCT f.id) FILTER (WHERE f.status NOT IN ('suspeita','descartado'))::numeric * 100
               ELSE 0
             END, 1)::float8 AS taxa_resolucao_pct,
@@ -152,7 +152,7 @@ export class GetDashboardTerritorial {
           SELECT
             COALESCE(im.bairro, '(sem bairro)') AS bairro,
             COUNT(DISTINCT f.id) AS total_focos,
-            COUNT(DISTINCT f.id) FILTER (WHERE f.status NOT IN ('suspeita', 'descartado', 'resolvido')) AS focos_ativos,
+            COUNT(DISTINCT f.id) FILTER (WHERE f.status NOT IN ('suspeita', 'descartado', 'resolvido', 'encaminhado_administrativo', 'acionado_juridico')) AS focos_ativos,
             COUNT(DISTINCT v.id) AS vistorias_realizadas,
             COUNT(DISTINCT sl.id) FILTER (WHERE sl.violado = true) AS sla_vencidos
           FROM focos_risco f
@@ -179,7 +179,7 @@ export class GetDashboardTerritorial {
             r.id AS regiao_id,
             r.nome AS regiao_nome,
             COUNT(DISTINCT f.id) AS total_focos,
-            COUNT(DISTINCT f.id) FILTER (WHERE f.status NOT IN ('suspeita', 'descartado', 'resolvido')) AS focos_ativos,
+            COUNT(DISTINCT f.id) FILTER (WHERE f.status NOT IN ('suspeita', 'descartado', 'resolvido', 'encaminhado_administrativo', 'acionado_juridico')) AS focos_ativos,
             COUNT(DISTINCT v.id) AS vistorias_realizadas
           FROM focos_risco f
           JOIN regioes r ON r.id = f.regiao_id
