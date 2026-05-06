@@ -49,6 +49,7 @@ const SM_MAIN_STATES: FocoRiscoStatus[] = [
   'suspeita',
   'em_triagem',
   'aguarda_inspecao',
+  'em_inspecao',
   'confirmado',
   'em_tratamento',
   'resolvido',
@@ -60,6 +61,7 @@ const SM_LABELS: Record<string, string> = {
   suspeita: 'Suspeita',
   em_triagem: 'Em triagem',
   aguarda_inspecao: 'Aguarda inspeção',
+  em_inspecao: 'Em inspeção',
   confirmado: 'Confirmado',
   em_tratamento: 'Em tratamento',
   resolvido: 'Resolvido',
@@ -68,10 +70,10 @@ const SM_LABELS: Record<string, string> = {
 
 function StateMachineTimeline({ currentStatus }: { currentStatus: string }) {
   const isDescartado = currentStatus === 'descartado';
-  // em_inspecao e aguardando_nova_tentativa são fases de inspeção — mapeiam para aguarda_inspecao
+  // aguardando_nova_tentativa é fase de inspeção — mapeia para em_inspecao
   const timelineStatus =
-    currentStatus === 'em_inspecao' || currentStatus === 'aguardando_nova_tentativa'
-      ? 'aguarda_inspecao'
+    currentStatus === 'aguardando_nova_tentativa'
+      ? 'em_inspecao'
       : currentStatus;
   const currentIdx = SM_MAIN_STATES.indexOf(timelineStatus as FocoRiscoStatus);
   // If descartado, treat as if we reached "confirmado" branch then went to descartado

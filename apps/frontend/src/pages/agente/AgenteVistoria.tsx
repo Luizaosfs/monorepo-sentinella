@@ -222,7 +222,7 @@ export default function AgenteVistoria() {
     !focoIdUrl ? imovelId : null,
     clienteId,
   );
-  const focoIdResolvido = focoIdUrl ?? focosDoImovel?.find((f: { status: string; id: string }) => f.status === 'em_inspecao')?.id ?? null;
+  const focoIdResolvido = focoIdUrl ?? focosDoImovel?.find((f: { status: string; id: string }) => f.status === 'em_inspecao' || f.status === 'aguardando_nova_tentativa')?.id ?? null;
 
   // Permite acesso sem imovelId quando há focoId (foco sem imóvel cadastrado)
   if (!imovelId && !focoIdResolvido) {

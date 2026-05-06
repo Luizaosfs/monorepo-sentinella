@@ -40,6 +40,7 @@ import {
 } from '@/hooks/queries/useFocosRisco';
 import { useReinspecoesByFoco } from '@/hooks/queries/useReinspecoes';
 import { useRegioes } from '@/hooks/queries/useRegioes';
+import { useResumoVisualVistoria } from '@/hooks/queries/useResumoVisualVistoria';
 import { useClienteAtivo } from '@/hooks/useClienteAtivo';
 import { logEvento } from '@/lib/pilotoEventos';
 import type { FocoRiscoAtivo, FocoRiscoStatus, TipoImovel } from '@/types/database';
@@ -84,6 +85,7 @@ export default function AgenteFocoDetalhe() {
 
   // Reinspeções — carregadas somente quando o foco está disponível
   const { data: reinspecoes = [] } = useReinspecoesByFoco(focoId ?? null);
+  const { data: resumoVistoria } = useResumoVisualVistoria(focoId ?? undefined);
 
   // Busca foco enriquecido (view com joins: bairro, quarteirao, sla, etc.)
   const { data: foco, isLoading, refetch } = useQuery<FocoRiscoAtivo | null>({
@@ -719,6 +721,49 @@ export default function AgenteFocoDetalhe() {
           </div>
         );
       })()}
+
+      {/* Tentativas sem acesso */}
+      {(foco.status === 'aguardando_nova_tentativa' || foco.status === 'em_inspecao') &&
+        (resumoVistoria?.historicoSemAcesso?.length ?? 0) > 0 && (
+        <div className="space-y-2">
+          <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            Tentativas sem acesso ({resumoVistoria!.historicoSemAcesso.length}/3)
+          </p>
+          {resumoVistoria!.historicoSemAcesso.map((t, i) => (
+            <div key={t.id} className="rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30 p-3 space-y-1">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
+                  Tentativa {i + 1}/3
+                </p>
+                <span className="text-xs text-muted-foreground">
+                  {new Date(t.dataVisita).toLocaleDateString('pt-BR')}
+                </span>
+              </div>
+              {t.motivoSemAcesso && (
+                <p className="text-xs text-muted-foreground">Motivo: {t.motivoSemAcesso}</p>
+              )}
+              {t.observacaoAcesso && (
+                <p className="text-xs text-muted-foreground">{t.observacaoAcesso}</p>
+              )}
+              {t.proximaTentativaSugerida && (
+                <p className="text-xs text-amber-700 dark:text-amber-400 flex items-center gap-1">
+                  <CalendarClock className="w-3 h-3 shrink-0" />
+                  Retorno sugerido: {new Date(t.proximaTentativaSugerida).toLocaleDateString('pt-BR')}
+                </p>
+              )}
+              {t.fotoExternaUrl && (
+                <a href={t.fotoExternaUrl} target="_blank" rel="noopener noreferrer">
+                  <img
+                    src={t.fotoExternaUrl}
+                    alt={`Fachada tentativa ${i + 1}`}
+                    className="mt-1 h-24 w-full object-cover rounded-lg border border-amber-200"
+                  />
+                </a>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Timeline */}
       <div className="pt-2">

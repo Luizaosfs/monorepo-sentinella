@@ -679,7 +679,7 @@ export default function AgenteFormularioVistoria({ focoRiscoId: focoRiscoIdProp 
     } finally {
       setIsSaving(false);
     }
-  }, [clienteId, agenteId, imovelId, atividade, etapaPre, etapa1, etapa2, etapa3, etapa4, etapa5]);
+  }, [clienteId, agenteId, imovelId, atividade, focoId, etapaPre, etapa1, etapa2, etapa3, etapa4, etapa5]);
 
   if (done) {
     // ── Quando veio de um foco atribuído: pedir classificação antes do sucesso ──

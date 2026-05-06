@@ -168,6 +168,7 @@ export function VistoriaSemAcesso({
         proximo_horario_sugerido: horario ?? undefined,
         observacao_acesso: observacao.trim() || undefined,
         foto_externa_url: fotoUrlFinal ?? undefined,
+        foco_risco_id: focoRiscoId ?? undefined,
         calhas: vistoriaCalha ? [{
           posicao: calhaPos,
           condicao: calhaCond,
