@@ -90,6 +90,7 @@ const RELATORIO_STEPS: { id: string; label: string }[] = [
 
 function statusToStepIndex(status: string): number {
   if (status === 'descartado') return 5;
+  if (status === 'aguardando_nova_tentativa') return 4;
   const map: Record<FocoRiscoStatus, number> = {
     suspeita: 0, em_triagem: 1, aguarda_inspecao: 2,
     em_inspecao: 4, confirmado: 5, em_tratamento: 6,
