@@ -997,15 +997,36 @@ export default function GestorTriagem() {
             </Select>
             <button
               onClick={() => {
-                setFiltroStatus('em_triagem');
-                setFiltroResponsavel('__sem__');
+                const jaAtivo = filtroStatus === 'em_triagem' && filtroResponsavel === '__sem__';
+                if (jaAtivo) {
+                  setFiltroStatus('todos');
+                  setFiltroResponsavel('todos');
+                } else {
+                  setFiltroStatus('em_triagem');
+                  setFiltroResponsavel('__sem__');
+                  setFiltroPendenteSupervisor(false);
+                }
               }}
-              className="inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-sm bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-colors"
+              className={cn(
+                'inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-sm border transition-colors',
+                filtroStatus === 'em_triagem' && filtroResponsavel === '__sem__'
+                  ? 'bg-amber-500 text-white border-amber-500'
+                  : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100',
+              )}
             >
               Prontos para despacho
             </button>
             <button
-              onClick={() => setFiltroPendenteSupervisor((v) => !v)}
+              onClick={() => {
+                const jaAtivo = filtroPendenteSupervisor;
+                if (jaAtivo) {
+                  setFiltroPendenteSupervisor(false);
+                } else {
+                  setFiltroPendenteSupervisor(true);
+                  setFiltroStatus('todos');
+                  setFiltroResponsavel('todos');
+                }
+              }}
               className={cn(
                 'inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-sm border transition-colors',
                 filtroPendenteSupervisor
