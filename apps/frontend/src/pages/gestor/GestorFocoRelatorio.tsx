@@ -29,6 +29,8 @@ import {
   Clock,
   Building2,
   Camera,
+  Ban,
+  CalendarDays,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -1102,6 +1104,191 @@ function TentativasSemAcessoTab({ tentativas }: { tentativas: TentativaSemAcesso
   );
 }
 
+// ── Timeline Fluxo do Foco ────────────────────────────────────────────────────
+
+type SubFlowNode =
+  | { kind: 'tentativa'; tentativa: TentativaSemAcesso }
+  | { kind: 'retorno' }
+  | { kind: 'escalado' };
+
+function buildSubFlowNodes(tentativas: TentativaSemAcesso[], pendente: boolean): SubFlowNode[] {
+  const nodes: SubFlowNode[] = [];
+  tentativas.forEach((t, i) => {
+    nodes.push({ kind: 'tentativa', tentativa: t });
+    if (i < tentativas.length - 1) nodes.push({ kind: 'retorno' });
+  });
+  if (pendente && tentativas.length > 0) nodes.push({ kind: 'escalado' });
+  return nodes;
+}
+
+function SubFlowNodeCard({ node }: { node: SubFlowNode }) {
+  if (node.kind === 'tentativa') {
+    return (
+      <div className="flex items-center gap-2 rounded-xl border-2 border-orange-300 bg-white dark:bg-card px-3 py-2.5 w-[150px] shrink-0">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-orange-500">
+          <Ban className="w-4 h-4 text-white" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-[11px] font-bold text-foreground leading-tight">
+            Tentativa {node.tentativa.tentativaNumero} recusada
+          </p>
+          <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">Recusa registrada</p>
+        </div>
+      </div>
+    );
+  }
+  if (node.kind === 'retorno') {
+    return (
+      <div className="flex items-center gap-2 rounded-xl border-2 border-blue-300 bg-white dark:bg-card px-3 py-2.5 w-[150px] shrink-0">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-600">
+          <Clock className="w-4 h-4 text-white" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-[11px] font-bold text-foreground leading-tight">Retorno pendente</p>
+          <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">Nova tentativa necessária</p>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="flex items-center gap-2 rounded-xl border-2 border-amber-400 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-700 px-3 py-2.5 w-[150px] shrink-0">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-500">
+        <User className="w-4 h-4 text-white" />
+      </div>
+      <div className="min-w-0">
+        <p className="text-[11px] font-bold text-foreground leading-tight">Escalado ao supervisor</p>
+        <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">Aguardando decisão</p>
+      </div>
+    </div>
+  );
+}
+
+function TimelineFluxoFoco({
+  currentStatus,
+  tentativas,
+  pendenteSemAcesso,
+  dataVisita,
+  origemVisita,
+}: {
+  currentStatus: string;
+  tentativas: TentativaSemAcesso[];
+  pendenteSemAcesso: boolean;
+  dataVisita?: string | null;
+  origemVisita?: string | null;
+}) {
+  const hasTentativas = tentativas.length > 0;
+  const nodes = hasTentativas ? buildSubFlowNodes(tentativas, pendenteSemAcesso) : [];
+
+  const statusLabel = pendenteSemAcesso
+    ? 'Escalado ao supervisor'
+    : (LABEL_STATUS[currentStatus as FocoRiscoStatus] ?? currentStatus);
+
+  const statusBadgeClass = pendenteSemAcesso
+    ? 'border-amber-400 bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-700'
+    : currentStatus === 'resolvido'
+      ? 'border-green-500 bg-green-50 text-green-700 dark:bg-green-950/40 dark:text-green-300'
+      : currentStatus === 'descartado'
+        ? 'border-red-400 bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300'
+        : 'border-sky-400 bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300';
+
+  return (
+    <Card className="overflow-hidden border-border/60">
+      <CardContent className="p-0">
+        {/* ── Cabeçalho ── */}
+        <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 border-b border-border/60 bg-muted/10">
+          <div className="flex items-center gap-4 text-[11px] text-muted-foreground flex-wrap">
+            {dataVisita && (
+              <span className="flex items-center gap-1.5">
+                <Clock className="w-3 h-3" />
+                Visita:{' '}
+                <span className="font-semibold text-foreground ml-0.5">{formatDate(dataVisita)}</span>
+              </span>
+            )}
+            {origemVisita && (
+              <span className="flex items-center gap-1.5">
+                {origemIcon(origemVisita)}
+                Origem:{' '}
+                <span className="font-semibold text-foreground ml-0.5 capitalize">
+                  {LABEL_ORIGEM[origemVisita] ?? origemVisita}
+                </span>
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] text-muted-foreground">Status atual:</span>
+            <Badge variant="outline" className={cn('text-[11px] font-semibold', statusBadgeClass)}>
+              {statusLabel}
+            </Badge>
+          </div>
+        </div>
+
+        {/* ── Stepper principal ── */}
+        <div className="relative bg-muted/20 px-3 sm:px-5 py-3">
+          <RelatorioStatusStepper currentStatus={currentStatus} />
+          {hasTentativas && (
+            <div
+              className="absolute bottom-0 translate-y-1/2 w-2.5 h-2.5 rounded-full bg-green-500 ring-2 ring-background z-10"
+              style={{ left: 'calc(56% - 5px)' }}
+              aria-hidden
+            />
+          )}
+        </div>
+
+        {/* ── Sub-flow sem acesso ── */}
+        {hasTentativas && (
+          <>
+            {/* Conector em L: desce de "Em inspeção" e vira para a esquerda */}
+            <div className="relative h-5 mx-4" aria-hidden>
+              <div
+                className="absolute top-0 bottom-0 border-r-2 border-dashed border-border/60"
+                style={{ left: 'calc(56% - 16px)' }}
+              />
+              <div
+                className="absolute left-0 bottom-0 border-b-2 border-dashed border-border/60"
+                style={{ right: 'calc(44% + 16px)' }}
+              />
+              <div
+                className="absolute bottom-0 translate-y-1/2 w-2.5 h-2.5 rounded-full bg-green-500 ring-2 ring-background"
+                style={{ left: '-5px' }}
+              />
+            </div>
+
+            {/* Nós do sub-flow */}
+            <div className="overflow-x-auto px-4 pb-4 pt-1">
+              <div className="flex items-center min-w-max">
+                {nodes.map((node, idx) => (
+                  <div key={idx} className="flex items-center">
+                    {idx > 0 && (
+                      <div className="flex items-center shrink-0 mx-2">
+                        <div className="w-2 h-2 rounded-full bg-green-500" />
+                        <div className="w-5 h-0.5 bg-green-500" />
+                        <div className="w-2 h-2 rounded-full bg-green-500" />
+                      </div>
+                    )}
+                    <SubFlowNodeCard node={node} />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Nota informativa */}
+            <div className="flex items-start gap-2 px-4 py-2.5 bg-sky-50/60 border-t border-border/60 dark:bg-sky-950/10">
+              <Info className="w-3.5 h-3.5 text-blue-500 shrink-0 mt-0.5" />
+              <p className="text-[11px] text-muted-foreground">
+                {tentativas.length} recusa{tentativas.length !== 1 ? 's' : ''} registrada
+                {tentativas.length !== 1 ? 's' : ''} no meio do processo.{' '}
+                {pendenteSemAcesso
+                  ? 'Ocorrência mantida ativa e encaminhada ao supervisor.'
+                  : 'Foco prosseguiu após resolução do acesso.'}
+              </p>
+            </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 // ── Skeleton ──────────────────────────────────────────────────────────────────
 
 function PageSkeleton() {
@@ -1323,29 +1510,16 @@ export default function GestorFocoRelatorio() {
             )}
           </div>
 
-          <div className="border-t border-border/60 bg-muted/20 px-3 sm:px-5 py-2.5">
-            <RelatorioStatusStepper currentStatus={foco.status} />
-          </div>
         </CardContent>
       </Card>
 
-      {/* ── Alerta recusa de acesso ─────────────────────────────────────── */}
-      {foco.tentativasSemAcesso > 0 && (
-        <Card className={foco.pendenteSemAcesso ? 'border-rose-300 bg-rose-50 dark:bg-rose-950/20 dark:border-rose-800/40' : 'border-amber-300 bg-amber-50/60 dark:bg-amber-950/20 dark:border-amber-800/40'}>
-          <CardContent className="px-4 py-3 flex items-start gap-3">
-            <AlertTriangle className={`h-4 w-4 shrink-0 mt-0.5 ${foco.pendenteSemAcesso ? 'text-rose-600' : 'text-amber-600'}`} aria-hidden />
-            <div className="space-y-1 min-w-0">
-              <p className={`text-sm font-bold ${foco.pendenteSemAcesso ? 'text-rose-800 dark:text-rose-300' : 'text-amber-800 dark:text-amber-300'}`}>
-                {foco.pendenteSemAcesso ? 'Acesso recusado — aguardando decisão do supervisor' : 'Histórico de acesso recusado'}
-              </p>
-              <p className={`text-xs ${foco.pendenteSemAcesso ? 'text-rose-700/80 dark:text-rose-400/80' : 'text-amber-700/80 dark:text-amber-400/80'}`}>
-                {foco.tentativasSemAcesso} tentativa{foco.tentativasSemAcesso !== 1 ? 's' : ''} sem acesso registrada{foco.tentativasSemAcesso !== 1 ? 's' : ''}.
-                {foco.pendenteSemAcesso && ' Supervisor deve reagendar a inspeção ou encerrar o foco.'}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <TimelineFluxoFoco
+        currentStatus={foco.status}
+        tentativas={resumo?.historicoSemAcesso ?? []}
+        pendenteSemAcesso={foco.pendenteSemAcesso}
+        dataVisita={resumo?.vistoria?.dataVisita}
+        origemVisita={resumo?.vistoria?.origemVisita ?? foco.origemTipo}
+      />
 
       {/* ── Estado vazio: sem vistoria ──────────────────────────────────── */}
       {!resumoLoading && resumo?.vistoria === null && (
