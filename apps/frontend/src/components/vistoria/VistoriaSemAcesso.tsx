@@ -23,22 +23,15 @@ import type { Etapa1Data } from './VistoriaEtapa1Responsavel';
 
 const MAX_TENTATIVAS = 3;
 
-const UI_TO_BACKEND_MOTIVO: Record<MotivoSemAcesso, 'recusa' | 'fechado' | 'desocupado' | 'sem_previsao'> = {
-  fechado_ausente:   'fechado',
-  fechado_viagem:    'fechado',
-  recusa_entrada:    'recusa',
-  cachorro_bravo:    'recusa',
-  calha_inacessivel: 'sem_previsao',
-  outro:             'sem_previsao',
+const DIAS_UTEIS: Partial<Record<MotivoSemAcesso, number>> = {
+  fechado_ausente: 1,
+  fechado_viagem:  1,
+  recusa_entrada:  2,
+  cachorro_bravo:  2,
 };
 
-const DIAS_UTEIS: Partial<Record<ReturnType<typeof UI_TO_BACKEND_MOTIVO_fn>, number>> = {
-  fechado: 1, recusa: 2, desocupado: 3,
-};
-function UI_TO_BACKEND_MOTIVO_fn(m: MotivoSemAcesso) { return UI_TO_BACKEND_MOTIVO[m]; }
-
-function calcularProximaTentativaFrontend(backendMotivo: 'recusa'|'fechado'|'desocupado'|'sem_previsao'): Date | null {
-  const dias = DIAS_UTEIS[backendMotivo];
+function calcularProximaTentativaFrontend(motivo: MotivoSemAcesso): Date | null {
+  const dias = DIAS_UTEIS[motivo];
   if (!dias) return null;
   const data = new Date();
   let adicionados = 0;
@@ -187,7 +180,7 @@ export function VistoriaSemAcesso({
       if (focoRiscoId) {
         try {
           const result = await api.vistorias.registrarSemAcessoFluxo(vistoriaId, {
-            motivo: UI_TO_BACKEND_MOTIVO[motivo],
+            motivo: motivo,
             observacao: observacao.trim() || undefined,
             proximoHorarioSugerido: horario ?? undefined,
             focoRiscoId,
@@ -503,10 +496,9 @@ export function VistoriaSemAcesso({
       </Card>
 
       {showConfirmacao && motivo && (() => {
-        const backendMotivo = UI_TO_BACKEND_MOTIVO[motivo];
-        const proxData = calcularProximaTentativaFrontend(backendMotivo);
+        const proxData = calcularProximaTentativaFrontend(motivo);
         const proxAtual = contadorTentativas + 1;
-        const vaiEscalar = proxAtual >= MAX_TENTATIVAS || backendMotivo === 'sem_previsao';
+        const vaiEscalar = proxAtual >= MAX_TENTATIVAS || motivo === 'calha_inacessivel' || motivo === 'outro';
         return (
           <Card className="rounded-2xl border-2 border-primary/30 bg-primary/5">
             <CardContent className="p-4 space-y-2">
@@ -552,7 +544,7 @@ export function VistoriaSemAcesso({
             disabled={!motivo || (isRecusa && !fotoFile && !fotoPreview) || (motivo === 'outro' && !observacao.trim()) || !!tenantStatus?.isBlocked}
             onClick={() => setShowConfirmacao(true)}
           >
-            {motivo && UI_TO_BACKEND_MOTIVO[motivo] === 'sem_previsao'
+            {motivo && (motivo === 'calha_inacessivel' || motivo === 'outro')
               ? 'Registrar — sem previsão de retorno'
               : 'Registrar e solicitar retorno'}
           </Button>

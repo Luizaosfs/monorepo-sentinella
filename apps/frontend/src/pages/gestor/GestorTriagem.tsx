@@ -433,10 +433,11 @@ export default function GestorTriagem() {
   const [loteLoading, setLoteLoading] = useState(false);
 
   /** Inclui aguarda_inspecao na fila “Todos” (próximo passo após triagem). */
-  /** Inclui em_inspecao na fila "Todos" — agentes em campo são visíveis ao supervisor. */
+  /** Inclui em_inspecao na fila “Todos” — agentes em campo são visíveis ao supervisor. */
+  /** Inclui aguardando_nova_tentativa — focos escalados ao supervisor após 3 tentativas sem acesso. */
   const statusFiltro: FocoRiscoStatus[] =
     filtroStatus === 'todos'
-      ? ['suspeita', 'em_triagem', 'aguarda_inspecao', 'em_inspecao']
+      ? ['suspeita', 'em_triagem', 'aguarda_inspecao', 'em_inspecao', 'aguardando_nova_tentativa']
       : [filtroStatus];
 
   const PAGE_SIZE = 30;

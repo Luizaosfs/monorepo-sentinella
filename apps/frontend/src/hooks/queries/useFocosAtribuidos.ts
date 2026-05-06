@@ -4,9 +4,9 @@ import { STALE } from '@/lib/queryConfig';
 import type { FocoRiscoAtivo } from '@/types/database';
 
 /**
- * Focos ativos atribuídos ao agente logado: todos os status não-terminais.
- * Inclui aguarda_inspecao, em_inspecao, confirmado e em_tratamento para que
- * o foco não desapareça da visão do agente ao avançar no fluxo.
+ * Focos ativos atribuídos ao agente logado para trabalho operacional em campo.
+ * Inclui aguardando_nova_tentativa para tentativa 1/2 sem acesso, mas exclui
+ * focos escalados ao supervisor (pendente_decisao_supervisor=true).
  */
 export function useFocosAtribuidos(
   clienteId: string | null | undefined,
@@ -20,7 +20,8 @@ export function useFocosAtribuidos(
         responsavel_id: responsavelId!,
         pageSize: 50,
       });
-      return result.data;
+      // Regra: foco escalado ao supervisor sai da mão do agente.
+      return result.data.filter((foco) => !foco.pendente_decisao_supervisor);
     },
     enabled: !!clienteId && !!responsavelId,
     staleTime: STALE.SHORT,

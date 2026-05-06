@@ -14,11 +14,12 @@ import { MotivoSemAcesso, RegistrarSemAcessoInput } from '../dtos/registrar-sem-
 
 const MAX_TENTATIVAS = 3;
 
-/** Dias úteis a aguardar por motivo antes de nova tentativa (sem_previsao não agenda). */
+/** Dias úteis a aguardar por motivo antes de nova tentativa (calha_inacessivel/outro → supervisor decide). */
 const DIAS_ESPERA: Partial<Record<MotivoSemAcesso, number>> = {
-  fechado:    1,
-  recusa:     2,
-  desocupado: 3,
+  fechado_ausente: 1,
+  fechado_viagem:  1,
+  recusa_entrada:  2,
+  cachorro_bravo:  2,
 };
 
 function calcularProximaTentativa(motivo: MotivoSemAcesso): Date | null {
@@ -107,7 +108,7 @@ export class RegistrarSemAcessoVistoria {
       // sem_previsao: vai para aguardando_nova_tentativa (visível nos filtros/cards)
       // mas sem data de próxima tentativa e marcado para decisão do supervisor.
       // Mesma lógica aplica quando MAX_TENTATIVAS é atingido.
-      const devEscalar = tentativaNumero >= MAX_TENTATIVAS || input.motivo === 'sem_previsao';
+      const devEscalar = tentativaNumero >= MAX_TENTATIVAS || input.motivo === 'calha_inacessivel' || input.motivo === 'outro';
       if (devEscalar) {
         foco.pendentDecisaoSupervisor = true;
         escaladoSupervisor = true;

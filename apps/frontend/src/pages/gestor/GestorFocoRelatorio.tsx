@@ -1055,51 +1055,54 @@ function TentativasSemAcessoTab({ tentativas }: { tentativas: TentativaSemAcesso
 
   return (
     <div className="space-y-3">
-      {tentativas.map((t) => (
-        <div key={t.id} className="rounded-sm border border-amber-200 bg-amber-50/60 dark:border-amber-800/50 dark:bg-amber-950/20 p-4">
-          <div className="flex items-start gap-3">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-sm bg-amber-100 dark:bg-amber-900/40">
-              <span className="text-sm font-bold text-amber-700 dark:text-amber-400">{t.tentativaNumero}ª</span>
-            </div>
-            <div className="min-w-0 flex-1 space-y-1.5">
-              <div className="flex items-center justify-between gap-2 flex-wrap">
-                <span className="text-sm font-semibold text-foreground">
-                  Tentativa {t.tentativaNumero} — acesso recusado
-                </span>
-                <span className="text-[11px] text-muted-foreground shrink-0">{formatDate(t.dataVisita)}</span>
+      {tentativas.map((t, idx) => {
+        const num = idx + 1;
+        return (
+          <div key={t.id} className="rounded-sm border border-amber-200 bg-amber-50/60 dark:border-amber-800/50 dark:bg-amber-950/20 p-4">
+            <div className="flex items-start gap-3">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-sm bg-amber-100 dark:bg-amber-900/40">
+                <span className="text-sm font-bold text-amber-700 dark:text-amber-400">{num}ª</span>
               </div>
-              {t.motivoSemAcesso && (
-                <p className="text-xs text-muted-foreground">
-                  <span className="font-medium text-foreground">Motivo:</span> {t.motivoSemAcesso}
-                </p>
-              )}
-              {t.observacaoAcesso && (
-                <p className="text-xs text-muted-foreground">
-                  <span className="font-medium text-foreground">Observação:</span> {t.observacaoAcesso}
-                </p>
-              )}
-              {t.proximaTentativaSugerida && (
-                <p className="text-xs text-muted-foreground">
-                  <span className="font-medium text-foreground">Próxima tentativa sugerida:</span>{' '}
-                  {formatDate(t.proximaTentativaSugerida)}
-                </p>
-              )}
+              <div className="min-w-0 flex-1 space-y-1.5">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <span className="text-sm font-semibold text-foreground">
+                    Tentativa {num} — acesso recusado
+                  </span>
+                  <span className="text-[11px] text-muted-foreground shrink-0">{formatDate(t.dataVisita)}</span>
+                </div>
+                {t.motivoSemAcesso && (
+                  <p className="text-xs text-muted-foreground">
+                    <span className="font-medium text-foreground">Motivo:</span> {t.motivoSemAcesso}
+                  </p>
+                )}
+                {t.observacaoAcesso && (
+                  <p className="text-xs text-muted-foreground">
+                    <span className="font-medium text-foreground">Observação:</span> {t.observacaoAcesso}
+                  </p>
+                )}
+                {t.proximaTentativaSugerida && (
+                  <p className="text-xs text-muted-foreground">
+                    <span className="font-medium text-foreground">Próxima tentativa sugerida:</span>{' '}
+                    {formatDate(t.proximaTentativaSugerida)}
+                  </p>
+                )}
+              </div>
             </div>
+            {t.fotoExternaUrl && (
+              <div className="mt-3 ml-11">
+                <a href={t.fotoExternaUrl} target="_blank" rel="noopener noreferrer" className="group inline-block">
+                  <img
+                    src={t.fotoExternaUrl}
+                    alt={`Foto da tentativa ${num}`}
+                    className="h-36 max-w-[200px] rounded-sm border border-border/60 object-cover transition-opacity group-hover:opacity-90"
+                  />
+                </a>
+                <p className="mt-1 text-[10px] text-muted-foreground">Foto do imóvel — tentativa {num}</p>
+              </div>
+            )}
           </div>
-          {t.fotoExternaUrl && (
-            <div className="mt-3 ml-11">
-              <a href={t.fotoExternaUrl} target="_blank" rel="noopener noreferrer" className="group inline-block">
-                <img
-                  src={t.fotoExternaUrl}
-                  alt={`Foto da tentativa ${t.tentativaNumero}`}
-                  className="h-36 max-w-[200px] rounded-sm border border-border/60 object-cover transition-opacity group-hover:opacity-90"
-                />
-              </a>
-              <p className="mt-1 text-[10px] text-muted-foreground">Foto do imóvel — tentativa {t.tentativaNumero}</p>
-            </div>
-          )}
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -1107,14 +1110,15 @@ function TentativasSemAcessoTab({ tentativas }: { tentativas: TentativaSemAcesso
 // ── Timeline Fluxo do Foco ────────────────────────────────────────────────────
 
 type SubFlowNode =
-  | { kind: 'tentativa'; tentativa: TentativaSemAcesso }
+  | { kind: 'tentativa'; tentativa: TentativaSemAcesso; num: number }
   | { kind: 'retorno' }
   | { kind: 'escalado' };
 
 function buildSubFlowNodes(tentativas: TentativaSemAcesso[], pendente: boolean): SubFlowNode[] {
   const nodes: SubFlowNode[] = [];
   tentativas.forEach((t, i) => {
-    nodes.push({ kind: 'tentativa', tentativa: t });
+    // usa i+1 como número da tentativa — tentativaNumero do banco pode vir incorreto
+    nodes.push({ kind: 'tentativa', tentativa: t, num: i + 1 });
     if (i < tentativas.length - 1) nodes.push({ kind: 'retorno' });
   });
   if (pendente && tentativas.length > 0) nodes.push({ kind: 'escalado' });
@@ -1130,7 +1134,7 @@ function SubFlowNodeCard({ node }: { node: SubFlowNode }) {
         </div>
         <div className="min-w-0">
           <p className="text-[11px] font-bold text-foreground leading-tight">
-            Tentativa {node.tentativa.tentativaNumero} recusada
+            Tentativa {node.num} recusada
           </p>
           <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">Recusa registrada</p>
         </div>

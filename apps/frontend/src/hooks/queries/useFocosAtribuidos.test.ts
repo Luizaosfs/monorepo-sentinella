@@ -65,10 +65,26 @@ describe('useFocosAtribuidos', () => {
     });
     await waitFor(() => expect(mockList).toHaveBeenCalled());
     expect(mockList).toHaveBeenCalledWith('cli-1', {
-      status: ['aguarda_inspecao', 'em_inspecao', 'confirmado', 'em_tratamento'],
+      status: ['aguarda_inspecao', 'em_inspecao', 'aguardando_nova_tentativa', 'confirmado', 'em_tratamento'],
       responsavel_id: 'resp-1',
       pageSize: 50,
     });
+  });
+
+  it('filtra focos escalados ao supervisor (pendente_decisao_supervisor=true)', async () => {
+    const focos: Partial<FocoRiscoAtivo>[] = [
+      { id: 'f1', status: 'aguardando_nova_tentativa', pendente_decisao_supervisor: false },
+      { id: 'f2', status: 'aguardando_nova_tentativa', pendente_decisao_supervisor: true },
+      { id: 'f3', status: 'em_inspecao', pendente_decisao_supervisor: false },
+    ];
+    mockList.mockResolvedValueOnce({ data: focos, count: 3 });
+    const { result } = renderHook(() => useFocosAtribuidos('cli-1', 'resp-1'), {
+      wrapper: makeWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.data).toHaveLength(2);
+    expect(result.current.data.map((f) => f.id)).toEqual(['f1', 'f3']);
   });
 
   it('retorna isLoading=true e data=[] enquanto a query ainda não resolveu', () => {
