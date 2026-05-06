@@ -161,7 +161,7 @@ export class VistoriaController {
   }
 
   @Post('completa')
-  @Roles('admin', 'supervisor', 'agente')
+  @Roles('supervisor', 'agente')
   @ApiOperation({
     summary:
       'Criar vistoria completa em transação (depositos + sintomas + riscos + calhas). Suporta idempotência via idempotencyKey.',

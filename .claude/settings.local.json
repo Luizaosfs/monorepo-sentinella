@@ -281,7 +281,8 @@
       "Bash(cmd /c \"pnpm build 2>&1 | tail -20\")",
       "PowerShell(cd \"D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend\"; $result = cmd /c \"pnpm build 2>&1\"; $result | Select-Object -Last 10; Write-Host \"Exit: $LASTEXITCODE\")",
       "PowerShell(netstat *)",
-      "Bash(\"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" \"postgresql://luizAntonio:Sentinella147852369@177.7.37.14:5432/sentinella\" -c \"SELECT column_name FROM information_schema.columns WHERE table_name='focos_risco' ORDER BY ordinal_position;\")"
+      "Bash(\"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" \"postgresql://luizAntonio:Sentinella147852369@177.7.37.14:5432/sentinella\" -c \"SELECT column_name FROM information_schema.columns WHERE table_name='focos_risco' ORDER BY ordinal_position;\")",
+      "Bash(pnpm --filter @sentinella/api typecheck)"
     ]
   }
 }

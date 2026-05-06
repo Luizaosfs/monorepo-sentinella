@@ -2,6 +2,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
 import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
+import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 
 import { CriarFocoDeVistoriaDeposito } from '@/modules/foco-risco/use-cases/auto-criacao/criar-foco-de-vistoria-deposito';
 import { QuotaException } from '../../billing/errors/quota.exception';
@@ -14,6 +15,7 @@ import { Vistoria } from '../entities/vistoria';
 import { VistoriaWriteRepository } from '../repositories/vistoria-write.repository';
 import { AtualizarPerfilImovel } from './atualizar-perfil-imovel';
 import { ConsolidarVistoria } from './consolidar-vistoria';
+import { VistoriaException } from '../errors/vistoria.exception';
 
 @Injectable()
 export class CreateVistoriaCompleta {
@@ -28,11 +30,28 @@ export class CreateVistoriaCompleta {
     private verificarQuota: VerificarQuota,
     private validarCicloVistoria: ValidarCicloVistoria,
     private atualizarPerfilImovel: AtualizarPerfilImovel,
+    private prisma: PrismaService,
   ) {}
 
   async execute(data: CreateVistoriaCompletaBody): Promise<{ id: string }> {
     // MT-02: tenantId do guard sempre vence — nunca aceita clienteId do frontend
     const clienteId = requireTenantId(getAccessScope(this.req));
+
+    // Segregação por papel: agente sempre usa próprio ID; supervisor valida cross-tenant
+    const userPapeis: string[] = (this.req['user'] as any)?.papeis ?? [];
+    const userId: string = (this.req['user'] as any)?.id;
+    let agenteId: string;
+    if (userPapeis.includes('agente')) {
+      agenteId = userId;
+    } else if (userPapeis.includes('supervisor') && data.agenteId) {
+      const count = await this.prisma.client.usuarios.count({
+        where: { id: data.agenteId, cliente_id: clienteId },
+      });
+      if (count === 0) throw VistoriaException.agenteForaTenant();
+      agenteId = data.agenteId;
+    } else {
+      agenteId = userId;
+    }
 
     // G.6 — rejeita ciclo diferente do ativo
     await this.validarCicloVistoria.execute(clienteId, data.ciclo);
@@ -45,7 +64,7 @@ export class CreateVistoriaCompleta {
       {
         clienteId,
         imovelId: data.imovelId,
-        agenteId: (data.agenteId ?? (this.req['user'] as any)?.id) as string,
+        agenteId,
         planejamentoId: data.planejamentoId,
         ciclo: data.ciclo,
         tipoAtividade: data.tipoAtividade,
@@ -138,7 +157,7 @@ export class CreateVistoriaCompleta {
         await this.atualizarPerfilImovel.execute({
           imovelId: data.imovelId,
           vistoriaId: id,
-          agenteId: data.agenteId ?? null,
+          agenteId: agenteId ?? null,
           clienteId,
         });
       } catch (err) {

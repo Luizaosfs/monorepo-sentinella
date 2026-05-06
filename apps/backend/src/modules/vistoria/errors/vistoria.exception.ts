@@ -20,4 +20,8 @@ export const VistoriaException = createExceptionFactory({
     message:
       'Vistorias não podem ser apagadas. Use deleted_at=now() para inativação.',
   },
+  agenteForaTenant: {
+    type: 'forbidden',
+    message: 'Agente não pertence ao mesmo cliente.',
+  },
 });
