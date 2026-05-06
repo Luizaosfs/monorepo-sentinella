@@ -31,6 +31,8 @@ import { RecalcularScorePrioridadeFoco } from './use-cases/recalcular-score-prio
 import { GetFocoDetalhes } from './use-cases/get-foco-detalhes';
 import { GetFocosAgrupados } from './use-cases/get-focos-agrupados';
 import { GetResumoVisualVistoriaPorFoco } from './use-cases/get-resumo-visual-vistoria-por-foco';
+import { ReagendarVisita } from './use-cases/reagendar-visita';
+import { ManterAtiva } from './use-cases/manter-ativa';
 
 @Module({
   providers: [
@@ -58,6 +60,8 @@ import { GetResumoVisualVistoriaPorFoco } from './use-cases/get-resumo-visual-vi
     GetFocoDetalhes,
     GetFocosAgrupados,
     GetResumoVisualVistoriaPorFoco,
+    ReagendarVisita,
+    ManterAtiva,
     JwtService,
     PrismaService,
   ],

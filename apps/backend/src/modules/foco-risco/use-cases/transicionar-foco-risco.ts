@@ -28,7 +28,12 @@ import { RecalcularScorePrioridadeFoco } from './recalcular-score-prioridade-foc
  * Status terminais que fecham SLAs remanescentes do foco. Alinhado com o
  * `descartado` também fecha SLAs remanescentes (é o branch `confirmado: false`).
  */
-const STATUS_FECHAMENTO: FocoRiscoStatus[] = ['resolvido', 'descartado'];
+const STATUS_FECHAMENTO: FocoRiscoStatus[] = [
+  'resolvido',
+  'descartado',
+  'encaminhado_administrativo',
+  'acionado_juridico',
+];
 
 @Injectable()
 export class TransicionarFocoRisco {

@@ -90,18 +90,23 @@ const RELATORIO_STEPS: { id: string; label: string }[] = [
 
 function statusToStepIndex(status: string): number {
   if (status === 'descartado') return 5;
+  if (status === 'encaminhado_administrativo') return 5;
+  if (status === 'acionado_juridico') return 5;
   if (status === 'aguardando_nova_tentativa') return 4;
   const map: Record<FocoRiscoStatus, number> = {
     suspeita: 0, em_triagem: 1, aguarda_inspecao: 2,
     em_inspecao: 4, confirmado: 5, em_tratamento: 6,
     resolvido: 7, descartado: 5,
+    encaminhado_administrativo: 5, acionado_juridico: 5,
   };
   return map[status as FocoRiscoStatus] ?? 0;
 }
 
+const TERMINAL_SEM_RESOLUCAO = ['descartado', 'encaminhado_administrativo', 'acionado_juridico'];
+
 function RelatorioStatusStepper({ currentStatus }: { currentStatus: string }) {
   const effectiveIdx = statusToStepIndex(currentStatus);
-  const isDescartado = currentStatus === 'descartado';
+  const isDescartado = TERMINAL_SEM_RESOLUCAO.includes(currentStatus);
   const isResolvido = currentStatus === 'resolvido';
 
   return (
@@ -134,7 +139,10 @@ function RelatorioStatusStepper({ currentStatus }: { currentStatus: string }) {
                   {done ? 'Concluído' : current ? 'Atual' : ''}
                 </span>
                 {isDescartado && step.id === 'confirmado' && current && (
-                  <span className="text-[9px] text-destructive font-semibold mt-0.5">Descartado</span>
+                  <span className="text-[9px] text-destructive font-semibold mt-0.5">
+                    {currentStatus === 'encaminhado_administrativo' ? 'Enc. adm.' :
+                     currentStatus === 'acionado_juridico' ? 'Jurídico' : 'Descartado'}
+                  </span>
                 )}
               </div>
               {idx < RELATORIO_STEPS.length - 1 && (

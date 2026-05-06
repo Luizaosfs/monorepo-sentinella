@@ -22,6 +22,8 @@ export enum FocoRiscoStatusEnum {
   EM_TRATAMENTO = 'em_tratamento',
   RESOLVIDO = 'resolvido',
   DESCARTADO = 'descartado',
+  ENCAMINHADO_ADMINISTRATIVO = 'encaminhado_administrativo',
+  ACIONADO_JURIDICO = 'acionado_juridico',
 }
 
 export enum FocoRiscoOrigem {
@@ -43,6 +45,8 @@ export const COR_STATUS: Record<string, string> = {
   em_tratamento:    '#993C1D',
   resolvido:        '#3B6D11',
   descartado:       '#888780',
+  encaminhado_administrativo: '#92400E',
+  acionado_juridico:          '#7C3AED',
 };
 
 export const COR_SLA: Record<string, string> = {
@@ -63,6 +67,8 @@ export const LABEL_STATUS: Record<string, string> = {
   em_tratamento:    'Em tratamento',
   resolvido:        'Resolvido',
   descartado:       'Descartado',
+  encaminhado_administrativo: 'Enc. administrativo',
+  acionado_juridico:          'Acionado jurídico',
 };
 
 export const LABEL_SLA: Record<string, string> = {

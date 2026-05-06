@@ -10,7 +10,9 @@ export type FocoRiscoStatus =
   | 'confirmado'
   | 'em_tratamento'
   | 'resolvido'
-  | 'descartado';
+  | 'descartado'
+  | 'encaminhado_administrativo'
+  | 'acionado_juridico';
 
 /**
  * `aguarda_inspecao` → `em_inspecao`: use IniciarInspecao (evento operacional).
@@ -22,11 +24,13 @@ export const TRANSICOES_VALIDAS: Record<FocoRiscoStatus, FocoRiscoStatus[]> = {
   em_triagem: ['aguarda_inspecao', 'descartado'],
   aguarda_inspecao: ['descartado'],
   em_inspecao: ['confirmado', 'aguarda_inspecao', 'descartado'],
-  aguardando_nova_tentativa: ['descartado'],
+  aguardando_nova_tentativa: ['descartado', 'encaminhado_administrativo', 'acionado_juridico'],
   confirmado: ['em_tratamento'],
   em_tratamento: ['resolvido', 'descartado'],
   resolvido: [],
   descartado: [],
+  encaminhado_administrativo: [],
+  acionado_juridico: [],
 };
 
 export interface FocoRiscoHistorico {

@@ -77,6 +77,8 @@ import { ListFocosByIds } from './use-cases/list-focos-by-ids';
 import { PaginationFocoRisco } from './use-cases/pagination-foco-risco';
 import { TransicionarFocoRisco } from './use-cases/transicionar-foco-risco';
 import { UpdateFocoRisco } from './use-cases/update-foco-risco';
+import { ReagendarVisita } from './use-cases/reagendar-visita';
+import { ManterAtiva } from './use-cases/manter-ativa';
 import { FocoRiscoViewModel } from './view-model/foco-risco';
 
 @UseInterceptors(PrismaInterceptor)
@@ -104,6 +106,8 @@ export class FocoRiscoController {
     private getFocoDetalhesUc: GetFocoDetalhes,
     private getFocosAgrupadosUc: GetFocosAgrupados,
     private getResumoVisualVistoriaPorFocoUc: GetResumoVisualVistoriaPorFoco,
+    private reagendarVisitaUc: ReagendarVisita,
+    private manterAtivaUc: ManterAtiva,
     private prisma: PrismaService,
     @Inject(REQUEST) private req: Request,
   ) {}
@@ -375,6 +379,28 @@ export class FocoRiscoController {
     const parsed = updateFocoRiscoSchema.parse(body);
     await this.updateFocoRiscoUc.execute(id, parsed);
     return { ok: true };
+  }
+
+  @Patch(':id/reagendar-visita')
+  @Roles('admin', 'supervisor')
+  @ApiOperation({ summary: 'Reagendar visita: volta para aguarda_inspecao e zera tentativas (supervisor)' })
+  async reagendarVisita(
+    @Param('id') id: string,
+    @Body() body: { motivo?: string },
+  ) {
+    const { foco } = await this.reagendarVisitaUc.execute(id, body?.motivo);
+    return FocoRiscoViewModel.toHttp(foco);
+  }
+
+  @Patch(':id/manter-ativa')
+  @Roles('admin', 'supervisor')
+  @ApiOperation({ summary: 'Manter ocorrência ativa: limpa pendente_decisao_supervisor (supervisor)' })
+  async manterAtiva(
+    @Param('id') id: string,
+    @Body() body: { motivo?: string },
+  ) {
+    const { foco } = await this.manterAtivaUc.execute(id, body?.motivo);
+    return FocoRiscoViewModel.toHttp(foco);
   }
 
   @Post('atribuir-agente-lote')

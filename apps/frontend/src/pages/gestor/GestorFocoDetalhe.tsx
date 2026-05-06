@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/services/api';
 import { cn } from '@/lib/utils';
-import { ArrowLeft, Image, Wrench, ClipboardCheck, MapPin, Check, Lock, Info, Stethoscope, UserCheck, RotateCcw, Plus, Calendar, Pencil, Clock, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Image, Wrench, ClipboardCheck, MapPin, Check, Lock, Info, Stethoscope, UserCheck, RotateCcw, Plus, Calendar, Pencil, Clock, AlertTriangle, FileText, Building2, Scale, RefreshCw, ShieldOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -31,6 +31,7 @@ import { mapFocoToStatusOperacional, LABEL_STATUS_OPERACIONAL, type FocoStatus }
 import type { FocoRiscoStatus, FocoRiscoClassificacao } from '@/types/database';
 import { LABEL_CLASSIFICACAO_INICIAL } from '@/types/database';
 import { logEvento } from '@/lib/pilotoEventos';
+import { gerarNotificacaoSemAcessoPdf } from '@/lib/notificacaoFormalPdf';
 import { getSlaReductionReason } from '@/types/sla';
 import { useReinspecoesByFoco, useCriarReinspecaoMutation, useCancelarReinspecaoMutation, useReagendarReinspecaoMutation } from '@/hooks/queries/useReinspecoes';
 import { useVistoriasByImovel } from '@/hooks/queries/useVistorias';
@@ -55,7 +56,7 @@ const SM_MAIN_STATES: FocoRiscoStatus[] = [
   'resolvido',
 ];
 
-const TERMINAL_STATES: FocoRiscoStatus[] = ['resolvido', 'descartado'];
+const TERMINAL_STATES: FocoRiscoStatus[] = ['resolvido', 'descartado', 'encaminhado_administrativo', 'acionado_juridico'];
 
 const SM_LABELS: Record<string, string> = {
   suspeita: 'Suspeita',
@@ -66,10 +67,12 @@ const SM_LABELS: Record<string, string> = {
   em_tratamento: 'Em tratamento',
   resolvido: 'Resolvido',
   descartado: 'Descartado',
+  encaminhado_administrativo: 'Enc. administrativo',
+  acionado_juridico: 'Acionado jurídico',
 };
 
 function StateMachineTimeline({ currentStatus }: { currentStatus: string }) {
-  const isDescartado = currentStatus === 'descartado';
+  const isDescartado = ['descartado', 'encaminhado_administrativo', 'acionado_juridico'].includes(currentStatus);
   // aguardando_nova_tentativa é fase de inspeção — mapeia para em_inspecao
   const timelineStatus =
     currentStatus === 'aguardando_nova_tentativa'
@@ -148,7 +151,7 @@ function StateMachineTimeline({ currentStatus }: { currentStatus: string }) {
                         isDescartado ? 'text-destructive font-bold' : 'text-muted-foreground/40',
                       ].join(' ')}
                     >
-                      Descartado
+                      {SM_LABELS[currentStatus] && isDescartado ? SM_LABELS[currentStatus] : 'Descartado'}
                     </span>
                   </div>
                 )}
@@ -178,12 +181,12 @@ export default function GestorFocoDetalhe() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const { clienteId } = useClienteAtivo();
+  const { clienteId, clienteAtivo } = useClienteAtivo();
   const { data, isLoading } = useFocoRisco(id);
   const atualizar = useAtualizarStatusFoco();
   const { data: agentes } = useAgentes(clienteId);
 
-  const [transDialog, setTransDialog] = useState<FocoRiscoStatus | null>(null);
+  const [transDialog, setTransDialog] = useState<string | null>(null);
   const [motivo, setMotivo] = useState('');
   const [responsavelSelecionado, setResponsavelSelecionado] = useState<string>('');
   const [editandoClassificacao, setEditandoClassificacao] = useState(false);
@@ -217,12 +220,42 @@ export default function GestorFocoDetalhe() {
     },
   });
 
+  const reagendarVisitaMutation = useMutation({
+    mutationFn: async (motivo: string) => {
+      await api.focosRisco.reagendarVisita(id!, motivo || undefined);
+    },
+    onSuccess: () => {
+      toast.success('Visita reagendada. Foco voltou para aguarda inspeção.');
+      qc.invalidateQueries({ queryKey: ['foco_risco', id] });
+      qc.invalidateQueries({ queryKey: ['focos_risco', clienteId] });
+      qc.invalidateQueries({ queryKey: ['focos_atribuidos', clienteId] });
+      setMotivo('');
+      setTransDialog(null);
+    },
+    onError: (err) => toast.error((err as { message?: string })?.message || 'Erro ao reagendar.'),
+  });
+
+  const manterAtivaMutation = useMutation({
+    mutationFn: async (motivo: string) => {
+      await api.focosRisco.manterAtiva(id!, motivo || undefined);
+    },
+    onSuccess: () => {
+      toast.success('Ocorrência mantida ativa. Agente pode ser acionado novamente.');
+      qc.invalidateQueries({ queryKey: ['foco_risco', id] });
+      qc.invalidateQueries({ queryKey: ['focos_risco', clienteId] });
+      qc.invalidateQueries({ queryKey: ['focos_atribuidos', clienteId] });
+      setMotivo('');
+      setTransDialog(null);
+    },
+    onError: (err) => toast.error((err as { message?: string })?.message || 'Erro ao manter ativa.'),
+  });
+
   const foco = data?.foco ?? null;
   const timeline = data?.timeline ?? [];
 
-  // Redirect resolved focos to the detailed report page
+  // Redirect terminal focos to the detailed report page
   useEffect(() => {
-    if (foco?.status === 'resolvido') {
+    if (foco && ['resolvido', 'encaminhado_administrativo', 'acionado_juridico'].includes(foco.status)) {
       navigate(`/gestor/focos/${id}/relatorio`, { replace: true });
     }
   }, [foco?.status, id, navigate]);
@@ -336,20 +369,37 @@ export default function GestorFocoDetalhe() {
 
   async function confirmarTransicao() {
     if (!transDialog || !foco) return;
+
+    // Ações especiais do supervisor (não são transições de status)
+    if ((transDialog as string) === '_reagendar') {
+      await reagendarVisitaMutation.mutateAsync(motivo);
+      return;
+    }
+    if ((transDialog as string) === '_manter_ativa') {
+      await manterAtivaMutation.mutateAsync(motivo);
+      return;
+    }
+
     if (transDialog === 'descartado' && !motivo) {
       toast.error('Motivo obrigatório para descartar.');
+      return;
+    }
+    if ((transDialog === 'encaminhado_administrativo' || transDialog === 'acionado_juridico') && !motivo) {
+      toast.error('Motivo obrigatório para esta ação.');
       return;
     }
     try {
       await atualizar.mutateAsync({
         focoId: foco.id,
-        statusNovo: transDialog,
+        statusNovo: transDialog as FocoRiscoStatus,
         motivo: motivo || undefined,
       });
       toast.success(
-        transDialog === 'descartado' ? 'Foco descartado.' :
+        transDialog === 'descartado' ? 'Foco encerrado.' :
         transDialog === 'confirmado' ? 'Foco confirmado.' :
         transDialog === 'aguarda_inspecao' ? 'Inspeção reagendada.' :
+        transDialog === 'encaminhado_administrativo' ? 'Encaminhado para medida administrativa.' :
+        transDialog === 'acionado_juridico' ? 'Acionado jurídico / Vigilância Sanitária.' :
         'Status atualizado.',
       );
       setTransDialog(null);
@@ -437,6 +487,84 @@ export default function GestorFocoDetalhe() {
               <UserCheck className="w-3.5 h-3.5 mr-1" />
               {foco.status === 'em_triagem' ? 'Encaminhar para inspeção' : 'Re-atribuir agente'}
             </Button>
+          </div>
+        )}
+
+        {/* Painel de decisão do supervisor — sem acesso recorrente */}
+        {foco.status === 'aguardando_nova_tentativa' && foco.pendente_decisao_supervisor && (
+          <div className="rounded-lg border border-rose-300 bg-rose-50 dark:bg-rose-950/20 dark:border-rose-800/40 p-3 space-y-2">
+            <p className="text-xs font-bold text-rose-800 dark:text-rose-300 flex items-center gap-1">
+              <AlertTriangle className="w-3.5 h-3.5" />
+              Decisão necessária — {foco.tentativas_sem_acesso ?? 0} tentativas sem acesso
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              <Button size="sm"
+                className="h-7 px-3 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white"
+                disabled={reagendarVisitaMutation.isPending}
+                onClick={() => { setTransDialog('_reagendar' as FocoRiscoStatus); setMotivo(''); }}
+              >
+                <RefreshCw className="w-3 h-3 mr-1" />
+                Reagendar visita
+              </Button>
+              <Button size="sm" variant="outline"
+                className="h-7 px-3 text-xs font-semibold"
+                onClick={() => {
+                  const tentativas = (vistoriasImovel ?? [])
+                    .filter((v: { acesso_realizado?: boolean }) => v.acesso_realizado === false)
+                    .map((v: { data_vistoria?: string; agente_nome?: string; motivo_sem_acesso?: string }) => ({
+                      data: v.data_vistoria ?? new Date().toISOString(),
+                      agente_nome: v.agente_nome ?? 'Agente',
+                      motivo: v.motivo_sem_acesso ?? null,
+                    }));
+                  gerarNotificacaoSemAcessoPdf({
+                    imovel: {
+                      logradouro: foco.logradouro ?? '',
+                      numero: foco.numero,
+                      bairro: foco.bairro ?? '',
+                      quarteirao: foco.quarteirao,
+                      tipo_imovel: foco.tipo_imovel ?? 'Residencial',
+                    },
+                    cliente: { nome: clienteAtivo?.nome ?? 'Município' },
+                    codigo_foco: foco.codigo_foco ?? foco.id.slice(0, 8),
+                    tentativas,
+                  });
+                }}
+              >
+                <FileText className="w-3 h-3 mr-1" />
+                Notificar responsável
+              </Button>
+              <Button size="sm" variant="outline"
+                className="h-7 px-3 text-xs font-semibold border-amber-500 text-amber-700 hover:bg-amber-50"
+                disabled={atualizar.isPending}
+                onClick={() => { setTransDialog('encaminhado_administrativo'); setMotivo(''); }}
+              >
+                <Building2 className="w-3 h-3 mr-1" />
+                Enc. administrativo
+              </Button>
+              <Button size="sm" variant="outline"
+                className="h-7 px-3 text-xs font-semibold border-orange-500 text-orange-700 hover:bg-orange-50"
+                disabled={atualizar.isPending}
+                onClick={() => { setTransDialog('acionado_juridico'); setMotivo(''); }}
+              >
+                <Scale className="w-3 h-3 mr-1" />
+                Acionar jurídico
+              </Button>
+              <Button size="sm" variant="outline"
+                className="h-7 px-3 text-xs font-semibold"
+                disabled={manterAtivaMutation.isPending}
+                onClick={() => { setTransDialog('_manter_ativa' as FocoRiscoStatus); setMotivo(''); }}
+              >
+                <ShieldOff className="w-3 h-3 mr-1" />
+                Manter ativa
+              </Button>
+              <Button size="sm" variant="outline"
+                className="h-7 px-3 text-xs font-semibold border-destructive text-destructive hover:bg-destructive/10"
+                disabled={atualizar.isPending}
+                onClick={() => { setTransDialog('descartado'); setMotivo(''); }}
+              >
+                Encerrar
+              </Button>
+            </div>
           </div>
         )}
 
@@ -994,9 +1122,21 @@ export default function GestorFocoDetalhe() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               {transDialog === 'aguarda_inspecao' && <UserCheck className="w-4 h-4 text-blue-600" />}
+              {transDialog === '_reagendar' && <RefreshCw className="w-4 h-4 text-blue-600" />}
+              {transDialog === '_manter_ativa' && <ShieldOff className="w-4 h-4 text-muted-foreground" />}
+              {transDialog === 'encaminhado_administrativo' && <Building2 className="w-4 h-4 text-amber-600" />}
+              {transDialog === 'acionado_juridico' && <Scale className="w-4 h-4 text-orange-600" />}
               {transDialog === 'aguarda_inspecao'
                 ? 'Encaminhar para inspeção'
-                : `Alterar para: ${transDialog ? (LABEL_STATUS[transDialog] ?? transDialog) : ''}`}
+                : transDialog === '_reagendar'
+                ? 'Reagendar visita'
+                : transDialog === '_manter_ativa'
+                ? 'Manter ocorrência ativa'
+                : transDialog === 'encaminhado_administrativo'
+                ? 'Encaminhar para medida administrativa'
+                : transDialog === 'acionado_juridico'
+                ? 'Acionar Vigilância Sanitária / Jurídico'
+                : `Alterar para: ${transDialog ? (LABEL_STATUS[transDialog as FocoRiscoStatus] ?? transDialog) : ''}`}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
@@ -1024,7 +1164,7 @@ export default function GestorFocoDetalhe() {
             )}
             <div className="space-y-2">
               <Label htmlFor="motivo-detalhe">
-                Motivo {transDialog === 'descartado' ? '(obrigatório)' : '(opcional)'}
+                Motivo {(transDialog === 'descartado' || transDialog === 'encaminhado_administrativo' || transDialog === 'acionado_juridico') ? '(obrigatório)' : '(opcional)'}
               </Label>
               <Input
                 id="motivo-detalhe"
@@ -1042,12 +1182,18 @@ export default function GestorFocoDetalhe() {
               onClick={confirmarTransicao}
               disabled={
                 atualizar.isPending ||
+                reagendarVisitaMutation.isPending ||
+                manterAtivaMutation.isPending ||
                 (transDialog === 'descartado' && !motivo) ||
+                ((transDialog === 'encaminhado_administrativo' || transDialog === 'acionado_juridico') && !motivo) ||
                 (transDialog === 'aguarda_inspecao' && !responsavelSelecionado)
               }
               className={transDialog === 'aguarda_inspecao' ? 'bg-blue-600 hover:bg-blue-700' : ''}
             >
-              {transDialog === 'aguarda_inspecao' ? 'Encaminhar' : 'Confirmar'}
+              {transDialog === 'aguarda_inspecao' ? 'Encaminhar' :
+               transDialog === '_reagendar' ? 'Reagendar' :
+               transDialog === '_manter_ativa' ? 'Confirmar' :
+               'Confirmar'}
             </Button>
           </DialogFooter>
         </DialogContent>

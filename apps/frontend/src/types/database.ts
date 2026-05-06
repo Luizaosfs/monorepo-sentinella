@@ -1710,7 +1710,9 @@ export type FocoRiscoStatus =
   | 'confirmado'
   | 'em_tratamento'
   | 'resolvido'
-  | 'descartado';
+  | 'descartado'
+  | 'encaminhado_administrativo'
+  | 'acionado_juridico';
 
 export type FocoRiscoOrigem = 'drone' | 'agente' | 'cidadao' | 'pluvio' | 'manual';
 
@@ -1903,11 +1905,13 @@ export const TRANSICOES_PERMITIDAS: Record<FocoRiscoStatus, FocoRiscoStatus[]> =
   em_triagem:                 ['aguarda_inspecao'],
   aguarda_inspecao:           ['em_inspecao', 'descartado'],
   em_inspecao:                ['confirmado', 'aguarda_inspecao', 'descartado'],
-  aguardando_nova_tentativa:  ['aguarda_inspecao', 'descartado'],
+  aguardando_nova_tentativa:  ['descartado', 'encaminhado_administrativo', 'acionado_juridico'],
   confirmado:                 ['em_tratamento'],
   em_tratamento:              ['resolvido', 'descartado'],
   resolvido:                  [],
   descartado:                 [],
+  encaminhado_administrativo: [],
+  acionado_juridico:          [],
 };
 
 export function getTransicoesPermitidas(status: FocoRiscoStatus): FocoRiscoStatus[] {

@@ -108,4 +108,10 @@ export const focosRisco = {
 
   getResumoVistoria: (focoId: string): Promise<ResumoVisualVistoriaResponse> =>
     http.get(`/focos-risco/${focoId}/resumo-vistoria`),
+
+  reagendarVisita: (focoId: string, motivo?: string): Promise<unknown> =>
+    http.patch(`/focos-risco/${focoId}/reagendar-visita`, { motivo }),
+
+  manterAtiva: (focoId: string, motivo?: string): Promise<unknown> =>
+    http.patch(`/focos-risco/${focoId}/manter-ativa`, { motivo }),
 };

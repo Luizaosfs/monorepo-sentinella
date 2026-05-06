@@ -7,7 +7,9 @@ export type FocoStatus =
   | 'confirmado'
   | 'em_tratamento'
   | 'resolvido'
-  | 'descartado';
+  | 'descartado'
+  | 'encaminhado_administrativo'
+  | 'acionado_juridico';
 
 export type StatusOperacional =
   | 'pendente'
@@ -37,6 +39,8 @@ export function mapFocoToStatusOperacional(
 
     case 'resolvido':
     case 'descartado':
+    case 'encaminhado_administrativo':
+    case 'acionado_juridico':
       return 'resolvido';
   }
 }
