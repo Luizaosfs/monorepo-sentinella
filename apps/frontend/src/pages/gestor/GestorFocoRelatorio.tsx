@@ -825,168 +825,79 @@ function SecaoEvidencias({ titulo, count, children }: { titulo: string; count: n
 }
 
 function EvidenciasTab({ evidencias }: { evidencias: Evidencia[] }) {
-  const [filtro, setFiltro] = useState<FiltroEv>('todos');
-
-  const fachada    = evidencias.filter(e => e.origem === 'vistoria' && !e.depositoTipo);
-  const depositos  = evidencias.filter(e => !!e.depositoTipo);
-  const calhas     = evidencias.filter(e => e.origem === 'calha');
-  const operacoes  = evidencias.filter(e => e.origem === 'operacao');
-  const semAcesso  = evidencias.filter(e => e.origem === 'vistoria_sem_acesso');
+  const depositos = evidencias.filter(e => !!e.depositoTipo);
 
   const depositosPorTipo: Record<string, { antes?: Evidencia; depois?: Evidencia }> = {};
   for (const ev of depositos) {
     const t = ev.depositoTipo!;
     if (!depositosPorTipo[t]) depositosPorTipo[t] = {};
-    if (ev.depositoMomento === 'antes')  depositosPorTipo[t].antes  = ev;
-    else                                  depositosPorTipo[t].depois = ev;
+    if (ev.depositoMomento === 'antes') depositosPorTipo[t].antes = ev;
+    else                                depositosPorTipo[t].depois = ev;
   }
   const tiposComFotos = DEPOSITO_TIPOS.filter(t => depositosPorTipo[t]);
 
-  const chips: Array<{ key: FiltroEv; label: string; count: number }> = [
-    { key: 'todos',      label: 'Todos',            count: evidencias.length },
-    { key: 'deposito',   label: 'Depósitos PNCD',  count: depositos.length },
-    { key: 'fachada',    label: 'Fachada',           count: fachada.length },
-    { key: 'calha',      label: 'Calhas',             count: calhas.length },
-    { key: 'operacao',   label: 'Operações',          count: operacoes.length },
-    { key: 'sem_acesso', label: 'Sem acesso',         count: semAcesso.length },
-  ].filter(c => c.key === 'todos' || c.count > 0);
-
-  if (evidencias.length === 0) {
+  if (tiposComFotos.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
         <Image className="h-8 w-8 text-muted-foreground/40 mb-2" aria-hidden />
-        <p className="text-sm text-muted-foreground">Não há evidências registradas.</p>
+        <p className="text-sm text-muted-foreground">Não há fotos de depósitos PNCD registradas.</p>
       </div>
     );
   }
 
-  const show = (key: FiltroEv) => filtro === 'todos' || filtro === key;
-
   return (
-    <div className="space-y-5">
-
-      {/* Filter chips */}
-      {chips.length > 1 && (
-        <div className="flex flex-wrap gap-1.5">
-          {chips.map(c => (
-            <button
-              key={c.key}
-              type="button"
-              onClick={() => setFiltro(c.key)}
-              className={cn(
-                'inline-flex items-center gap-1.5 rounded-sm border px-2.5 py-1 text-[11px] font-semibold transition-colors',
-                filtro === c.key
-                  ? 'border-primary bg-primary/10 text-primary'
-                  : 'border-border/70 bg-background text-muted-foreground hover:border-muted-foreground/40 hover:text-foreground',
-              )}
-            >
-              {c.label}
-              <span className={cn(
-                'rounded-[3px] px-1 text-[10px] font-bold tabular-nums',
-                filtro === c.key ? 'bg-primary/15 text-primary' : 'bg-muted text-muted-foreground',
-              )}>
-                {c.count}
-              </span>
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Depósitos PNCD — comparação antes × depois */}
-      {show('deposito') && tiposComFotos.length > 0 && (
-        <SecaoEvidencias titulo="Depósitos PNCD" count={depositos.length}>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {tiposComFotos.map(tipo => {
-              const { antes, depois } = depositosPorTipo[tipo];
-              return (
-                <div key={tipo} className="overflow-hidden rounded-sm border border-border/70 bg-card">
-                  <div className="flex items-center gap-2 border-b border-border/50 bg-muted/30 px-3 py-2">
-                    <span className="text-xs font-bold text-foreground">{tipo}</span>
-                    <span className="text-[10px] text-muted-foreground">{DEPOSITO_TIPO_LABEL[tipo] ?? tipo}</span>
-                    <div className="ml-auto flex items-center gap-1">
-                      {antes  && <span className="rounded-sm bg-sky-100 px-1.5 py-0.5 text-[9px] font-semibold text-sky-700 dark:bg-sky-950/50 dark:text-sky-300">antes</span>}
-                      {depois && <span className="rounded-sm bg-emerald-100 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">depois</span>}
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      {tiposComFotos.map(tipo => {
+        const { antes, depois } = depositosPorTipo[tipo];
+        return (
+          <div key={tipo} className="overflow-hidden rounded-sm border border-border/70 bg-card">
+            <div className="flex items-center gap-2 border-b border-border/50 bg-muted/30 px-3 py-2">
+              <span className="text-xs font-bold text-foreground">{tipo}</span>
+              <span className="text-[10px] text-muted-foreground">{DEPOSITO_TIPO_LABEL[tipo] ?? tipo}</span>
+              <div className="ml-auto flex items-center gap-1">
+                {antes  && <span className="rounded-sm bg-sky-100 px-1.5 py-0.5 text-[9px] font-semibold text-sky-700 dark:bg-sky-950/50 dark:text-sky-300">antes</span>}
+                {depois && <span className="rounded-sm bg-emerald-100 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">depois</span>}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 divide-x divide-border/50">
+              {(['antes', 'depois'] as const).map(momento => {
+                const ev = momento === 'antes' ? antes : depois;
+                return (
+                  <div key={momento} className="relative">
+                    {ev ? (
+                      <a href={ev.url} target="_blank" rel="noopener noreferrer" className="group block">
+                        <img
+                          src={ev.url}
+                          alt={`Depósito ${tipo} ${momento}`}
+                          className="h-36 w-full object-cover transition-opacity group-hover:opacity-90"
+                        />
+                        {ev.createdAt && (
+                          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-2 py-1.5">
+                            <p className="text-[9px] text-white/75">{formatDate(ev.createdAt)}</p>
+                          </div>
+                        )}
+                      </a>
+                    ) : (
+                      <div className="flex h-36 flex-col items-center justify-center gap-1.5 bg-muted/40">
+                        <Camera className="h-5 w-5 text-muted-foreground/30" aria-hidden />
+                        <p className="text-[9px] text-muted-foreground/50">Sem foto {momento}</p>
+                      </div>
+                    )}
+                    <div className="absolute left-1.5 top-1.5">
+                      <span className={cn(
+                        'rounded-sm px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white',
+                        momento === 'antes' ? 'bg-sky-500/90' : 'bg-emerald-500/90',
+                      )}>
+                        {momento}
+                      </span>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 divide-x divide-border/50">
-                    {(['antes', 'depois'] as const).map(momento => {
-                      const ev = momento === 'antes' ? antes : depois;
-                      return (
-                        <div key={momento} className="relative">
-                          {ev ? (
-                            <a href={ev.url} target="_blank" rel="noopener noreferrer" className="group block">
-                              <img
-                                src={ev.url}
-                                alt={`Depósito ${tipo} ${momento}`}
-                                className="h-36 w-full object-cover transition-opacity group-hover:opacity-90"
-                              />
-                              {ev.createdAt && (
-                                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-2 py-1.5">
-                                  <p className="text-[9px] text-white/75">{formatDate(ev.createdAt)}</p>
-                                </div>
-                              )}
-                            </a>
-                          ) : (
-                            <div className="flex h-36 flex-col items-center justify-center gap-1.5 bg-muted/40">
-                              <Camera className="h-5 w-5 text-muted-foreground/30" aria-hidden />
-                              <p className="text-[9px] text-muted-foreground/50">Sem foto {momento}</p>
-                            </div>
-                          )}
-                          <div className="absolute left-1.5 top-1.5">
-                            <span className={cn(
-                              'rounded-sm px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white',
-                              momento === 'antes' ? 'bg-sky-500/90' : 'bg-emerald-500/90',
-                            )}>
-                              {momento}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
-        </SecaoEvidencias>
-      )}
-
-      {/* Fachada */}
-      {show('fachada') && fachada.length > 0 && (
-        <SecaoEvidencias titulo="Fachada" count={fachada.length}>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-            {fachada.map((ev, i) => <FotoCard key={i} ev={ev} />)}
-          </div>
-        </SecaoEvidencias>
-      )}
-
-      {/* Calhas */}
-      {show('calha') && calhas.length > 0 && (
-        <SecaoEvidencias titulo="Calhas" count={calhas.length}>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-            {calhas.map((ev, i) => <FotoCard key={i} ev={ev} />)}
-          </div>
-        </SecaoEvidencias>
-      )}
-
-      {/* Operações */}
-      {show('operacao') && operacoes.length > 0 && (
-        <SecaoEvidencias titulo="Operações de campo" count={operacoes.length}>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-            {operacoes.map((ev, i) => <FotoCard key={i} ev={ev} />)}
-          </div>
-        </SecaoEvidencias>
-      )}
-
-      {/* Tentativas sem acesso */}
-      {show('sem_acesso') && semAcesso.length > 0 && (
-        <SecaoEvidencias titulo="Fotos de tentativas sem acesso" count={semAcesso.length}>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-            {semAcesso.map((ev, i) => <FotoCard key={i} ev={ev} />)}
-          </div>
-        </SecaoEvidencias>
-      )}
-
+        );
+      })}
     </div>
   );
 }
@@ -1734,7 +1645,7 @@ export default function GestorFocoRelatorio() {
       <Tabs defaultValue="evidencias" className="mt-2">
         <TabsList className="inline-flex h-auto w-full min-h-10 flex-wrap gap-0 rounded-none border-b border-border/60 bg-transparent p-0 text-muted-foreground">
           {[
-            { value: 'evidencias', label: 'Evidências', count: resumo?.evidencias.length ?? 0 },
+            { value: 'evidencias', label: 'Evidências', count: (resumo?.evidencias ?? []).filter(e => !!e.depositoTipo).length },
             { value: 'historico', label: 'Histórico', count: resumo?.historico.length ?? 0 },
             { value: 'tentativas', label: 'Sem acesso', count: resumo?.historicoSemAcesso?.length ?? 0 },
             { value: 'ocorrencia', label: 'Dados da ocorrência', count: 0 },
