@@ -282,7 +282,11 @@
       "PowerShell(cd \"D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend\"; $result = cmd /c \"pnpm build 2>&1\"; $result | Select-Object -Last 10; Write-Host \"Exit: $LASTEXITCODE\")",
       "PowerShell(netstat *)",
       "Bash(\"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" \"postgresql://luizAntonio:Sentinella147852369@177.7.37.14:5432/sentinella\" -c \"SELECT column_name FROM information_schema.columns WHERE table_name='focos_risco' ORDER BY ordinal_position;\")",
-      "Bash(pnpm --filter @sentinella/api typecheck)"
+      "Bash(pnpm --filter @sentinella/api typecheck)",
+      "PowerShell($env:PGPASSWORD = \"Sentinella147852369\"; & \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -U luizAntonio -h 177.7.37.14 -d sentinella -c \"SELECT id, protocolo, status, prioridade, origem_tipo, origem_vistoria_id, imovel_id, created_at FROM focos_risco WHERE protocolo = '2026-00000088';\" 2>&1)",
+      "PowerShell($env:PGPASSWORD = \"Sentinella147852369\"; & \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -U luizAntonio -h 177.7.37.14 -d sentinella -c \"SELECT id, protocolo_publico, codigo_foco, status, prioridade, origem_tipo, origem_vistoria_id, imovel_id, created_at, created_by FROM focos_risco WHERE protocolo_publico = '2026-00000088';\" 2>&1)",
+      "PowerShell($env:PGPASSWORD = \"Sentinella147852369\"; & \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -U luizAntonio -h 177.7.37.14 -d sentinella -c \"SELECT h.id, h.evento, h.status_anterior, h.status_novo, h.observacao, h.created_at, u.nome as usuario FROM foco_risco_historico h LEFT JOIN usuarios u ON u.id = h.criado_por WHERE h.foco_risco_id = '3632d3a1-742b-4b96-9245-0b6d727f2a5b' ORDER BY h.created_at;\" 2>&1)",
+      "PowerShell($env:PGPASSWORD = \"Sentinella147852369\"; & \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -U luizAntonio -h 177.7.37.14 -d sentinella -c \"\\\\d foco_risco_historico\" 2>&1)"
     ]
   }
 }

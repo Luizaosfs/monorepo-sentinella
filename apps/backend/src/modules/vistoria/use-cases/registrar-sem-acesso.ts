@@ -76,37 +76,45 @@ export class RegistrarSemAcessoVistoria {
 
     const focoId = input.focoRiscoId ?? vistoria.focoRiscoId;
 
+    // Sem foco vinculado: persiste apenas os dados de acesso na vistoria.
+    if (!focoId) {
+      vistoria.acessoRealizado = false;
+      vistoria.motivoSemAcesso = input.motivo;
+      vistoria.proximoHorarioSugerido = input.proximoHorarioSugerido;
+      vistoria.observacaoAcesso = input.observacao;
+      vistoria.proximaTentativaSugerida = proximaTentativa ?? undefined;
+      await this.vistoriaWriteRepository.save(vistoria);
+      return { vistoria, escaladoSupervisor: false, tentativaNumero: 1, proximaTentativa };
+    }
+
+    // Carrega e valida o foco ANTES de persistir a vistoria para evitar registros
+    // órfãos (vistoria salva sem histórico) quando o status não é em_inspecao.
+    const foco = await this.focoRiscoReadRepository.findById(focoId, clienteId);
+    if (!foco) {
+      this.logger.warn(`Foco ${focoId} não encontrado ao registrar sem-acesso da vistoria ${vistoriaId}`);
+      throw VistoriaException.focoStatusInvalido();
+    }
+    if (foco.status !== 'em_inspecao') {
+      throw VistoriaException.focoStatusInvalido();
+    }
+
+    const tentativaNumero = foco.tentativasSemAcesso + 1;
+
     vistoria.acessoRealizado = false;
     vistoria.motivoSemAcesso = input.motivo;
     vistoria.proximoHorarioSugerido = input.proximoHorarioSugerido;
     vistoria.observacaoAcesso = input.observacao;
     vistoria.proximaTentativaSugerida = proximaTentativa ?? undefined;
-    if (focoId && !vistoria.focoRiscoId) {
+    vistoria.tentativaNumero = tentativaNumero;
+    if (!vistoria.focoRiscoId) {
       vistoria.focoRiscoId = focoId;
     }
 
     await this.vistoriaWriteRepository.save(vistoria);
 
-    if (!focoId) {
-      return { vistoria, escaladoSupervisor: false, tentativaNumero: 1, proximaTentativa };
-    }
-
     let escaladoSupervisor = false;
-    let tentativaNumero = 1;
 
     try {
-      const foco = await this.focoRiscoReadRepository.findById(focoId, clienteId);
-      if (!foco) {
-        this.logger.warn(`Foco ${focoId} não encontrado ao registrar sem-acesso da vistoria ${vistoriaId}`);
-        return { vistoria, escaladoSupervisor: false, tentativaNumero: 1, proximaTentativa };
-      }
-
-      if (foco.status !== 'em_inspecao') {
-        this.logger.warn(`Foco ${focoId} não está em_inspecao (status=${foco.status}), pulando transição`);
-        return { vistoria, escaladoSupervisor: false, tentativaNumero: 1, proximaTentativa };
-      }
-
-      tentativaNumero = foco.tentativasSemAcesso + 1;
       foco.tentativasSemAcesso = tentativaNumero;
 
       // sem_previsao: vai para aguardando_nova_tentativa (visível nos filtros/cards)
