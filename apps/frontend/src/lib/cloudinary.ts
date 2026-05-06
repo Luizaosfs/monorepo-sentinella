@@ -4,6 +4,8 @@
  * Não use return_delete_token (não permitido em unsigned). Exclusão via Edge Function + public_id.
  */
 
+import { compressImage } from '@/lib/compressImage';
+
 const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string | undefined;
 const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET as string | undefined;
 
@@ -31,8 +33,10 @@ export async function uploadImage(file: File): Promise<UploadImageResult> {
     );
   }
 
+  const compressed = await compressImage(file, { maxBytes: 1_000_000 });
+
   const formData = new FormData();
-  formData.append('file', file);
+  formData.append('file', compressed);
   formData.append('upload_preset', UPLOAD_PRESET);
 
   const res = await fetch(UPLOAD_URL, {

@@ -1,5 +1,6 @@
 import { tokenStore } from '@sentinella/api-client';
 import { captureError } from '@/lib/sentry';
+import { compressImage, fileToBase64 } from '@/lib/compressImage';
 
 const BACKEND_URL = (import.meta.env.VITE_API_URL as string | undefined) || 'http://localhost:3333';
 
@@ -59,4 +60,18 @@ export async function invokeUploadEvidencia(
     return { url: p.url, public_id: p.publicId ?? p.public_id };
   }
   return { error: new Error('Resposta inválida do upload') };
+}
+
+/**
+ * Comprime o arquivo para ≤1 MB, converte para base64 e envia ao backend.
+ * Use esta função em vez de converter manualmente para base64 antes de chamar invokeUploadEvidencia.
+ */
+export async function invokeUploadFile(
+  file: File,
+  opts: { modulo?: string } = {},
+): Promise<{ url: string; public_id?: string } | { error: Error }> {
+  const blob = await compressImage(file, { maxBytes: 1_000_000 });
+  const base64 = await fileToBase64(blob);
+  const filename = file.name.replace(/\.[^.]+$/, '.jpg');
+  return invokeUploadEvidencia({ fileBase64: base64, filename, modulo: opts.modulo });
 }

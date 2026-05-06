@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { Home, Plane, ShieldOff, Dog, Wrench, FileText, ChevronLeft, AlertTriangle, Camera, Loader2, Upload, UserCheck, CalendarClock, Info, Ban } from 'lucide-react';
-import { invokeUploadEvidencia } from '@/lib/uploadEvidencia';
+import { invokeUploadFile } from '@/lib/uploadEvidencia';
 import {
   MotivoSemAcesso, HorarioSugerido,
   MOTIVO_LABELS, HORARIO_LABELS,
@@ -66,18 +66,6 @@ const MOTIVOS: MotivoSemAcesso[] = [
 
 const HORARIOS: HorarioSugerido[] = ['manha', 'tarde', 'fim_de_semana', 'sem_previsao'];
 
-const UPLOAD_EXTS = new Set(['jpg', 'jpeg', 'png', 'gif', 'webp']);
-
-function filenameSemAcessoComExtensao(file: File): string {
-  const fromName = file.name.includes('.') ? file.name.split('.').pop()!.toLowerCase() : '';
-  let ext = 'jpg';
-  if (fromName && UPLOAD_EXTS.has(fromName)) {
-    ext = fromName === 'jpeg' ? 'jpg' : fromName;
-  } else if (file.type === 'image/png') ext = 'png';
-  else if (file.type === 'image/webp') ext = 'webp';
-  else if (file.type === 'image/gif') ext = 'gif';
-  return `sem_acesso_${Date.now()}.${ext}`;
-}
 
 interface Props {
   clienteId: string;
@@ -154,17 +142,7 @@ export function VistoriaSemAcesso({
       let fotoUrlFinal: string | null = null;
       if (fotoFile) {
         try {
-          const base64 = await new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve((reader.result as string).split(',')[1]);
-            reader.onerror = reject;
-            reader.readAsDataURL(fotoFile);
-          });
-          const up = await invokeUploadEvidencia({
-            fileBase64: base64,
-            filename: filenameSemAcessoComExtensao(fotoFile),
-            modulo: 'sem_acesso',
-          });
+          const up = await invokeUploadFile(fotoFile, { modulo: 'sem_acesso' });
           if ('url' in up) {
             fotoUrlFinal = up.url;
           } else {

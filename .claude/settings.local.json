@@ -264,7 +264,8 @@
       "Bash(\"C:/Program Files/PostgreSQL/17/bin/psql.exe\" postgresql://luizAntonio:Sentinella147852369@177.7.37.14:5432/sentinella -t -A -c \"SELECT t.typname||'|'||e.enumlabel FROM pg_type t JOIN pg_enum e ON e.enumtypid=t.oid JOIN pg_namespace n ON n.oid=t.typnamespace WHERE n.nspname='public' ORDER BY t.typname,e.enumsortorder\")",
       "PowerShell(& \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -U postgres -d sentinella -c \"ALTER TABLE vistorias ADD COLUMN IF NOT EXISTS tentativa_numero integer NOT NULL DEFAULT 1; ALTER TABLE vistorias ADD COLUMN IF NOT EXISTS proxima_tentativa_sugerida timestamptz; ALTER TABLE focos_risco ADD COLUMN IF NOT EXISTS tentativas_sem_acesso integer NOT NULL DEFAULT 0; ALTER TABLE focos_risco ADD COLUMN IF NOT EXISTS pendente_decisao_supervisor boolean NOT NULL DEFAULT false;\")",
       "PowerShell($env:PGPASSWORD = \"Sentinella147852369\"; & \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -h 177.7.37.14 -U luizAntonio -d sentinella -c \"ALTER TABLE vistorias ADD COLUMN IF NOT EXISTS tentativa_numero integer NOT NULL DEFAULT 1; ALTER TABLE vistorias ADD COLUMN IF NOT EXISTS proxima_tentativa_sugerida timestamptz; ALTER TABLE focos_risco ADD COLUMN IF NOT EXISTS tentativas_sem_acesso integer NOT NULL DEFAULT 0; ALTER TABLE focos_risco ADD COLUMN IF NOT EXISTS pendente_decisao_supervisor boolean NOT NULL DEFAULT false;\")",
-      "Bash(pnpm --filter @sentinella/api generate)"
+      "Bash(pnpm --filter @sentinella/api generate)",
+      "Bash(not exist *)"
     ]
   }
 }
