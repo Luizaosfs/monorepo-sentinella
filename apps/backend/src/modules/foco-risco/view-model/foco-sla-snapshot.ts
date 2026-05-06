@@ -40,6 +40,8 @@ const STATUS_PARA_FASE: Record<
   em_tratamento: 'tratamento',
   resolvido: null,
   descartado: null,
+  encaminhado_administrativo: null,
+  acionado_juridico: null,
 };
 
 export function mapFocoStatusParaFaseSla(status: FocoRiscoStatus): SlaFaseConfig | null {
