@@ -31,6 +31,9 @@ import {
   Camera,
   Ban,
   CalendarDays,
+  Route,
+  Target,
+  ListChecks,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -1311,6 +1314,26 @@ function PageSkeleton() {
   );
 }
 
+// ── Section label ─────────────────────────────────────────────────────────────
+
+function SectionLabel({
+  icon: Icon,
+  children,
+}: {
+  icon: typeof MapPin;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex items-center gap-2 px-1 mt-3 mb-1">
+      <Icon className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" aria-hidden />
+      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap">
+        {children}
+      </span>
+      <div className="flex-1 h-px bg-gradient-to-r from-border/40 to-transparent" />
+    </div>
+  );
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function GestorFocoRelatorio() {
@@ -1398,6 +1421,12 @@ export default function GestorFocoRelatorio() {
     }
     return null;
   })();
+
+  const temExplicabilidade =
+    (resumo?.explicabilidade?.motivos?.length ?? 0) +
+      (resumo?.explicabilidade?.alertas?.length ?? 0) +
+      (resumo?.explicabilidade?.pendencias?.length ?? 0) >
+    0;
 
   return (
     <div className="max-w-7xl mx-auto px-4 pt-2 pb-10 space-y-3">
@@ -1517,6 +1546,8 @@ export default function GestorFocoRelatorio() {
         </CardContent>
       </Card>
 
+      {/* ── Seção: Linha do tempo do foco ──────────────────────────────── */}
+      <SectionLabel icon={Route}>Linha do tempo do foco</SectionLabel>
       <TimelineFluxoFoco
         currentStatus={foco.status}
         tentativas={resumo?.historicoSemAcesso ?? []}
@@ -1536,7 +1567,10 @@ export default function GestorFocoRelatorio() {
         </Card>
       )}
 
-      {/* ── Resumo estratégico (tiles superiores) ──────────────────────── */}
+      {/* ── Seção: Decisão operacional ─────────────────────────────────── */}
+      <SectionLabel icon={Target}>Decisão operacional</SectionLabel>
+
+      {/* Tiles estratégicos */}
       {resumoLoading ? (
         <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
           {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-20 rounded-sm" />)}
@@ -1554,9 +1588,69 @@ export default function GestorFocoRelatorio() {
         </div>
       ) : null}
 
-      {/* ── Cards de vistoria (só se houver vistoria) ───────────────────── */}
+      {/* ISTI + Consolidação lado a lado (Decisão operacional) */}
+      {resumo?.vistoria && (
+        <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-3">
+          {/* ISTI */}
+          <Card className="border-border/60 shadow-sm overflow-hidden">
+            <CardHeader className="pb-0 pt-4 px-4">
+              <CardTitle className="text-sm font-semibold leading-snug text-foreground tracking-tight">
+                Índice Sanitário (ISTI)
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col px-4 pb-4 pt-1">
+              <IstiGauge score={scoreOperacional} />
+              <div className="mt-1 flex items-center justify-between gap-3 border-t border-border/50 pt-3">
+                <span className="text-xs text-muted-foreground">Classificação</span>
+                <span className={cn('inline-flex shrink-0 rounded-sm px-2.5 py-1 text-xs font-bold', istiInfo.badgeClass)}>
+                  {istiInfo.label}
+                </span>
+              </div>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className="mt-3 inline-flex items-center justify-center gap-1.5 self-center text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400"
+                  >
+                    Como é calculado
+                    <Info className="h-4 w-4 shrink-0" aria-hidden />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent align="center" className="space-y-3 text-sm">
+                  <p className="font-semibold text-foreground">ISTI — Índice de Severidade (0–100)</p>
+                  <p className="text-xs text-muted-foreground">
+                    Pontuação operacional que mede a urgência de atendimento do foco. Composta por três fatores:
+                  </p>
+                  <ul className="space-y-2 border-t border-border/60 pt-2">
+                    <li className="space-y-0.5">
+                      <p className="text-xs font-semibold">SLA — prazo consumido (10–50 pts)</p>
+                      <p className="text-[11px] text-muted-foreground">10 pts se abaixo de 70% do prazo · 20 pts entre 70–90% · 40 pts acima de 90% · 50 pts se vencido</p>
+                    </li>
+                    <li className="space-y-0.5">
+                      <p className="text-xs font-semibold">Reincidência (+20 pts)</p>
+                      <p className="text-[11px] text-muted-foreground">Acrescido quando há registro de foco anterior no mesmo local</p>
+                    </li>
+                    <li className="space-y-0.5">
+                      <p className="text-xs font-semibold">Casos próximos (+5 pts por caso, máx 30 pts)</p>
+                      <p className="text-[11px] text-muted-foreground">Casos de arbovirose notificados nas proximidades do foco</p>
+                    </li>
+                  </ul>
+                  <p className="text-[11px] text-muted-foreground border-t border-border/60 pt-2">
+                    Focos resolvidos ou descartados recebem pontuação 0.
+                  </p>
+                </PopoverContent>
+              </Popover>
+            </CardContent>
+          </Card>
+
+          <ConsolidacaoCard consolidacao={resumo.consolidacao} />
+        </div>
+      )}
+
+      {/* ── Seção: Vistoria de campo ───────────────────────────────────── */}
       {resumo?.vistoria && (
         <>
+          <SectionLabel icon={ListChecks}>Vistoria de campo</SectionLabel>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <MoradoresCard moradores={resumo.moradores} />
             <GruposVulneraveisCard grupos={resumo.gruposVulneraveis} />
@@ -1564,70 +1658,16 @@ export default function GestorFocoRelatorio() {
             <DepositosCard depositosPncd={resumo.depositosPncd} />
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <CalhasCard calhas={resumo.calhas} />
             <TratamentoCard tratamento={resumo.tratamento} />
             <FatoresRiscoCard fatoresRisco={resumo.fatoresRisco} />
-
-            {/* ISTI */}
-            <Card className="border-border/60 shadow-sm overflow-hidden">
-              <CardHeader className="pb-0 pt-4 px-4">
-                <CardTitle className="text-sm font-semibold leading-snug text-foreground tracking-tight">
-                  Índice Sanitário (ISTI)
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-col px-4 pb-4 pt-1">
-                <IstiGauge score={scoreOperacional} />
-                <div className="mt-1 flex items-center justify-between gap-3 border-t border-border/50 pt-3">
-                  <span className="text-xs text-muted-foreground">Classificação</span>
-                  <span className={cn('inline-flex shrink-0 rounded-sm px-2.5 py-1 text-xs font-bold', istiInfo.badgeClass)}>
-                    {istiInfo.label}
-                  </span>
-                </div>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <button
-                      type="button"
-                      className="mt-3 inline-flex items-center justify-center gap-1.5 self-center text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400"
-                    >
-                      Como é calculado
-                      <Info className="h-4 w-4 shrink-0" aria-hidden />
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent align="center" className="space-y-3 text-sm">
-                    <p className="font-semibold text-foreground">ISTI — Índice de Severidade (0–100)</p>
-                    <p className="text-xs text-muted-foreground">
-                      Pontuação operacional que mede a urgência de atendimento do foco. Composta por três fatores:
-                    </p>
-                    <ul className="space-y-2 border-t border-border/60 pt-2">
-                      <li className="space-y-0.5">
-                        <p className="text-xs font-semibold">SLA — prazo consumido (10–50 pts)</p>
-                        <p className="text-[11px] text-muted-foreground">10 pts se abaixo de 70% do prazo · 20 pts entre 70–90% · 40 pts acima de 90% · 50 pts se vencido</p>
-                      </li>
-                      <li className="space-y-0.5">
-                        <p className="text-xs font-semibold">Reincidência (+20 pts)</p>
-                        <p className="text-[11px] text-muted-foreground">Acrescido quando há registro de foco anterior no mesmo local</p>
-                      </li>
-                      <li className="space-y-0.5">
-                        <p className="text-xs font-semibold">Casos próximos (+5 pts por caso, máx 30 pts)</p>
-                        <p className="text-[11px] text-muted-foreground">Casos de arbovirose notificados nas proximidades do foco</p>
-                      </li>
-                    </ul>
-                    <p className="text-[11px] text-muted-foreground border-t border-border/60 pt-2">
-                      Focos resolvidos ou descartados recebem pontuação 0.
-                    </p>
-                  </PopoverContent>
-                </Popover>
-              </CardContent>
-            </Card>
           </div>
-
-          <ConsolidacaoCard consolidacao={resumo.consolidacao} />
-          <ExplicabilidadeCard explicabilidade={resumo.explicabilidade} />
         </>
       )}
 
-      {/* ── Localização ─────────────────────────────────────────────────── */}
+      {/* ── Seção: Localização & contexto ──────────────────────────────── */}
+      <SectionLabel icon={MapPin}>Localização & contexto</SectionLabel>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <Card className="border-border/60">
           <CardHeader className="pb-3 pt-4 px-4">
@@ -1698,7 +1738,11 @@ export default function GestorFocoRelatorio() {
             { value: 'historico', label: 'Histórico', count: resumo?.historico.length ?? 0 },
             { value: 'tentativas', label: 'Sem acesso', count: resumo?.historicoSemAcesso?.length ?? 0 },
             { value: 'ocorrencia', label: 'Dados da ocorrência', count: 0 },
-          ].filter(t => t.value !== 'tentativas' || (resumo?.historicoSemAcesso?.length ?? 0) > 0).map((tab) => (
+            { value: 'explicabilidade', label: 'Explicabilidade', count: 0 },
+          ]
+            .filter(t => t.value !== 'tentativas' || (resumo?.historicoSemAcesso?.length ?? 0) > 0)
+            .filter(t => t.value !== 'explicabilidade' || temExplicabilidade)
+            .map((tab) => (
             <TabsTrigger key={tab.value} value={tab.value}
               className="rounded-none border-b-2 border-transparent px-3 py-2 text-sm data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:text-primary"
             >
@@ -1782,6 +1826,10 @@ export default function GestorFocoRelatorio() {
               )}
             </div>
           </div>
+        </TabsContent>
+
+        <TabsContent value="explicabilidade" className="mt-4">
+          <ExplicabilidadeCard explicabilidade={resumo?.explicabilidade ?? { motivos: [], alertas: [], pendencias: [] }} />
         </TabsContent>
       </Tabs>
     </div>
