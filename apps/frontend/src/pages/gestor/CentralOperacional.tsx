@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -10,7 +9,6 @@ import {
   Stethoscope, ChevronRight, GitMerge, FileText, Info, MapPinOff, ClipboardCheck,
   ShieldAlert,
 } from 'lucide-react';
-import { STALE } from '@/lib/queryConfig';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -20,7 +18,7 @@ import { ScoreBadge } from '@/components/foco/ScoreBadge';
 import { AgentesHojeWidget } from '@/components/dashboard/AgentesHojeWidget';
 import { ResumoIAWidget } from '@/components/dashboard/ResumoIAWidget';
 import { PainelPilotoFunilCard } from '@/components/dashboard/PainelPilotoFunil';
-import { useCentralKpis, useImoveisParaHoje, useFocosPendentesSupervisor, useAnaliticoSemAcesso } from '@/hooks/queries/useCentralOperacional';
+import { useCentralKpis, useImoveisParaHoje, useFocosPendentesSupervisor, useAnaliticoSemAcesso, useRegioesSemCobertura } from '@/hooks/queries/useCentralOperacional';
 import { gerarRelatorioPdf } from '@/lib/gestorRelatorioPdf';
 import { useClienteAtivo } from '@/hooks/useClienteAtivo';
 import { useCasosCruzadosHoje } from '@/hooks/queries/useCasosNotificados';
@@ -125,13 +123,7 @@ export default function CentralOperacional() {
   const { data: vistoriasConsolidadas = [], isLoading: vstLoading } =
     useVistoriasConsolidadas(clienteAtivo?.id, vstFiltros);
 
-  // G4: Regiões sem cobertura hoje
-  const { data: regioesSemCobertura = [] } = useQuery<{ id: string; regiao: string }[]>({
-    queryKey: ['regioes-sem-cobertura', clienteAtivo?.id],
-    queryFn: () => api.central.getRegioesSemCobertura(),
-    enabled: !!clienteAtivo?.id,
-    staleTime: STALE.MEDIUM,
-  });
+  const { data: regioesSemCobertura = [] } = useRegioesSemCobertura();
 
   const handleRefresh = () => {
     refetch();
@@ -563,7 +555,6 @@ export default function CentralOperacional() {
         </Card>
       </div>
 
-      {/* G4: Regiões sem cobertura hoje */}
       {regioesSemCobertura.length > 0 && (
         <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50/50 dark:bg-amber-950/20 dark:border-amber-800/40 px-4 py-3">
           <MapPinOff className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />

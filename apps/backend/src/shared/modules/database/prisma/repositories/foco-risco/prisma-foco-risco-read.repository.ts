@@ -313,13 +313,14 @@ export class PrismaFocoRiscoReadRepository implements FocoRiscoReadRepository {
     };
   }
 
-  async findContagemPorStatus(clienteId: string): Promise<Record<string, number>> {
+  async findContagemPorStatus(clienteId: string, responsavelId?: string): Promise<Record<string, number>> {
     type Row = { status: string; total: bigint };
     const rows = await this.prisma.client.$queryRaw<Row[]>`
       SELECT status, COUNT(*) AS total
       FROM focos_risco
       WHERE cliente_id = ${clienteId}::uuid
         AND deleted_at IS NULL
+        ${responsavelId != null ? Prisma.sql`AND responsavel_id = ${responsavelId}::uuid` : Prisma.empty}
       GROUP BY status
     `;
     const result: Record<string, number> = {};

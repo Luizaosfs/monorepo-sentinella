@@ -45,6 +45,7 @@ import {
   FilterFocoRiscoInput,
   filterFocoRiscoSchema,
 } from './dtos/filter-foco-risco.input';
+import { AuthenticatedUser } from 'src/guards/auth.guard';
 import {
   IniciarInspecaoBody,
   iniciarInspecaoSchema,
@@ -176,6 +177,12 @@ export class FocoRiscoController {
     const parsed = filterFocoRiscoSchema.parse(filters);
     // MT-02: clienteId SEMPRE vem do TenantGuard, nunca da query diretamente
     parsed.clienteId = getAccessScope(this.req).tenantId ?? undefined;
+    // Espelha FilterFocoRisco: agente só vê contagens dos próprios focos
+    const user = this.req['user'] as AuthenticatedUser;
+    const isPrivileged = user.isPlatformAdmin || user.papeis.includes('supervisor');
+    if (!isPrivileged) {
+      parsed.responsavel_id = user.id;
+    }
     return this.contagemTriagemFilaUc.execute(parsed);
   }
 
@@ -185,7 +192,10 @@ export class FocoRiscoController {
   async contagemPorStatus() {
     // MT-03: clienteId vem do TenantGuard, não de query param
     const clienteId = requireTenantId(getAccessScope(this.req));
-    return this.contagemPorStatusUc.execute(clienteId);
+    const user = this.req['user'] as AuthenticatedUser;
+    const isPrivileged = user.isPlatformAdmin || user.papeis.includes('supervisor');
+    const responsavelId = isPrivileged ? undefined : user.id;
+    return this.contagemPorStatusUc.execute(clienteId, responsavelId);
   }
 
   @Get('agrupados')

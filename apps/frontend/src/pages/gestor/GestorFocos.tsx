@@ -224,7 +224,10 @@ export default function GestorFocos() {
   const [busca, setBusca] = useState('');
   const [buscaCodigo, setBuscaCodigo] = useState('');
   const [buscaEndereco, setBuscaEndereco] = useState('');
-  const [filtroStatus, setFiltroStatus] = useState<FiltroStatus>('todos');
+  const [filtroStatus, setFiltroStatus] = useState<FiltroStatus>(() => {
+    const s = searchParams.get('status') as FiltroStatus;
+    return STATUS_FILTROS.includes(s) ? s : 'todos';
+  });
   const [filtroPrioridade, setFiltroPrioridade] = useState<FiltroPrioridade>('todos');
   const [filtroOrigem, setFiltroOrigem] = useState<FiltroOrigem>('todos');
   const [filtroParado, setFiltroParado] = useState(false);

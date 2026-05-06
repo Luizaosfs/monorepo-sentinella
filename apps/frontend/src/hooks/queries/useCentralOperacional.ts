@@ -75,6 +75,16 @@ export function useAnaliticoSemAcesso() {
   });
 }
 
+export function useRegioesSemCobertura() {
+  const { clienteId } = useClienteAtivo();
+  return useQuery<{ id: string; regiao: string }[]>({
+    queryKey: ['regioes-sem-cobertura', clienteId],
+    queryFn: () => api.central.getRegioesSemCobertura(),
+    enabled: !!clienteId,
+    staleTime: STALE.MEDIUM,
+  });
+}
+
 /** Focos aguardando decisão do supervisor: pendente_decisao_supervisor=true. */
 export function useFocosPendentesSupervisor() {
   const { clienteId } = useClienteAtivo();

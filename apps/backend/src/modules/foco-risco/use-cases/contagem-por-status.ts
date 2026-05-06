@@ -6,7 +6,7 @@ import { FocoRiscoReadRepository } from '../repositories/foco-risco-read.reposit
 export class ContagemPorStatus {
   constructor(private repository: FocoRiscoReadRepository) {}
 
-  async execute(clienteId: string): Promise<Record<string, number>> {
-    return this.repository.findContagemPorStatus(clienteId);
+  async execute(clienteId: string, responsavelId?: string): Promise<Record<string, number>> {
+    return this.repository.findContagemPorStatus(clienteId, responsavelId);
   }
 }

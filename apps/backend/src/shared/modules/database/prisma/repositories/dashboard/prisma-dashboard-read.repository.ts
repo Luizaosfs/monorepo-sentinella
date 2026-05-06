@@ -452,14 +452,17 @@ export class PrismaDashboardReadRepository implements DashboardReadRepository {
       SELECT
         (SELECT COUNT(*) FROM focos_risco
          WHERE cliente_id = ${clienteId}::uuid
+           AND deleted_at IS NULL
            AND status NOT IN ('resolvido', 'descartado'))                           AS focos_pendentes,
 
         (SELECT COUNT(*) FROM focos_risco
          WHERE cliente_id = ${clienteId}::uuid
+           AND deleted_at IS NULL
            AND status = 'em_tratamento')                                            AS focos_em_atendimento,
 
         (SELECT COUNT(*) FROM focos_risco
          WHERE cliente_id = ${clienteId}::uuid
+           AND deleted_at IS NULL
            AND prioridade = 'P1'
            AND responsavel_id IS NULL
            AND status NOT IN ('resolvido', 'descartado'))                           AS focos_p1_sem_agente,
@@ -498,11 +501,13 @@ export class PrismaDashboardReadRepository implements DashboardReadRepository {
 
         (SELECT COUNT(*) FROM focos_risco
          WHERE cliente_id = ${clienteId}::uuid
+           AND deleted_at IS NULL
            AND origem_tipo = 'denuncia'
            AND created_at >= NOW() - INTERVAL '24 hours')                           AS denuncias_ultimas_24h,
 
         (SELECT COUNT(*) FROM casos_notificados
          WHERE cliente_id = ${clienteId}::uuid
+           AND deleted_at IS NULL
            AND created_at >= CURRENT_DATE)                                          AS casos_hoje
     `;
 
