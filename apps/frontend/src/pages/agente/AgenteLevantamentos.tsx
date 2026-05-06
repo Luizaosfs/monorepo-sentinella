@@ -28,7 +28,7 @@ import { carregarRascunho, formatarTempoRascunho } from '@/lib/vistoriaRascunho'
 // ── Constantes ────────────────────────────────────────────────────────────────
 
 const ACTIVE_STATUSES: FocoRiscoStatus[] = [
-  'aguarda_inspecao', 'em_inspecao', 'confirmado', 'em_tratamento',
+  'aguarda_inspecao', 'em_inspecao', 'aguardando_nova_tentativa', 'confirmado', 'em_tratamento',
 ];
 
 /** Ação rápida de transição disponível para cada status. */
@@ -52,11 +52,12 @@ type StatusChip = FocoRiscoStatus | 'todos';
 type ViewTab    = 'minha_fila' | 'fila_aberta';
 
 const STATUS_CHIPS: { key: StatusChip; label: string }[] = [
-  { key: 'todos',            label: 'Ativos' },
-  { key: 'aguarda_inspecao', label: 'Aguardando' },
-  { key: 'em_inspecao',      label: 'Em inspeção' },
-  { key: 'em_tratamento',    label: 'Tratamento' },
-  { key: 'resolvido',        label: 'Resolvidos' },
+  { key: 'todos',                     label: 'Ativos' },
+  { key: 'aguarda_inspecao',          label: 'Aguardando' },
+  { key: 'em_inspecao',               label: 'Em inspeção' },
+  { key: 'aguardando_nova_tentativa', label: 'Sem acesso' },
+  { key: 'em_tratamento',             label: 'Tratamento' },
+  { key: 'resolvido',                 label: 'Resolvidos' },
 ];
 
 // ── Componente principal ──────────────────────────────────────────────────────
@@ -159,6 +160,7 @@ const AgenteLevantamentos = () => {
   const counts = useMemo(() => ({
     aguarda:    todosAtivos.filter((f) => f.status === 'aguarda_inspecao').length,
     inspecao:   todosAtivos.filter((f) => f.status === 'em_inspecao').length,
+    semAcesso:  todosAtivos.filter((f) => f.status === 'aguardando_nova_tentativa').length,
     tratamento: todosAtivos.filter((f) => f.status === 'em_tratamento' || f.status === 'confirmado').length,
     resolvidos: todosAtivos.filter((f) => f.status === 'resolvido').length,
   }), [todosAtivos]);
@@ -240,11 +242,12 @@ const AgenteLevantamentos = () => {
 
         {/* ── KPI cards ──────────────────────────────────────────────────── */}
         {!loadingFila && (
-          <div className="grid grid-cols-4 gap-1.5">
+          <div className="grid grid-cols-5 gap-1">
             {([
-              { label: 'Aguardando', value: counts.aguarda,    color: 'text-amber-600',   bg: 'bg-amber-50 dark:bg-amber-950/20',   chip: 'aguarda_inspecao' as StatusChip },
-              { label: 'Inspeção',   value: counts.inspecao,   color: 'text-blue-600',    bg: 'bg-blue-50 dark:bg-blue-950/20',     chip: 'em_inspecao' as StatusChip },
-              { label: 'Tratamento', value: counts.tratamento, color: 'text-purple-600',  bg: 'bg-purple-50 dark:bg-purple-950/20', chip: 'em_tratamento' as StatusChip },
+              { label: 'Aguardando', value: counts.aguarda,    color: 'text-amber-600',   bg: 'bg-amber-50 dark:bg-amber-950/20',    chip: 'aguarda_inspecao' as StatusChip },
+              { label: 'Inspeção',   value: counts.inspecao,   color: 'text-blue-600',    bg: 'bg-blue-50 dark:bg-blue-950/20',      chip: 'em_inspecao' as StatusChip },
+              { label: 'Sem acesso', value: counts.semAcesso,  color: 'text-rose-600',    bg: 'bg-rose-50 dark:bg-rose-950/20',      chip: 'aguardando_nova_tentativa' as StatusChip },
+              { label: 'Tratamento', value: counts.tratamento, color: 'text-purple-600',  bg: 'bg-purple-50 dark:bg-purple-950/20',  chip: 'em_tratamento' as StatusChip },
               { label: 'Resolvidos', value: counts.resolvidos, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-950/20', chip: 'resolvido' as StatusChip },
             ] as const).map(({ label, value, color, bg, chip }) => (
               <button
@@ -278,12 +281,12 @@ const AgenteLevantamentos = () => {
           >
             <ListTodo className="w-4 h-4" />
             Minha Fila
-            {counts.aguarda + counts.inspecao + counts.tratamento > 0 && (
+            {counts.aguarda + counts.inspecao + counts.semAcesso + counts.tratamento > 0 && (
               <span className={cn(
                 'rounded-full px-1.5 py-0 text-[10px] font-bold',
                 tab === 'minha_fila' ? 'bg-white/20' : 'bg-muted'
               )}>
-                {counts.aguarda + counts.inspecao + counts.tratamento}
+                {counts.aguarda + counts.inspecao + counts.semAcesso + counts.tratamento}
               </span>
             )}
           </button>
@@ -338,9 +341,10 @@ const AgenteLevantamentos = () => {
                       'ml-1 rounded-full px-1 text-[10px] font-bold',
                       statusChip === key ? 'bg-white/20' : 'bg-muted'
                     )}>
-                      {key === 'aguarda_inspecao' ? counts.aguarda
-                       : key === 'em_inspecao'    ? counts.inspecao
-                       : key === 'em_tratamento'  ? counts.tratamento
+                      {key === 'aguarda_inspecao'          ? counts.aguarda
+                       : key === 'em_inspecao'              ? counts.inspecao
+                       : key === 'aguardando_nova_tentativa'? counts.semAcesso
+                       : key === 'em_tratamento'            ? counts.tratamento
                        : counts.resolvidos}
                     </span>
                   )}
@@ -398,7 +402,12 @@ const AgenteLevantamentos = () => {
                   agenteId={usuario?.id}
                   onNavigate={() => navigate(`/agente/focos/${foco.id}`)}
                   onAcaoRapida={(statusNovo) => {
-                    if (statusNovo === 'em_inspecao') {
+                    if (statusNovo === 'aguardando_nova_tentativa') {
+                      const base = foco.imovel_id
+                        ? `/agente/vistoria/${foco.imovel_id}`
+                        : '/agente/vistoria';
+                      navigate(`${base}?focoId=${foco.id}&atividade=pesquisa`);
+                    } else if (statusNovo === 'em_inspecao') {
                       navigate(`/agente/focos/${foco.id}`);
                     } else if (statusNovo === 'confirmado') {
                       const base = foco.imovel_id
@@ -573,7 +582,24 @@ function FocoCard({ foco, onNavigate, onAcaoRapida, onAssumir, isPending, modoFi
             </>
           ) : (
             <>
-              {acao && onAcaoRapida && (
+              {foco.status === 'aguardando_nova_tentativa' && onAcaoRapida ? (
+                foco.pendente_decisao_supervisor || (foco.tentativas_sem_acesso ?? 0) >= 3 ? (
+                  <span className="flex-1 flex items-center justify-center h-8 rounded-xl text-xs font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
+                    Aguardando decisão do supervisor
+                  </span>
+                ) : (
+                  <Button
+                    size="sm"
+                    className="flex-1 h-8 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white"
+                    onClick={() => onAcaoRapida('aguardando_nova_tentativa')}
+                    disabled={isPending}
+                  >
+                    {isPending
+                      ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      : `Nova tentativa ${(foco.tentativas_sem_acesso ?? 0) + 1}/3`}
+                  </Button>
+                )
+              ) : acao && onAcaoRapida ? (
                 <Button
                   size="sm"
                   className={cn('flex-1 h-8 rounded-xl text-xs font-semibold', acao.cor)}
@@ -582,7 +608,7 @@ function FocoCard({ foco, onNavigate, onAcaoRapida, onAssumir, isPending, modoFi
                 >
                   {isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : acao.label}
                 </Button>
-              )}
+              ) : null}
               <Button
                 size="sm" variant="outline"
                 className="h-8 rounded-xl text-xs"
