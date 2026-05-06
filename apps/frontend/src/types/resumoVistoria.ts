@@ -173,4 +173,15 @@ export interface ResumoVisualVistoriaResponse {
     createdAt: string;
     origem: string;
   }>;
+
+  historicoSemAcesso: Array<{
+    id: string;
+    tentativaNumero: number;
+    dataVisita: string;
+    motivoSemAcesso: string | null;
+    observacaoAcesso: string | null;
+    fotoExternaUrl: string | null;
+    proximaTentativaSugerida: string | null;
+    criadoEm: string | null;
+  }>;
 }

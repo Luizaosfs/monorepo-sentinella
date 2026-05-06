@@ -11,6 +11,7 @@ import {
   SintomaConsolidacao,
   VistoriaParaConsolidacao,
   VistoriaResumoVisual,
+  VistoriaSemAcessoResumo,
 } from '@modules/vistoria/repositories/vistoria-read.repository';
 import { VistoriaReadRepository } from '@modules/vistoria/repositories/vistoria-read.repository';
 import { Injectable } from '@nestjs/common';
@@ -341,6 +342,42 @@ export class PrismaVistoriaReadRepository implements VistoriaReadRepository {
     }
 
     return raw ? this.mapResumoVisual(raw) : null;
+  }
+
+  async findSemAcessoByFocoId(
+    focoId: string,
+    clienteId: string | null,
+  ): Promise<VistoriaSemAcessoResumo[]> {
+    const rows = await this.prisma.client.vistorias.findMany({
+      where: {
+        foco_risco_id: focoId,
+        acesso_realizado: false,
+        deleted_at: null,
+        ...(clienteId != null && { cliente_id: clienteId }),
+      },
+      select: {
+        id: true,
+        tentativa_numero: true,
+        data_visita: true,
+        motivo_sem_acesso: true,
+        observacao_acesso: true,
+        foto_externa_url: true,
+        proxima_tentativa_sugerida: true,
+        created_at: true,
+      },
+      orderBy: { tentativa_numero: 'asc' },
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return rows.map((r: any) => ({
+      id: r.id as string,
+      tentativa_numero: (r.tentativa_numero as number | null) ?? 1,
+      data_visita: r.data_visita as Date,
+      motivo_sem_acesso: (r.motivo_sem_acesso as string | null) ?? null,
+      observacao_acesso: (r.observacao_acesso as string | null) ?? null,
+      foto_externa_url: (r.foto_externa_url as string | null) ?? null,
+      proxima_tentativa_sugerida: (r.proxima_tentativa_sugerida as Date | null) ?? null,
+      created_at: (r.created_at as Date | null) ?? null,
+    }));
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

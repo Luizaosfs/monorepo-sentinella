@@ -119,6 +119,7 @@ describe('GetResumoVisualVistoriaPorFoco', () => {
   const findFoco = jest.fn();
   const findOperacoes = jest.fn();
   const findResumoByFocoId = jest.fn();
+  const findSemAcessoByFocoId = jest.fn();
 
   const prisma = {
     client: {
@@ -129,11 +130,13 @@ describe('GetResumoVisualVistoriaPorFoco', () => {
 
   const vistoriaRepo = {
     findResumoByFocoId,
+    findSemAcessoByFocoId,
   } as unknown as VistoriaReadRepository;
 
   beforeEach(async () => {
     jest.clearAllMocks();
     findOperacoes.mockResolvedValue([]);
+    findSemAcessoByFocoId.mockResolvedValue([]);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -488,6 +491,97 @@ describe('GetResumoVisualVistoriaPorFoco', () => {
     const result = await useCase.execute('foco-1', 'cliente-1');
 
     expect(result.explicabilidade.alertas.some((a) => a.includes('depósito(s) com foco'))).toBe(true);
+  });
+
+  describe('historicoSemAcesso', () => {
+    const semAcessoBase = {
+      id: 'v-sem-1',
+      tentativa_numero: 1,
+      data_visita: new Date('2026-04-10T08:00:00Z'),
+      motivo_sem_acesso: 'Imóvel fechado',
+      observacao_acesso: 'Portão trancado',
+      foto_externa_url: 'https://cdn.example.com/sem-acesso.jpg',
+      proxima_tentativa_sugerida: new Date('2026-04-13T08:00:00Z'),
+      created_at: new Date('2026-04-10T08:00:00Z'),
+    };
+
+    it('deve retornar historicoSemAcesso vazio quando não há tentativas', async () => {
+      findFoco.mockResolvedValue(focoBase);
+      findResumoByFocoId.mockResolvedValue(null);
+      findSemAcessoByFocoId.mockResolvedValue([]);
+
+      const result = await useCase.execute('foco-1', 'cliente-1');
+
+      expect(result.historicoSemAcesso).toHaveLength(0);
+    });
+
+    it('deve incluir tentativa sem acesso no historicoSemAcesso com todos os campos', async () => {
+      findFoco.mockResolvedValue(focoBase);
+      findResumoByFocoId.mockResolvedValue(null);
+      findSemAcessoByFocoId.mockResolvedValue([semAcessoBase]);
+
+      const result = await useCase.execute('foco-1', 'cliente-1');
+
+      expect(result.historicoSemAcesso).toHaveLength(1);
+      const t = result.historicoSemAcesso[0];
+      expect(t.id).toBe('v-sem-1');
+      expect(t.tentativaNumero).toBe(1);
+      expect(t.dataVisita).toBe('2026-04-10T08:00:00.000Z');
+      expect(t.motivoSemAcesso).toBe('Imóvel fechado');
+      expect(t.observacaoAcesso).toBe('Portão trancado');
+      expect(t.fotoExternaUrl).toBe('https://cdn.example.com/sem-acesso.jpg');
+      expect(t.proximaTentativaSugerida).toBe('2026-04-13T08:00:00.000Z');
+    });
+
+    it('deve incluir foto da tentativa sem acesso nas evidências com origem vistoria_sem_acesso', async () => {
+      findFoco.mockResolvedValue(focoBase);
+      findResumoByFocoId.mockResolvedValue(null);
+      findSemAcessoByFocoId.mockResolvedValue([semAcessoBase]);
+
+      const result = await useCase.execute('foco-1', 'cliente-1');
+
+      const ev = result.evidencias.find((e) => e.origem === 'vistoria_sem_acesso');
+      expect(ev).toBeDefined();
+      expect(ev?.url).toBe('https://cdn.example.com/sem-acesso.jpg');
+      expect(ev?.legenda).toContain('Tentativa 1');
+    });
+
+    it('deve adicionar evento sem_acesso por tentativa no histórico', async () => {
+      findFoco.mockResolvedValue(focoBase);
+      findResumoByFocoId.mockResolvedValue(null);
+      findSemAcessoByFocoId.mockResolvedValue([
+        semAcessoBase,
+        { ...semAcessoBase, id: 'v-sem-2', tentativa_numero: 2, motivo_sem_acesso: 'Morador ausente', data_visita: new Date('2026-04-14T09:00:00Z'), created_at: new Date('2026-04-14T09:00:00Z') },
+      ]);
+
+      const result = await useCase.execute('foco-1', 'cliente-1');
+
+      const semAcessoEntries = result.historico.filter((h) => h.tipo === 'sem_acesso');
+      expect(semAcessoEntries).toHaveLength(2);
+      expect(semAcessoEntries[0].descricao).toContain('Tentativa 1');
+      expect(semAcessoEntries[0].descricao).toContain('Imóvel fechado');
+      expect(semAcessoEntries[1].descricao).toContain('Tentativa 2');
+      expect(semAcessoEntries[1].descricao).toContain('Morador ausente');
+    });
+
+    it('deve adicionar alerta quando há tentativas sem acesso', async () => {
+      findFoco.mockResolvedValue(focoBase);
+      findResumoByFocoId.mockResolvedValue(vistoriaBase);
+      findSemAcessoByFocoId.mockResolvedValue([semAcessoBase]);
+
+      const result = await useCase.execute('foco-1', 'cliente-1');
+
+      expect(result.explicabilidade.alertas.some((a) => a.includes('tentativa(s) sem acesso'))).toBe(true);
+    });
+
+    it('deve chamar findSemAcessoByFocoId com focoId e clienteId corretos', async () => {
+      findFoco.mockResolvedValue(focoBase);
+      findResumoByFocoId.mockResolvedValue(null);
+
+      await useCase.execute('foco-1', 'cliente-1');
+
+      expect(findSemAcessoByFocoId).toHaveBeenCalledWith('foco-1', 'cliente-1');
+    });
   });
 
   it('deve calcular calhasCriticasQtd apenas para calhas com foco ou agua parada', async () => {

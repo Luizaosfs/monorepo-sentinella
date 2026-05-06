@@ -1,6 +1,7 @@
 import {
   VistoriaReadRepository,
   VistoriaResumoVisual,
+  VistoriaSemAcessoResumo,
 } from '@modules/vistoria/repositories/vistoria-read.repository';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
@@ -30,7 +31,7 @@ export class GetResumoVisualVistoriaPorFoco {
     });
     if (!foco) throw FocoRiscoException.notFound();
 
-    const [vistoria, operacoes] = await Promise.all([
+    const [vistoria, operacoes, semAcessoVistorias] = await Promise.all([
       this.vistoriaReadRepo.findResumoByFocoId(
         foco.id,
         foco.origem_vistoria_id ?? null,
@@ -45,9 +46,13 @@ export class GetResumoVisualVistoriaPorFoco {
         include: { evidencias: true },
         orderBy: { created_at: 'asc' },
       }),
+      this.vistoriaReadRepo.findSemAcessoByFocoId(
+        foco.id,
+        tenantId ?? foco.cliente_id,
+      ),
     ]);
 
-    return this.buildResponse(foco, vistoria, operacoes);
+    return this.buildResponse(foco, vistoria, operacoes, semAcessoVistorias);
   }
 
   private buildResponse(
@@ -56,6 +61,7 @@ export class GetResumoVisualVistoriaPorFoco {
     vistoria: VistoriaResumoVisual | null,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     operacoes: any[],
+    semAcessoVistorias: VistoriaSemAcessoResumo[],
   ): ResumoVisualVistoriaResponse {
     const focoOut: ResumoVisualVistoriaResponse['foco'] = {
       id: foco.id,
@@ -115,8 +121,9 @@ export class GetResumoVisualVistoriaPorFoco {
           alertas: [],
           pendencias: ['Nenhuma vistoria vinculada ao foco'],
         },
-        evidencias: this.buildEvidencias(null, [], operacoes),
-        historico: this.buildHistorico(null, foco.historico ?? [], operacoes),
+        evidencias: this.buildEvidencias(null, [], operacoes, semAcessoVistorias),
+        historico: this.buildHistorico(null, foco.historico ?? [], operacoes, semAcessoVistorias),
+        historicoSemAcesso: semAcessoVistorias.map((v) => this.mapSemAcesso(v)),
       };
     }
 
@@ -259,6 +266,14 @@ export class GetResumoVisualVistoriaPorFoco {
     if (possuiCalhaComFoco) alertas.push('Calha com foco identificada');
     if (possuiAguaParada) alertas.push('Calha com água parada identificada');
     if (fatoresRiscoAtivosQtd > 0) alertas.push(`${fatoresRiscoAtivosQtd} fator(es) de risco socioambiental presente(s)`);
+    if (semAcessoVistorias.length > 0) {
+      alertas.push(`${semAcessoVistorias.length} tentativa(s) sem acesso registrada(s) neste imóvel`);
+      const today = new Date().toISOString().slice(0, 10);
+      const jaHoje = semAcessoVistorias.some(
+        (v) => v.data_visita.toISOString().slice(0, 10) === today,
+      );
+      if (jaHoje) alertas.push('Atenção: já existe uma tentativa sem acesso registrada hoje');
+    }
 
     const pendencias: string[] = [];
     if (!vistoria.acesso_realizado) {
@@ -309,8 +324,9 @@ export class GetResumoVisualVistoriaPorFoco {
         fatoresRiscoAtivosQtd,
       },
       explicabilidade: { motivos, alertas, pendencias },
-      evidencias: this.buildEvidencias(vistoria, calhasItens, operacoes),
-      historico: this.buildHistorico(vistoria, foco.historico ?? [], operacoes),
+      evidencias: this.buildEvidencias(vistoria, calhasItens, operacoes, semAcessoVistorias),
+      historico: this.buildHistorico(vistoria, foco.historico ?? [], operacoes, semAcessoVistorias),
+      historicoSemAcesso: semAcessoVistorias.map((v) => this.mapSemAcesso(v)),
     };
   }
 
@@ -319,10 +335,11 @@ export class GetResumoVisualVistoriaPorFoco {
     calhasItens: Array<{ fotoUrl: string | null; observacao: string | null; posicao: string }>,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     operacoes: any[],
+    semAcessoVistorias: VistoriaSemAcessoResumo[],
   ): ResumoVisualVistoriaResponse['evidencias'] {
     const evidencias: ResumoVisualVistoriaResponse['evidencias'] = [];
 
-    if (vistoria?.foto_externa_url) {
+    if (vistoria?.foto_externa_url && vistoria.acesso_realizado) {
       evidencias.push({
         tipo: 'foto',
         url: vistoria.foto_externa_url,
@@ -330,6 +347,18 @@ export class GetResumoVisualVistoriaPorFoco {
         origem: 'vistoria',
         createdAt: vistoria.created_at ? vistoria.created_at.toISOString() : null,
       });
+    }
+
+    for (const v of semAcessoVistorias) {
+      if (v.foto_externa_url) {
+        evidencias.push({
+          tipo: 'foto',
+          url: v.foto_externa_url,
+          legenda: `Tentativa ${v.tentativa_numero} sem acesso — ${v.data_visita.toISOString().slice(0, 10)}`,
+          origem: 'vistoria_sem_acesso',
+          createdAt: v.created_at ? v.created_at.toISOString() : null,
+        });
+      }
     }
 
     for (const calha of calhasItens) {
@@ -373,12 +402,26 @@ export class GetResumoVisualVistoriaPorFoco {
     return evidencias;
   }
 
+  private mapSemAcesso(v: VistoriaSemAcessoResumo): ResumoVisualVistoriaResponse['historicoSemAcesso'][0] {
+    return {
+      id: v.id,
+      tentativaNumero: v.tentativa_numero,
+      dataVisita: v.data_visita.toISOString(),
+      motivoSemAcesso: v.motivo_sem_acesso,
+      observacaoAcesso: v.observacao_acesso,
+      fotoExternaUrl: v.foto_externa_url,
+      proximaTentativaSugerida: v.proxima_tentativa_sugerida ? v.proxima_tentativa_sugerida.toISOString() : null,
+      criadoEm: v.created_at ? v.created_at.toISOString() : null,
+    };
+  }
+
   private buildHistorico(
     vistoria: VistoriaResumoVisual | null,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     focoHistorico: any[],
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     operacoes: any[],
+    semAcessoVistorias: VistoriaSemAcessoResumo[],
   ): ResumoVisualVistoriaResponse['historico'] {
     const historico: ResumoVisualVistoriaResponse['historico'] = [];
 
@@ -391,6 +434,15 @@ export class GetResumoVisualVistoriaPorFoco {
       });
     }
 
+    for (const v of semAcessoVistorias) {
+      historico.push({
+        tipo: 'sem_acesso',
+        descricao: `Tentativa ${v.tentativa_numero} — acesso recusado${v.motivo_sem_acesso ? `: ${v.motivo_sem_acesso}` : ''}`,
+        createdAt: v.data_visita.toISOString(),
+        origem: 'vistoria',
+      });
+    }
+
     if (vistoria) {
       if (vistoria.created_at) {
         historico.push({
@@ -400,14 +452,7 @@ export class GetResumoVisualVistoriaPorFoco {
           origem: 'vistoria',
         });
       }
-      if (!vistoria.acesso_realizado) {
-        historico.push({
-          tipo: 'sem_acesso',
-          descricao: `Acesso recusado${vistoria.motivo_sem_acesso ? `: ${vistoria.motivo_sem_acesso}` : ''}`,
-          createdAt: vistoria.data_visita.toISOString(),
-          origem: 'vistoria',
-        });
-      } else {
+      if (vistoria.acesso_realizado) {
         historico.push({
           tipo: 'vistoria_realizada',
           descricao: 'Visita ao imóvel realizada',

@@ -63,6 +63,17 @@ export interface DadosConsolidacao {
   calhas: CalhaAgregada;
 }
 
+export interface VistoriaSemAcessoResumo {
+  id: string;
+  tentativa_numero: number;
+  data_visita: Date;
+  motivo_sem_acesso: string | null;
+  observacao_acesso: string | null;
+  foto_externa_url: string | null;
+  proxima_tentativa_sugerida: Date | null;
+  created_at: Date | null;
+}
+
 export interface VistoriaResumoVisual {
   id: string;
   data_visita: Date;
@@ -170,4 +181,8 @@ export abstract class VistoriaReadRepository {
     origemVistoriaId: string | null,
     clienteId: string | null,
   ): Promise<VistoriaResumoVisual | null>;
+  abstract findSemAcessoByFocoId(
+    focoId: string,
+    clienteId: string | null,
+  ): Promise<VistoriaSemAcessoResumo[]>;
 }

@@ -13,6 +13,7 @@ import AgenteFormularioVistoria from '@/pages/agente/AgenteFormularioVistoria';
 import { VistoriaSemAcesso } from '@/components/vistoria/VistoriaSemAcesso';
 import { useClienteAtivo } from '@/hooks/useClienteAtivo';
 import { useAuth } from '@/hooks/useAuth';
+import { useResumoVisualVistoria } from '@/hooks/queries/useResumoVisualVistoria';
 import { STALE } from '@/lib/queryConfig';
 import { getCurrentCiclo } from '@/lib/ciclo';
 import { api } from '@/services/api';
@@ -59,6 +60,64 @@ function ReincidenteBanner({ imovelId, clienteId }: { imovelId: string; clienteI
         )}
         . Inspecionar com atenção redobrada.
       </p>
+    </div>
+  );
+}
+
+// ─── Banner tentativas sem acesso ─────────────────────────────────────────────
+
+function TentativasSemAcessoBanner({ focoId }: { focoId: string }) {
+  const { data: resumo } = useResumoVisualVistoria(focoId);
+  const tentativas = resumo?.historicoSemAcesso ?? [];
+
+  if (tentativas.length === 0) return null;
+
+  const ultima = tentativas[tentativas.length - 1];
+  const dataFormatada = new Date(ultima.dataVisita).toLocaleDateString('pt-BR', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+  });
+
+  return (
+    <div className="mx-4 mt-3 rounded-xl border border-rose-200 bg-rose-50 dark:border-rose-800/40 dark:bg-rose-950/25 p-3 space-y-2">
+      <div className="flex items-start gap-2">
+        <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+        <div className="space-y-0.5">
+          <p className="text-sm font-semibold text-rose-800 dark:text-rose-300 leading-snug">
+            {tentativas.length === 1
+              ? '1 tentativa sem acesso registrada'
+              : `${tentativas.length} tentativas sem acesso registradas`}
+          </p>
+          <p className="text-xs text-rose-700 dark:text-rose-400">
+            Última: <span className="font-medium">{dataFormatada}</span>
+            {ultima.motivoSemAcesso && (
+              <> · {ultima.motivoSemAcesso}</>
+            )}
+          </p>
+          {ultima.observacaoAcesso && (
+            <p className="text-xs text-rose-600 dark:text-rose-500">{ultima.observacaoAcesso}</p>
+          )}
+          {ultima.proximaTentativaSugerida && (
+            <p className="text-xs text-rose-700 dark:text-rose-400">
+              Retorno sugerido:{' '}
+              <span className="font-medium">
+                {new Date(ultima.proximaTentativaSugerida).toLocaleDateString('pt-BR', {
+                  day: '2-digit', month: '2-digit',
+                })}
+              </span>
+            </p>
+          )}
+        </div>
+      </div>
+      {ultima.fotoExternaUrl && (
+        <a href={ultima.fotoExternaUrl} target="_blank" rel="noopener noreferrer" className="group inline-block ml-6">
+          <img
+            src={ultima.fotoExternaUrl}
+            alt="Foto da última tentativa"
+            className="h-20 max-w-[120px] rounded-lg border border-rose-200 object-cover transition-opacity group-hover:opacity-85"
+          />
+          <p className="mt-0.5 text-[10px] text-rose-500">Foto da tentativa {ultima.tentativaNumero}</p>
+        </a>
+      )}
     </div>
   );
 }
@@ -123,6 +182,9 @@ function SemAcessoWrapper({
         </div>
       </div>
 
+      {/* Contexto da última tentativa */}
+      {focoRiscoId && <TentativasSemAcessoBanner focoId={focoRiscoId} />}
+
       {/* Formulário */}
       <div className="p-4 pb-24">
         <VistoriaSemAcesso
@@ -183,6 +245,7 @@ export default function AgenteVistoria() {
         </div>
       )}
       {clienteId && <ReincidenteBanner imovelId={imovelId} clienteId={clienteId} />}
+      {focoId && <TentativasSemAcessoBanner focoId={focoId} />}
       <AgenteFormularioVistoria />
     </div>
   );

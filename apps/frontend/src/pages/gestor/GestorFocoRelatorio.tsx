@@ -68,6 +68,7 @@ type CalhaItem = Resumo['calhas']['itens'][0];
 type Tratamento = Resumo['tratamento'];
 type Evidencia = Resumo['evidencias'][0];
 type HistoricoItem = Resumo['historico'][0];
+type TentativaSemAcesso = Resumo['historicoSemAcesso'][0];
 
 // ── Stepper ───────────────────────────────────────────────────────────────────
 
@@ -775,7 +776,7 @@ function ExplicabilidadeCard({ explicabilidade }: { explicabilidade: Resumo['exp
 
 // ── Evidências tab ────────────────────────────────────────────────────────────
 
-type FiltroEv = 'todos' | 'deposito' | 'fachada' | 'calha' | 'operacao';
+type FiltroEv = 'todos' | 'deposito' | 'fachada' | 'calha' | 'operacao' | 'sem_acesso';
 
 const DEPOSITO_TIPO_LABEL: Record<string, string> = {
   A1: 'Caixa d\'água (solo)', A2: 'Reservatório elevado',
@@ -821,10 +822,11 @@ function SecaoEvidencias({ titulo, count, children }: { titulo: string; count: n
 function EvidenciasTab({ evidencias }: { evidencias: Evidencia[] }) {
   const [filtro, setFiltro] = useState<FiltroEv>('todos');
 
-  const fachada   = evidencias.filter(e => e.origem === 'vistoria' && !e.depositoTipo);
-  const depositos = evidencias.filter(e => !!e.depositoTipo);
-  const calhas    = evidencias.filter(e => e.origem === 'calha');
-  const operacoes = evidencias.filter(e => e.origem === 'operacao');
+  const fachada    = evidencias.filter(e => e.origem === 'vistoria' && !e.depositoTipo);
+  const depositos  = evidencias.filter(e => !!e.depositoTipo);
+  const calhas     = evidencias.filter(e => e.origem === 'calha');
+  const operacoes  = evidencias.filter(e => e.origem === 'operacao');
+  const semAcesso  = evidencias.filter(e => e.origem === 'vistoria_sem_acesso');
 
   const depositosPorTipo: Record<string, { antes?: Evidencia; depois?: Evidencia }> = {};
   for (const ev of depositos) {
@@ -836,11 +838,12 @@ function EvidenciasTab({ evidencias }: { evidencias: Evidencia[] }) {
   const tiposComFotos = DEPOSITO_TIPOS.filter(t => depositosPorTipo[t]);
 
   const chips: Array<{ key: FiltroEv; label: string; count: number }> = [
-    { key: 'todos',    label: 'Todos',          count: evidencias.length },
-    { key: 'deposito', label: 'Depósitos PNCD', count: depositos.length },
-    { key: 'fachada',  label: 'Fachada',         count: fachada.length },
-    { key: 'calha',    label: 'Calhas',           count: calhas.length },
-    { key: 'operacao', label: 'Operações',        count: operacoes.length },
+    { key: 'todos',      label: 'Todos',            count: evidencias.length },
+    { key: 'deposito',   label: 'Depósitos PNCD',  count: depositos.length },
+    { key: 'fachada',    label: 'Fachada',           count: fachada.length },
+    { key: 'calha',      label: 'Calhas',             count: calhas.length },
+    { key: 'operacao',   label: 'Operações',          count: operacoes.length },
+    { key: 'sem_acesso', label: 'Sem acesso',         count: semAcesso.length },
   ].filter(c => c.key === 'todos' || c.count > 0);
 
   if (evidencias.length === 0) {
@@ -970,6 +973,15 @@ function EvidenciasTab({ evidencias }: { evidencias: Evidencia[] }) {
         </SecaoEvidencias>
       )}
 
+      {/* Tentativas sem acesso */}
+      {show('sem_acesso') && semAcesso.length > 0 && (
+        <SecaoEvidencias titulo="Fotos de tentativas sem acesso" count={semAcesso.length}>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+            {semAcesso.map((ev, i) => <FotoCard key={i} ev={ev} />)}
+          </div>
+        </SecaoEvidencias>
+      )}
+
     </div>
   );
 }
@@ -1023,6 +1035,69 @@ function HistoricoTab({ historico }: { historico: HistoricoItem[] }) {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+// ── Tentativas sem acesso tab ─────────────────────────────────────────────────
+
+function TentativasSemAcessoTab({ tentativas }: { tentativas: TentativaSemAcesso[] }) {
+  if (tentativas.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 text-center">
+        <ShieldAlert className="h-8 w-8 text-muted-foreground/40 mb-2" aria-hidden />
+        <p className="text-sm text-muted-foreground">Nenhuma tentativa sem acesso registrada.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {tentativas.map((t) => (
+        <div key={t.id} className="rounded-sm border border-amber-200 bg-amber-50/60 dark:border-amber-800/50 dark:bg-amber-950/20 p-4">
+          <div className="flex items-start gap-3">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-sm bg-amber-100 dark:bg-amber-900/40">
+              <span className="text-sm font-bold text-amber-700 dark:text-amber-400">{t.tentativaNumero}ª</span>
+            </div>
+            <div className="min-w-0 flex-1 space-y-1.5">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <span className="text-sm font-semibold text-foreground">
+                  Tentativa {t.tentativaNumero} — acesso recusado
+                </span>
+                <span className="text-[11px] text-muted-foreground shrink-0">{formatDate(t.dataVisita)}</span>
+              </div>
+              {t.motivoSemAcesso && (
+                <p className="text-xs text-muted-foreground">
+                  <span className="font-medium text-foreground">Motivo:</span> {t.motivoSemAcesso}
+                </p>
+              )}
+              {t.observacaoAcesso && (
+                <p className="text-xs text-muted-foreground">
+                  <span className="font-medium text-foreground">Observação:</span> {t.observacaoAcesso}
+                </p>
+              )}
+              {t.proximaTentativaSugerida && (
+                <p className="text-xs text-muted-foreground">
+                  <span className="font-medium text-foreground">Próxima tentativa sugerida:</span>{' '}
+                  {formatDate(t.proximaTentativaSugerida)}
+                </p>
+              )}
+            </div>
+          </div>
+          {t.fotoExternaUrl && (
+            <div className="mt-3 ml-11">
+              <a href={t.fotoExternaUrl} target="_blank" rel="noopener noreferrer" className="group inline-block">
+                <img
+                  src={t.fotoExternaUrl}
+                  alt={`Foto da tentativa ${t.tentativaNumero}`}
+                  className="h-36 max-w-[200px] rounded-sm border border-border/60 object-cover transition-opacity group-hover:opacity-90"
+                />
+              </a>
+              <p className="mt-1 text-[10px] text-muted-foreground">Foto do imóvel — tentativa {t.tentativaNumero}</p>
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   );
 }
@@ -1443,8 +1518,9 @@ export default function GestorFocoRelatorio() {
           {[
             { value: 'evidencias', label: 'Evidências', count: resumo?.evidencias.length ?? 0 },
             { value: 'historico', label: 'Histórico', count: resumo?.historico.length ?? 0 },
+            { value: 'tentativas', label: 'Sem acesso', count: resumo?.historicoSemAcesso?.length ?? 0 },
             { value: 'ocorrencia', label: 'Dados da ocorrência', count: 0 },
-          ].map((tab) => (
+          ].filter(t => t.value !== 'tentativas' || (resumo?.historicoSemAcesso?.length ?? 0) > 0).map((tab) => (
             <TabsTrigger key={tab.value} value={tab.value}
               className="rounded-none border-b-2 border-transparent px-3 py-2 text-sm data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:text-primary"
             >
@@ -1471,6 +1547,16 @@ export default function GestorFocoRelatorio() {
             </div>
           ) : (
             <HistoricoTab historico={resumo?.historico ?? []} />
+          )}
+        </TabsContent>
+
+        <TabsContent value="tentativas" className="mt-4">
+          {resumoLoading ? (
+            <div className="space-y-3">
+              {[1, 2].map((i) => <Skeleton key={i} className="h-28 w-full rounded-sm" />)}
+            </div>
+          ) : (
+            <TentativasSemAcessoTab tentativas={resumo?.historicoSemAcesso ?? []} />
           )}
         </TabsContent>
 
