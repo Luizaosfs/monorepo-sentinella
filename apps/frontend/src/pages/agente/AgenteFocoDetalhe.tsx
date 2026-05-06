@@ -4,10 +4,11 @@
  * Rota: /agente/focos/:focoId
  *
  * Fluxo canônico e CTAs por status:
- *   aguarda_inspecao → "Iniciar inspeção"  (único CTA — agente ainda não viu o foco)
- *   em_inspecao      → "Confirmar foco" | "Descartar foco"  (agente viu e decide)
- *   confirmado       → "Iniciar tratamento"  (único CTA — foco confirmado, tratamento obrigatório)
- *   em_tratamento    → "Resolver foco"  (único CTA — só resolve após tratar)
+ *   aguarda_inspecao          → "Iniciar inspeção"  (único CTA — agente ainda não viu o foco)
+ *   aguardando_nova_tentativa → "Iniciar nova tentativa"  (tentativas 1/2; 3ª → supervisor)
+ *   em_inspecao               → "Confirmar foco" | "Descartar foco"  (agente viu e decide)
+ *   confirmado                → "Iniciar tratamento"  (único CTA — foco confirmado, tratamento obrigatório)
+ *   em_tratamento             → "Resolver foco"  (único CTA — só resolve após tratar)
  *
  * Descarte só é oferecido em `em_inspecao`: é a única etapa onde o agente
  * pode constatar que o foco não existe ou foi resolvido naturalmente.
@@ -418,6 +419,27 @@ export default function AgenteFocoDetalhe() {
           >
             <PlayCircle className="w-4 h-4 mr-2" />
             {isPending ? 'Iniciando...' : 'Iniciar inspeção'}
+          </Button>
+        );
+
+      case 'aguardando_nova_tentativa':
+        if (foco!.pendente_decisao_supervisor) {
+          return (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30 p-4 text-center space-y-1">
+              <p className="text-sm font-semibold text-amber-700 dark:text-amber-300">Aguardando decisão do supervisor</p>
+              <p className="text-xs text-muted-foreground">O supervisor analisará e reagendará este foco.</p>
+            </div>
+          );
+        }
+        return (
+          <Button
+            size="lg"
+            className="w-full bg-rose-500 hover:bg-rose-600 text-white font-bold"
+            disabled={isPending}
+            onClick={handleIniciarInspecao}
+          >
+            <PlayCircle className="w-4 h-4 mr-2" />
+            {isPending ? 'Iniciando...' : 'Iniciar nova tentativa'}
           </Button>
         );
 

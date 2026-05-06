@@ -265,7 +265,19 @@
       "PowerShell(& \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -U postgres -d sentinella -c \"ALTER TABLE vistorias ADD COLUMN IF NOT EXISTS tentativa_numero integer NOT NULL DEFAULT 1; ALTER TABLE vistorias ADD COLUMN IF NOT EXISTS proxima_tentativa_sugerida timestamptz; ALTER TABLE focos_risco ADD COLUMN IF NOT EXISTS tentativas_sem_acesso integer NOT NULL DEFAULT 0; ALTER TABLE focos_risco ADD COLUMN IF NOT EXISTS pendente_decisao_supervisor boolean NOT NULL DEFAULT false;\")",
       "PowerShell($env:PGPASSWORD = \"Sentinella147852369\"; & \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -h 177.7.37.14 -U luizAntonio -d sentinella -c \"ALTER TABLE vistorias ADD COLUMN IF NOT EXISTS tentativa_numero integer NOT NULL DEFAULT 1; ALTER TABLE vistorias ADD COLUMN IF NOT EXISTS proxima_tentativa_sugerida timestamptz; ALTER TABLE focos_risco ADD COLUMN IF NOT EXISTS tentativas_sem_acesso integer NOT NULL DEFAULT 0; ALTER TABLE focos_risco ADD COLUMN IF NOT EXISTS pendente_decisao_supervisor boolean NOT NULL DEFAULT false;\")",
       "Bash(pnpm --filter @sentinella/api generate)",
-      "Bash(not exist *)"
+      "Bash(not exist *)",
+      "Bash(findstr \"DATABASE_URL\")",
+      "PowerShell($env:PGPASSWORD = \"Sentinella147852369\"; & \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -h 177.7.37.14 -p 5432 -U luizAntonio -d sentinella -c \"SELECT id, codigo_foco, status, tentativas_sem_acesso, pendente_decisao_supervisor FROM focos_risco WHERE codigo_foco = '2026-00000092';\")",
+      "PowerShell($env:PGPASSWORD = \"Sentinella147852369\"; & \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -h 177.7.37.14 -p 5432 -U luizAntonio -d sentinella -f \"D:\\\\sentinella\\\\monorepo-sentinella\\\\fix_foco_92.sql\")",
+      "PowerShell($env:PGPASSWORD = \"Sentinella147852369\"; & \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -h 177.7.37.14 -p 5432 -U luizAntonio -d sentinella -c \"SELECT pg_get_constraintdef\\(oid\\) FROM pg_constraint WHERE conname = 'focos_risco_status_check';\")",
+      "PowerShell(Get-Process *)",
+      "PowerShell(& \"C:\\\\Users\\\\luiz\\\\AppData\\\\Roaming\\\\npm\\\\pm2.cmd\" list 2>&1)",
+      "PowerShell(npx pm2 list 2>&1 | Select-Object -First 20)",
+      "Bash(pm2 list *)",
+      "PowerShell(Get-NetTCPConnection *)",
+      "PowerShell(Get-WmiObject *)",
+      "PowerShell($env:PGPASSWORD = \"Sentinella147852369\"; & \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -h 177.7.37.14 -p 5432 -U luizAntonio -d sentinella -f \"D:\\\\sentinella\\\\monorepo-sentinella\\\\fix_focos_sem_acesso.sql\")",
+      "PowerShell($env:PGPASSWORD = \"Sentinella147852369\"; & \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -h 177.7.37.14 -p 5432 -U luizAntonio -d sentinella -c \"SELECT codigo_foco, status, tentativas_sem_acesso, pendente_decisao_supervisor FROM focos_risco WHERE id IN \\('831b6ceb-b3fa-4c1e-95ae-952f4caf8592','0fba5b4f-4d5a-4b39-b63e-0aa8d6af7c57','9d19712e-2986-49f9-866e-364c35a61a08'\\) ORDER BY codigo_foco;\")"
     ]
   }
 }

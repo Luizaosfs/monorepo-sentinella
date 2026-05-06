@@ -59,8 +59,8 @@ export class FocoRiscoViewModel {
       classificacaoInicial: foco.classificacaoInicial,
       scorePrioridade: foco.scorePrioridade,
       codigoFoco: foco.codigoFoco,
-      tentativasSemAcesso: foco.tentativasSemAcesso,
-      pendentDecisaoSupervisor: foco.pendentDecisaoSupervisor,
+      tentativas_sem_acesso: foco.tentativasSemAcesso,
+      pendente_decisao_supervisor: foco.pendentDecisaoSupervisor,
       origemImageUrl: foco.origemImageUrl ?? null,
       ultimaVistoriaEm: foco.ultimaVistoriaEm ?? null,
       // JSON operacional/analítico; classificação atual legada pode existir em payload; coluna canônica de rótulo é classificacaoInicial.
