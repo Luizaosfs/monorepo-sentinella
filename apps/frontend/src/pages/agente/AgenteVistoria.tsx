@@ -14,6 +14,7 @@ import { VistoriaSemAcesso } from '@/components/vistoria/VistoriaSemAcesso';
 import { useClienteAtivo } from '@/hooks/useClienteAtivo';
 import { useAuth } from '@/hooks/useAuth';
 import { useResumoVisualVistoria } from '@/hooks/queries/useResumoVisualVistoria';
+import { useFocosDoImovel } from '@/hooks/queries/useFocosRisco';
 import { STALE } from '@/lib/queryConfig';
 import { getCurrentCiclo } from '@/lib/ciclo';
 import { api } from '@/services/api';
@@ -213,11 +214,18 @@ export default function AgenteVistoria() {
   const { usuario } = useAuth();
 
   const modo = searchParams.get('modo');
-  const focoId = searchParams.get('focoId');
+  const focoIdUrl = searchParams.get('focoId');
   const ciclo = getCurrentCiclo();
 
+  // Quando não há focoId na URL, descobre o foco em em_inspecao para este imóvel.
+  const { data: focosDoImovel } = useFocosDoImovel(
+    !focoIdUrl ? imovelId : null,
+    clienteId,
+  );
+  const focoIdResolvido = focoIdUrl ?? focosDoImovel?.find((f: { status: string; id: string }) => f.status === 'em_inspecao')?.id ?? null;
+
   // Permite acesso sem imovelId quando há focoId (foco sem imóvel cadastrado)
-  if (!imovelId && !focoId) {
+  if (!imovelId && !focoIdResolvido) {
     navigate('/agente/hoje');
     return null;
   }
@@ -230,7 +238,7 @@ export default function AgenteVistoria() {
         clienteId={clienteId}
         agenteId={usuario.id}
         ciclo={ciclo}
-        focoRiscoId={focoId ?? undefined}
+        focoRiscoId={focoIdResolvido ?? undefined}
         onDone={() => navigate('/agente/hoje')}
       />
     );
@@ -238,15 +246,15 @@ export default function AgenteVistoria() {
 
   return (
     <div>
-      {focoId && (
+      {focoIdResolvido && (
         <div className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-xs font-semibold">
           <UserCheck className="w-4 h-4 shrink-0" />
           Inspeção de foco atribuído — classifique o resultado ao finalizar
         </div>
       )}
       {clienteId && <ReincidenteBanner imovelId={imovelId} clienteId={clienteId} />}
-      {focoId && <TentativasSemAcessoBanner focoId={focoId} />}
-      <AgenteFormularioVistoria />
+      {focoIdResolvido && <TentativasSemAcessoBanner focoId={focoIdResolvido} />}
+      <AgenteFormularioVistoria focoRiscoId={focoIdResolvido ?? undefined} />
     </div>
   );
 }

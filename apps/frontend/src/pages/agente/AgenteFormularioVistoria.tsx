@@ -129,11 +129,11 @@ const FOCO_ORIGEM_MAP: Partial<Record<FocoRiscoOrigem, 'denuncia' | 'liraa' | 'd
   cidadao: 'denuncia',
 };
 
-export default function AgenteFormularioVistoria() {
+export default function AgenteFormularioVistoria({ focoRiscoId: focoRiscoIdProp }: { focoRiscoId?: string } = {}) {
   const { imovelId: imovelIdParam } = useParams<{ imovelId: string }>();
   const [searchParams] = useSearchParams();
   const atividade = (searchParams.get('atividade') as TipoAtividade) || 'pesquisa';
-  const focoId = searchParams.get('focoId');
+  const focoId = focoRiscoIdProp ?? searchParams.get('focoId');
 
   const navigate = useNavigate();
   const { clienteId, tenantStatus } = useClienteAtivo();
