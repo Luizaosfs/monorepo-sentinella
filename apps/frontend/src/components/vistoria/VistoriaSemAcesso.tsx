@@ -180,6 +180,13 @@ export function VistoriaSemAcesso({
       let escaladoSupervisor = false;
       if (focoRiscoId) {
         try {
+          // Garante que o foco está em em_inspecao antes de registrar sem_acesso.
+          // aguarda_inspecao → em_inspecao requer endpoint dedicado (não o genérico).
+          try {
+            await api.focosRisco.iniciarInspecao(focoRiscoId);
+          } catch {
+            // Já está em em_inspecao ou outra transição — continua normalmente.
+          }
           const result = await api.vistorias.registrarSemAcessoFluxo(vistoriaId, {
             motivo: motivo,
             observacao: observacao.trim() || undefined,

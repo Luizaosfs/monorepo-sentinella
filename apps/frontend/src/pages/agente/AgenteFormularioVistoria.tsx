@@ -245,8 +245,10 @@ export default function AgenteFormularioVistoria({ focoRiscoId: focoRiscoIdProp 
       toast.success('Foco confirmado — larvas encontradas, tratamento pendente.');
       setFocoClassificando(false);
     } else {
-      // Sem larvas: backend não faz nada, frontend descarta o foco
-      api.focosRisco.transicionar(focoId, 'descartado', undefined, undefined)
+      // Sem larvas: garante em_inspecao antes de descartar
+      api.focosRisco.iniciarInspecao(focoId)
+        .catch(() => { /* já em_inspecao */ })
+        .then(() => api.focosRisco.transicionar(focoId, 'descartado', undefined, undefined))
         .then(() => {
           setFocoClassificado('descartado');
           toast.success('Foco descartado — nenhuma larva encontrada.');
@@ -687,6 +689,8 @@ export default function AgenteFormularioVistoria({ focoRiscoId: focoRiscoIdProp 
       async function classificarFoco(resultado: 'confirmado' | 'descartado') {
         setFocoClassificando(true);
         try {
+          // aguarda_inspecao → em_inspecao obrigatório antes de confirmar/descartar
+          try { await api.focosRisco.iniciarInspecao(focoId!); } catch { /* já em_inspecao */ }
           await api.focosRisco.transicionar(focoId!, resultado, undefined, undefined);
           setFocoClassificado(resultado);
           toast.success(resultado === 'confirmado' ? 'Foco confirmado.' : 'Foco descartado.');
