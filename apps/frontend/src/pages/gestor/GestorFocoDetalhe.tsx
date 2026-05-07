@@ -232,7 +232,11 @@ export default function GestorFocoDetalhe() {
       setMotivo('');
       setTransDialog(null);
     },
-    onError: (err) => toast.error((err as { message?: string })?.message || 'Erro ao reagendar.'),
+    onError: (err) => {
+      toast.error((err as { message?: string })?.message || 'Erro ao reagendar.');
+      setTransDialog(null);
+      qc.invalidateQueries({ queryKey: ['foco_risco', id] });
+    },
   });
 
   const manterAtivaMutation = useMutation({

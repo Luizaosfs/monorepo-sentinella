@@ -48,6 +48,10 @@ export class IniciarInspecao {
       throw FocoRiscoException.statusInvalido();
     }
 
+    if (foco.status === 'aguardando_nova_tentativa' && foco.pendentDecisaoSupervisor) {
+      throw FocoRiscoException.aguardaDecisaoSupervisor();
+    }
+
     const statusAnterior = foco.status;
     foco.status = 'em_inspecao';
     // G6: COALESCE — preservar valores existentes.

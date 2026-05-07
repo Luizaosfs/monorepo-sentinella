@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
+import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 import { Request } from 'express';
 import { getAccessScope } from '@shared/security/access-scope.helpers';
 import type { AuthenticatedUser } from 'src/guards/auth.guard';
@@ -13,6 +14,7 @@ export class ManterAtiva {
   constructor(
     private readRepository: FocoRiscoReadRepository,
     private writeRepository: FocoRiscoWriteRepository,
+    private prisma: PrismaService,
     @Inject(REQUEST) private req: Request,
   ) {}
 
@@ -27,20 +29,20 @@ export class ManterAtiva {
       throw FocoRiscoException.statusInvalido();
     }
 
-    // Limpa o flag de decisão pendente sem alterar o status nem o contador
-    // O foco permanece em aguardando_nova_tentativa mas sem bloqueio
+    const statusAtual = foco.status;
     foco.pendentDecisaoSupervisor = false;
 
-    await this.writeRepository.save(foco);
-
-    await this.writeRepository.createHistorico({
-      focoRiscoId: foco.id,
-      clienteId: foco.clienteId,
-      statusAnterior: foco.status,
-      statusNovo: foco.status,
-      alteradoPor: user?.id,
-      motivo: motivo ?? 'Ocorrência mantida ativa pelo supervisor',
-      tipoEvento: 'manter_ativa_supervisor',
+    await this.prisma.client.$transaction(async (tx) => {
+      await this.writeRepository.save(foco, tx);
+      await this.writeRepository.createHistorico({
+        focoRiscoId: foco.id,
+        clienteId: foco.clienteId,
+        statusAnterior: statusAtual,
+        statusNovo: statusAtual,
+        alteradoPor: user?.id,
+        motivo: motivo ?? 'Ocorrência mantida ativa pelo supervisor',
+        tipoEvento: 'manter_ativa_supervisor',
+      }, tx);
     });
 
     return { foco };

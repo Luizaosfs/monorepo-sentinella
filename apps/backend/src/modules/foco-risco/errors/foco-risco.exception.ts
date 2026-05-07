@@ -22,6 +22,10 @@ export const FocoRiscoException = createExceptionFactory({
     type: 'forbidden',
     message: 'Apenas agentes podem iniciar inspeções',
   },
+  aguardaDecisaoSupervisor: {
+    type: 'badRequest',
+    message: 'Foco aguarda decisão do supervisor antes de nova tentativa',
+  },
   semPermissaoTransicionar: {
     type: 'forbidden',
     message: 'Agente só pode transicionar focos atribuídos a si',

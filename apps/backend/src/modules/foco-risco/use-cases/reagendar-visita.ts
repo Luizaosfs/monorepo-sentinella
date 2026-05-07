@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
+import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 import { Request } from 'express';
 import { getAccessScope } from '@shared/security/access-scope.helpers';
 import type { AuthenticatedUser } from 'src/guards/auth.guard';
@@ -13,6 +14,7 @@ export class ReagendarVisita {
   constructor(
     private readRepository: FocoRiscoReadRepository,
     private writeRepository: FocoRiscoWriteRepository,
+    private prisma: PrismaService,
     @Inject(REQUEST) private req: Request,
   ) {}
 
@@ -29,21 +31,20 @@ export class ReagendarVisita {
 
     const statusAnterior = foco.status;
     foco.status = 'aguarda_inspecao';
-    // Zera o contador para o agente poder fazer novas tentativas
-    // O histórico de vistorias sem acesso permanece intacto
     foco.tentativasSemAcesso = 0;
     foco.pendentDecisaoSupervisor = false;
 
-    await this.writeRepository.save(foco);
-
-    await this.writeRepository.createHistorico({
-      focoRiscoId: foco.id,
-      clienteId: foco.clienteId,
-      statusAnterior,
-      statusNovo: 'aguarda_inspecao',
-      alteradoPor: user?.id,
-      motivo: motivo ?? 'Visita reagendada pelo supervisor',
-      tipoEvento: 'reagendamento_supervisor',
+    await this.prisma.client.$transaction(async (tx) => {
+      await this.writeRepository.save(foco, tx);
+      await this.writeRepository.createHistorico({
+        focoRiscoId: foco.id,
+        clienteId: foco.clienteId,
+        statusAnterior,
+        statusNovo: 'aguarda_inspecao',
+        alteradoPor: user?.id,
+        motivo: motivo ?? 'Visita reagendada pelo supervisor',
+        tipoEvento: 'reagendamento_supervisor',
+      }, tx);
     });
 
     return { foco };
