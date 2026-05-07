@@ -1,7 +1,7 @@
 FROM node:22-alpine
 
 WORKDIR /app
-RUN corepack enable
+RUN npm install -g pnpm@9
 
 COPY . .
 

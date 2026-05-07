@@ -294,7 +294,9 @@
       "PowerShell(& \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" \"postgresql://luizAntonio:Sentinella147852369@177.7.37.14:5432/sentinella\" -f \"d:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend\\\\prisma\\\\migrations\\\\add_tipo_evento_supervisor_actions.sql\" 2>&1)",
       "PowerShell(& \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" \"postgresql://luizAntonio:Sentinella147852369@177.7.37.14:5432/sentinella\" -f \"d:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend\\\\prisma\\\\migrations\\\\add_status_terminais_administrativos.sql\" 2>&1)",
       "Bash(dir \"D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend\\\\prisma\\\\migrations\")",
-      "PowerShell(& \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -U postgres -d sentinella -c \"SELECT name FROM _prisma_migrations ORDER BY finished_at DESC LIMIT 30;\" 2>&1)"
+      "PowerShell(& \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -U postgres -d sentinella -c \"SELECT name FROM _prisma_migrations ORDER BY finished_at DESC LIMIT 30;\" 2>&1)",
+      "PowerShell(pnpm *)",
+      "PowerShell(node -e \"const fs=require\\('fs'\\); const l=fs.readFileSync\\('D:/sentinella/monorepo-sentinella/pnpm-lock.yaml','utf8'\\).split\\('\\\\n'\\)[0]; console.log\\(l\\);\")"
     ]
   }
 }

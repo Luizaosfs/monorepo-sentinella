@@ -24,8 +24,10 @@
       "@scarf/scarf",
       "@swc/core",
       "bcrypt",
+      "core-js",
       "esbuild",
-      "prisma"
+      "prisma",
+      "puppeteer"
     ]
   }
 }
