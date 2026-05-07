@@ -300,7 +300,8 @@
       "Bash(PGPASSWORD=Sentinella147852369 C:/Program Files/PostgreSQL/17/bin/psql.exe *)",
       "Bash(pnpm --filter backend tsc --noEmit)",
       "Bash(npx --prefix apps/backend tsc --noEmit)",
-      "Bash(\"C:/Program Files/PostgreSQL/17/bin/psql\" \"postgresql://luizAntonio:Sentinella147852369@177.7.37.14:5432/sentinella\" -c \"SELECT tablename FROM pg_tables WHERE schemaname='public' ORDER BY tablename;\")"
+      "Bash(\"C:/Program Files/PostgreSQL/17/bin/psql\" \"postgresql://luizAntonio:Sentinella147852369@177.7.37.14:5432/sentinella\" -c \"SELECT tablename FROM pg_tables WHERE schemaname='public' ORDER BY tablename;\")",
+      "PowerShell($env:PGPASSWORD = \"Sentinella147852369\"; & \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -h 177.7.37.14 -p 5432 -U luizAntonio -d sentinella -f \"D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend\\\\prisma\\\\migrations\\\\e1_1_hardening_epidemiologico.sql\" 2>&1)"
     ]
   }
 }

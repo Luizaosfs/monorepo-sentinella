@@ -6,7 +6,10 @@ import {
   PushSubscription,
   UnidadeSaude,
 } from 'src/modules/notificacao/entities/notificacao';
-import { NotificacaoWriteRepository } from 'src/modules/notificacao/repositories/notificacao-write.repository';
+import {
+  NotificacaoWriteRepository,
+  VincularFocoCasoData,
+} from 'src/modules/notificacao/repositories/notificacao-write.repository';
 
 import { PrismaRepository } from '@/decorators/prisma-repository.decorator';
 
@@ -101,6 +104,18 @@ export class PrismaNotificacaoWriteRepository implements NotificacaoWriteReposit
       },
     });
     return PrismaNotificacaoMapper.esusToDomain(row);
+  }
+
+  async vincularFoco(casoId: string, data: VincularFocoCasoData): Promise<void> {
+    await this.prisma.client.casos_notificados.update({
+      where: { id: casoId },
+      data: {
+        foco_risco_id: data.focoRiscoId ?? null,
+        foco_vinculado_em: data.vinculadoEm ?? null,
+        foco_vinculo_tipo: data.vinculoTipo,
+        foco_vinculo_distancia_metros: data.distanciaMetros ?? null,
+      } as any,
+    });
   }
 
   async nextProtocolo(clienteId: string): Promise<string> {

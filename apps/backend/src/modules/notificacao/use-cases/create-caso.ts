@@ -4,6 +4,7 @@ import { EnfileirarScoreImovel } from '../../job/enfileirar-score-imovel';
 import { CreateCasoBody } from '../dtos/create-notificacao.body';
 import { CasoNotificado } from '../entities/notificacao';
 import { NotificacaoWriteRepository } from '../repositories/notificacao-write.repository';
+import { CriarFocoDeCasoNotificado } from './criar-foco-de-caso-notificado';
 import { CruzarCasoComFocos } from './cruzar-caso-com-focos';
 
 @Injectable()
@@ -13,6 +14,7 @@ export class CreateCaso {
   constructor(
     private repository: NotificacaoWriteRepository,
     private cruzarCasoComFocos: CruzarCasoComFocos,
+    private criarFocoDeCasoNotificado: CriarFocoDeCasoNotificado,
     private enfileirarScore: EnfileirarScoreImovel,
   ) {}
 
@@ -43,18 +45,40 @@ export class CreateCaso {
     );
     const created = await this.repository.createCaso(entity);
 
-    // Fase C.4 — hook best-effort. Falha no cruzamento NÃO quebra a criação.
+    // E.1.1 — Fase 1: cruzar com focos existentes (dedupe ampla, raio centralizado).
+    // Retorna principalFocoId=null se nenhum foco ativo foi encontrado no raio.
+    let principalFocoId: string | null = null;
     try {
-      await this.cruzarCasoComFocos.execute({
+      const resultado = await this.cruzarCasoComFocos.execute({
         casoId: created.id,
         clienteId: created.clienteId,
         latitude: created.latitude,
         longitude: created.longitude,
       });
+      principalFocoId = resultado.principalFocoId;
     } catch (err) {
       this.logger.error(
         `Hook CruzarCasoComFocos falhou para caso ${created.id}: ${(err as Error).message}`,
       );
+    }
+
+    // E.1.1 — Fase 2: se nenhum foco existente foi encontrado, criar foco epidemiológico
+    // (ou marcar como pendente_geocodificacao se sem coordenadas).
+    if (principalFocoId === null) {
+      try {
+        await this.criarFocoDeCasoNotificado.execute({
+          casoId: created.id!,
+          clienteId: created.clienteId,
+          latitude: created.latitude,
+          longitude: created.longitude,
+          regiaoId: created.regiaoId,
+          statusCaso: created.status,
+        });
+      } catch (err) {
+        this.logger.error(
+          `Hook CriarFocoDeCasoNotificado falhou para caso ${created.id}: ${(err as Error).message}`,
+        );
+      }
     }
 
     // Fase F.1.B — enfileira recálculo dos scores territoriais próximos (best-effort)

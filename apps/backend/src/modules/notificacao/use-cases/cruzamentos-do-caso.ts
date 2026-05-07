@@ -10,6 +10,7 @@ export class CruzamentosDocaso {
     return this.prisma.client.$queryRaw(Prisma.sql`
       SELECT
         c.id,
+        c.foco_risco_id,
         c.levantamento_item_id,
         c.distancia_metros,
         c.criado_em

@@ -9,6 +9,7 @@ export class ListCruzamentos {
   execute(clienteId: string) {
     return this.prisma.client.$queryRaw(Prisma.sql`
       SELECT
+        c.foco_risco_id,
         c.levantamento_item_id,
         c.distancia_metros,
         c.criado_em

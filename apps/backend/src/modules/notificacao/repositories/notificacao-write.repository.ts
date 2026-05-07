@@ -7,6 +7,15 @@ import {
   UnidadeSaude,
 } from '../entities/notificacao';
 
+/** E.1.1 — dados do vínculo operacional caso ↔ foco (permanente, não apagado ao descartar). */
+export interface VincularFocoCasoData {
+  /** null apenas quando foco_vinculo_tipo = 'pendente_geocodificacao' */
+  focoRiscoId: string | null;
+  vinculadoEm: Date | null;
+  vinculoTipo: 'existente_300m' | 'criado_por_caso' | 'pendente_geocodificacao';
+  distanciaMetros: number | null;
+}
+
 @Injectable()
 export abstract class NotificacaoWriteRepository {
   abstract createUnidade(entity: UnidadeSaude): Promise<UnidadeSaude>;
@@ -21,4 +30,6 @@ export abstract class NotificacaoWriteRepository {
     entity: ItemNotificacaoEsus,
   ): Promise<ItemNotificacaoEsus>;
   abstract nextProtocolo(clienteId: string): Promise<string>;
+  /** E.1.1 — persiste o vínculo operacional principal caso ↔ foco. */
+  abstract vincularFoco(casoId: string, data: VincularFocoCasoData): Promise<void>;
 }

@@ -1,11 +1,15 @@
 model caso_foco_cruzamento {
   id                   String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   caso_id              String   @db.Uuid
-  levantamento_item_id String   @db.Uuid
+  // E.1.1 — chave operacional direta; dedupe ampla (qualquer foco, não só de levantamento)
+  foco_risco_id        String   @db.Uuid
+  // auxiliar opcional — preenchido apenas quando o foco veio de levantamento_item
+  levantamento_item_id String?  @db.Uuid
   distancia_metros     Float
   criado_em            DateTime @default(now()) @db.Timestamptz
 
-  @@unique([caso_id, levantamento_item_id])
+  @@unique([caso_id, foco_risco_id])
+  @@index([foco_risco_id])
   @@map("caso_foco_cruzamento")
   @@schema("public")
 }
