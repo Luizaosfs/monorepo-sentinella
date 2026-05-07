@@ -56,7 +56,7 @@ export function useClienteQuotasMutation(clienteId: string) {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: (limites: Partial<Pick<ClienteQuota, 'voos_mes' | 'levantamentos_mes' | 'itens_mes' | 'usuarios_ativos'>>) =>
+    mutationFn: (limites: Partial<Pick<ClienteQuota, 'voos_mes' | 'levantamentos_mes' | 'itens_mes' | 'usuarios_ativos' | 'vistorias_mes' | 'ia_calls_mes' | 'storage_gb'>>) =>
       api.quotas.update(clienteId, limites),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['cliente_quotas', clienteId] });

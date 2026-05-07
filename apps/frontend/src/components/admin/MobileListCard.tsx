@@ -14,9 +14,10 @@ interface MobileListCardProps {
   onEdit?: () => void;
   onDelete?: () => void;
   extra?: ReactNode;
+  extraActions?: ReactNode;
 }
 
-const MobileListCard = memo(function MobileListCard({ title, fields, badges, onEdit, onDelete, extra }: MobileListCardProps) {
+const MobileListCard = memo(function MobileListCard({ title, fields, badges, onEdit, onDelete, extra, extraActions }: MobileListCardProps) {
   return (
   <div
     className={`rounded-xl border border-cardBorder bg-card p-4 space-y-3 shadow-sm ${onEdit ? 'cursor-pointer hover:bg-muted/50 active:bg-muted transition-colors' : ''}`}
@@ -28,6 +29,7 @@ const MobileListCard = memo(function MobileListCard({ title, fields, badges, onE
         {badges && <div className="flex flex-wrap gap-1.5 mt-1.5">{badges}</div>}
       </div>
       <div className="flex gap-1 shrink-0 px-1 py-1">
+        {extraActions}
         {onEdit && (
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); onEdit(); }}>
             <Pencil className="w-3.5 h-3.5" />

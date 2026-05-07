@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 import { Bot, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -10,7 +12,6 @@ import {
   Tooltip as RechartsTooltip,
   ResponsiveContainer,
 } from 'recharts';
-import { useClienteAtivo } from '@/hooks/useClienteAtivo';
 import { api } from '@/services/api';
 import { STALE } from '@/lib/queryConfig';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,6 +19,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ListColumnHeader } from '@/components/ui/list-column-header';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 
 interface YoloQualidadeResumo {
@@ -76,44 +78,69 @@ function exportarCsvRetreino(correlacoes: YoloQualidadeResumo['correlacoes']) {
 }
 
 export default function AdminYoloQualidade() {
-  const { clienteId } = useClienteAtivo();
+  const [searchParams] = useSearchParams();
+  const [selectedClienteId, setSelectedClienteId] = useState<string>(searchParams.get('clienteId') ?? '');
+
+  const { data: clientesList = [] } = useQuery({
+    queryKey: ['admin_clientes_all'],
+    queryFn: api.clientes.listAll,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  useEffect(() => {
+    if (!selectedClienteId && clientesList.length > 0) {
+      setSelectedClienteId(clientesList[0].id);
+    }
+  }, [clientesList]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const clienteId = selectedClienteId || null;
 
   const { data, isLoading } = useQuery<YoloQualidadeResumo>({
     queryKey: ['yolo_qualidade', clienteId],
-    queryFn: () => api.yoloQualidade.resumo(clienteId!),
-    enabled: !!clienteId,
+    queryFn: () => api.yoloQualidade.resumo(clienteId),
     staleTime: STALE.MEDIUM,
+    enabled: !!clienteId,
   });
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between flex-wrap">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
             <Bot className="h-5 w-5" />
           </div>
           <div>
             <h1 className="text-xl font-bold">Qualidade do Modelo Drone</h1>
-            <p className="text-sm text-muted-foreground">
-              Baseado em correlações drone × campo
-            </p>
+            <p className="text-sm text-muted-foreground">Baseado em correlações drone × campo</p>
           </div>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          className="gap-2"
-          disabled={!data?.correlacoes?.length}
-          onClick={() => data?.correlacoes && exportarCsvRetreino(data.correlacoes)}
-        >
-          <Download className="h-4 w-4" />
-          Exportar dados para re-treino (CSV)
-        </Button>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <Select value={selectedClienteId} onValueChange={setSelectedClienteId}>
+            <SelectTrigger className="w-full sm:w-[220px] shrink-0">
+              <SelectValue placeholder="Selecione um cliente..." />
+            </SelectTrigger>
+            <SelectContent align="end" className="max-h-72 overflow-y-auto">
+              {clientesList.map((c) => (
+                <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            disabled={!data?.correlacoes?.length}
+            onClick={() => data?.correlacoes && exportarCsvRetreino(data.correlacoes)}
+          >
+            <Download className="h-4 w-4" />
+            Exportar CSV re-treino
+          </Button>
+        </div>
       </div>
 
       {/* KPI cards */}
-      {isLoading ? (
+      {(isLoading || !clienteId) ? (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-24 rounded-xl" />)}
         </div>
@@ -156,7 +183,7 @@ export default function AdminYoloQualidade() {
       ) : null}
 
       {/* Line chart */}
-      {isLoading ? (
+      {(isLoading || !clienteId) ? (
         <Skeleton className="h-64 w-full rounded-xl" />
       ) : data?.evolucao_mensal && data.evolucao_mensal.length > 0 ? (
         <Card>
@@ -200,17 +227,22 @@ export default function AdminYoloQualidade() {
 
       {/* Correlations table */}
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between gap-2 flex-wrap">
           <CardTitle className="text-base">Correlações Drone × Campo</CardTitle>
+          {(data?.total_correlacoes ?? 0) >= 200 && (
+            <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">
+              Exibindo últimas 200 de {data!.total_correlacoes} correlações
+            </span>
+          )}
         </CardHeader>
         <CardContent className="p-0 overflow-x-auto">
-          {isLoading ? (
+          {(isLoading || !clienteId) ? (
             <div className="p-6 space-y-3">
               {[1, 2, 3].map(i => <Skeleton key={i} className="h-10 w-full rounded-lg" />)}
             </div>
           ) : !data?.correlacoes?.length ? (
             <div className="p-10 text-center text-muted-foreground text-sm">
-              Nenhuma correlação registrada ainda.
+              Nenhuma correlação registrada para este cliente.
             </div>
           ) : (
             <table className="w-full text-sm">

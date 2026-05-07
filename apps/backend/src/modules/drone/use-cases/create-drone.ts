@@ -8,10 +8,9 @@ import { DroneWriteRepository } from '../repositories/drone-write.repository';
 export class CreateDrone {
   constructor(private repository: DroneWriteRepository) {}
 
-  async execute(clienteId: string, input: CreateDroneBody): Promise<{ drone: Drone }> {
+  async execute(input: CreateDroneBody): Promise<{ drone: Drone }> {
     const entity = new Drone(
       {
-        clienteId,
         nome: input.nome,
         modelo: input.modelo,
         serial: input.serial,

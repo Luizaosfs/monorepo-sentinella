@@ -3,7 +3,7 @@ import type { JsonObject } from '@shared/types/json';
 import { Paginated } from 'src/utils/pagination';
 
 interface DroneProps {
-  clienteId: string;
+  clienteId?: string;
   nome: string;
   modelo?: string;
   serial?: string;

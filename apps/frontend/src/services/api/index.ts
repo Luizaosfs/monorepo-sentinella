@@ -89,6 +89,7 @@ import {
   alertasRetorno,
   historicoAtendimento,
 } from './domains/sistema';
+import { securityLogs } from './domains/security-logs';
 
 // Cloudinary
 import { cloudinary, cloudinaryOrfaos } from './domains/cloudinary';
@@ -193,6 +194,7 @@ export const api = {
   auditLog,
   alertasRetorno,
   historicoAtendimento,
+  securityLogs,
 
   // Cloudinary
   cloudinary,

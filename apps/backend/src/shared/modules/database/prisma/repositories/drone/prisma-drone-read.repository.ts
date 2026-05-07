@@ -16,9 +16,9 @@ import { PrismaService } from '../../prisma.service';
 export class PrismaDroneReadRepository implements DroneReadRepository {
   constructor(private prisma: PrismaService) {}
 
-  async findDrones(clienteId: string): Promise<Drone[]> {
+  async findDrones(): Promise<Drone[]> {
     const rows = await this.prisma.client.drones.findMany({
-      where: { cliente_id: clienteId, ativo: true },
+      where: { ativo: true },
       orderBy: { nome: 'asc' },
     });
     return rows.map((r) => PrismaDroneMapper.toDomain(r as any));

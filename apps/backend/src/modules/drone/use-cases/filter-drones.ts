@@ -7,8 +7,8 @@ import { DroneReadRepository } from '../repositories/drone-read.repository';
 export class FilterDrones {
   constructor(private repository: DroneReadRepository) {}
 
-  async execute(clienteId: string): Promise<{ items: Drone[] }> {
-    const items = await this.repository.findDrones(clienteId);
+  async execute(): Promise<{ items: Drone[] }> {
+    const items = await this.repository.findDrones();
     return { items };
   }
 }

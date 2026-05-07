@@ -8,6 +8,8 @@ import {
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
+import { SecurityLoggerService } from '@modules/security-log/security-log.service';
+import { SecurityEventType, SecuritySeverity } from '@modules/security-log/security-log.types';
 import { Request } from 'express';
 import { env } from 'src/lib/env/server';
 
@@ -39,6 +41,7 @@ export class AuthGuard implements CanActivate {
     private jwtService: JwtService,
     private prisma: PrismaService,
     private reflector: Reflector,
+    private securityLogger: SecurityLoggerService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -54,6 +57,11 @@ export class AuthGuard implements CanActivate {
     if (!token) {
       throw AuthException.unauthorized();
     }
+
+    const ip = request.ip ?? null;
+    const userAgent = (request.headers['user-agent'] as string) ?? null;
+    const method = request.method;
+    const path = request.url;
 
     let authId: string | undefined;
     const t0 = Date.now();
@@ -75,7 +83,16 @@ export class AuthGuard implements CanActivate {
       );
     } catch (err) {
       if (err instanceof UnauthorizedException) throw err;
-      this.logger.warn(`JWT inválido: ${(err as Error).message}`);
+      const reason = (err as Error).message;
+      this.logger.warn(`JWT inválido: ${reason}`);
+      void this.securityLogger.log({
+        eventType: SecurityEventType.TOKEN_INVALID,
+        severity: SecuritySeverity.WARN,
+        ip, userAgent, method, path,
+        statusCode: 401,
+        message: 'Token JWT inválido ou expirado',
+        metadata: { reason },
+      });
       throw AuthException.unauthorized();
     }
 
@@ -90,10 +107,27 @@ export class AuthGuard implements CanActivate {
         this.logger.warn(
           `AuthGuard: usuario nao encontrado para auth_id=${authId}`,
         );
+        void this.securityLogger.log({
+          eventType: SecurityEventType.LOGIN_FAILED,
+          severity: SecuritySeverity.WARN,
+          ip, userAgent, method, path,
+          statusCode: 401,
+          message: 'Usuário não encontrado para o token apresentado',
+          metadata: { authId },
+        });
         throw AuthException.unauthorized();
       }
       if (!usuario.ativo) {
         this.logger.warn(`AuthGuard: usuario inativo auth_id=${authId}`);
+        void this.securityLogger.log({
+          eventType: SecurityEventType.LOGIN_FAILED,
+          severity: SecuritySeverity.WARN,
+          userId: usuario.id,
+          clienteId: usuario.cliente_id,
+          ip, userAgent, method, path,
+          statusCode: 401,
+          message: 'Tentativa de acesso com usuário inativo',
+        });
         throw AuthException.unauthorized();
       }
 

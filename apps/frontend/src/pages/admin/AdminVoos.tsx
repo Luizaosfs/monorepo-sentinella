@@ -1,9 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import { usePagination } from '@/hooks/usePagination';
 import TablePagination from '@/components/TablePagination';
-import { useClienteAtivo } from '@/hooks/useClienteAtivo';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -23,7 +22,7 @@ import AdminPageHeader from '@/components/AdminPageHeader';
 import MobileListCard from '@/components/admin/MobileListCard';
 import ConfirmDialog from '@/components/admin/ConfirmDialog';
 import { getErrorMessage } from '@/lib/utils';
-import { Voo, Planejamento } from '@/types/database';
+import { Voo } from '@/types/database';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
@@ -50,7 +49,9 @@ const emptyForm = {
 
 const AdminVoos = () => {
   const location = useLocation();
-  const { clienteId, tenantStatus } = useClienteAtivo();
+  const [searchParams] = useSearchParams();
+  const [selectedClienteId, setSelectedClienteId] = useState<string>(searchParams.get('clienteId') ?? '');
+  const clienteId = selectedClienteId || null;
   const editVooIdFromState = useRef<string | null>((location.state as { editVooId?: string })?.editVooId || null);
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
@@ -62,6 +63,18 @@ const AdminVoos = () => {
   const [showPlanModal, setShowPlanModal] = useState(false);
   const [pendingImportData, setPendingImportData] = useState<Partial<Voo>[] | null>(null);
   const [fallbackPlanId, setFallbackPlanId] = useState<string>('');
+
+  const { data: clientesList = [] } = useQuery({
+    queryKey: ['admin_clientes_all'],
+    queryFn: api.clientes.listAll,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  useEffect(() => {
+    if (!selectedClienteId && clientesList.length > 0) {
+      setSelectedClienteId(clientesList[0].id);
+    }
+  }, [clientesList]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const { data: condicoes } = useCondicoesVoo(clienteId);
 
@@ -84,8 +97,7 @@ const AdminVoos = () => {
   const { data: voos = [], isLoading: loading } = useQuery({
     queryKey: ['admin_voos', clienteId],
     queryFn: async () => {
-      const data = await api.voos.listByCliente(clienteId!) as (Voo & { planejamento?: Planejamento })[];
-      return data.filter(v => v.planejamento?.cliente_id === clienteId || !v.planejamento_id);
+      return await api.voos.listByCliente(clienteId!) as Voo[];
     },
     enabled: !!clienteId,
     staleTime: 0,
@@ -96,7 +108,7 @@ const AdminVoos = () => {
       if (payload.id) {
         await api.voos.update(payload.id, payload.data);
       } else {
-        await api.voos.create(payload.data as Omit<Voo, 'id' | 'created_at' | 'updated_at'>);
+        await api.voos.create(clienteId!, payload.data as Omit<Voo, 'id' | 'created_at' | 'updated_at'>);
       }
     },
     onSuccess: (_, variables) => {
@@ -132,18 +144,16 @@ const AdminVoos = () => {
 
 
   const openCreate = async () => {
-    if (clienteId) {
-      try {
-        const q = await api.quotas.verificar(clienteId, 'voos_mes');
-        if (!q.ok) {
-          toast.error(`Quota de voos atingida: ${q.usado}/${q.limite} voos este mês.`);
-          return;
-        }
-        if (q.limite != null && q.usado >= q.limite * 0.8) {
-          toast.warning(`Atenção: ${q.usado}/${q.limite} voos utilizados este mês.`);
-        }
-      } catch { /* quota indisponível — não bloqueia */ }
-    }
+    try {
+      const q = await api.quotas.verificar(clienteId!, 'voos_mes');
+      if (!q.ok) {
+        toast.error(`Quota de voos atingida: ${q.usado}/${q.limite} voos este mês.`);
+        return;
+      }
+      if (q.limite != null && q.usado >= q.limite * 0.8) {
+        toast.warning(`Atenção: ${q.usado}/${q.limite} voos utilizados este mês.`);
+      }
+    } catch { /* quota indisponível — não bloqueia */ }
     setEditing(null);
     setForm({ ...emptyForm });
     setShowForm(true);
@@ -284,7 +294,7 @@ const AdminVoos = () => {
   const executeImport = async (mapped: Partial<Voo>[]) => {
     setImporting(true);
     try {
-      await api.voos.bulkCreate(mapped);
+      await api.voos.bulkCreate(clienteId!, mapped);
 
       toast.success(`${mapped.length} voo(s) importado(s) com sucesso`);
       queryClient.invalidateQueries({ queryKey: ['admin_voos', clienteId] });
@@ -349,8 +359,10 @@ const AdminVoos = () => {
     URL.revokeObjectURL(url);
   };
 
+  const planMap = Object.fromEntries(planejamentos.map(p => [p.id, p]));
+
   const filtered = voos.filter((v) =>
-    (v.planejamento?.descricao || '').toLowerCase().includes(search.toLowerCase()) ||
+    (v.planejamento_id ? planMap[v.planejamento_id]?.descricao ?? '' : '').toLowerCase().includes(search.toLowerCase()) ||
     (v.amostra_arquivo || '').toLowerCase().includes(search.toLowerCase()) ||
     (v.voo_numero?.toString() || '').includes(search)
   );
@@ -379,7 +391,7 @@ const AdminVoos = () => {
           </div>
           <div className="flex gap-2 ml-auto">
             <Button variant="outline" size="sm" onClick={() => setShowForm(false)}>Cancelar</Button>
-            <Button size="sm" onClick={handleSave} disabled={saveMutation.isPending || !!tenantStatus?.isBlocked}>
+            <Button size="sm" onClick={handleSave} disabled={saveMutation.isPending}>
               {saveMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               {editing ? 'Salvar' : 'Criar'}
             </Button>
@@ -535,36 +547,49 @@ const AdminVoos = () => {
       />
       <AdminPageHeader title="Voos" description="Gerencie os voos realizados vinculados aos planejamentos." icon={Plane} />
       <div className="space-y-3 lg:space-y-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="relative flex-1">
+        {/* Linha 1: seletor + busca */}
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <Select value={selectedClienteId} onValueChange={(v) => { setSelectedClienteId(v); reset(); }}>
+            <SelectTrigger className="w-full sm:w-[240px] shrink-0">
+              <SelectValue placeholder="Selecione um cliente..." />
+            </SelectTrigger>
+            <SelectContent align="start" className="max-h-72 overflow-y-auto">
+              {clientesList.map((c) => (
+                <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <div className="relative flex-1 min-w-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input placeholder="Buscar por planejamento, arquivo ou nº..." className="pl-9" value={search} onChange={(e) => { setSearch(e.target.value); reset(); }} />
+            <Input
+              placeholder="Buscar por planejamento, arquivo ou nº..."
+              className="pl-9"
+              disabled={!clienteId}
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); reset(); }}
+            />
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5 text-xs"
-              onClick={handleDownloadTemplate}
-            >
-              <Download className="w-3.5 h-3.5" />
-              Modelo JSON
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5 text-xs"
-              disabled={importing}
-              onClick={() => document.getElementById('voos-json-import')?.click()}
-            >
-              {importing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
-              Importar JSON
-            </Button>
-            <input id="voos-json-import" type="file" accept=".json" className="hidden" onChange={handleImportJson} />
-            <Button onClick={openCreate} className="w-full sm:w-auto gap-2">
-              <Plus className="w-4 h-4" /> Novo Voo
-            </Button>
-          </div>
+        </div>
+        {/* Linha 2: ações */}
+        <div className="flex flex-wrap gap-2 justify-end">
+          <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={handleDownloadTemplate}>
+            <Download className="w-3.5 h-3.5" />
+            Modelo JSON
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5 text-xs"
+            disabled={importing || !clienteId}
+            onClick={() => document.getElementById('voos-json-import')?.click()}
+          >
+            {importing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+            Importar JSON
+          </Button>
+          <input id="voos-json-import" type="file" accept=".json" className="hidden" onChange={handleImportJson} />
+          <Button onClick={openCreate} disabled={!clienteId} className="gap-2">
+            <Plus className="w-4 h-4" /> Novo Voo
+          </Button>
         </div>
 
         <Card className="rounded-sm border-2 border-cardBorder shadow-lg shadow-black/8 dark:shadow-black/20 overflow-hidden">
@@ -582,8 +607,8 @@ const AdminVoos = () => {
                       key={v.id}
                       title={`Voo #${v.voo_numero || '—'}`}
                       fields={[
-                        { label: 'Planejamento', value: v.planejamento?.descricao },
-                        { label: 'Piloto', value: v.piloto?.nome },
+                        { label: 'Planejamento', value: v.planejamento_id ? planMap[v.planejamento_id]?.descricao : undefined },
+                        { label: 'Piloto', value: undefined },
                         { label: 'Início', value: formatDt(v.inicio) },
                         { label: 'Duração', value: v.duracao_min ? `${v.duracao_min} min` : null },
                         { label: 'Área', value: v.ha ? `${v.ha} ha` : null },
@@ -640,8 +665,8 @@ const AdminVoos = () => {
                               })()}
                             </div>
                           </TableCell>
-                          <TableCell className="text-muted-foreground text-sm max-w-[200px] truncate">{v.planejamento?.descricao || '—'}</TableCell>
-                          <TableCell className="text-muted-foreground text-sm">{v.piloto?.nome || '—'}</TableCell>
+                          <TableCell className="text-muted-foreground text-sm max-w-[200px] truncate">{(v.planejamento_id && planMap[v.planejamento_id]?.descricao) || '—'}</TableCell>
+                          <TableCell className="text-muted-foreground text-sm">{'—'}</TableCell>
                           <TableCell className="text-muted-foreground text-sm">{formatDt(v.inicio)}</TableCell>
                           <TableCell className="text-muted-foreground text-sm">{v.duracao_min ? `${v.duracao_min} min` : '—'}</TableCell>
                           <TableCell className="text-muted-foreground text-sm">{v.km ?? '—'}</TableCell>

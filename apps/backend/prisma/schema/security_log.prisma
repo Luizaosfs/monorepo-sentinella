@@ -1,0 +1,24 @@
+model security_log {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  event_type  String
+  severity    String
+  user_id     String?
+  cliente_id  String?  @db.Uuid
+  role        String?
+  ip          String?
+  user_agent  String?
+  method      String?
+  path        String?
+  status_code Int?
+  message     String
+  metadata    Json?
+  created_at  DateTime @default(now()) @db.Timestamptz
+
+  @@index([event_type])
+  @@index([cliente_id])
+  @@index([ip])
+  @@index([user_id])
+  @@index([created_at(sort: Desc)])
+  @@map("security_log")
+  @@schema("public")
+}

@@ -25,14 +25,14 @@ export class PrismaDroneWriteRepository implements DroneWriteRepository {
 
   async saveDrone(entity: Drone): Promise<void> {
     await this.prisma.client.drones.updateMany({
-      where: { id: entity.id, cliente_id: entity.clienteId },
+      where: { id: entity.id },
       data: PrismaDroneMapper.toPrisma(entity),
     });
   }
 
-  async deleteDrone(id: string, clienteId: string): Promise<void> {
+  async deleteDrone(id: string): Promise<void> {
     await this.prisma.client.drones.updateMany({
-      where: { id, cliente_id: clienteId },
+      where: { id },
       data: { ativo: false, updated_at: new Date() },
     });
   }

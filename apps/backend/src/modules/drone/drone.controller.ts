@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   Inject,
   Param,
@@ -108,12 +109,14 @@ export class DroneController {
   @ApiOperation({ summary: 'Avalia condições meteorológicas para voo baseado em pluvio_risco' })
   async condicoesVoo(
     @Query('data') dataStr?: string,
+    @Query('clienteId') clienteIdQ?: string,
   ) {
     const { data } = z
       .object({ data: z.coerce.date().default(() => new Date()) })
       .parse({ data: dataStr });
-    // MT-02: tenantId do guard sempre vence — nunca aceita clienteId do frontend
-    const clienteId = requireTenantId(getAccessScope(this.req));
+    const scope = getAccessScope(this.req);
+    const clienteId = scope.tenantId ?? clienteIdQ;
+    if (!clienteId) throw new ForbiddenException('clienteId obrigatório');
     return this.avaliarCondicoesVoo.execute(clienteId, data);
   }
 
@@ -121,20 +124,18 @@ export class DroneController {
 
   @Get()
   @Roles('admin', 'supervisor')
-  @ApiOperation({ summary: 'Listar drones do cliente' })
+  @ApiOperation({ summary: 'Listar drones da plataforma' })
   async listDrones() {
-    const clienteId = requireTenantId(getAccessScope(this.req));
-    const { items } = await this.droneFilter.execute(clienteId);
+    const { items } = await this.droneFilter.execute();
     return items.map(DroneViewModel.toHttp);
   }
 
   @Post()
   @Roles('admin', 'supervisor')
-  @ApiOperation({ summary: 'Cadastrar drone' })
+  @ApiOperation({ summary: 'Cadastrar drone na plataforma' })
   async createDrone(@Body() body: CreateDroneBody) {
     const parsed = createDroneSchema.parse(body);
-    const clienteId = requireTenantId(getAccessScope(this.req));
-    const { drone } = await this.droneCreate.execute(clienteId, parsed);
+    const { drone } = await this.droneCreate.execute(parsed);
     return DroneViewModel.toHttp(drone);
   }
 
@@ -160,8 +161,10 @@ export class DroneController {
   @Get('voos')
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Listar voos do cliente' })
-  async listVoos() {
-    const clienteId = requireTenantId(getAccessScope(this.req));
+  async listVoos(@Query('clienteId') clienteIdQ?: string) {
+    const scope = getAccessScope(this.req);
+    const clienteId = scope.tenantId ?? clienteIdQ;
+    if (!clienteId) throw new ForbiddenException('clienteId obrigatório');
     const { items } = await this.vooFilter.execute(clienteId);
     return items.map(DroneViewModel.vooToHttp);
   }
@@ -169,9 +172,11 @@ export class DroneController {
   @Post('voos')
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Registrar voo' })
-  async createVoo(@Body() body: CreateVooBody) {
+  async createVoo(@Body() body: CreateVooBody, @Query('clienteId') clienteIdQ?: string) {
     const parsed = createVooSchema.parse(body);
-    const clienteId = requireTenantId(getAccessScope(this.req));
+    const scope = getAccessScope(this.req);
+    const clienteId = scope.tenantId ?? clienteIdQ;
+    if (!clienteId) throw new ForbiddenException('clienteId obrigatório');
     const { voo } = await this.vooCreate.execute(clienteId, parsed);
     return DroneViewModel.vooToHttp(voo);
   }
@@ -215,8 +220,10 @@ export class DroneController {
   @Post('voos/bulk-create')
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Importar voos em lote (chunks de 50, skipDuplicates)' })
-  async bulkCreateVoos(@Body() body: BulkCreateVoosBody) {
-    const clienteId = requireTenantId(getAccessScope(this.req));
+  async bulkCreateVoos(@Body() body: BulkCreateVoosBody, @Query('clienteId') clienteIdQ?: string) {
+    const scope = getAccessScope(this.req);
+    const clienteId = scope.tenantId ?? clienteIdQ;
+    if (!clienteId) throw new ForbiddenException('clienteId obrigatório');
     const parsed = bulkCreateVoosSchema.parse(body);
     return this.vooBulkCreate.execute(clienteId, parsed);
   }
@@ -258,8 +265,9 @@ export class DroneController {
   @Get('yolo-qualidade/resumo')
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Resumo de qualidade YOLO (precisão, cobertura, correlações)' })
-  async yoloQualidadeResumo() {
-    const clienteId = requireTenantId(getAccessScope(this.req));
+  async yoloQualidadeResumo(@Query('clienteId') clienteIdQ?: string) {
+    const scope = getAccessScope(this.req);
+    const clienteId = scope.tenantId ?? clienteIdQ ?? null;
     return this.yoloQualidadeResumoUc.execute(clienteId);
   }
 

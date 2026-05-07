@@ -1,8 +1,4 @@
-import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
-import { REQUEST } from '@nestjs/core';
-import { Request } from 'express';
-import { getAccessScope } from '@shared/security/access-scope.helpers';
-import { AuthenticatedUser } from 'src/guards/auth.guard';
+import { Injectable } from '@nestjs/common';
 
 import { SaveDroneBody } from '../dtos/create-drone.body';
 import { Drone } from '../entities/drone';
@@ -15,18 +11,11 @@ export class SaveDrone {
   constructor(
     private readRepository: DroneReadRepository,
     private writeRepository: DroneWriteRepository,
-    @Inject(REQUEST) private req: Request,
   ) {}
 
   async execute(id: string, input: SaveDroneBody): Promise<{ drone: Drone }> {
     const drone = await this.readRepository.findDroneById(id);
     if (!drone) throw DroneException.notFound();
-
-    const user = this.req['user'] as AuthenticatedUser | undefined;
-    const tenantId = getAccessScope(this.req).tenantId ?? undefined;
-    if (!user?.isPlatformAdmin && drone.clienteId !== tenantId) {
-      throw new ForbiddenException('Acesso negado: recurso pertence a outro tenant');
-    }
 
     if (input.nome !== undefined) drone.nome = input.nome;
     if (input.modelo !== undefined) drone.modelo = input.modelo;

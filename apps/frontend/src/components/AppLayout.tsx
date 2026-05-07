@@ -45,7 +45,7 @@ import {
   Settings2,
   RotateCcw,
   BookOpen,
-  Search,
+  ShieldAlert,
 } from 'lucide-react';
 import { IconDrone } from '@/components/icons/IconDrone';
 import { OfflineBanner } from '@/components/OfflineBanner';
@@ -75,8 +75,6 @@ import { cn } from '@/lib/utils';
 import { SlaAlertBell } from '@/components/SlaAlertBell';
 import { useClienteAtivo } from '@/hooks/useClienteAtivo';
 import { useAlertasRetorno } from '@/hooks/queries/useAlertasRetorno';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
 import {
   Collapsible,
   CollapsibleContent,
@@ -179,71 +177,19 @@ const grupoPlataforma = [
   { to: '/admin/usuarios',          label: 'Usuários',                  icon: Users,      adminOnly: true },
   { to: '/admin/agrupamentos',      label: 'Agrupamentos Regionais',    icon: Globe2,     adminOnly: true },
   { to: '/admin/painel-municipios', label: 'Painel de Municípios',      icon: Globe2,     adminOnly: true },
-  { to: '/admin/quotas',            label: 'Quotas',                    icon: Gauge,      adminOnly: true },
   { to: '/admin/drones',            label: 'Drones',                    icon: IconDrone,  adminOnly: true },
   { to: '/admin/voos',              label: 'Voos',                      icon: Plane,      adminOnly: true },
   { to: '/admin/yolo-qualidade',    label: 'Qualidade do Drone (YOLO)', icon: Eye,        adminOnly: true },
   { to: '/admin/pipeline-status',   label: 'Pipeline Drone',            icon: Activity,   adminOnly: true },
   { to: '/admin/saude-sistema',     label: 'Saúde do Sistema',          icon: HeartPulse, adminOnly: true },
   { to: '/admin/job-queue',         label: 'Fila de Jobs',              icon: ListTodo,   adminOnly: true },
+  { to: '/admin/security-logs',    label: 'Logs de Segurança',         icon: ShieldAlert, adminOnly: true },
 ];
 
 /**
  * Rotas permitidas para agente (portal próprio).
  * Sem dashboard geral e sem SLA operacional. Demais redirecionam para o mapa do agente.
  */
-type NavSearchEntry = { to: string; label: string };
-
-function dedupeNavByPath(items: NavSearchEntry[]): NavSearchEntry[] {
-  const seen = new Map<string, string>();
-  for (const it of items) {
-    if (!seen.has(it.to)) seen.set(it.to, it.label);
-  }
-  return Array.from(seen.entries()).map(([to, label]) => ({ to, label }));
-}
-
-/** Lista plana de rotas do menu para busca no sidebar (por papel). */
-function buildSidebarSearchIndex(params: {
-  papel: string | null | undefined;
-  isAdmin: boolean;
-  isAgente: boolean;
-}): NavSearchEntry[] {
-  const { papel, isAdmin, isAgente } = params;
-  const out: NavSearchEntry[] = [];
-  const push = (arr: { to: string; label: string; adminOnly?: boolean }[]) => {
-    for (const it of arr) {
-      if (!it.adminOnly || isAdmin) out.push({ to: it.to, label: it.label });
-    }
-  };
-
-  if (papel === 'admin') {
-    push(adminMonitorNavItems.map(({ to, label }) => ({ to, label })));
-    push(grupoPlataforma);
-    return dedupeNavByPath(out);
-  }
-  if (papel === 'analista_regional') {
-    push(analistaRegionalNavItems.map(({ to, label }) => ({ to, label })));
-    return dedupeNavByPath(out);
-  }
-  if (papel === 'notificador') {
-    push(notificadorNavItems.map(({ to, label }) => ({ to, label })));
-    return dedupeNavByPath(out);
-  }
-  if (isAgente) {
-    push(agenteNavItems.map(({ to, label }) => ({ to, label })));
-    return dedupeNavByPath(out);
-  }
-
-  push(baseNavItems.map(({ to, label }) => ({ to, label })));
-  push(grupoPlnejamento);
-  push(grupoSaudeVigilancia);
-  push(grupoInteligencia);
-  push(grupoRiscoClima);
-  push(grupoConfiguracoes);
-  if (isAdmin) push(grupoPlataforma);
-  return dedupeNavByPath(out);
-}
-
 const AGENTE_ALLOWED_PATHS = [
   '/',
   '/agente/hoje',
@@ -311,7 +257,7 @@ const SidebarGroup = ({ label, icon: GroupIcon, items, isAdmin, location, onClos
 const AppLayout = () => {
   const { usuario, papel, isAdmin, isAdminOrSupervisor, isAgente, signOut } = useAuth();
   const { ativo: modoAnalitico, toggle: toggleModoAnalitico } = useModoAnalitico();
-  const { clienteId, setClienteId, clientes } = useClienteAtivo();
+  const { clienteId } = useClienteAtivo();
   const queryClient = useQueryClient();
   const { pendingCount: offlinePending, isSyncing: offlineSyncing } = useOfflineQueue();
   const { data: alertasRetornoNav = [] } = useAlertasRetorno(
@@ -342,7 +288,6 @@ const AppLayout = () => {
     return AGENTE_ALLOWED_PATHS.some(allowed => path === allowed || (allowed !== '/' && path.startsWith(allowed)));
   }, [isAgente, location.pathname]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [navSearch, setNavSearch] = useState('');
   const [onboardingForce, setOnboardingForce] = useState(false);
   const [logoutDialog, setLogoutDialog] = useState(false);
   const [draining, setDraining] = useState(false);
@@ -401,20 +346,6 @@ const AppLayout = () => {
 
   const bottomNavItems = mobileNavItems.slice(0, 4);
   const moreNavItems = mobileNavItems.slice(4);
-
-  const navSearchIndex = useMemo(
-    () => buildSidebarSearchIndex({ papel, isAdmin, isAgente }),
-    [papel, isAdmin, isAgente],
-  );
-  const navSearchResults = useMemo(() => {
-    const q = navSearch.trim().toLowerCase();
-    if (!q) return [];
-    return navSearchIndex.filter(
-      (it) =>
-        it.label.toLowerCase().includes(q) ||
-        it.to.toLowerCase().includes(q),
-    );
-  }, [navSearch, navSearchIndex]);
 
   const doSignOut = async () => {
     try {
@@ -478,78 +409,12 @@ const AppLayout = () => {
           </div>
         </div>
 
-        <div className="px-4 pb-2">
-          <div className="relative">
-            <Search
-              className="pointer-events-none absolute left-2.5 top-1/2 z-[1] h-3.5 w-3.5 -translate-y-1/2 text-white/45"
-              aria-hidden
-            />
-            <Input
-              type="search"
-              value={navSearch}
-              onChange={(e) => setNavSearch(e.target.value)}
-              placeholder="Buscar no menu…"
-              className="h-9 border-white/20 bg-white/10 pl-8 text-xs text-white placeholder:text-white/40 focus-visible:ring-white/30"
-              aria-label="Buscar item do menu"
-              autoComplete="off"
-            />
-            {navSearch.trim() ? (
-              <ul
-                className="absolute left-0 right-0 top-full z-[120] mt-1 max-h-52 overflow-y-auto rounded-lg border border-white/20 bg-[#0c4533] py-1 shadow-xl"
-                role="listbox"
-                aria-label="Resultados da busca"
-              >
-                {navSearchResults.length === 0 ? (
-                  <li className="px-3 py-2 text-xs text-white/50">Nenhum item encontrado</li>
-                ) : (
-                  navSearchResults.slice(0, 18).map((it) => (
-                    <li key={it.to} role="option">
-                      <Link
-                        to={it.to}
-                        onClick={() => {
-                          setNavSearch('');
-                          setSidebarOpen(false);
-                        }}
-                        className="block px-3 py-2 text-xs text-white/90 hover:bg-white/10"
-                      >
-                        {it.label}
-                      </Link>
-                    </li>
-                  ))
-                )}
-              </ul>
-            ) : null}
-          </div>
-        </div>
-
-        {/* Admin client selector */}
-        {isAdmin && clientes.length > 0 && (
-          <div className="px-4 pt-4 pb-2">
-            <label className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-white/60 font-semibold mb-1.5 px-1">
-              <Building2 className="w-3.5 h-3.5" /> Cliente ativo
-            </label>
-            <Select value={clienteId || ''} onValueChange={setClienteId}>
-              <SelectTrigger className="h-9 rounded-sm text-xs bg-white/10 border-white/20 text-white hover:bg-white/20 transition-colors">
-                <SelectValue placeholder="Selecione um cliente" />
-              </SelectTrigger>
-              <SelectContent className="bg-[#10563f] border-white/20 text-white shadow-xl">
-                {clientes.map(c => (
-                  <SelectItem key={c.id} value={c.id} className="text-xs hover:bg-white/10 focus:bg-white/20 focus:text-white cursor-pointer data-[state=checked]:bg-white/20">
-                    {c.nome}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-
         {/* Nav — agente: portal próprio; demais: Início & Monitoramento + Contextos (Cadastros, Risco, Operação, etc.) */}
         <nav className="flex-1 space-y-1 p-4 [&_a]:rounded-sm [&_button]:rounded-sm">
           {papel === 'admin' ? (
             /* Admin de plataforma: monitoramento + gestão da plataforma SaaS */
             <>
               <div className="mb-2">
-                <p className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-white/40">Monitoramento</p>
                 {adminMonitorNavItems.map((item) => {
                   const active = location.pathname === item.to || location.pathname.startsWith(item.to + '/');
                   return (

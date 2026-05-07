@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  ForbiddenException,
   Get,
   Inject,
   Param,
@@ -227,7 +228,9 @@ export class BillingController {
   @ApiOperation({ summary: 'Atualizar quotas do cliente' })
   async upsertQuotas(@Body() body: UpsertQuotasBody) {
     const parsed = upsertQuotasSchema.parse(body);
-    const clienteId = requireTenantId(getAccessScope(this.req));
+    const scope = getAccessScope(this.req);
+    const clienteId = scope.tenantId ?? parsed.clienteId;
+    if (!clienteId) throw new ForbiddenException('clienteId obrigatório — passe no body para admin ou use escopo de município');
     const { quotas } = await this.quotasUpsert.execute(clienteId, parsed);
     return BillingViewModel.quotasToHttp(quotas);
   }

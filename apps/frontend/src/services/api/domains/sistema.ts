@@ -13,7 +13,8 @@ export const systemHealth = {
     return deepToSnake(raw) as Ret<typeof _sb.systemHealth.latestByServico>;
   },
   listAlerts: async (apenasAtivos?: boolean) => {
-    const raw = await http.get(`/dashboard/alerts${qs({ apenasAtivos })}`);
+    // backend reads ?resolvido=false → active only; omit param → all alerts
+    const raw = await http.get(`/dashboard/alerts${qs({ resolvido: apenasAtivos ? false : undefined })}`);
     return deepToSnake(raw) as Ret<typeof _sb.systemHealth.listAlerts>;
   },
   resolverAlerta: (...args: Parameters<typeof _sb.systemHealth.resolverAlerta>): Promise<void> =>
@@ -66,9 +67,8 @@ export const offlineSyncLog = {
 };
 
 export const jobQueue = {
-  list: async (...args: Parameters<typeof _sb.jobQueue.list>): Promise<Ret<typeof _sb.jobQueue.list>> => {
-    const [status] = args as [string?];
-    return deepToSnake(await http.get(`/jobs${qs({ status })}`)) as Ret<typeof _sb.jobQueue.list>;
+  list: async (filtros?: { status?: string; tipo?: string; limit?: number }): Promise<Ret<typeof _sb.jobQueue.list>> => {
+    return deepToSnake(await http.get(`/jobs${qs({ status: filtros?.status })}`)) as Ret<typeof _sb.jobQueue.list>;
   },
 
   get: async (id: string): Promise<Ret<typeof _sb.jobQueue.get>> =>

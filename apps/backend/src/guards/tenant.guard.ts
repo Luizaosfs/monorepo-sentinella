@@ -3,9 +3,12 @@ import {
   ExecutionContext,
   ForbiddenException,
   Injectable,
+  Logger,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
+import { SecurityLoggerService } from '@modules/security-log/security-log.service';
+import { SecurityEventType, SecuritySeverity } from '@modules/security-log/security-log.types';
 
 import { SKIP_TENANT_KEY } from '@/decorators/roles.decorator';
 import {
@@ -32,9 +35,12 @@ import { AuthenticatedUser } from './auth.guard';
  */
 @Injectable()
 export class TenantGuard implements CanActivate {
+  private readonly logger = new Logger(TenantGuard.name);
+
   constructor(
     private reflector: Reflector,
     private prisma: PrismaService,
+    private securityLogger: SecurityLoggerService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -85,6 +91,20 @@ export class TenantGuard implements CanActivate {
 
     if (user.papeis.includes('analista_regional')) {
       if (!user.agrupamentoId) {
+        this.logger.warn(`TenantGuard: analista_regional sem agrupamento user=${user.id}`);
+        void this.securityLogger.log({
+          eventType: SecurityEventType.TENANT_VIOLATION,
+          severity: SecuritySeverity.WARN,
+          userId: user.id,
+          clienteId: user.clienteId ?? null,
+          role: 'analista_regional',
+          ip: request.ip ?? null,
+          userAgent: request.headers?.['user-agent'] ?? null,
+          method: request.method,
+          path: request.url,
+          statusCode: 403,
+          message: 'Analista regional sem agrupamento vinculado',
+        });
         throw new ForbiddenException(
           'Analista regional sem agrupamento vinculado',
         );
@@ -97,11 +117,41 @@ export class TenantGuard implements CanActivate {
       const clienteIds = rows.map((r) => r.cliente_id);
 
       if (clienteIds.length === 0) {
+        this.logger.warn(`TenantGuard: agrupamento sem clientes user=${user.id} agrupamento=${user.agrupamentoId}`);
+        void this.securityLogger.log({
+          eventType: SecurityEventType.TENANT_VIOLATION,
+          severity: SecuritySeverity.WARN,
+          userId: user.id,
+          role: 'analista_regional',
+          ip: request.ip ?? null,
+          userAgent: request.headers?.['user-agent'] ?? null,
+          method: request.method,
+          path: request.url,
+          statusCode: 403,
+          message: 'Agrupamento sem clientes vinculados',
+          metadata: { agrupamentoId: user.agrupamentoId },
+        });
         throw new ForbiddenException('Agrupamento sem clientes vinculados');
       }
 
       const requestedClienteId = (request.query?.clienteId as string | undefined) ?? null;
       if (requestedClienteId && !clienteIds.includes(requestedClienteId)) {
+        this.logger.warn(
+          `TenantGuard: município fora do agrupamento user=${user.id} requested=${requestedClienteId}`,
+        );
+        void this.securityLogger.log({
+          eventType: SecurityEventType.TENANT_VIOLATION,
+          severity: SecuritySeverity.WARN,
+          userId: user.id,
+          role: 'analista_regional',
+          ip: request.ip ?? null,
+          userAgent: request.headers?.['user-agent'] ?? null,
+          method: request.method,
+          path: request.url,
+          statusCode: 403,
+          message: 'Município não pertence ao agrupamento do analista',
+          metadata: { requestedClienteId, agrupamentoId: user.agrupamentoId },
+        });
         throw new ForbiddenException('Município não pertence ao seu agrupamento');
       }
 
@@ -117,6 +167,19 @@ export class TenantGuard implements CanActivate {
     }
 
     if (!user.clienteId) {
+      this.logger.warn(`TenantGuard: usuário sem vínculo a município user=${user.id}`);
+      void this.securityLogger.log({
+        eventType: SecurityEventType.TENANT_VIOLATION,
+        severity: SecuritySeverity.WARN,
+        userId: user.id,
+        role: user.papeis?.join(',') ?? null,
+        ip: request.ip ?? null,
+        userAgent: request.headers?.['user-agent'] ?? null,
+        method: request.method,
+        path: request.url,
+        statusCode: 403,
+        message: 'Usuário sem vínculo a município',
+      });
       throw new ForbiddenException('Usuário sem vínculo a município');
     }
 

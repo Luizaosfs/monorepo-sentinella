@@ -9,7 +9,6 @@ import * as express from 'express';
 import helmet from 'helmet';
 import { patchNestJsSwagger } from 'nestjs-zod';
 
-import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { MyZodValidationPipe } from './pipes/zod-validations.pipe';
 import { AppModule } from './app.module';
 
@@ -33,12 +32,15 @@ async function bootstrap() {
     credentials: true,
   });
 
-  app.use(express.json({ limit: '15mb' }));
-  app.use(express.urlencoded({ extended: true, limit: '15mb' }));
+  // Uploads base64 (fotos ~10MB) só no path /cloudinary; demais endpoints ficam em 1MB
+  app.use('/cloudinary', express.json({ limit: '15mb' }));
+  app.use('/cloudinary', express.urlencoded({ extended: true, limit: '15mb' }));
+  app.use(express.json({ limit: '1mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '1mb' }));
   app.use(cookieParser());
 
-  // Permite que req.ip reflita o IP real atrás de proxy/load balancer
-  app.getHttpAdapter().getInstance().set('trust proxy', true);
+  // '1' = confiar em exatamente 1 hop de proxy (nginx/LB); evita IP spoofing via X-Forwarded-For
+  app.getHttpAdapter().getInstance().set('trust proxy', 1);
 
   //app.use(helmet());
   app.use(
@@ -80,7 +82,7 @@ async function bootstrap() {
   );
 
   app.useGlobalPipes(new MyZodValidationPipe());
-  app.useGlobalFilters(new GlobalExceptionFilter());
+  // GlobalExceptionFilter registrado via APP_FILTER no AppModule (suporta DI)
 
   if (process.env.NODE_ENV !== 'production') {
     patchNestJsSwagger();

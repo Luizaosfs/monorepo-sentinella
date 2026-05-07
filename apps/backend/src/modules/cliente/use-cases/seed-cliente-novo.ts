@@ -11,6 +11,8 @@ export interface SeedClienteNovoResult {
   yoloClassConfig: { criados: number };
   yoloSynonyms: { criados: number };
   planoAcaoCatalogo: { genericosCriados: number; porTipoCriados: number };
+  riskPolicy: 'criado' | 'ja_existente';
+  slaConfig: 'criado' | 'ja_existente';
 }
 
 interface YoloClass {
@@ -70,6 +72,31 @@ const SLA_FERIADOS_NACIONAIS: ReadonlyArray<{ data: string; descricao: string }>
   { data: '2026-11-20', descricao: 'Consciência Negra' },
   { data: '2026-12-25', descricao: 'Natal' },
 ];
+
+const DEFAULT_SLA_CONFIG = {
+  prioridades: {
+    'Crítica':       { horas: 4,  criticidade: 'Muito Alta' },
+    'Urgente':       { horas: 4,  criticidade: 'Muito Alta' },
+    'Alta':          { horas: 12, criticidade: 'Alta' },
+    'Moderada':      { horas: 24, criticidade: 'Média' },
+    'Média':         { horas: 24, criticidade: 'Média' },
+    'Baixa':         { horas: 72, criticidade: 'Baixa' },
+    'Monitoramento': { horas: 72, criticidade: 'Baixa' },
+  },
+  fatores: {
+    risco_muito_alto_pct: 30,
+    persistencia_dias_min: 3,
+    persistencia_pct: 20,
+    temperatura_min: 30,
+    temperatura_pct: 10,
+  },
+  horario_comercial: {
+    ativo: false,
+    inicio: '08:00',
+    fim: '18:00',
+    dias_semana: [1, 2, 3, 4, 5],
+  },
+};
 
 const DRONE_BASE_BY_RISCO = { baixo: 25, medio: 55, alto: 85 };
 const DRONE_PRIORITY_THRESHOLDS = { P1: 85, P2: 60, P3: 40, P4: 20, P5: 0 };
@@ -255,6 +282,14 @@ type TxClient = {
     count: (args: unknown) => Promise<number>;
     createMany: (args: unknown) => Promise<{ count: number }>;
   };
+  sentinela_risk_policy: {
+    findFirst: (args: unknown) => Promise<{ id: string } | null>;
+    create: (args: unknown) => Promise<unknown>;
+  };
+  sla_config: {
+    findFirst: (args: unknown) => Promise<{ id: string } | null>;
+    create: (args: unknown) => Promise<unknown>;
+  };
 };
 
 @Injectable()
@@ -280,6 +315,8 @@ export class SeedClienteNovo {
       yoloClassConfig: await this.seedYoloClassConfig(client, clienteId),
       yoloSynonyms: await this.seedYoloSynonyms(client, clienteId),
       planoAcaoCatalogo: await this.seedPlanoAcaoCatalogo(client, clienteId),
+      riskPolicy: await this.seedRiskPolicy(client, clienteId),
+      slaConfig: await this.seedSlaConfig(client, clienteId),
     };
   }
 
@@ -479,5 +516,31 @@ export class SeedClienteNovo {
     }
 
     return { genericosCriados, porTipoCriados };
+  }
+
+  // 9) sentinela_risk_policy: registro header da política pluvial (sem regras inline)
+  private async seedRiskPolicy(
+    tx: TxClient,
+    clienteId: string,
+  ): Promise<'criado' | 'ja_existente'> {
+    const existing = await tx.sentinela_risk_policy.findFirst({
+      where: { cliente_id: clienteId, name: 'default' },
+    });
+    if (existing) return 'ja_existente';
+    await tx.sentinela_risk_policy.create({
+      data: { cliente_id: clienteId, name: 'default', version: 'v1', is_active: true },
+    });
+    return 'criado';
+  }
+
+  // 10) sla_config: configuração geral de SLA (prioridades, fatores, horário comercial)
+  private async seedSlaConfig(
+    tx: TxClient,
+    clienteId: string,
+  ): Promise<'criado' | 'ja_existente'> {
+    const existing = await tx.sla_config.findFirst({ where: { cliente_id: clienteId } });
+    if (existing) return 'ja_existente';
+    await tx.sla_config.create({ data: { cliente_id: clienteId, config: DEFAULT_SLA_CONFIG } });
+    return 'criado';
   }
 }

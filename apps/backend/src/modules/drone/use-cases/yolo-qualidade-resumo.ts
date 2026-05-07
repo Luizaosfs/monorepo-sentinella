@@ -12,11 +12,21 @@ interface CorrelacaoRow {
   risco: string | null;
 }
 
+interface EvolucaoRow {
+  mes: string;
+  confirmados: number;
+  com_confirmacao: number;
+}
+
 @Injectable()
 export class YoloQualidadeResumo {
   constructor(private prisma: PrismaService) {}
 
-  async execute(clienteId: string) {
+  async execute(clienteId: string | null) {
+    const clienteFilter = clienteId
+      ? Prisma.sql`WHERE vdc.cliente_id = ${clienteId}::uuid`
+      : Prisma.sql``;
+
     const correlacoes = await this.prisma.client.$queryRaw<CorrelacaoRow[]>(Prisma.sql`
       SELECT
         vdc.id,
@@ -28,10 +38,28 @@ export class YoloQualidadeResumo {
         li.risco
       FROM vistoria_drone_correlacao vdc
       LEFT JOIN levantamento_itens li ON li.id = vdc.levantamento_item_id
-      WHERE vdc.cliente_id = ${clienteId}::uuid
+      ${clienteFilter}
       ORDER BY vdc.created_at DESC
       LIMIT 200
     `);
+
+    const evolucaoRows = await this.prisma.client.$queryRaw<EvolucaoRow[]>(Prisma.sql`
+      SELECT
+        TO_CHAR(DATE_TRUNC('month', vdc.created_at), 'YYYY-MM') AS mes,
+        COUNT(CASE WHEN vdc.campo_confirmou_foco = true THEN 1 END)::int AS confirmados,
+        COUNT(CASE WHEN vdc.campo_confirmou_foco IS NOT NULL THEN 1 END)::int AS com_confirmacao
+      FROM vistoria_drone_correlacao vdc
+      ${clienteFilter}
+      GROUP BY DATE_TRUNC('month', vdc.created_at)
+      ORDER BY DATE_TRUNC('month', vdc.created_at) ASC
+    `);
+
+    const evolucao_mensal = evolucaoRows.map(row => ({
+      mes: row.mes,
+      precisao: Number(row.com_confirmacao) > 0
+        ? Math.round((Number(row.confirmados) / Number(row.com_confirmacao)) * 100)
+        : 0,
+    }));
 
     const total = correlacoes.length;
     const comConfirmacao = correlacoes.filter(c => c.campo_confirmou_foco !== null);
@@ -52,7 +80,7 @@ export class YoloQualidadeResumo {
       taxa_falsos_positivos:  falsosPositivos,
       total_correlacoes:      total,
       cobertura,
-      evolucao_mensal:        [] as { mes: string; precisao: number }[],
+      evolucao_mensal,
       correlacoes: correlacoes.map(c => ({
         id:                c.id,
         endereco:          c.endereco_curto ?? '—',

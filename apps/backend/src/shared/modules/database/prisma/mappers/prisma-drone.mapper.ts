@@ -93,7 +93,6 @@ export class PrismaDroneMapper {
 
   static toPrisma(entity: Drone) {
     return {
-      cliente_id: entity.clienteId,
       nome: entity.nome,
       modelo: entity.modelo ?? '',
       serial: entity.serial ?? null,

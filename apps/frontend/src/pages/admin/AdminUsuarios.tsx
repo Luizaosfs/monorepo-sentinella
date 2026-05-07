@@ -244,6 +244,14 @@ const AdminUsuarios = () => {
     onError: (err: unknown) => toast.error(err instanceof Error ? err.message : 'Erro ao remover'),
   });
 
+  const handleDelete = (u: UsuarioRow) => {
+    setConfirmDialog({
+      title: 'Remover usuário',
+      description: `Remover "${u.nome}"? Esta ação desativa o acesso do usuário à plataforma.`,
+      onConfirm: () => deleteMutation.mutate(u),
+    });
+  };
+
   const handleSave = () => {
     if (!form.nome.trim() || !form.email.trim()) {
       toast.error('Nome e email são obrigatórios'); return;

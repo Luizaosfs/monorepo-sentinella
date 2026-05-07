@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
-import { useClienteAtivo } from '@/hooks/useClienteAtivo';
 import { api } from '@/services/api';
 import { usePagination } from '@/hooks/usePagination';
 import TablePagination from '@/components/TablePagination';
@@ -11,33 +10,26 @@ import { Badge } from '@/components/ui/badge';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { Loader2, Plus, Pencil, Trash2, Search, ArrowLeft } from 'lucide-react';
 import { IconDrone } from '@/components/icons/IconDrone';
-import { Drone, type DroneProprietario } from '@/types/database';
+import { Drone } from '@/types/database';
 import AdminPageHeader from '@/components/AdminPageHeader';
 import MobileListCard from '@/components/admin/MobileListCard';
 import ConfirmDialog from '@/components/admin/ConfirmDialog';
 
 const emptyForm = {
-  marca: '',
+  nome: '',
   modelo: '',
-  baterias: '',
-  specs: '',
-  proprietario: 'proprio' as DroneProprietario,
+  serial: '',
   ativo: true,
 };
 
 const AdminDrones = () => {
   const { isAdmin } = useAuth();
-  const { clienteId } = useClienteAtivo();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
@@ -46,9 +38,8 @@ const AdminDrones = () => {
   const [confirmDialog, setConfirmDialog] = useState<{ title: string; description: string; onConfirm: () => void } | null>(null);
 
   const { data: drones = [], isLoading: loading } = useQuery({
-    queryKey: ['admin_drones', clienteId],
-    queryFn: () => api.drones.list(clienteId!),
-    enabled: !!clienteId,
+    queryKey: ['admin_drones'],
+    queryFn: () => api.drones.list(),
     staleTime: 0,
   });
 
@@ -58,7 +49,7 @@ const AdminDrones = () => {
       if (id) {
         await api.drones.update(id, data);
       } else {
-        await api.drones.create({ ...data, cliente_id: clienteId! });
+        await api.drones.create(data);
       }
     },
     onSuccess: () => {
@@ -87,27 +78,21 @@ const AdminDrones = () => {
   const openEdit = (d: Drone) => {
     setEditing(d);
     setForm({
-      marca: d.marca,
-      modelo: d.modelo,
-      baterias: d.baterias,
-      specs: d.specs,
-      proprietario: d.proprietario,
+      nome: d.nome,
+      modelo: d.modelo ?? '',
+      serial: d.serial ?? '',
       ativo: d.ativo,
     });
     setShowForm(true);
   };
 
   const handleSave = () => {
-    if (!form.marca.trim()) { toast.error('Marca é obrigatória'); return; }
-    if (!form.modelo.trim()) { toast.error('Modelo é obrigatório'); return; }
-    if (!form.baterias.trim()) { toast.error('Baterias é obrigatório'); return; }
-    if (!form.specs.trim()) { toast.error('Especificações é obrigatório'); return; }
+    if (!form.nome.trim()) { toast.error('Nome é obrigatório'); return; }
     saveMutation.mutate({
       ...form,
-      marca: form.marca.trim(),
+      nome: form.nome.trim(),
       modelo: form.modelo.trim(),
-      baterias: form.baterias.trim(),
-      specs: form.specs.trim(),
+      serial: form.serial.trim(),
       ...(editing ? { id: editing.id } : {}),
     });
   };
@@ -122,10 +107,9 @@ const AdminDrones = () => {
 
   const filtered = drones.filter(
     (d) =>
-      d.marca.toLowerCase().includes(search.toLowerCase()) ||
-      d.modelo.toLowerCase().includes(search.toLowerCase()) ||
-      d.baterias.toLowerCase().includes(search.toLowerCase()) ||
-      d.specs.toLowerCase().includes(search.toLowerCase())
+      d.nome.toLowerCase().includes(search.toLowerCase()) ||
+      (d.modelo ?? '').toLowerCase().includes(search.toLowerCase()) ||
+      (d.serial ?? '').toLowerCase().includes(search.toLowerCase())
   );
 
   const { page, totalPages, paginated, goTo, next, prev, reset, total } = usePagination(filtered);
@@ -148,18 +132,18 @@ const AdminDrones = () => {
         <Card className="rounded-sm border-2 border-cardBorder shadow-lg shadow-black/8 dark:shadow-black/20">
           <CardContent className="p-6">
             <div className="grid gap-4">
+              <div className="space-y-2">
+                <Label>Nome *</Label>
+                <Input
+                  value={form.nome}
+                  onChange={(e) => setForm((p) => ({ ...p, nome: e.target.value }))}
+                  placeholder="Ex: DJI Phantom 4 Pro"
+                  maxLength={200}
+                />
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Marca *</Label>
-                  <Input
-                    value={form.marca}
-                    onChange={(e) => setForm((p) => ({ ...p, marca: e.target.value }))}
-                    placeholder="Ex: DJI"
-                    maxLength={100}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Modelo *</Label>
+                  <Label>Modelo</Label>
                   <Input
                     value={form.modelo}
                     onChange={(e) => setForm((p) => ({ ...p, modelo: e.target.value }))}
@@ -167,40 +151,15 @@ const AdminDrones = () => {
                     maxLength={100}
                   />
                 </div>
-              </div>
-              <div className="space-y-2">
-                <Label>Baterias *</Label>
-                <Input
-                  value={form.baterias}
-                  onChange={(e) => setForm((p) => ({ ...p, baterias: e.target.value }))}
-                  placeholder="Ex: 2x 5870 mAh"
-                  maxLength={200}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Especificações *</Label>
-                <Textarea
-                  value={form.specs}
-                  onChange={(e) => setForm((p) => ({ ...p, specs: e.target.value }))}
-                  placeholder="Especificações técnicas, câmera, autonomia, etc."
-                  rows={3}
-                  className="resize-none"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Proprietário</Label>
-                <Select
-                  value={form.proprietario}
-                  onValueChange={(v) => setForm((p) => ({ ...p, proprietario: v as DroneProprietario }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="proprio">Próprio</SelectItem>
-                    <SelectItem value="terceiro">Terceiro</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="space-y-2">
+                  <Label>Número de série</Label>
+                  <Input
+                    value={form.serial}
+                    onChange={(e) => setForm((p) => ({ ...p, serial: e.target.value }))}
+                    placeholder="Ex: DJI1234567890"
+                    maxLength={100}
+                  />
+                </div>
               </div>
               <div className="flex items-center justify-between rounded-lg border p-4">
                 <Label htmlFor="drone-ativo" className="cursor-pointer">Ativo</Label>
@@ -268,20 +227,15 @@ const AdminDrones = () => {
                 {paginated.map((d) => (
                   <MobileListCard
                     key={d.id}
-                    title={`${d.marca} ${d.modelo}`}
+                    title={d.nome}
                     badges={
-                      <>
-                        <Badge variant={d.proprietario === 'proprio' ? 'default' : 'secondary'}>
-                          {d.proprietario === 'proprio' ? 'Próprio' : 'Terceiro'}
-                        </Badge>
-                        <Badge variant={d.ativo ? 'default' : 'outline'}>
-                          {d.ativo ? 'Ativo' : 'Inativo'}
-                        </Badge>
-                      </>
+                      <Badge variant={d.ativo ? 'default' : 'outline'}>
+                        {d.ativo ? 'Ativo' : 'Inativo'}
+                      </Badge>
                     }
                     fields={[
-                      { label: 'Baterias', value: d.baterias },
-                      { label: 'Specs', value: <span className="line-clamp-2">{d.specs}</span> },
+                      { label: 'Modelo', value: d.modelo ?? '—' },
+                      { label: 'Série', value: d.serial ?? '—' },
                     ]}
                     onEdit={() => openEdit(d)}
                     onDelete={isAdmin ? () => handleDelete(d) : undefined}
@@ -296,10 +250,9 @@ const AdminDrones = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Marca</TableHead>
+                      <TableHead>Nome</TableHead>
                       <TableHead>Modelo</TableHead>
-                      <TableHead>Baterias</TableHead>
-                      <TableHead>Proprietário</TableHead>
+                      <TableHead>Série</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="text-right">Ações</TableHead>
                     </TableRow>
@@ -307,16 +260,9 @@ const AdminDrones = () => {
                   <TableBody>
                     {paginated.map((d) => (
                       <TableRow key={d.id} className="group cursor-pointer hover:bg-muted/50" onClick={() => openEdit(d)}>
-                        <TableCell className="font-medium">{d.marca}</TableCell>
-                        <TableCell className="text-muted-foreground text-sm">{d.modelo}</TableCell>
-                        <TableCell className="text-muted-foreground text-sm max-w-[120px] truncate" title={d.baterias}>
-                          {d.baterias}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={d.proprietario === 'proprio' ? 'default' : 'secondary'}>
-                            {d.proprietario === 'proprio' ? 'Próprio' : 'Terceiro'}
-                          </Badge>
-                        </TableCell>
+                        <TableCell className="font-medium">{d.nome}</TableCell>
+                        <TableCell className="text-muted-foreground text-sm">{d.modelo ?? '—'}</TableCell>
+                        <TableCell className="text-muted-foreground text-sm font-mono text-xs">{d.serial ?? '—'}</TableCell>
                         <TableCell>
                           <Badge variant={d.ativo ? 'default' : 'outline'}>
                             {d.ativo ? 'Ativo' : 'Inativo'}
@@ -343,7 +289,7 @@ const AdminDrones = () => {
                     ))}
                     {filtered.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
+                        <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
                           Nenhum drone encontrado
                         </TableCell>
                       </TableRow>

@@ -94,6 +94,7 @@ const AdminDistribuicaoQuarteirao = safeLazy(() => import("@/pages/admin/AdminDi
 const AdminSupervisorTempoReal = safeLazy(() => import("@/pages/admin/AdminSupervisorTempoReal"));
 const AdminSaudeSistema = safeLazy(() => import("@/pages/admin/AdminSaudeSistema"));
 const AdminJobQueue = safeLazy(() => import("@/pages/admin/AdminJobQueue"));
+const AdminSecurityLogs = safeLazy(() => import("@/pages/admin/AdminSecurityLogs"));
 const ConsultaProtocolo = safeLazy(() => import("@/pages/public/ConsultaProtocolo"));
 const MunicipioPublico = safeLazy(() => import("@/pages/public/MunicipioPublico"));
 const GestorFocos = safeLazy(() => import("@/pages/gestor/GestorFocos"));
@@ -238,6 +239,7 @@ const App = () => (
                 <Route path="yolo-qualidade"    element={<PlatformAdminGuard><AdminYoloQualidade /></PlatformAdminGuard>} />
                 <Route path="saude-sistema"     element={<PlatformAdminGuard><AdminSaudeSistema /></PlatformAdminGuard>} />
                 <Route path="job-queue"         element={<PlatformAdminGuard><AdminJobQueue /></PlatformAdminGuard>} />
+                <Route path="security-logs"    element={<PlatformAdminGuard><AdminSecurityLogs /></PlatformAdminGuard>} />
                 <Route path="pipeline-status"   element={<PlatformAdminGuard><AdminPipelineStatus /></PlatformAdminGuard>} />
                 <Route path="agrupamentos"      element={<PlatformAdminGuard><AdminAgrupamentos /></PlatformAdminGuard>} />
                 {/* backwards-compat: old /admin/* municipal bookmarks → /gestor/* */}

@@ -1,3 +1,4 @@
+import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { AgrupamentosModule } from '@modules/agrupamentos/agrupamentos.module';
 import { AlertaRetornoModule } from '@modules/alerta-retorno/alerta-retorno.module';
 import { AuthModule } from '@modules/auth/auth.module';
@@ -24,6 +25,7 @@ import { PluvioModule } from '@modules/pluvio/pluvio.module';
 import { QuarteiraoModule } from '@modules/quarteirao/quarteirao.module';
 import { RecorrenciasModule } from '@modules/recorrencias/recorrencias.module';
 import { RegiaoModule } from '@modules/regiao/regiao.module';
+import { SecurityLogModule } from '@modules/security-log/security-log.module';
 import { ReinspecaoModule } from '@modules/reinspecao/reinspecao.module';
 import { RiskEngineModule } from '@modules/risk-engine/risk-engine.module';
 import { SeedModule } from '@modules/seed/seed.module';
@@ -31,7 +33,7 @@ import { SlaModule } from '@modules/sla/sla.module';
 import { UsuarioModule } from '@modules/usuario/usuario.module';
 import { VistoriaModule } from '@modules/vistoria/vistoria.module';
 import { Module } from '@nestjs/common';
-import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { DatabaseModule } from '@shared/modules/database/database.module';
@@ -54,6 +56,7 @@ import { UserContextInterceptor } from 'src/shared/interceptors/user-context.int
       },
     }),
     DatabaseModule,
+    SecurityLogModule,
     AuthModule,
     UsuarioModule,
     ClienteModule,
@@ -89,6 +92,8 @@ import { UserContextInterceptor } from 'src/shared/interceptors/user-context.int
   ],
   controllers: [],
   providers: [
+    // Filter com DI (SecurityLoggerService injetado via SecurityLogModule)
+    { provide: APP_FILTER, useClass: GlobalExceptionFilter },
     // Guard order matters: throttle → auth → roles → tenant
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: AuthGuard },

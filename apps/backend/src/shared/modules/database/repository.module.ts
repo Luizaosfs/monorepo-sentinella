@@ -46,6 +46,8 @@ import { PrismaSlaReadRepository } from './prisma/repositories/sla/prisma-sla-re
 import { PrismaSlaWriteRepository } from './prisma/repositories/sla/prisma-sla-write.repository';
 import { PrismaUsuarioReadRepository } from './prisma/repositories/usuario/prisma-usuario-read.repository';
 import { PrismaUsuarioWriteRepository } from './prisma/repositories/usuario/prisma-usuario-write.repository';
+import { PrismaSecurityLogReadRepository } from './prisma/repositories/security-log/prisma-security-log-read.repository';
+import { PrismaSecurityLogWriteRepository } from './prisma/repositories/security-log/prisma-security-log-write.repository';
 import { PrismaVistoriaReadRepository } from './prisma/repositories/vistoria/prisma-vistoria-read.repository';
 import { PrismaVistoriaWriteRepository } from './prisma/repositories/vistoria/prisma-vistoria-write.repository';
 
@@ -89,6 +91,8 @@ const ALL_REPOSITORIES = [
   PrismaReinspecaoWriteRepository,
   PrismaRiskEngineReadRepository,
   PrismaRiskEngineWriteRepository,
+  PrismaSecurityLogReadRepository,
+  PrismaSecurityLogWriteRepository,
   PrismaSlaReadRepository,
   PrismaSlaWriteRepository,
   PrismaUsuarioReadRepository,

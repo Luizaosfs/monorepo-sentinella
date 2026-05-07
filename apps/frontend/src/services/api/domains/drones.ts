@@ -4,8 +4,8 @@ import { qs } from '../shared/qs';
 import { deepToCamel, deepToSnake, type Ret } from '../shared/case-mappers';
 
 export const drones = {
-  list: async (clienteId: string) => {
-    const raw = await http.get(`/drones${qs({ clienteId })}`);
+  list: async () => {
+    const raw = await http.get('/drones');
     return deepToSnake(raw) as Ret<typeof _sb.drones.list>;
   },
   create: async (payload: Parameters<typeof _sb.drones.create>[0]) => {
@@ -23,16 +23,16 @@ export const voos = {
     const raw = await http.get(`/drones/voos${qs({ clienteId })}`);
     return deepToSnake(raw) as Ret<typeof _sb.voos.listByCliente>;
   },
-  create: async (payload: Parameters<typeof _sb.voos.create>[0]) => {
-    const raw = await http.post('/drones/voos', deepToCamel(payload));
+  create: async (clienteId: string, payload: Parameters<typeof _sb.voos.create>[0]) => {
+    const raw = await http.post(`/drones/voos${qs({ clienteId })}`, deepToCamel(payload));
     return deepToSnake(raw) as Ret<typeof _sb.voos.create>;
   },
   update: (id: string, payload: Parameters<typeof _sb.voos.update>[1]): Promise<void> =>
     http.put(`/drones/voos/${id}`, deepToCamel(payload)),
   remove: (id: string): Promise<void> =>
     http.delete(`/drones/voos/${id}`),
-  bulkCreate: (rows: Record<string, unknown>[]): Promise<{ importados: number }> =>
-    http.post('/drones/voos/bulk-create', { rows: rows.map(r => deepToCamel(r)) }),
+  bulkCreate: (clienteId: string, rows: Record<string, unknown>[]): Promise<{ importados: number }> =>
+    http.post(`/drones/voos/bulk-create${qs({ clienteId })}`, { rows: rows.map(r => deepToCamel(r)) }),
 };
 
 export const pipeline = {
@@ -67,8 +67,8 @@ export const yoloClassConfig = {
 };
 
 export const yoloQualidade = {
-  resumo: (_clienteId: string) =>
-    http.get('/drones/yolo-qualidade/resumo'),
+  resumo: (clienteId?: string | null) =>
+    http.get(`/drones/yolo-qualidade/resumo${qs({ clienteId: clienteId ?? undefined })}`),
 };
 
 export const droneRiskConfig = {

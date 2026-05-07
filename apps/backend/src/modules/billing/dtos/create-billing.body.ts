@@ -146,6 +146,7 @@ export const createCicloSchema = z.object({
 export class CreateCicloBody extends createZodDto(createCicloSchema) {}
 
 export const upsertQuotasSchema = z.object({
+  clienteId: z.string().uuid().optional().describe('Obrigatório para admin (platform scope)'),
   voosMes: z
     .coerce.number()
     .int()

@@ -1,4 +1,5 @@
 import { useState, Suspense, lazy } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/services/api';
@@ -21,18 +22,13 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Loader2, Building2, Plus, Pencil, Trash2, Search, MapPin, Pentagon, ArrowLeft, LocateFixed, CreditCard, AlertTriangle, Users } from 'lucide-react';
+import { Loader2, Building2, Plus, Pencil, Trash2, Search, MapPin, Pentagon, ArrowLeft, LocateFixed, CreditCard, AlertTriangle, Users, Gauge, Plane } from 'lucide-react';
 import { Cliente } from '@/types/database';
 import { validateSenhaForte } from '@/lib/senhaValidacao';
 import { usePlanos, useUpdateClientePlan, useBillingResumo } from '@/hooks/queries/useBilling';
 import AdminPageHeader from '@/components/AdminPageHeader';
 import MobileListCard from '@/components/admin/MobileListCard';
 import ConfirmDialog from '@/components/admin/ConfirmDialog';
-import { seedDefaultRiskPolicy } from '@/lib/seedDefaultRiskPolicy';
-import { seedDefaultDroneRiskConfig } from '@/lib/seedDefaultDroneRiskConfig';
-import { seedDefaultSlaConfig } from '@/lib/seedDefaultSlaConfig';
-import { seedDefaultPlanoAcaoCatalogo } from '@/lib/seedDefaultPlanoAcaoCatalogo';
-import { seedDefaultSlaFeriados } from '@/lib/seedDefaultSlaFeriados';
 import { type PlanejamentoGeoJSON } from '@/components/map/InspectionLeafletMap';
 import { forwardGeocode } from '@/lib/geo';
 
@@ -70,6 +66,7 @@ const AdminClientes = () => {
   const { isAdmin } = useAuth();
   const { clienteId } = useClienteAtivo();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Cliente | null>(null);
@@ -129,15 +126,6 @@ const AdminClientes = () => {
           `O cliente foi removido automaticamente.`
         );
       }
-
-      // ── 3. Seeds de configuração (após supervisor — fire-and-forget) ───────
-      await Promise.all([
-        seedDefaultRiskPolicy(newCliente.id),
-        seedDefaultDroneRiskConfig(newCliente.id),
-        seedDefaultSlaConfig(newCliente.id),
-        seedDefaultPlanoAcaoCatalogo(newCliente.id),
-        seedDefaultSlaFeriados(newCliente.id),
-      ]);
 
       return {
         isNew: true,
@@ -667,6 +655,16 @@ const AdminClientes = () => {
                         { label: 'Email', value: c.contato_email },
                         { label: 'Área', value: c.area ? <span className="text-primary flex items-center gap-1"><Pentagon className="w-3 h-3" />Definida</span> : null },
                       ]}
+                      extraActions={
+                        <>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" title="Voos" onClick={(e) => { e.stopPropagation(); navigate(`/admin/voos?clienteId=${c.id}`); }}>
+                            <Plane className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" title="Quotas de uso" onClick={(e) => { e.stopPropagation(); navigate(`/admin/quotas?clienteId=${c.id}`); }}>
+                            <Gauge className="w-3.5 h-3.5" />
+                          </Button>
+                        </>
+                      }
                       onEdit={() => openEdit(c)}
                       onDelete={isAdmin ? () => handleDelete(c) : undefined}
                     />
@@ -742,6 +740,12 @@ const AdminClientes = () => {
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex gap-1 justify-end">
+                              <Button variant="ghost" size="icon" title="Voos" onClick={(e) => { e.stopPropagation(); navigate(`/admin/voos?clienteId=${c.id}`); }}>
+                                <Plane className="w-4 h-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon" title="Quotas de uso" onClick={(e) => { e.stopPropagation(); navigate(`/admin/quotas?clienteId=${c.id}`); }}>
+                                <Gauge className="w-4 h-4" />
+                              </Button>
                               <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); openEdit(c); }}>
                                 <Pencil className="w-4 h-4" />
                               </Button>

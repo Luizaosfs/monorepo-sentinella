@@ -814,16 +814,12 @@ export interface Voo {
   piloto?: Pick<Usuario, 'id' | 'nome'>;
 }
 
-export type DroneProprietario = 'proprio' | 'terceiro';
-
 export interface Drone {
   id: string;
-  marca: string;
-  modelo: string;
-  baterias: string;
-  specs: string;
+  nome: string;
+  modelo: string | null;
+  serial: string | null;
   ativo: boolean;
-  proprietario: DroneProprietario;
   created_at: string;
   updated_at: string;
 }
