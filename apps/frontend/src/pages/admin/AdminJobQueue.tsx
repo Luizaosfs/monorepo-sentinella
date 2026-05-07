@@ -37,8 +37,11 @@ const TIPO_LABELS: Record<JobTipo, string> = {
   health_check:       'Health Check',
 };
 
-function distancia(iso: string) {
-  return formatDistanceToNow(new Date(iso), { locale: ptBR, addSuffix: true });
+function distancia(iso: string | null | undefined) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '—';
+  return formatDistanceToNow(d, { locale: ptBR, addSuffix: true });
 }
 
 function dataCurta(iso: string | null) {
