@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Header,
   Inject,
   Param,
   Post,
@@ -19,7 +20,8 @@ import { AuthenticatedUser } from 'src/guards/auth.guard';
 import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 
-import { Roles } from '@/decorators/roles.decorator';
+import { Public, Roles, SkipTenant } from '@/decorators/roles.decorator';
+import { env } from '@/lib/env/server';
 
 import {
   CreateCasoBody,
@@ -105,6 +107,34 @@ export class NotificacaoController {
     private getCruzamentoCountUc: GetCruzamentoCount,
     @Inject(REQUEST) private req: Request,
   ) {}
+
+  // ── Geocodificação (proxy server-side para Google Maps) ───────────────────
+
+  @Get('geocode')
+  @Public()
+  @Header('Cache-Control', 'no-store')
+  @ApiOperation({ summary: 'Geocodificar endereço via Google Maps (server-side, público)' })
+  async geocode(
+    @Query('logradouro') logradouro: string,
+    @Query('bairro') bairro?: string,
+    @Query('cidade') cidade?: string,
+    @Query('uf') uf?: string,
+  ): Promise<{ lat: number | null; lng: number | null }> {
+    console.log('[Geocoding] key:', env.GOOGLE_MAPS_KEY ? 'SET' : 'MISSING', '| logradouro:', logradouro);
+    if (!env.GOOGLE_MAPS_KEY || !logradouro?.trim()) return { lat: null, lng: null };
+    const parts = [logradouro, cidade, uf].filter(Boolean);
+    const address = encodeURIComponent(parts.join(', '));
+    const components = encodeURIComponent('country:BR');
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${address}&components=${components}&key=${env.GOOGLE_MAPS_KEY}&region=BR&language=pt-BR`;
+    const res = await fetch(url);
+    const json = await res.json() as { status: string; error_message?: string; results?: Array<{ geometry: { location: { lat: number; lng: number } } }> };
+    console.log('[Geocoding] query:', parts.join(', '), '| status:', json.status, json.error_message ?? '');
+    if (json.status === 'OK' && json.results?.length) {
+      const { lat, lng } = json.results[0].geometry.location;
+      return { lat, lng };
+    }
+    return { lat: null, lng: null };
+  }
 
   // ── Unidades de Saúde ─────────────────────────────────────────────────────
 

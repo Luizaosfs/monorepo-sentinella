@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { http } from '@sentinella/api-client';
 import { ArrowLeft, Save, Loader2, MapPin, Calendar as CalendarIcon, AlertCircle, CheckCircle2, GitMerge, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, parseISO } from 'date-fns';
@@ -53,18 +54,16 @@ const INITIAL_FORM: FormState = {
 
 export default function NotificadorRegistroCaso() {
   const navigate = useNavigate();
-  const { clienteId, tenantStatus } = useClienteAtivo();
+  const { clienteId, tenantStatus, clienteAtivo } = useClienteAtivo();
   const { usuario } = useAuth();
   const { data: unidades = [], isLoading: loadingUnidades } = useUnidadesSaude(clienteId);
   const { data: regioes = [] } = useRegioes(clienteId);
   const casosNotificadosMutation = useCasosNotificadosMutation();
 
-  const hasGeoKey = !!import.meta.env.VITE_GOOGLE_MAPS_KEY;
-
   const [form, setForm] = useState<FormState>(INITIAL_FORM);
   const [geocoding, setGeocoding] = useState(false);
   const [geoWarning, setGeoWarning] = useState<string | null>(null);
-  const [showManualCoords, setShowManualCoords] = useState(!hasGeoKey);
+  const [showManualCoords, setShowManualCoords] = useState(false);
   const [success, setSuccess] = useState(false);
   const [savedCasoId, setSavedCasoId] = useState<string | null>(null);
   const { data: cruzamentos = [] } = useCruzamentosDoCaso(savedCasoId);
@@ -77,31 +76,32 @@ export default function NotificadorRegistroCaso() {
       set(field)(e.target.value);
 
   const handleGeocodificar = async () => {
-    if (!form.logradouro_bairro.trim() || !hasGeoKey) return;
+    if (!form.logradouro_bairro.trim()) return;
 
     setGeocoding(true);
     setGeoWarning(null);
 
     try {
-      const address = encodeURIComponent(
-        [form.logradouro_bairro, form.bairro].filter(Boolean).join(', '),
-      );
-      const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${address}&key=${import.meta.env.VITE_GOOGLE_MAPS_KEY}`;
-      const res = await fetch(url);
-      const json = await res.json();
+      const params = new URLSearchParams({ logradouro: form.logradouro_bairro });
+      if (clienteAtivo?.cidade) params.set('cidade', clienteAtivo.cidade);
+      if (clienteAtivo?.uf) params.set('uf', clienteAtivo.uf);
 
-      if (json.status === 'OK' && json.results?.length > 0) {
-        const loc = json.results[0].geometry.location;
+      const result = await http.get<{ lat: number | null; lng: number | null }>(
+        `/notificacoes/geocode?${params.toString()}`,
+      );
+
+      if (result?.lat != null) {
         setForm((prev) => ({
           ...prev,
-          latitude: String(loc.lat),
-          longitude: String(loc.lng),
+          latitude: String(result.lat),
+          longitude: String(result.lng),
         }));
         setGeoWarning(null);
       } else {
-        setGeoWarning('Endereço não encontrado — verifique o logradouro e bairro');
+        setGeoWarning('Endereço não encontrado — verifique o logradouro e tente incluir o número');
       }
-    } catch {
+    } catch (err) {
+      console.error('[Geocoding] erro:', err);
       setGeoWarning('Falha na geocodificação — insira as coordenadas manualmente abaixo');
       setShowManualCoords(true);
     } finally {
@@ -118,19 +118,18 @@ export default function NotificadorRegistroCaso() {
 
     try {
       const novoCaso = await casosNotificadosMutation.mutateAsync({
+        cliente_id: clienteId!,
         doenca: form.doenca,
         status: 'suspeito',
         unidade_saude_id: form.unidade_saude_id,
-        regiao_id: form.regiao_id || null,
+        regiao_id: form.regiao_id || undefined,
         data_notificacao: form.data_notificacao,
-        data_inicio_sintomas: form.data_inicio_sintomas || null,
-        logradouro_bairro: form.logradouro_bairro || null,
-        bairro: form.bairro || null,
-        latitude: form.latitude ? parseFloat(form.latitude) : null,
-        longitude: form.longitude ? parseFloat(form.longitude) : null,
-        observacao: form.observacao || null,
-        cliente_id: clienteId,
-        notificador_id: usuario?.id ?? null,
+        data_inicio_sintomas: form.data_inicio_sintomas || undefined,
+        logradouro_bairro: form.logradouro_bairro || undefined,
+        bairro: form.bairro || undefined,
+        latitude: form.latitude ? parseFloat(form.latitude) : undefined,
+        longitude: form.longitude ? parseFloat(form.longitude) : undefined,
+        observacao: form.observacao || undefined,
       });
 
       setSavedCasoId(novoCaso.id);
@@ -271,19 +270,30 @@ export default function NotificadorRegistroCaso() {
           </Select>
         </div>
 
-        {/* Região */}
+        {/* Região / Bairro */}
         {regioes.length > 0 && (
           <div className="space-y-2">
-            <Label className="text-sm font-semibold">Região</Label>
+            <Label className="text-sm font-semibold">Bairro / Região</Label>
             <Select
               value={form.regiao_id || '_nenhuma'}
-              onValueChange={(v) => set('regiao_id')(v === '_nenhuma' ? '' : v)}
+              onValueChange={(v) => {
+                if (v === '_nenhuma') {
+                  setForm((prev) => ({ ...prev, regiao_id: '', bairro: '' }));
+                } else {
+                  const regiao = regioes.find((r) => r.id === v);
+                  setForm((prev) => ({
+                    ...prev,
+                    regiao_id: v,
+                    bairro: regiao?.regiao ?? prev.bairro,
+                  }));
+                }
+              }}
             >
               <SelectTrigger className="h-12 text-base rounded-xl">
                 <SelectValue placeholder="Selecione (opcional)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="_nenhuma">Nenhuma</SelectItem>
+                <SelectItem value="_nenhuma">Não informado</SelectItem>
                 {regioes.map((r) => (
                   <SelectItem key={r.id} value={r.id}>{r.regiao}</SelectItem>
                 ))}
@@ -363,37 +373,15 @@ export default function NotificadorRegistroCaso() {
           />
         </div>
 
-        {/* Bairro */}
-        <div className="space-y-2">
-          <Label className="text-sm font-semibold">Bairro</Label>
-          <Input
-            placeholder="Nome do bairro"
-            value={form.bairro}
-            onChange={handleInputChange('bairro')}
-            className="h-12 rounded-xl text-base"
-          />
-        </div>
-
         {/* Geocodificação */}
         <div className="space-y-3">
-          {!hasGeoKey && (
-            <div className="flex items-start gap-2 rounded-xl border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2.5">
-              <AlertCircle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-              <p className="text-xs text-amber-800 dark:text-amber-300">
-                Geocodificação indisponível — configure{' '}
-                <code className="font-mono bg-amber-100 dark:bg-amber-900 px-1 rounded">VITE_GOOGLE_MAPS_KEY</code>.
-                O cruzamento geoespacial (300m) não funcionará sem coordenadas.
-              </p>
-            </div>
-          )}
-
           <div className="flex items-center gap-3">
             <Button
               type="button"
               variant="outline"
               className="h-11 rounded-xl flex-1 gap-2"
               onClick={handleGeocodificar}
-              disabled={geocoding || !form.logradouro_bairro.trim() || !hasGeoKey}
+              disabled={geocoding || !form.logradouro_bairro.trim()}
             >
               {geocoding ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -423,8 +411,7 @@ export default function NotificadorRegistroCaso() {
             </p>
           )}
 
-          {/* Coordenadas manuais — exibidas sempre que não há Google Maps key ou após falha */}
-          {!showManualCoords && hasGeoKey && (
+          {!showManualCoords && (
             <button
               type="button"
               className="text-xs text-muted-foreground underline flex items-center gap-1"

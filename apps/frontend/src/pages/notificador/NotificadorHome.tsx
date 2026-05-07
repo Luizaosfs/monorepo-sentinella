@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { PlusCircle, Stethoscope, Activity, CheckCircle2, XCircle, TrendingUp } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { PlusCircle, Stethoscope, Activity, CheckCircle2, XCircle, TrendingUp, ChevronDown, ChevronUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
@@ -52,6 +52,7 @@ export default function NotificadorHome() {
   const { clienteId } = useClienteAtivo();
   const { usuario } = useAuth();
   const { data: todos = [], isLoading } = useCasosNotificados(clienteId);
+  const [verTodosCasos, setVerTodosCasos] = useState(false);
 
   // Últimos 30 dias
   const corte30 = daysAgo(30);
@@ -61,12 +62,12 @@ export default function NotificadorHome() {
   );
 
   // Casos do próprio notificador (últimos 30 dias)
-  const meusCasos = useMemo(
-    () => casos30
-      .filter(c => c.notificador_id === usuario?.id || !c.notificador_id)
-      .slice(0, 5),
+  const meusCasosTodos = useMemo(
+    () => casos30.filter(c => c.notificador_id === usuario?.id || !c.notificador_id),
     [casos30, usuario?.id],
   );
+  const LIMITE_INICIAL = 5;
+  const meusCasos = verTodosCasos ? meusCasosTodos : meusCasosTodos.slice(0, LIMITE_INICIAL);
 
   // KPIs
   const totalSemana = useMemo(() => {
@@ -261,7 +262,7 @@ export default function NotificadorHome() {
         <Card className="rounded-2xl">
           <CardHeader className="pb-2 pt-4 px-4 flex-row items-center justify-between">
             <CardTitle className="text-sm font-semibold">Meus registros recentes</CardTitle>
-            <span className="text-xs text-muted-foreground">{meusCasos.length} caso{meusCasos.length !== 1 ? 's' : ''}</span>
+            <span className="text-xs text-muted-foreground">{meusCasosTodos.length} caso{meusCasosTodos.length !== 1 ? 's' : ''}</span>
           </CardHeader>
           <CardContent className="px-4 pb-4">
             {isLoading ? (
@@ -302,6 +303,19 @@ export default function NotificadorHome() {
                     </Badge>
                   </div>
                 ))}
+                {meusCasosTodos.length > LIMITE_INICIAL && (
+                  <button
+                    type="button"
+                    onClick={() => setVerTodosCasos(v => !v)}
+                    className="w-full flex items-center justify-center gap-1 pt-1 text-xs text-primary font-medium"
+                  >
+                    {verTodosCasos ? (
+                      <><ChevronUp className="h-3.5 w-3.5" /> Ver menos</>
+                    ) : (
+                      <><ChevronDown className="h-3.5 w-3.5" /> Ver todos ({meusCasosTodos.length})</>
+                    )}
+                  </button>
+                )}
               </div>
             )}
           </CardContent>

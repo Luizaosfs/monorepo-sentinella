@@ -42,6 +42,7 @@ const envSchema = z.object({
     .optional()
     .transform((v) => v === 'true')
     .default('true'),
+  GOOGLE_MAPS_KEY: z.string().optional(),
 });
 
 const getEnv = () => {

@@ -9,10 +9,9 @@ import { Logo } from '@/components/Logo';
 import { Search, Loader2, AlertTriangle, CheckCircle2, Clock, Wrench, Eye, ShieldCheck, XCircle } from 'lucide-react';
 
 interface ResultadoConsulta {
-  ok: boolean;
   status: string;
-  data: string;
-  mensagem: string;
+  created_at: string;
+  mensagem?: string;
 }
 
 const STATUS_BADGE: Record<string, { label: string; mensagem: string; className: string; icon: React.ReactNode }> = {
@@ -137,14 +136,14 @@ const ConsultaProtocolo: React.FC = () => {
                   <Label htmlFor="protocolo">Número do protocolo</Label>
                   <Input
                     id="protocolo"
-                    placeholder="Ex: A1B2C3D4"
+                    placeholder="Ex: SENT-2026-A1B2C3"
                     value={protocolo}
                     onChange={(e) => setProtocolo(e.target.value.toUpperCase())}
-                    maxLength={8}
+                    maxLength={15}
                     className="font-mono text-lg tracking-widest text-center uppercase"
                   />
                   <p className="text-xs text-muted-foreground text-center">
-                    Os primeiros 8 caracteres do código de atendimento
+                    Código completo exibido após o registro da denúncia
                   </p>
                 </div>
               </CardContent>
@@ -152,7 +151,7 @@ const ConsultaProtocolo: React.FC = () => {
 
             <Button
               type="submit"
-              disabled={loading || protocolo.trim().length < 4}
+              disabled={loading || protocolo.trim().length < 15}
               className="w-full h-12 text-base font-semibold"
             >
               {loading ? (
@@ -188,9 +187,9 @@ const ConsultaProtocolo: React.FC = () => {
                 <p className="text-sm text-muted-foreground text-center leading-relaxed">
                   {resultado.mensagem || statusInfo.mensagem}
                 </p>
-                {resultado.data && (
+                {resultado.created_at && (
                   <p className="text-xs text-muted-foreground text-center">
-                    Registrado em: {new Date(resultado.data).toLocaleDateString('pt-BR')}
+                    Registrado em: {new Date(resultado.created_at).toLocaleDateString('pt-BR')}
                   </p>
                 )}
               </CardContent>
