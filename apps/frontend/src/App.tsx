@@ -120,6 +120,7 @@ const AdminAgrupamentos = safeLazy(() => import("@/pages/admin/AdminAgrupamentos
 const RegionalDashboard = safeLazy(() => import("@/pages/regional/RegionalDashboard"));
 const DashboardAnalitico = safeLazy(() => import("@/pages/gestor/DashboardAnalitico"));
 const GestorRelatorios = safeLazy(() => import("@/pages/gestor/GestorRelatorios"));
+const GestorPluvioAlertaTerritorial = safeLazy(() => import("@/pages/gestor/GestorPluvioAlertaTerritorial"));
 
 const PageLoader = forwardRef<HTMLDivElement>((_props, _ref) => (
   <div className="flex bg-background items-center justify-center min-h-[50vh] w-full">
@@ -306,6 +307,7 @@ const App = () => (
               <Route path="/gestor/supervisor-tempo-real"   element={<AdminOrSupervisorGuard><AdminSupervisorTempoReal /></AdminOrSupervisorGuard>} />
               <Route path="/gestor/pluvio-risco"            element={<AdminOrSupervisorGuard><AdminPluvioRisco /></AdminOrSupervisorGuard>} />
               <Route path="/gestor/pluvio-operacional"      element={<AdminOrSupervisorGuard><AdminPluvioOperacional /></AdminOrSupervisorGuard>} />
+              <Route path="/gestor/pluvio/alerta-territorial" element={<AdminOrSupervisorGuard><GestorPluvioAlertaTerritorial /></AdminOrSupervisorGuard>} />
               <Route path="/gestor/regioes"                 element={<AdminOrSupervisorGuard><AdminRegioes /></AdminOrSupervisorGuard>} />
               <Route path="/gestor/unidades-saude"          element={<AdminOrSupervisorGuard><AdminUnidadesSaude /></AdminOrSupervisorGuard>} />
               <Route path="/gestor/imoveis"                 element={<AdminOrSupervisorGuard><AdminImoveis /></AdminOrSupervisorGuard>} />

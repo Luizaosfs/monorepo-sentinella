@@ -13,6 +13,28 @@ export interface StormForecastAlert {
   atualizadoEm: string;
 }
 
+export type NivelRiscoPluvio = 'baixo' | 'medio' | 'alto' | 'critico';
+
+export interface AlertaTerritorialItem {
+  regiaoId: string;
+  regiaoNome: string;
+  nivelRiscoPluvio: NivelRiscoPluvio;
+  chuva24hMm: number;
+  chuva72hMm: number;
+  chuva7dMm: number;
+  tendencia: string | null;
+  justificativas: string[];
+  recomendacao: string;
+}
+
+export interface AlertaTerritorialResponse {
+  atualizadoEm: string;
+  totalRegioesMonitoradas: number;
+  totalRegioesEmAlerta: number;
+  severidadeGeral: NivelRiscoPluvio;
+  alertas: AlertaTerritorialItem[];
+}
+
 export const pluvio = {
   riscoByCliente: async (clienteId?: string) =>
     http.get(`/pluvio/risco/by-cliente${qs({ clienteId })}`),
@@ -22,6 +44,8 @@ export const pluvio = {
   },
   getStormForecast: async (clienteId: string): Promise<StormForecastAlert[]> =>
     http.get(`/pluvio/storm-forecast${qs({ clienteId })}`),
+  getAlertaTerritorial: async (clienteId: string): Promise<AlertaTerritorialResponse> =>
+    http.get(`/pluvio/alerta-territorial${qs({ clienteId })}`),
 };
 
 export const pluvioOperacional = {

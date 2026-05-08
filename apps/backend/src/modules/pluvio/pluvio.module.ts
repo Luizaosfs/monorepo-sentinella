@@ -22,6 +22,7 @@ import { UpsertItem } from './use-cases/upsert-item';
 import { UpsertRisco } from './use-cases/upsert-risco';
 import { RiscoByCliente } from './use-cases/risco-by-cliente';
 import { GetStormForecast } from './use-cases/get-storm-forecast';
+import { GetAlertaTerritorial } from './use-cases/get-alerta-territorial';
 import { OpenMeteoService } from './services/open-meteo.service';
 
 @Module({
@@ -42,6 +43,7 @@ import { OpenMeteoService } from './services/open-meteo.service';
     GerarSlasRun,
     RiscoByCliente,
     GetStormForecast,
+    GetAlertaTerritorial,
     OpenMeteoService,
     PluvioSchedulerService,
     PluvioScheduler,

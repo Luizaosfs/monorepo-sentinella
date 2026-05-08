@@ -55,6 +55,7 @@ import { UpsertItem } from './use-cases/upsert-item';
 import { UpsertRisco } from './use-cases/upsert-risco';
 import { RiscoByCliente } from './use-cases/risco-by-cliente';
 import { GetStormForecast } from './use-cases/get-storm-forecast';
+import { GetAlertaTerritorial } from './use-cases/get-alerta-territorial';
 import {
   PluvioItemViewModel,
   PluvioRiscoViewModel,
@@ -84,6 +85,7 @@ export class PluvioController {
     private gerarSlasRunUC: GerarSlasRun,
     private riscoByClienteUC: RiscoByCliente,
     private getStormForecastUC: GetStormForecast,
+    private getAlertaTerritorialUC: GetAlertaTerritorial,
     @Inject(REQUEST) private req: Request,
   ) {}
 
@@ -182,6 +184,14 @@ export class PluvioController {
   }
 
   // ── Risco ─────────────────────────────────────────────────────────────────
+
+  @Get('alerta-territorial')
+  @Roles('admin', 'supervisor', 'agente')
+  @ApiOperation({ summary: 'Alerta pluviométrico territorial — regiões em risco preventivo' })
+  async alertaTerritorial() {
+    const clienteId = requireTenantId(getAccessScope(this.req));
+    return this.getAlertaTerritorialUC.execute(clienteId);
+  }
 
   @Get('storm-forecast')
   @Roles('admin', 'supervisor', 'agente')

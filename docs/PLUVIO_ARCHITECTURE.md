@@ -69,6 +69,8 @@ PluvioScheduler @Cron('0 6 * * *')
 | Arquivo | Responsabilidade |
 |---|---|
 | `risco-by-cliente.ts` | Query lateral — retorna `nivel_risco`, `chuva_24h`, `dt_ref`, `updated_at` mais recente por região do cliente |
+| `get-alerta-territorial.ts` | DISTINCT ON — último registro por região, filtra meio/alto/critico, gera justificativas e recomendações |
+| `get-storm-forecast.ts` | Busca previsão Open-Meteo por região, classifica alertas, cache em memória 10min |
 | `filter-items.ts` | Lista itens de uma `pluvio_operacional_run` |
 | `gerar-slas-run.ts` | Gera SLAs para uma run operacional |
 | `update-run-total.ts` | Atualiza totais de uma run |
@@ -123,6 +125,44 @@ Vento no D+0: ≥ 90 km/h → `critico`, 60–89 km/h → `alto`.
 
 ### Widget
 `StormAlertWidget` — exibe alertas ordenados por severidade (`critico → alto → moderado`). Em caso de erro do backend: exibe "Dados climáticos temporariamente indisponíveis" sem stacktrace.
+
+---
+
+## Fluxo alerta-territorial (PR-PLUVIO-03)
+
+```
+Browser → GET /pluvio/alerta-territorial
+  └─ PluvioController.alertaTerritorial()
+       └─ GetAlertaTerritorial.execute(clienteId)
+            ├─ $queryRaw — DISTINCT ON (regiao_id) ORDER BY regiao_id, dt_ref DESC
+            │    (último registro por região, sem scan de corrida)
+            ├─ filtra nivel_risco ∈ {medio, alto, critico}
+            ├─ mapeia → AlertaTerritorialItem (justificativas + recomendação)
+            ├─ ordena critico → alto → medio
+            └─ retorna AlertaTerritorialResponse
+                 { atualizadoEm, totalRegioesMonitoradas, totalRegioesEmAlerta, severidadeGeral, alertas[] }
+```
+
+**Diferença alerta vs foco:** `GET /pluvio/alerta-territorial` é somente leitura — não cria focos, SLAs ou eventos operacionais. A unidade de dado é `pluvio_risco`, não `focos_risco`.
+
+**Diferença risco pluvial vs SLA:** risco pluvial é preventivo territorial (toda a região). SLA é operacional por imóvel (endereço específico). Os dois domínios não se cruzam.
+
+**ViewModel puro:** `alerta-territorial.vm.ts` contém 3 funções puras exportadas e testadas independentemente: `calcularSeveridadeGeral`, `gerarJustificativas`, `gerarRecomendacao`.
+
+**Regras de recomendação:**
+| Nível | Recomendação |
+|---|---|
+| `critico` | Priorizar vistoria preventiva nas próximas 24h |
+| `alto` | Reforçar cobertura territorial nas próximas 48h |
+| `medio` | Monitorar e manter rota preventiva |
+| `baixo` | Sem ação extraordinária |
+
+**Limitação conhecida — cross-join com cobertura operacional:** o cruzamento `pluvio_risco ↔ cobertura_operacional/reincidência` **não é possível** sem migração de schema. `cobertura_operacional` agrupa por `quarteirao` (texto) e `distribuicao_quarteirao`; `reincidência` agrupa por `quarteirao/bairro` (texto em `imoveis`). Nenhuma dessas tabelas tem FK para `regioes.id`. O campo `operacao` foi omitido do `AlertaTerritorialItem` por esse motivo. Roadmap: adicionar `regiao_id` em `cobertura_operacional` como coluna calculada via PostGIS.
+
+**Frontend:**
+- `usePluvioAlertaTerritorial(clienteId)` — `staleTime: STALE.MODERATE` (5min), queryKey `['pluvio-alerta-territorial', clienteId]`
+- `PluvioAlertaWidget` — widget compacto na `CentralOperacional`, oculto quando não há alertas ou em caso de erro. Mostra severidade geral, regiões em alerta, máx. chuva 72h, recomendação principal e botão "Ver alerta territorial".
+- `GestorPluvioAlertaTerritorial` — página completa em `/gestor/pluvio/alerta-territorial` com KPIs, banner de status, tabela de regiões com justificativas e disclaimer de risco preventivo.
 
 ---
 

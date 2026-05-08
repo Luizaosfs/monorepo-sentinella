@@ -18,6 +18,7 @@ import { ScoreBadge } from '@/components/foco/ScoreBadge';
 import { AgentesHojeWidget } from '@/components/dashboard/AgentesHojeWidget';
 import { ResumoIAWidget } from '@/components/dashboard/ResumoIAWidget';
 import { PainelPilotoFunilCard } from '@/components/dashboard/PainelPilotoFunil';
+import { PluvioAlertaWidget } from '@/components/dashboard/PluvioAlertaWidget';
 import { useCentralKpis, useImoveisParaHoje, useFocosPendentesSupervisor, useAnaliticoSemAcesso, useRegioesSemCobertura } from '@/hooks/queries/useCentralOperacional';
 import { useImplantacaoOperacionalStatus, useGerarOperacaoInicial } from '@/hooks/queries/useImplantacaoOperacional';
 import { useResumoCoberturaOperacional } from '@/hooks/queries/useCoberturaOperacional';
@@ -400,6 +401,9 @@ export default function CentralOperacional() {
           </div>
         </div>
       )}
+
+      {/* Alerta Pluviométrico Territorial */}
+      {clienteAtivo?.id && <PluvioAlertaWidget clienteId={clienteAtivo.id} />}
 
       {/* Pendências do Supervisor */}
       {pendentesSupervisor && pendentesSupervisor.count > 0 && (
