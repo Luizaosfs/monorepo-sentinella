@@ -104,6 +104,9 @@ const GestorDashboardTerritorial = safeLazy(() => import("@/pages/gestor/GestorD
 const GestorMapa = safeLazy(() => import("@/pages/gestor/GestorMapa"));
 const GestorTriagem = safeLazy(() => import("@/pages/gestor/GestorTriagem"));
 const CentralOperacional = safeLazy(() => import("@/pages/gestor/CentralOperacional"));
+const GestorCoberturaOperacional = safeLazy(() => import("@/pages/gestor/GestorCoberturaOperacional"));
+const GestorReincidenciaTerritorial = safeLazy(() => import("@/pages/gestor/GestorReincidenciaTerritorial"));
+const GestorImplantacaoOperacional = safeLazy(() => import("@/pages/gestor/GestorImplantacaoOperacional"));
 const AdminScoreConfig = safeLazy(() => import("@/pages/admin/AdminScoreConfig"));
 const PainelExecutivo = safeLazy(() => import("@/pages/admin/PainelExecutivo"));
 const AdminGestaCiclos = safeLazy(() => import("@/pages/admin/AdminGestaCiclos"));
@@ -273,6 +276,9 @@ const App = () => (
               </Route>
               {/* ── /gestor/* ── operação municipal (supervisor + admin) ──────────────── */}
               {/* Focos de risco — supervisor exclusivo */}
+              <Route path="/gestor/implantacao-operacional" element={<SupervisorOnlyGuard><GestorImplantacaoOperacional /></SupervisorOnlyGuard>} />
+              <Route path="/gestor/cobertura-operacional" element={<SupervisorOnlyGuard><GestorCoberturaOperacional /></SupervisorOnlyGuard>} />
+              <Route path="/gestor/reincidencia-territorial" element={<SupervisorOnlyGuard><GestorReincidenciaTerritorial /></SupervisorOnlyGuard>} />
               <Route path="/gestor/central"   element={<SupervisorOnlyGuard><CentralOperacional /></SupervisorOnlyGuard>} />
               <Route path="/gestor/triagem"   element={<SupervisorOnlyGuard><GestorTriagem /></SupervisorOnlyGuard>} />
               <Route path="/gestor/focos"     element={<SupervisorOnlyGuard><GestorFocos /></SupervisorOnlyGuard>} />

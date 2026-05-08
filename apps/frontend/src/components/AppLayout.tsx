@@ -123,12 +123,18 @@ const adminMonitorNavItems = [
 
 // ─── GRUPOS DO SIDEBAR (supervisor/admin) ─────────────────────────────────────
 const grupoPlnejamento = [
-  { to: '/gestor/planejamentos',           label: 'Planejamentos',              icon: CalendarRange,  adminOnly: false },
-  { to: '/levantamentos',                 label: 'Levantamentos',              icon: ClipboardList,  adminOnly: false },
-  { to: '/gestor/ciclos',                  label: 'Gestão de Ciclos',           icon: CalendarRange,  adminOnly: false },
-  { to: '/gestor/distribuicao-quarteirao', label: 'Distribuição de Quarteirão', icon: MapIcon,        adminOnly: false },
-  { to: '/gestor/operacoes',               label: 'Operações',                  icon: ClipboardCheck, adminOnly: false },
-  { to: '/gestor/historico-atendimento',   label: 'Histórico de Atendimento',   icon: User,           adminOnly: false },
+  // ── Configurar ──────────────────────────────────────────────────────────
+  { to: '/gestor/ciclos',                   label: 'Gestão de Ciclos',           icon: CalendarRange,  adminOnly: false },
+  { to: '/gestor/implantacao-operacional',  label: 'Implantação Operacional',    icon: ListTodo,       adminOnly: false, supervisorOnly: true },
+  { to: '/gestor/distribuicao-quarteirao',  label: 'Distribuição de Quarteirão', icon: MapIcon,        adminOnly: false },
+  // ── Planejar & Executar ──────────────────────────────────────────────────
+  { to: '/gestor/planejamentos',            label: 'Planejamentos',              icon: CalendarRange,  adminOnly: false },
+  { to: '/gestor/operacoes',                label: 'Operações',                  icon: ClipboardCheck, adminOnly: false },
+  { to: '/levantamentos',                   label: 'Levantamentos',              icon: ClipboardList,  adminOnly: false },
+  // ── Monitorar & Analisar ─────────────────────────────────────────────────
+  { to: '/gestor/cobertura-operacional',    label: 'Cobertura Territorial',      icon: BarChart2,      adminOnly: false, supervisorOnly: true },
+  { to: '/gestor/reincidencia-territorial', label: 'Reincidência Territorial',   icon: TrendingUp,     adminOnly: false, supervisorOnly: true },
+  { to: '/gestor/historico-atendimento',    label: 'Histórico de Atendimento',   icon: User,           adminOnly: false },
 ];
 
 const grupoSaudeVigilancia = [
@@ -214,14 +220,16 @@ const AGENTE_ALLOWED_PATHS = [
 interface SidebarGroupProps {
   label: string;
   icon: React.ElementType;
-  items: { to: string; label: string; icon: React.ElementType; adminOnly?: boolean }[];
+  items: { to: string; label: string; icon: React.ElementType; adminOnly?: boolean; supervisorOnly?: boolean }[];
   isAdmin: boolean;
   location: ReturnType<typeof useLocation>;
   onClose: () => void;
 }
 
 const SidebarGroup = ({ label, icon: GroupIcon, items, isAdmin, location, onClose }: SidebarGroupProps) => {
-  const visibleItems = items.filter(item => isAdmin || !item.adminOnly);
+  const visibleItems = items.filter(item =>
+    (isAdmin || !item.adminOnly) && (!item.supervisorOnly || !isAdmin),
+  );
   if (visibleItems.length === 0) return null;
   const isGroupActive = visibleItems.some(item => location.pathname.startsWith(item.to));
   return (

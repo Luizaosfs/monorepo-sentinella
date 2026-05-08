@@ -108,6 +108,15 @@ import {
   levantamentoItemEvidencias,
 } from './domains/misc';
 
+// Cobertura operacional
+import { coberturaOperacionalApi } from './domains/cobertura-operacional';
+
+// Reincidência territorial
+import { reincidenciaTerritorialApi } from './domains/reincidencia-territorial';
+
+// Implantação operacional
+import { implantacaoOperacional } from './domains/implantacao-operacional';
+
 export const api = {
   // Core operacional
   focosRisco,
@@ -213,4 +222,9 @@ export const api = {
   map,
   evidenciasItem,
   levantamentoItemEvidencias,
+
+  // Implantação operacional
+  coberturaOperacional: coberturaOperacionalApi,
+  reincidenciaTerritorial: reincidenciaTerritorialApi,
+  implantacaoOperacional,
 };

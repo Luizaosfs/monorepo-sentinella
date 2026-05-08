@@ -1,6 +1,9 @@
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { AgrupamentosModule } from '@modules/agrupamentos/agrupamentos.module';
 import { AlertaRetornoModule } from '@modules/alerta-retorno/alerta-retorno.module';
+import { CoberturaOperacionalModule } from '@modules/cobertura-operacional/cobertura-operacional.module';
+import { ReincidenciaTerritorialModule } from '@modules/reincidencia-territorial/reincidencia-territorial.module';
+import { ImplantacaoOperacionalModule } from '@modules/implantacao-operacional/implantacao-operacional.module';
 import { AuthModule } from '@modules/auth/auth.module';
 import { BillingModule } from '@modules/billing/billing.module';
 import { CicloModule } from '@modules/ciclo/ciclo.module';
@@ -89,6 +92,9 @@ import { UserContextInterceptor } from 'src/shared/interceptors/user-context.int
     SeedModule,
     AlertaRetornoModule,
     RecorrenciasModule,
+    CoberturaOperacionalModule,
+    ReincidenciaTerritorialModule,
+    ImplantacaoOperacionalModule,
   ],
   controllers: [],
   providers: [

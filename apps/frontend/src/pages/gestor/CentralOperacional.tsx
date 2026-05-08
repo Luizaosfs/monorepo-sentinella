@@ -7,7 +7,7 @@ import {
   AlertTriangle, Clock, MapPin, Users, Radio, RefreshCw,
   LayoutDashboard, ArrowRight, TrendingUp, MessageSquare,
   Stethoscope, ChevronRight, GitMerge, FileText, Info, MapPinOff, ClipboardCheck,
-  ShieldAlert,
+  ShieldAlert, Building2, PlayCircle, Loader2,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,9 @@ import { AgentesHojeWidget } from '@/components/dashboard/AgentesHojeWidget';
 import { ResumoIAWidget } from '@/components/dashboard/ResumoIAWidget';
 import { PainelPilotoFunilCard } from '@/components/dashboard/PainelPilotoFunil';
 import { useCentralKpis, useImoveisParaHoje, useFocosPendentesSupervisor, useAnaliticoSemAcesso, useRegioesSemCobertura } from '@/hooks/queries/useCentralOperacional';
+import { useImplantacaoOperacionalStatus, useGerarOperacaoInicial } from '@/hooks/queries/useImplantacaoOperacional';
+import { useResumoCoberturaOperacional } from '@/hooks/queries/useCoberturaOperacional';
+import { useResumoReincidencia } from '@/hooks/queries/useReincidenciaTerritorial';
 import { gerarRelatorioPdf } from '@/lib/gestorRelatorioPdf';
 import { useClienteAtivo } from '@/hooks/useClienteAtivo';
 import { useCasosCruzadosHoje } from '@/hooks/queries/useCasosNotificados';
@@ -109,6 +112,10 @@ export default function CentralOperacional() {
   const { data: topCriticos = [] } = useScoreTopCriticos(5);
   const { data: casosCruzados = 0 } = useCasosCruzadosHoje();
   const { data: slaInteligenteList = [] } = useSlaInteligente();
+  const { data: implantacaoStatus } = useImplantacaoOperacionalStatus();
+  const gerarOperacaoMutation = useGerarOperacaoInicial();
+  const { data: coberturaResumo } = useResumoCoberturaOperacional();
+  const { data: reincidenciaResumo } = useResumoReincidencia();
 
   // ── Filtros vistorias consolidadas ─────────────────────────────────────────
   const [filtroVstPrioridade, setFiltroVstPrioridade] = useState<'' | 'P1' | 'P2' | 'P3+'>('');
@@ -238,6 +245,159 @@ export default function CentralOperacional() {
               {a.msg}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Card implantação — exibido quando município ainda não tem operação ativa */}
+      {!kpisLoading && kpis && kpis.focos_pendentes === 0 && kpis.focos_em_atendimento === 0 && (
+        <div className="rounded-xl border border-blue-200 bg-blue-50/50 dark:bg-blue-950/20 dark:border-blue-800/40 px-4 py-4 space-y-3">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <Building2 className="h-5 w-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+              <div>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-semibold text-blue-800 dark:text-blue-300">Município em implantação operacional</p>
+                  {implantacaoStatus?.operacao_inicial?.existe
+                    ? <span className="text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-1.5 py-0.5 rounded font-medium">Operação gerada</span>
+                    : <span className="text-xs bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-1.5 py-0.5 rounded font-medium">Pendente</span>}
+                </div>
+                <p className="text-xs text-blue-700/80 dark:text-blue-400/80 mt-0.5">
+                  Nenhum foco ativo. Configure ciclo, distribua quarteirões e gere a operação inicial para liberar os agentes.
+                </p>
+              </div>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              className="shrink-0 border-blue-300 text-blue-700 hover:bg-blue-100 dark:border-blue-700 dark:text-blue-300"
+              onClick={() => navigate('/gestor/implantacao-operacional')}
+            >
+              Ver checklist
+              <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
+            </Button>
+          </div>
+
+          {/* Métricas rápidas da operação inicial */}
+          {implantacaoStatus?.operacao_inicial && (
+            <div className="grid grid-cols-3 gap-2 pt-1 border-t border-blue-200/60 dark:border-blue-800/40">
+              <div className="text-center">
+                <p className="text-lg font-bold text-blue-800 dark:text-blue-200 tabular-nums">
+                  {implantacaoStatus.operacao_inicial.total_imoveis_elegiveis}
+                </p>
+                <p className="text-xs text-blue-600/70 dark:text-blue-400/70">imóveis elegíveis</p>
+              </div>
+              <div className="text-center">
+                <p className="text-lg font-bold text-amber-700 dark:text-amber-300 tabular-nums">
+                  {implantacaoStatus.operacao_inicial.total_imoveis_pendentes}
+                </p>
+                <p className="text-xs text-blue-600/70 dark:text-blue-400/70">pendentes</p>
+              </div>
+              <div className="text-center">
+                <p className="text-lg font-bold text-blue-800 dark:text-blue-200 tabular-nums">
+                  {implantacaoStatus.operacao_inicial.agentes_com_rota_inicial}
+                </p>
+                <p className="text-xs text-blue-600/70 dark:text-blue-400/70">agentes com rota</p>
+              </div>
+            </div>
+          )}
+
+          {/* Ação rápida: gerar operação inicial */}
+          {implantacaoStatus?.operacao_inicial && !implantacaoStatus.operacao_inicial.existe && implantacaoStatus.operacao_inicial.pode_gerar && (
+            <Button
+              size="sm"
+              className="w-full gap-1.5 bg-blue-600 hover:bg-blue-700 text-white"
+              disabled={gerarOperacaoMutation.isPending}
+              onClick={async () => {
+                try {
+                  const result = await gerarOperacaoMutation.mutateAsync();
+                  const { toast } = await import('sonner');
+                  toast.success(result.mensagem);
+                } catch {
+                  const { toast } = await import('sonner');
+                  toast.error('Erro ao gerar operação inicial');
+                }
+              }}
+            >
+              {gerarOperacaoMutation.isPending
+                ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                : <PlayCircle className="h-3.5 w-3.5" />}
+              Gerar operação inicial
+            </Button>
+          )}
+        </div>
+      )}
+
+      {/* Cobertura Territorial */}
+      {coberturaResumo?.ciclo && (
+        <div className="rounded-xl border bg-card px-4 py-3">
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <div className="flex items-center gap-2">
+              <Building2 className="h-4 w-4 text-primary shrink-0" />
+              <p className="text-sm font-semibold">Cobertura Territorial</p>
+              <Badge variant="outline" className="text-xs">{coberturaResumo.ciclo.nome}</Badge>
+            </div>
+            <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs" onClick={() => navigate('/gestor/cobertura-operacional')}>
+              Ver detalhes <ChevronRight className="h-3 w-3" />
+            </Button>
+          </div>
+          <div className="grid grid-cols-3 gap-2 text-center">
+            <div>
+              <p className="text-xs text-muted-foreground">Cobertura</p>
+              <p className="text-xl font-bold">{coberturaResumo.municipio.percentual_cobertura}%</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Visitados</p>
+              <p className="text-xl font-bold">{coberturaResumo.municipio.total_visitados}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Pendentes</p>
+              <p className="text-xl font-bold text-orange-600">{coberturaResumo.municipio.total_pendentes}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reincidência Territorial */}
+      {reincidenciaResumo && reincidenciaResumo.municipio.imoveis_reincidentes > 0 && (
+        <div className={cn(
+          'rounded-xl border px-4 py-3',
+          reincidenciaResumo.criticidade.alta > 0
+            ? 'border-red-300 bg-red-50/60 dark:bg-red-950/20'
+            : reincidenciaResumo.criticidade.media > 0
+              ? 'border-yellow-300 bg-yellow-50/60 dark:bg-yellow-950/20'
+              : 'border-border bg-card',
+        )}>
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-primary shrink-0" />
+              <p className="text-sm font-semibold">Reincidência Territorial</p>
+              {reincidenciaResumo.criticidade.alta > 0 && (
+                <Badge className="bg-red-100 text-red-800 text-xs">Crítico</Badge>
+              )}
+              {reincidenciaResumo.criticidade.alta === 0 && reincidenciaResumo.criticidade.media > 0 && (
+                <Badge className="bg-yellow-100 text-yellow-800 text-xs">Atenção</Badge>
+              )}
+            </div>
+            <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs" onClick={() => navigate('/gestor/reincidencia-territorial')}>
+              Abrir reincidência <ChevronRight className="h-3 w-3" />
+            </Button>
+          </div>
+          <div className="grid grid-cols-3 gap-2 text-center">
+            <div>
+              <p className="text-xs text-muted-foreground">Imóveis reincid.</p>
+              <p className="text-xl font-bold">{reincidenciaResumo.municipio.imoveis_reincidentes}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Quarteirões</p>
+              <p className="text-xl font-bold">{reincidenciaResumo.municipio.quarteiroes_reincidentes}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Nível alto</p>
+              <p className={cn('text-xl font-bold', reincidenciaResumo.criticidade.alta > 0 ? 'text-red-600' : 'text-muted-foreground')}>
+                {reincidenciaResumo.criticidade.alta}
+              </p>
+            </div>
+          </div>
         </div>
       )}
 
