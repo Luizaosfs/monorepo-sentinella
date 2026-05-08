@@ -1,17 +1,29 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 
-const regiaoItemSchema = z.object({
-  nome:        z.string().min(1),
-  tipo:        z.string().optional(),
-  cor:         z.string().optional(),
-  geojson:     z.unknown().optional(),
-  latitude: z.number().optional(),
-  longitude: z.number().optional(),
-  municipio:   z.string().optional(),
-  uf:          z.string().optional(),
-  ativo:       z.boolean().optional(),
+const regiaoItemNormalizedSchema = z.object({
+  nome:      z.string().min(1),
+  tipo:      z.string().optional(),
+  cor:       z.string().optional(),
+  geojson:   z.unknown().optional(),
+  latitude:  z.number().nullish(),
+  longitude: z.number().nullish(),
+  municipio: z.string().optional(),
+  uf:        z.string().optional(),
+  ativo:     z.boolean().optional(),
 });
+
+// Aceita tanto os nomes novos (latitude/longitude/nome) quanto os legados (lat/lon/bairro)
+const regiaoItemSchema = z.preprocess((raw: unknown) => {
+  if (typeof raw !== 'object' || raw === null) return raw;
+  const r = raw as Record<string, unknown>;
+  return {
+    ...r,
+    nome:      r.nome      ?? r.bairro,
+    latitude:  r.latitude  ?? r.lat,
+    longitude: r.longitude ?? r.lon,
+  };
+}, regiaoItemNormalizedSchema);
 
 export const bulkInsertRegioesSchema = z.object({
   rows: z.array(regiaoItemSchema).min(1).max(500),

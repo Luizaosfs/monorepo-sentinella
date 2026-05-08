@@ -1,18 +1,12 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { Scope } from '@nestjs/common';
-import { REQUEST } from '@nestjs/core';
-import { Request } from 'express';
+import { Injectable } from '@nestjs/common';
 
 import { CreatePluvioRunInput } from '../dtos/create-pluvio-run.body';
 import { PluvioRun } from '../entities/pluvio';
 import { PluvioWriteRepository } from '../repositories/pluvio-write.repository';
 
-@Injectable({ scope: Scope.REQUEST })
+@Injectable()
 export class CreateRun {
-  constructor(
-    private repository: PluvioWriteRepository,
-    @Inject(REQUEST) private req: Request,
-  ) {}
+  constructor(private repository: PluvioWriteRepository) {}
 
   async execute(input: CreatePluvioRunInput, clienteId: string) {
     const run = new PluvioRun(
@@ -22,7 +16,7 @@ export class CreateRun {
         total: input.totalBairros,
         status: input.status ?? 'pendente',
       },
-      { createdBy: this.req['user']?.id },
+      {},
     );
 
     const created = await this.repository.createRun(run);

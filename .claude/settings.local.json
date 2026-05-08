@@ -310,7 +310,10 @@
       "PowerShell(& \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" \"postgresql://luizAntonio:Sentinella147852369@177.7.37.14:5432/sentinella\" -c \"SELECT id, nome, slug, ativo, deleted_at FROM clientes ORDER BY created_at DESC LIMIT 10;\")",
       "PowerShell(& \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" \"postgresql://luizAntonio:Sentinella147852369@177.7.37.14:5432/sentinella\" -c \"SELECT id, nome FROM planos ORDER BY created_at;\")",
       "PowerShell(& \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" \"postgresql://luizAntonio:Sentinella147852369@177.7.37.14:5432/sentinella\" -c \"SELECT id, nome, slug, ativo, deleted_at FROM clientes ORDER BY created_at DESC LIMIT 5;\")",
-      "PowerShell(& \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" \"postgresql://luizAntonio:Sentinella147852369@177.7.37.14:5432/sentinella\" -c \"SELECT id, nome, email FROM usuarios WHERE cliente_id = 'e6ccee51-2dab-4e2b-b736-4f10fdfe08a0' ORDER BY created_at DESC;\")"
+      "PowerShell(& \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" \"postgresql://luizAntonio:Sentinella147852369@177.7.37.14:5432/sentinella\" -c \"SELECT id, nome, email FROM usuarios WHERE cliente_id = 'e6ccee51-2dab-4e2b-b736-4f10fdfe08a0' ORDER BY created_at DESC;\")",
+      "Bash(New-Item -Path \"C:\\\\Users\\\\luiz\\\\Downloads\\\\modelo_importacao_regioes.json\" -ItemType File -Force)",
+      "Bash(Out-Null)",
+      "Bash(Write-Host \"ok\")"
     ]
   }
 }

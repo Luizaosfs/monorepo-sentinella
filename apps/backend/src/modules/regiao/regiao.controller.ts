@@ -46,10 +46,7 @@ import { PaginationRegiao } from './use-cases/pagination-regiao';
 import { ResolverRegiaoPorCoordenada } from './use-cases/resolver-regiao-por-coordenada';
 import { SaveRegiao } from './use-cases/save-regiao';
 import { RegiaoViewModel } from './view-model/regiao';
-import {
-  BulkInsertRegioesBody,
-  bulkInsertRegioesSchema,
-} from './dtos/bulk-insert-regioes.body';
+import { BulkInsertRegioesBody } from './dtos/bulk-insert-regioes.body';
 
 const geocodeLoteSchema = z.object({
   nomes: z.array(z.string().min(1)).min(1).max(100),
@@ -135,8 +132,7 @@ export class RegiaoController {
   @ApiOperation({ summary: 'Inserir múltiplas regiões em lote (skipDuplicates)' })
   async bulkInsert(@Body() body: BulkInsertRegioesBody) {
     const clienteId = requireTenantId(getAccessScope(this.req));
-    const parsed = bulkInsertRegioesSchema.parse(body);
-    return this.bulkInsertRegioesUc.execute(clienteId, parsed);
+    return this.bulkInsertRegioesUc.execute(clienteId, body);
   }
 
   @Post()

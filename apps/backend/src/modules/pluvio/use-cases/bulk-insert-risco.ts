@@ -1,21 +1,14 @@
-import { Inject, Injectable, Scope } from '@nestjs/common';
-import { REQUEST } from '@nestjs/core';
-import { Request } from 'express';
+import { Injectable } from '@nestjs/common';
 
 import { UpsertPluvioRiscoInput } from '../dtos/upsert-pluvio-risco.body';
 import { PluvioRisco } from '../entities/pluvio';
 import { PluvioWriteRepository } from '../repositories/pluvio-write.repository';
 
-@Injectable({ scope: Scope.REQUEST })
+@Injectable()
 export class BulkInsertRisco {
-  constructor(
-    private repository: PluvioWriteRepository,
-    @Inject(REQUEST) private req: Request,
-  ) {}
+  constructor(private repository: PluvioWriteRepository) {}
 
   async execute(inputs: UpsertPluvioRiscoInput[]) {
-    const createdBy = this.req['user']?.id;
-
     const riscos = inputs.map(
       (input) =>
         new PluvioRisco(
@@ -26,7 +19,7 @@ export class BulkInsertRisco {
             dataReferencia: input.dataReferencia,
             observacoes: input.observacoes,
           },
-          { createdBy },
+          {},
         ),
     );
 

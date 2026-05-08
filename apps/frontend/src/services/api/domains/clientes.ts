@@ -101,12 +101,16 @@ export const regioes = {
   remove: (id: string): Promise<void> =>
     http.delete(`/regioes/${id}`),
   bulkInsert: (rows: Record<string, unknown>[]): Promise<{ count: number }> => {
-    const mapped = rows.map((r) => ({
-      nome: r.regiao ?? r.nome,
-      latitude: r.latitude ?? null,
-      longitude: r.longitude ?? null,
-      geojson: r.area ?? r.geojson ?? null,
-    }));
+    const mapped = rows.map((r) => {
+      const obj: Record<string, unknown> = { nome: r.bairro ?? r.regiao ?? r.nome };
+      const lat = r.lat ?? r.latitude;
+      const lon = r.lon ?? r.longitude ?? r.lng;
+      if (lat != null) obj.latitude = lat;
+      if (lon != null) obj.longitude = lon;
+      const geojson = r.area ?? r.geojson;
+      if (geojson != null) obj.geojson = geojson;
+      return obj;
+    });
     return http.post('/regioes/bulk-insert', { rows: mapped });
   },
   porCoordenada: (clienteId: string, lat: number, lng: number): Promise<{ bairroId: string | null }> =>
