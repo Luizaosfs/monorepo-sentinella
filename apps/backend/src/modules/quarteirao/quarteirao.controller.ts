@@ -64,6 +64,10 @@ import {
   DistribuicaoQuarteiraoViewModel,
   QuarteiraoViewModel,
 } from './view-model/quarteirao';
+import {
+  BulkInsertQuarteiraoBody,
+} from './dtos/bulk-insert-quarteiroes.body';
+import { BulkInsertQuarteiroes } from './use-cases/bulk-insert-quarteiroes';
 
 @UseInterceptors(PrismaInterceptor)
 @UsePipes(MyZodValidationPipe)
@@ -82,6 +86,7 @@ export class QuarteiraoController {
     private listByAgenteUc: ListDistribuicoesByAgente,
     private upsertDistribuicoesUc: UpsertDistribuicoes,
     private deletarDistribuicoesUc: DeletarDistribuicoes,
+    private bulkInsertQuarteiraoesUc: BulkInsertQuarteiroes,
     @Inject(REQUEST) private req: Request,
   ) {}
 
@@ -157,6 +162,14 @@ export class QuarteiraoController {
   @ApiOperation({ summary: 'Remover distribuição de quarteirão' })
   async deleteDistribuicaoHandler(@Param('id') id: string) {
     return this.deleteDistribuicao.execute(id);
+  }
+
+  @Post('bulk-insert')
+  @Roles('admin', 'supervisor')
+  @ApiOperation({ summary: 'Importar quarteirões em lote (upsert por código)' })
+  async bulkInsert(@Body() body: BulkInsertQuarteiraoBody) {
+    const clienteId = requireTenantId(getAccessScope(this.req));
+    return this.bulkInsertQuarteiraoesUc.execute(clienteId, body);
   }
 
   @Get()

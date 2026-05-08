@@ -15,6 +15,7 @@ import { FilterQuarteiroes } from './use-cases/filter-quarteiroes';
 import { ListDistribuicoesByAgente } from './use-cases/list-distribuicoes-by-agente';
 import { UpsertDistribuicoes } from './use-cases/upsert-distribuicoes';
 import { DeletarDistribuicoes } from './use-cases/deletar-distribuicoes';
+import { BulkInsertQuarteiroes } from './use-cases/bulk-insert-quarteiroes';
 
 @Module({
   providers: [
@@ -29,6 +30,7 @@ import { DeletarDistribuicoes } from './use-cases/deletar-distribuicoes';
     ListDistribuicoesByAgente,
     UpsertDistribuicoes,
     DeletarDistribuicoes,
+    BulkInsertQuarteiroes,
     JwtService,
     PrismaService,
   ],

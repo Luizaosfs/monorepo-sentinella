@@ -8,6 +8,12 @@ export const quarteiroes = {
     const raw = await http.get(`/quarteiroes${qs({ clienteId })}`);
     return deepToSnake(raw) as Ret<typeof _sb.quarteiroes.listByCliente>;
   },
+  create: (payload: { codigo: string; regiaoId?: string | null; bairro?: string | null; ativo?: boolean }): Promise<Record<string, unknown>> =>
+    http.post('/quarteiroes', payload),
+  remove: (id: string): Promise<void> =>
+    http.delete(`/quarteiroes/${id}`),
+  bulkInsert: (rows: { codigo: string; bairro?: string }[]): Promise<{ inserted: number; updated: number }> =>
+    http.post('/quarteiroes/bulk-insert', { rows }),
 };
 
 export const distribuicaoQuarteirao = {

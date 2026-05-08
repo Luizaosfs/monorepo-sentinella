@@ -11,6 +11,7 @@ import { useImoveis } from '@/hooks/queries/useImoveis';
 import {
   useDistribuicaoQuarteiraoByCiclo,
   useCoberturaQuarteirao,
+  useQuarteiroesMestre,
 } from '@/hooks/queries/useDistribuicaoQuarteirao';
 import AdminPageHeader from '@/components/AdminPageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -63,6 +64,15 @@ export default function AdminDistribuicaoQuarteirao() {
     useDistribuicaoQuarteiraoByCiclo(clienteId, ciclo);
   const { data: cobertura = [] } = useCoberturaQuarteirao(clienteId, ciclo);
 
+  // Fontes primárias: tabelas mestre (não derivar de imoveis)
+  const { data: quarteiroesMestre = [], isLoading: loadingQ } = useQuarteiroesMestre(clienteId);
+  const { data: regioesList = [], isLoading: loadingRegioes } = useQuery({
+    queryKey: ['regioes', clienteId],
+    queryFn: () => api.regioes.listByCliente(clienteId!),
+    enabled: !!clienteId,
+    staleTime: STALE.LONG,
+  });
+
   const { data: agentes = [], isLoading: loadingAgentes } = useQuery({
     queryKey: ['usuarios_agentes', clienteId],
     queryFn: async () => {
@@ -91,7 +101,7 @@ export default function AdminDistribuicaoQuarteirao() {
 
   // ── Derivações ────────────────────────────────────────────────────────────
 
-  /** Contagem de imóveis por quarteirão (apenas ativos) */
+  /** Contagem de imóveis por código de quarteirão (apenas ativos) */
   const contagemPorQ = useMemo(() => {
     const c: Record<string, number> = {};
     for (const im of imoveis) {
@@ -103,35 +113,66 @@ export default function AdminDistribuicaoQuarteirao() {
     return c;
   }, [imoveis]);
 
-  /** Todos os quarteirões existentes, ordenados */
+  /** Map regiao_id → nome (para resolver o bairro de cada quarteirão) */
+  const regiaoNomeMap = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const r of regioesList as Array<Record<string, unknown>>) {
+      if (r.id) m[String(r.id)] = String(r.nome ?? r.regiao ?? 'Sem bairro');
+    }
+    return m;
+  }, [regioesList]);
+
+  /** Todos os códigos de quarteirão (tabela mestre), ordenados */
   const quarteiroes = useMemo(
-    () => Object.keys(contagemPorQ).sort((a, b) => a.localeCompare(b, 'pt-BR')),
-    [contagemPorQ],
+    () =>
+      (quarteiroesMestre as Array<Record<string, unknown>>)
+        .filter((q) => q.ativo !== false)
+        .map((q) => String(q.codigo))
+        .sort((a, b) => a.localeCompare(b, 'pt-BR')),
+    [quarteiroesMestre],
   );
 
-  /** Imóveis que não têm quarteirão definido */
+  /** Map código → regiao_id (para preencher regiao_id ao salvar) */
+  const qRegiaoMap = useMemo(() => {
+    const m: Record<string, string | null> = {};
+    for (const q of quarteiroesMestre as Array<Record<string, unknown>>) {
+      m[String(q.codigo)] = q.regiao_id ? String(q.regiao_id) : null;
+    }
+    return m;
+  }, [quarteiroesMestre]);
+
+  /** Imóveis que não têm quarteirão definido ou cujo código não consta na tabela mestre */
   const imoveisSemQuarteirao = useMemo(
     () => imoveis.filter((im) => im.ativo && !im.quarteirao?.trim()),
     [imoveis],
   );
 
-  /** Agrupamento por bairro: bairro → lista de quarteirões */
+  /** Agrupamento por bairro: TODAS as regiões aparecem (mesmo sem quarteirões) */
   const porBairro = useMemo(() => {
     const map: Record<string, string[]> = {};
-    for (const im of imoveis) {
-      if (!im.ativo) continue;
-      const q = (im.quarteirao ?? '').trim();
-      if (!q) continue;
-      const b = (im.bairro ?? 'Sem bairro').trim();
-      if (!map[b]) map[b] = [];
-      if (!map[b].includes(q)) map[b].push(q);
+
+    // Inicializa todas as regiões importadas como bairros
+    for (const r of regioesList as Array<Record<string, unknown>>) {
+      const nome = String(r.nome ?? r.regiao ?? '').trim();
+      if (nome) map[nome] = [];
     }
-    // Ordena os quarteirões dentro de cada bairro
+
+    // Adiciona quarteirões do mestre em seus respectivos bairros
+    for (const q of quarteiroesMestre as Array<Record<string, unknown>>) {
+      if (q.ativo === false) continue;
+      const codigo = String(q.codigo);
+      const bairroNome = q.regiao_id
+        ? (regiaoNomeMap[String(q.regiao_id)] ?? String(q.bairro ?? 'Sem bairro'))
+        : String(q.bairro ?? 'Sem bairro');
+      if (!map[bairroNome]) map[bairroNome] = [];
+      if (!map[bairroNome].includes(codigo)) map[bairroNome].push(codigo);
+    }
+
     for (const b of Object.keys(map)) {
       map[b].sort((a, c) => a.localeCompare(c, 'pt-BR'));
     }
     return map;
-  }, [imoveis]);
+  }, [regioesList, quarteiroesMestre, regiaoNomeMap]);
 
   const bairros = useMemo(
     () => Object.keys(porBairro).sort((a, b) => a.localeCompare(b, 'pt-BR')),
@@ -257,7 +298,7 @@ export default function AdminDistribuicaoQuarteirao() {
             ciclo,
             quarteirao,
             agente_id: st.pendente,
-            regiao_id: null,
+            regiao_id: qRegiaoMap[quarteirao] ?? null,
           });
         } else {
           // agente removido
@@ -296,7 +337,7 @@ export default function AdminDistribuicaoQuarteirao() {
     onError: () => toast.error('Erro ao copiar distribuição.'),
   });
 
-  const isLoading = loadingImoveis || loadingDist || loadingAgentes;
+  const isLoading = loadingImoveis || loadingDist || loadingAgentes || loadingQ || loadingRegioes;
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
@@ -429,10 +470,11 @@ export default function AdminDistribuicaoQuarteirao() {
         <div className="space-y-3">
           {[1, 2, 3].map((i) => <Skeleton key={i} className="h-20 rounded-xl" />)}
         </div>
-      ) : quarteiroes.length === 0 ? (
+      ) : bairros.length === 0 ? (
         <Card>
-          <CardContent className="py-12 text-center text-muted-foreground text-sm">
-            Nenhum quarteirão cadastrado nos imóveis deste cliente.
+          <CardContent className="py-12 text-center text-muted-foreground text-sm space-y-2">
+            <p className="font-medium">Nenhum bairro/região cadastrado.</p>
+            <p>Importe as regiões antes de distribuir quarteirões.</p>
           </CardContent>
         </Card>
       ) : (
@@ -514,7 +556,12 @@ export default function AdminDistribuicaoQuarteirao() {
                   </div>
 
                   {/* Linhas de quarteirão */}
-                  {aberto && (
+                  {aberto && qs.length === 0 && (
+                    <div className="px-4 py-4 text-xs text-muted-foreground border-t">
+                      Nenhum quarteirão cadastrado neste bairro ainda.
+                    </div>
+                  )}
+                  {aberto && qs.length > 0 && (
                     <div className="divide-y divide-border/40 border-t">
                       {qs.map((q) => {
                         const st = atribuicoes[q] ?? { salvo: '', pendente: '' };
