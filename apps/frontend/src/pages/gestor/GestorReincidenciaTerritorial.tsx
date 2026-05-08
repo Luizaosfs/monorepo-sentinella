@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { format, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
@@ -88,7 +88,7 @@ function KpiCard({
 
 export default function GestorReincidenciaTerritorial() {
   const [preset, setPreset] = useState<Preset>('90d');
-  const filtro = periodoFromPreset(preset);
+  const filtro = useMemo(() => periodoFromPreset(preset), [preset]);
 
   const { data: resumo, isLoading: loadingR, refetch } = useResumoReincidencia(filtro);
   const { data: imoveis, isLoading: loadingI } = useReincidenciaImoveis(filtro);
