@@ -16,7 +16,7 @@ export class ListAgrupamentoClientes {
 
     return this.prisma.client.clientes.findMany({
       where: { id: { in: ids }, deleted_at: null },
-      select: { id: true, nome: true, cidade: true, uf: true },
+      select: { id: true, nome: true, cidade: true, uf: true, latitude_centro: true, longitude_centro: true },
     });
   }
 }

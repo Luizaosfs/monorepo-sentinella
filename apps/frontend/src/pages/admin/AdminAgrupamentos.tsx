@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/services/api';
 import { Card, CardContent } from '@/components/ui/card';
@@ -16,11 +16,35 @@ import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import {
   Loader2, Plus, Trash2, Building2, MapPin, Users,
-  ChevronRight, X, Search,
+  ChevronRight, X, Search, Map, List,
 } from 'lucide-react';
 import AdminPageHeader from '@/components/AdminPageHeader';
 import { STALE } from '@/lib/queryConfig';
 import type { AgrupamentoRegional } from '@/types/database';
+import L from '@/lib/leaflet';
+import 'leaflet/dist/leaflet.css';
+
+function convexHull(pts: [number, number][]): [number, number][] {
+  if (pts.length < 3) return [...pts];
+  let start = 0;
+  for (let i = 1; i < pts.length; i++) {
+    if (pts[i][1] < pts[start][1]) start = i;
+  }
+  const hull: [number, number][] = [];
+  let cur = start;
+  do {
+    hull.push(pts[cur]);
+    let next = (cur + 1) % pts.length;
+    for (let i = 0; i < pts.length; i++) {
+      const cross =
+        (pts[next][1] - pts[cur][1]) * (pts[i][0] - pts[cur][0]) -
+        (pts[next][0] - pts[cur][0]) * (pts[i][1] - pts[cur][1]);
+      if (cross < 0) next = i;
+    }
+    cur = next;
+  } while (cur !== start && hull.length <= pts.length);
+  return hull;
+}
 
 const TIPO_LABELS: Record<string, string> = {
   consorcio: 'Consórcio Intermunicipal',
@@ -43,6 +67,9 @@ export default function AdminAgrupamentos() {
   const [selectedAgrupamento, setSelectedAgrupamento] = useState<AgrupamentoRegional | null>(null);
   const [novoClienteId, setNovoClienteId] = useState('');
   const [searchVinculados, setSearchVinculados] = useState('');
+  const [mapMode, setMapMode] = useState(false);
+  const mapContainerRef = useRef<HTMLDivElement | null>(null);
+  const mapInstanceRef = useRef<L.Map | null>(null);
 
   const { data: agrupamentos = [], isLoading } = useQuery({
     queryKey: ['agrupamentos'],
@@ -99,7 +126,14 @@ export default function AdminAgrupamentos() {
     onError: (err: Error) => toast.error(err.message),
   });
 
-  type ClienteVinculado = { id: string; nome: string; cidade?: string; uf?: string };
+  type ClienteVinculado = {
+    id: string;
+    nome: string;
+    cidade?: string;
+    uf?: string;
+    latitude_centro?: number | null;
+    longitude_centro?: number | null;
+  };
 
   const vinculadosIds = useMemo(
     () => new Set((clientesDoAgrupamento as ClienteVinculado[]).map((c) => c.id)),
@@ -117,6 +151,70 @@ export default function AdminAgrupamentos() {
       (c.nome ?? c.id ?? '').toLowerCase().includes(q),
     );
   }, [clientesDoAgrupamento, searchVinculados]);
+
+  useEffect(() => {
+    if (!mapMode || !mapContainerRef.current) return;
+
+    const validPts = (clientesDoAgrupamento as ClienteVinculado[])
+      .filter((c) => c.latitude_centro != null && c.longitude_centro != null)
+      .map((c) => [c.latitude_centro!, c.longitude_centro!] as [number, number]);
+
+    if (validPts.length === 0) return;
+
+    const avgLat = validPts.reduce((s, p) => s + p[0], 0) / validPts.length;
+    const avgLng = validPts.reduce((s, p) => s + p[1], 0) / validPts.length;
+
+    const map = L.map(mapContainerRef.current, { zoomControl: true }).setView([avgLat, avgLng], 7);
+    mapInstanceRef.current = map;
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors',
+      maxZoom: 18,
+    }).addTo(map);
+
+    const latlngs: L.LatLngExpression[] = [];
+    (clientesDoAgrupamento as ClienteVinculado[])
+      .filter((c) => c.latitude_centro != null && c.longitude_centro != null)
+      .forEach((c) => {
+        const ll: L.LatLngExpression = [c.latitude_centro!, c.longitude_centro!];
+        latlngs.push(ll);
+        L.circleMarker(ll, {
+          radius: 9,
+          color: '#fff',
+          fillColor: '#3b82f6',
+          fillOpacity: 0.95,
+          weight: 2.5,
+        })
+          .bindPopup(
+            `<div style="min-width:160px"><strong>${c.nome}</strong>` +
+            (c.cidade || c.uf ? `<br/><span style="color:#6b7280;font-size:12px">${[c.cidade, c.uf].filter(Boolean).join(' · ')}</span>` : '') +
+            `<br/><span style="color:#9ca3af;font-size:11px;font-family:monospace">${c.latitude_centro!.toFixed(5)}, ${c.longitude_centro!.toFixed(5)}</span></div>`,
+          )
+          .addTo(map);
+      });
+
+    if (validPts.length >= 3) {
+      const hull = convexHull(validPts);
+      L.polygon(hull as L.LatLngExpression[], {
+        color: '#3b82f6',
+        fillColor: '#3b82f6',
+        fillOpacity: 0.07,
+        weight: 2,
+        dashArray: '7 5',
+      })
+        .bindTooltip('Zona integrada', { permanent: false, sticky: true })
+        .addTo(map);
+    }
+
+    if (latlngs.length > 0) {
+      map.fitBounds(L.latLngBounds(latlngs), { padding: [40, 40], maxZoom: 10 });
+    }
+
+    return () => {
+      map.remove();
+      mapInstanceRef.current = null;
+    };
+  }, [mapMode, clientesDoAgrupamento]);
 
   return (
     <div className="space-y-4">
@@ -160,6 +258,7 @@ export default function AdminAgrupamentos() {
                       setSelectedAgrupamento(isSelected ? null : ag);
                       setSearchVinculados('');
                       setNovoClienteId('');
+                      setMapMode(false);
                     }}
                     className={[
                       'w-full text-left rounded-xl border px-4 py-3 transition-all',
@@ -224,9 +323,20 @@ export default function AdminAgrupamentos() {
                     Gerencie os municípios que fazem parte deste agrupamento.
                   </p>
                 </div>
-                <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setSelectedAgrupamento(null)}>
-                  <X className="w-4 h-4" />
-                </Button>
+                <div className="flex items-center gap-1 shrink-0">
+                  <Button
+                    variant={mapMode ? 'secondary' : 'ghost'}
+                    size="sm"
+                    className="h-8 px-2.5 gap-1.5 text-xs"
+                    onClick={() => setMapMode((v) => !v)}
+                    title={mapMode ? 'Ver lista' : 'Ver no mapa'}
+                  >
+                    {mapMode ? <><List className="w-3.5 h-3.5" />Lista</> : <><Map className="w-3.5 h-3.5" />Mapa</>}
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setSelectedAgrupamento(null); setMapMode(false); }}>
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
 
               {/* Vincular município */}
@@ -265,8 +375,27 @@ export default function AdminAgrupamentos() {
                 )}
               </div>
 
+              {/* Modo mapa */}
+              {mapMode && (
+                <div className="p-4 border-b">
+                  {loadingClientes ? (
+                    <div className="flex justify-center py-10">
+                      <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : clientesDoAgrupamento.length === 0 ? (
+                    <p className="text-sm text-muted-foreground italic text-center py-6">Nenhum município vinculado para exibir no mapa.</p>
+                  ) : (
+                    <div
+                      ref={mapContainerRef}
+                      className="w-full rounded-lg overflow-hidden border border-border"
+                      style={{ height: 420 }}
+                    />
+                  )}
+                </div>
+              )}
+
               {/* Municípios vinculados */}
-              <div className="p-4">
+              <div className={mapMode ? 'hidden' : 'p-4'}>
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Municípios vinculados
@@ -320,6 +449,11 @@ export default function AdminAgrupamentos() {
                               {(c.cidade || c.uf) && (
                                 <p className="text-xs text-muted-foreground truncate">
                                   {[c.cidade, c.uf].filter(Boolean).join(' · ')}
+                                </p>
+                              )}
+                              {c.latitude_centro != null && c.longitude_centro != null && (
+                                <p className="text-[10px] text-muted-foreground/60 font-mono mt-0.5">
+                                  {c.latitude_centro.toFixed(5)}, {c.longitude_centro.toFixed(5)}
                                 </p>
                               )}
                             </div>
