@@ -186,7 +186,7 @@ export class PluvioController {
   // ── Risco ─────────────────────────────────────────────────────────────────
 
   @Get('alerta-territorial')
-  @Roles('admin', 'supervisor', 'agente')
+  @Roles('supervisor')
   @ApiOperation({ summary: 'Alerta pluviométrico territorial — regiões em risco preventivo' })
   async alertaTerritorial() {
     const clienteId = requireTenantId(getAccessScope(this.req));
@@ -194,7 +194,7 @@ export class PluvioController {
   }
 
   @Get('storm-forecast')
-  @Roles('admin', 'supervisor', 'agente')
+  @Roles('supervisor', 'agente')
   @ApiOperation({ summary: 'Previsão de tempestades por região do cliente (próximos 4 dias)' })
   async stormForecast() {
     const clienteId = requireTenantId(getAccessScope(this.req));
@@ -202,7 +202,7 @@ export class PluvioController {
   }
 
   @Get('risco/by-cliente')
-  @Roles('admin', 'supervisor', 'agente')
+  @Roles('supervisor', 'agente')
   @ApiOperation({ summary: 'Risco pluviométrico de todas as regiões do cliente' })
   async riscoByCliente() {
     const clienteId = requireTenantId(getAccessScope(this.req));
@@ -210,7 +210,7 @@ export class PluvioController {
   }
 
   @Get('risco')
-  @Roles('admin', 'supervisor', 'agente')
+  @Roles('supervisor', 'agente')
   @ApiOperation({ summary: 'Listar riscos pluviométricos por região' })
   async filterRisco(@Query('regiaoId') regiaoIds: string | string[]) {
     const ids = Array.isArray(regiaoIds) ? regiaoIds : regiaoIds ? [regiaoIds] : [];

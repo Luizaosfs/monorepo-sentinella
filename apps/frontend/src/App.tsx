@@ -307,7 +307,7 @@ const App = () => (
               <Route path="/gestor/supervisor-tempo-real"   element={<AdminOrSupervisorGuard><AdminSupervisorTempoReal /></AdminOrSupervisorGuard>} />
               <Route path="/gestor/pluvio-risco"            element={<AdminOrSupervisorGuard><AdminPluvioRisco /></AdminOrSupervisorGuard>} />
               <Route path="/gestor/pluvio-operacional"      element={<AdminOrSupervisorGuard><AdminPluvioOperacional /></AdminOrSupervisorGuard>} />
-              <Route path="/gestor/pluvio/alerta-territorial" element={<AdminOrSupervisorGuard><GestorPluvioAlertaTerritorial /></AdminOrSupervisorGuard>} />
+              <Route path="/gestor/pluvio/alerta-territorial" element={<SupervisorOnlyGuard><GestorPluvioAlertaTerritorial /></SupervisorOnlyGuard>} />
               <Route path="/gestor/regioes"                 element={<AdminOrSupervisorGuard><AdminRegioes /></AdminOrSupervisorGuard>} />
               <Route path="/gestor/unidades-saude"          element={<AdminOrSupervisorGuard><AdminUnidadesSaude /></AdminOrSupervisorGuard>} />
               <Route path="/gestor/imoveis"                 element={<AdminOrSupervisorGuard><AdminImoveis /></AdminOrSupervisorGuard>} />

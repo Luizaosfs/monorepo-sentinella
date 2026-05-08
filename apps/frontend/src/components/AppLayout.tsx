@@ -160,9 +160,10 @@ const grupoInteligencia = [
 ];
 
 const grupoRiscoClima = [
-  { to: '/gestor/pluvio-risco',       label: 'Risco Pluviométrico', icon: CloudRain,       adminOnly: false },
-  { to: '/gestor/pluvio-operacional', label: 'Tabela Operacional',  icon: FileSpreadsheet, adminOnly: false },
-  { to: '/admin/risk-policy',         label: 'Política de Risco',   icon: ShieldCheck,     adminOnly: true  },
+  { to: '/gestor/pluvio-risco',               label: 'Risco Pluviométrico',   icon: CloudRain,       adminOnly: false },
+  { to: '/gestor/pluvio-operacional',         label: 'Tabela Operacional',    icon: FileSpreadsheet, adminOnly: false },
+  { to: '/gestor/pluvio/alerta-territorial',  label: 'Alerta Territorial',    icon: CloudRain,       adminOnly: false, supervisorOnly: true },
+  { to: '/admin/risk-policy',                 label: 'Política de Risco',     icon: ShieldCheck,     adminOnly: true  },
 ];
 
 const grupoConfiguracoes = [
