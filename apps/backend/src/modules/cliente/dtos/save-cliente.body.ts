@@ -69,6 +69,11 @@ export const saveClienteSchema = z.object({
     .positive()
     .describe('Janela em dias para considerar recorrência de focos')
     .optional(),
+  deletedAt: z
+    .string()
+    .datetime()
+    .describe('Soft-delete: marca o cliente como excluído')
+    .optional(),
 });
 
 export class SaveClienteBody extends createZodDto(saveClienteSchema) {}

@@ -44,6 +44,8 @@ export class SaveCliente {
     if (input.surtoAtivo !== undefined) cliente.surtoAtivo = input.surtoAtivo;
     if (input.janelaRecorrenciaDias !== undefined)
       cliente.janelaRecorrenciaDias = input.janelaRecorrenciaDias;
+    if (input.deletedAt !== undefined)
+      cliente.deletedAt = new Date(input.deletedAt);
 
     await this.writeRepository.save(cliente);
 

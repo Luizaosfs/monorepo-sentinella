@@ -22,7 +22,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Loader2, Building2, Plus, Pencil, Trash2, Search, MapPin, Pentagon, ArrowLeft, LocateFixed, CreditCard, AlertTriangle, Users, Gauge, Plane } from 'lucide-react';
+import { Loader2, Building2, Plus, Pencil, Trash2, Search, MapPin, Pentagon, ArrowLeft, LocateFixed, CreditCard, AlertTriangle, Users, Gauge, Plane, Eye, EyeOff } from 'lucide-react';
 import { Cliente } from '@/types/database';
 import { validateSenhaForte } from '@/lib/senhaValidacao';
 import { usePlanos, useUpdateClientePlan, useBillingResumo } from '@/hooks/queries/useBilling';
@@ -75,6 +75,7 @@ const AdminClientes = () => {
   const [geocoding, setGeocoding] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState<{ title: string; description: string; onConfirm: () => void } | null>(null);
   const [planoSelecionado, setPlanoSelecionado] = useState<string>('');
+  const [showSenha, setShowSenha] = useState(false);
   // Credenciais do supervisor recém-criado (exibir uma vez, somente em sucesso completo)
   const [supervisorCriado, setSupervisorCriado] = useState<{ nome: string; email: string; senha: string } | null>(null);
 
@@ -83,12 +84,10 @@ const AdminClientes = () => {
   const updatePlanMutation = useUpdateClientePlan();
 
   const { data: clientes = [], isLoading: loading } = useQuery({
-    queryKey: ['admin_clientes', clienteId],
+    queryKey: ['admin_clientes'],
     queryFn: async () => {
-      // QW-10A: filtrar clientes com soft delete (deleted_at IS NULL)
       const all = await api.clientes.listAll();
-      const active = all.filter((c: Cliente) => !c.deleted_at);
-      return clienteId ? active.filter((c: Cliente) => c.id === clienteId) : active;
+      return (all as Cliente[]).filter((c) => !c.deleted_at);
     },
     staleTime: 0,
   });
@@ -111,7 +110,7 @@ const AdminClientes = () => {
       // Falha aqui → rollback (soft-delete do cliente) → throw → onError
       try {
         if (!tokenStore.getAccessToken()) throw new Error('Sessão expirada. Faça login novamente.');
-        await api.usuarios.create({
+        await api.usuarios.insert({
           nome: payload.supervisor!.nome.trim(),
           email: payload.supervisor!.email.trim().toLowerCase(),
           senha: payload.supervisor!.senha,
@@ -134,7 +133,7 @@ const AdminClientes = () => {
       };
     },
     onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: ['admin_clientes', clienteId] });
+      queryClient.invalidateQueries({ queryKey: ['admin_clientes'] });
       setShowForm(false);
       if (!result.isNew) {
         toast.success('Cliente atualizado');
@@ -152,7 +151,7 @@ const AdminClientes = () => {
       await api.clientes.update(id, { ativo: false, deleted_at: new Date().toISOString() } as never);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin_clientes', clienteId] });
+      queryClient.invalidateQueries({ queryKey: ['admin_clientes'] });
       toast.success('Cliente desativado');
     },
     onError: (err: unknown) => toast.error(err instanceof Error ? err.message : 'Erro ao desativar'),
@@ -548,13 +547,24 @@ const AdminClientes = () => {
                       </div>
                       <div className="sm:col-span-2 space-y-0.5">
                         <Label className="text-xs">Senha temporária * (mín. 8 chars, maiúscula, número e especial)</Label>
-                        <Input
-                          type="password"
-                          value={supervisorForm.senha}
-                          onChange={(e) => setSupervisorForm((p) => ({ ...p, senha: e.target.value }))}
-                          placeholder="Senha provisória — o supervisor poderá alterar no primeiro acesso"
-                          minLength={8}
-                        />
+                        <div className="relative">
+                          <Input
+                            type={showSenha ? 'text' : 'password'}
+                            value={supervisorForm.senha}
+                            onChange={(e) => setSupervisorForm((p) => ({ ...p, senha: e.target.value }))}
+                            placeholder="Senha provisória — o supervisor poderá alterar no primeiro acesso"
+                            minLength={8}
+                            className="pr-9"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowSenha((v) => !v)}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                            tabIndex={-1}
+                          >
+                            {showSenha ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>

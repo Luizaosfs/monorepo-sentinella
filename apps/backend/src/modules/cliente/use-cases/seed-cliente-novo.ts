@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 
 export interface SeedClienteNovoResult {
-  clientePlano: 'criado' | 'pulado_sem_plano_basico' | 'ja_existente';
+  clientePlano: 'criado' | 'plano_criado_e_vinculado' | 'ja_existente';
   clienteQuotas: 'criado' | 'ja_existente';
   scoreConfig: 'criado' | 'ja_existente';
   slaFocoConfig: { criados: number };
@@ -266,7 +266,10 @@ const PLANO_ACAO_POR_TIPO: ReadonlyArray<PlanoAcaoPorTipo> = [
 ];
 
 type TxClient = {
-  planos: { findFirst: (args: unknown) => Promise<{ id: string } | null> };
+  planos: {
+    findFirst: (args: unknown) => Promise<{ id: string } | null>;
+    create: (args: unknown) => Promise<{ id: string }>;
+  };
   cliente_plano: {
     findUnique: (args: unknown) => Promise<unknown | null>;
     create: (args: unknown) => Promise<unknown>;
@@ -320,18 +323,31 @@ export class SeedClienteNovo {
     };
   }
 
-  // 1) cliente_plano: SELECT plano basico → INSERT (cliente_id, plano_id) ON CONFLICT (cliente_id) DO NOTHING
+  // 1) cliente_plano: garante plano "basico" existe (cria se necessário) → vincula ao cliente
   private async seedClientePlano(
     tx: TxClient,
     clienteId: string,
-  ): Promise<'criado' | 'pulado_sem_plano_basico' | 'ja_existente'> {
-    const planoBasico = await tx.planos.findFirst({
+  ): Promise<'criado' | 'plano_criado_e_vinculado' | 'ja_existente'> {
+    let planoBasico = await tx.planos.findFirst({
       where: { nome: 'basico' },
       select: { id: true },
     });
+
+    let planoFoiCriado = false;
     if (!planoBasico) {
-      this.logger.warn(`Plano "basico" não cadastrado — cliente_plano não criado para ${clienteId}`);
-      return 'pulado_sem_plano_basico';
+      this.logger.warn(`Plano "basico" inexistente — criando plano padrão automaticamente`);
+      planoBasico = await tx.planos.create({
+        data: {
+          nome: 'basico',
+          descricao: 'Plano padrao - acesso completo',
+          drone_habilitado: true,
+          sla_avancado: true,
+          ativo: true,
+          ordem: 0,
+        },
+        select: { id: true },
+      });
+      planoFoiCriado = true;
     }
 
     const existente = await tx.cliente_plano.findUnique({
@@ -342,7 +358,7 @@ export class SeedClienteNovo {
     await tx.cliente_plano.create({
       data: { cliente_id: clienteId, plano_id: planoBasico.id },
     });
-    return 'criado';
+    return planoFoiCriado ? 'plano_criado_e_vinculado' : 'criado';
   }
 
   // 2) cliente_quotas: INSERT (cliente_id) ON CONFLICT (cliente_id) DO NOTHING

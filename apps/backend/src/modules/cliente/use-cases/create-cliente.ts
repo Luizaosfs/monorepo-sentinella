@@ -51,7 +51,7 @@ export class CreateCliente {
         surtoAtivo: false,
         janelaRecorrenciaDias: input.janelaRecorrenciaDias ?? 30,
       },
-      { createdBy: this.req['user']?.id },
+      { createdBy: this.req?.['user']?.id },
     );
 
     // Cliente novo + 7 seeds em transação atômica.
@@ -64,7 +64,7 @@ export class CreateCliente {
         throw new Error('Cliente criado sem id retornado pelo repository');
       }
       seedResult = await this.seedClienteNovo.execute(created.id, tx);
-    });
+    }, { timeout: 30000, maxWait: 10000 });
 
     this.logger.log(
       `Cliente ${created.id} criado e seeds aplicados: ${JSON.stringify(seedResult)}`,

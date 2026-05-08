@@ -1,10 +1,4 @@
-/**
- * AdminAgrupamentos — Gerenciamento de agrupamentos regionais (P5)
- *
- * Permite ao admin criar agrupamentos regionais e vincular municípios.
- * Acesso restrito: apenas admin da plataforma.
- */
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/services/api';
 import { Card, CardContent } from '@/components/ui/card';
@@ -22,7 +16,7 @@ import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import {
   Loader2, Plus, Trash2, Building2, MapPin, Users,
-  ChevronRight, X,
+  ChevronRight, X, Search,
 } from 'lucide-react';
 import AdminPageHeader from '@/components/AdminPageHeader';
 import { STALE } from '@/lib/queryConfig';
@@ -35,9 +29,9 @@ const TIPO_LABELS: Record<string, string> = {
 };
 
 const TIPO_COLORS: Record<string, string> = {
-  consorcio: 'bg-blue-50 text-blue-700 border-blue-200',
-  regiao_saude: 'bg-green-50 text-green-700 border-green-200',
-  estado: 'bg-purple-50 text-purple-700 border-purple-200',
+  consorcio: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800',
+  regiao_saude: 'bg-green-50 text-green-700 border-green-200 dark:bg-green-950/40 dark:text-green-300 dark:border-green-800',
+  estado: 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800',
 };
 
 const emptyForm = { nome: '', tipo: 'consorcio' as AgrupamentoRegional['tipo'], uf: '' };
@@ -48,8 +42,7 @@ export default function AdminAgrupamentos() {
   const [form, setForm] = useState(emptyForm);
   const [selectedAgrupamento, setSelectedAgrupamento] = useState<AgrupamentoRegional | null>(null);
   const [novoClienteId, setNovoClienteId] = useState('');
-
-  // ── Queries ────────────────────────────────────────────────────────────────
+  const [searchVinculados, setSearchVinculados] = useState('');
 
   const { data: agrupamentos = [], isLoading } = useQuery({
     queryKey: ['agrupamentos'],
@@ -69,8 +62,6 @@ export default function AdminAgrupamentos() {
     enabled: !!selectedAgrupamento,
     staleTime: STALE.SHORT,
   });
-
-  // ── Mutations ──────────────────────────────────────────────────────────────
 
   const criarMutation = useMutation({
     mutationFn: () => api.agrupamentos.create({
@@ -108,15 +99,27 @@ export default function AdminAgrupamentos() {
     onError: (err: Error) => toast.error(err.message),
   });
 
-  // ── Derived ────────────────────────────────────────────────────────────────
+  type ClienteVinculado = { id: string; nome: string; cidade?: string; uf?: string };
 
-  const vinculadosIds = new Set(clientesDoAgrupamento.map((ac: { cliente_id: string }) => ac.cliente_id));
-  const clientesDisponiveis = todosClientes.filter((c: { id: string }) => !vinculadosIds.has(c.id));
+  const vinculadosIds = useMemo(
+    () => new Set((clientesDoAgrupamento as ClienteVinculado[]).map((c) => c.id)),
+    [clientesDoAgrupamento],
+  );
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+  const clientesDisponiveis = useMemo(
+    () => (todosClientes as { id: string; nome: string }[]).filter((c) => !vinculadosIds.has(c.id)),
+    [todosClientes, vinculadosIds],
+  );
+
+  const vinculadosFiltrados = useMemo(() => {
+    const q = searchVinculados.toLowerCase();
+    return (clientesDoAgrupamento as ClienteVinculado[]).filter((c) =>
+      (c.nome ?? c.id ?? '').toLowerCase().includes(q),
+    );
+  }, [clientesDoAgrupamento, searchVinculados]);
 
   return (
-    <div className="p-4 md:p-6 max-w-6xl mx-auto space-y-6">
+    <div className="space-y-4">
       <AdminPageHeader
         title="Agrupamentos Regionais"
         description="Consórcios, regiões de saúde e estados para acesso analítico do analista regional."
@@ -128,12 +131,11 @@ export default function AdminAgrupamentos() {
         }
       />
 
-      {/* Layout master-detail */}
-      <div className="grid grid-cols-1 md:grid-cols-[340px_1fr] gap-4 items-start">
+      <div className="grid grid-cols-1 md:grid-cols-[320px_1fr] gap-4 items-start">
 
-        {/* ── Coluna esquerda: lista de agrupamentos ── */}
+        {/* ── Coluna esquerda: lista ── */}
         <div className="space-y-2">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1 mb-3">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">
             Agrupamentos ({agrupamentos.length})
           </p>
 
@@ -148,36 +150,28 @@ export default function AdminAgrupamentos() {
               <p className="text-xs mt-1 opacity-70">Crie um para começar</p>
             </div>
           ) : (
-            agrupamentos.map((ag: AgrupamentoRegional) => {
-              const isSelected = selectedAgrupamento?.id === ag.id;
-              return (
-                <button
-                  key={ag.id}
-                  onClick={() => setSelectedAgrupamento(isSelected ? null : ag)}
-                  className={[
-                    'w-full text-left rounded-xl border p-3.5 transition-all',
-                    'hover:border-primary/40 hover:shadow-sm',
-                    isSelected
-                      ? 'border-primary bg-primary/5 shadow-sm'
-                      : 'border-border bg-card',
-                  ].join(' ')}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-start gap-3 min-w-0">
-                      <div className={[
-                        'mt-0.5 p-1.5 rounded-lg shrink-0',
-                        isSelected ? 'bg-primary/10' : 'bg-muted',
-                      ].join(' ')}>
-                        <Building2 className={[
-                          'w-4 h-4',
-                          isSelected ? 'text-primary' : 'text-muted-foreground',
-                        ].join(' ')} />
-                      </div>
+            <div className="space-y-1.5">
+              {(agrupamentos as AgrupamentoRegional[]).map((ag) => {
+                const isSelected = selectedAgrupamento?.id === ag.id;
+                return (
+                  <button
+                    key={ag.id}
+                    onClick={() => {
+                      setSelectedAgrupamento(isSelected ? null : ag);
+                      setSearchVinculados('');
+                      setNovoClienteId('');
+                    }}
+                    className={[
+                      'w-full text-left rounded-xl border px-4 py-3 transition-all',
+                      'hover:border-primary/40 hover:shadow-sm',
+                      isSelected
+                        ? 'border-primary bg-primary/5 shadow-sm'
+                        : 'border-border bg-card',
+                    ].join(' ')}
+                  >
+                    <div className="flex items-center justify-between gap-2">
                       <div className="min-w-0">
-                        <p className={[
-                          'text-sm font-semibold truncate',
-                          isSelected ? 'text-primary' : '',
-                        ].join(' ')}>
+                        <p className={['text-sm font-semibold truncate', isSelected ? 'text-primary' : ''].join(' ')}>
                           {ag.nome}
                         </p>
                         <div className="flex items-center gap-1.5 mt-1 flex-wrap">
@@ -188,31 +182,31 @@ export default function AdminAgrupamentos() {
                             {TIPO_LABELS[ag.tipo] ?? ag.tipo}
                           </span>
                           {ag.uf && (
-                            <span className="text-[11px] text-muted-foreground font-mono">
+                            <span className="text-[11px] text-muted-foreground font-mono bg-muted px-1.5 py-0.5 rounded">
                               {ag.uf}
                             </span>
                           )}
                         </div>
                       </div>
+                      <ChevronRight className={[
+                        'w-4 h-4 shrink-0 transition-transform text-muted-foreground/50',
+                        isSelected ? 'rotate-90 text-primary' : '',
+                      ].join(' ')} />
                     </div>
-                    <ChevronRight className={[
-                      'w-4 h-4 shrink-0 mt-1 transition-transform',
-                      isSelected ? 'text-primary rotate-90' : 'text-muted-foreground/40',
-                    ].join(' ')} />
-                  </div>
-                </button>
-              );
-            })
+                  </button>
+                );
+              })}
+            </div>
           )}
         </div>
 
-        {/* ── Coluna direita: detalhe do agrupamento selecionado ── */}
+        {/* ── Coluna direita: detalhe ── */}
         {selectedAgrupamento ? (
           <Card className="border-border">
             <CardContent className="p-0">
 
-              {/* Header do detalhe */}
-              <div className="flex items-start justify-between gap-4 p-5 border-b">
+              {/* Header */}
+              <div className="flex items-start justify-between gap-4 p-4 border-b">
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <h2 className="text-base font-semibold">{selectedAgrupamento.nome}</h2>
@@ -223,28 +217,21 @@ export default function AdminAgrupamentos() {
                       {TIPO_LABELS[selectedAgrupamento.tipo] ?? selectedAgrupamento.tipo}
                     </span>
                     {selectedAgrupamento.uf && (
-                      <Badge variant="outline" className="text-xs font-mono">
-                        {selectedAgrupamento.uf}
-                      </Badge>
+                      <Badge variant="outline" className="text-xs font-mono">{selectedAgrupamento.uf}</Badge>
                     )}
                   </div>
-                  <p className="text-sm text-muted-foreground mt-0.5">
+                  <p className="text-xs text-muted-foreground mt-0.5">
                     Gerencie os municípios que fazem parte deste agrupamento.
                   </p>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 shrink-0 text-muted-foreground"
-                  onClick={() => setSelectedAgrupamento(null)}
-                >
+                <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setSelectedAgrupamento(null)}>
                   <X className="w-4 h-4" />
                 </Button>
               </div>
 
-              {/* Adicionar município */}
-              <div className="p-5 border-b bg-muted/30">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+              {/* Vincular município */}
+              <div className="p-4 border-b bg-muted/30">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                   Vincular município
                 </p>
                 {clientesDisponiveis.length === 0 ? (
@@ -258,7 +245,7 @@ export default function AdminAgrupamentos() {
                         <SelectValue placeholder="Selecione um município..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {clientesDisponiveis.map((c: { id: string; nome: string }) => (
+                        {clientesDisponiveis.map((c) => (
                           <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
                         ))}
                       </SelectContent>
@@ -278,16 +265,16 @@ export default function AdminAgrupamentos() {
                 )}
               </div>
 
-              {/* Lista de municípios vinculados */}
-              <div className="p-5">
+              {/* Municípios vinculados */}
+              <div className="p-4">
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Municípios vinculados
                   </p>
                   {!loadingClientes && (
-                    <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                    <Badge variant="secondary" className="text-xs">
                       {clientesDoAgrupamento.length}
-                    </span>
+                    </Badge>
                   )}
                 </div>
 
@@ -302,33 +289,57 @@ export default function AdminAgrupamentos() {
                     <p className="text-xs mt-1 opacity-70">Use o campo acima para adicionar</p>
                   </div>
                 ) : (
-                  <div className="space-y-1">
-                    {clientesDoAgrupamento.map((ac: { cliente_id: string; clientes?: { nome: string } }) => (
-                      <div
-                        key={ac.cliente_id}
-                        className="flex items-center justify-between py-2.5 px-3 rounded-lg hover:bg-muted/60 transition-colors group"
-                      >
-                        <div className="flex items-center gap-2.5">
-                          <MapPin className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
-                          <span className="text-sm font-medium">
-                            {(ac.clientes as { nome: string } | undefined)?.nome ?? ac.cliente_id}
-                          </span>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 px-2 text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-destructive hover:bg-destructive/10 transition-all"
-                          onClick={() => removeClienteMutation.mutate({
-                            agrupamentoId: selectedAgrupamento.id,
-                            clienteId: ac.cliente_id,
-                          })}
-                          disabled={removeClienteMutation.isPending}
-                        >
-                          <Trash2 className="w-3.5 h-3.5 mr-1" />
-                          Remover
-                        </Button>
+                  <div className="space-y-2">
+                    {/* Busca inline quando há vários */}
+                    {clientesDoAgrupamento.length > 4 && (
+                      <div className="relative mb-2">
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                        <Input
+                          className="pl-8 h-8 text-sm"
+                          placeholder="Filtrar municípios..."
+                          value={searchVinculados}
+                          onChange={(e) => setSearchVinculados(e.target.value)}
+                        />
                       </div>
-                    ))}
+                    )}
+
+                    {vinculadosFiltrados.length === 0 ? (
+                      <p className="text-sm text-muted-foreground italic text-center py-4">Nenhum resultado</p>
+                    ) : (
+                      vinculadosFiltrados.map((c) => (
+                        <div
+                          key={c.id}
+                          className="flex items-center justify-between px-3 py-2.5 rounded-lg border border-border bg-card hover:bg-muted/40 transition-colors group"
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                              <MapPin className="w-3.5 h-3.5 text-primary" />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium truncate">{c.nome}</p>
+                              {(c.cidade || c.uf) && (
+                                <p className="text-xs text-muted-foreground truncate">
+                                  {[c.cidade, c.uf].filter(Boolean).join(' · ')}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 px-2 text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-destructive hover:bg-destructive/10 transition-all shrink-0"
+                            onClick={() => removeClienteMutation.mutate({
+                              agrupamentoId: selectedAgrupamento.id,
+                              clienteId: c.id,
+                            })}
+                            disabled={removeClienteMutation.isPending}
+                          >
+                            <Trash2 className="w-3.5 h-3.5 mr-1" />
+                            Remover
+                          </Button>
+                        </div>
+                      ))
+                    )}
                   </div>
                 )}
               </div>
@@ -336,7 +347,6 @@ export default function AdminAgrupamentos() {
             </CardContent>
           </Card>
         ) : (
-          /* Placeholder quando nada está selecionado */
           <div className="hidden md:flex flex-col items-center justify-center h-64 text-center text-muted-foreground border-2 border-dashed rounded-xl">
             <Users className="w-8 h-8 mb-2 opacity-30" />
             <p className="text-sm font-medium">Selecione um agrupamento</p>
@@ -345,7 +355,7 @@ export default function AdminAgrupamentos() {
         )}
       </div>
 
-      {/* ── Dialog: criar agrupamento ── */}
+      {/* Dialog criar agrupamento */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -359,9 +369,7 @@ export default function AdminAgrupamentos() {
 
           <div className="space-y-4 py-1">
             <div className="space-y-1.5">
-              <Label htmlFor="nome">
-                Nome <span className="text-destructive">*</span>
-              </Label>
+              <Label htmlFor="nome">Nome <span className="text-destructive">*</span></Label>
               <Input
                 id="nome"
                 placeholder="Ex: Consórcio Vale do Paraíba"
@@ -372,25 +380,15 @@ export default function AdminAgrupamentos() {
             </div>
 
             <div className="space-y-1.5">
-              <Label>
-                Tipo <span className="text-destructive">*</span>
-              </Label>
-              <Select
-                value={form.tipo}
-                onValueChange={v => setForm(f => ({ ...f, tipo: v as AgrupamentoRegional['tipo'] }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
+              <Label>Tipo <span className="text-destructive">*</span></Label>
+              <Select value={form.tipo} onValueChange={v => setForm(f => ({ ...f, tipo: v as AgrupamentoRegional['tipo'] }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {Object.entries(TIPO_LABELS).map(([k, v]) => (
                     <SelectItem key={k} value={k}>{v}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-muted-foreground">
-                Define a natureza administrativa do agrupamento.
-              </p>
             </div>
 
             <div className="space-y-1.5">
@@ -412,10 +410,7 @@ export default function AdminAgrupamentos() {
             <Button variant="ghost" onClick={() => { setShowCreateDialog(false); setForm(emptyForm); }}>
               Cancelar
             </Button>
-            <Button
-              disabled={!form.nome.trim() || criarMutation.isPending}
-              onClick={() => criarMutation.mutate()}
-            >
+            <Button disabled={!form.nome.trim() || criarMutation.isPending} onClick={() => criarMutation.mutate()}>
               {criarMutation.isPending && <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />}
               Criar agrupamento
             </Button>

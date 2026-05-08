@@ -12,7 +12,13 @@ import {
 } from './extensions/updated-at.extension';
 
 function buildPoolConfig(connectionString: string): PoolConfig {
-  const config: PoolConfig = { connectionString };
+  const config: PoolConfig = {
+    connectionString,
+    max: 10,
+    connectionTimeoutMillis: 10_000,
+    idleTimeoutMillis: 30_000,
+    query_timeout: 60_000,
+  };
 
   let url: URL;
   try {
