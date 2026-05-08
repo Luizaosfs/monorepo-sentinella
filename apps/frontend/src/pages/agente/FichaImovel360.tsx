@@ -17,7 +17,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
-  ArrowLeft, AlertCircle, CheckCircle2, Clock, Ban,
+  ArrowLeft, AlertCircle, CheckCircle2, Clock,
   AlertTriangle, Plane, ShieldAlert, ShieldCheck, MapPin, Stethoscope,
   GitMerge, WifiOff, ChevronRight, Home, MessageSquare,
   Activity, CalendarDays, ClipboardCheck,
@@ -45,13 +45,10 @@ import { ScoreImovelCard } from '@/components/imoveis/ScoreImovelCard';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-const hoje = new Date().toISOString().slice(0, 10);
-
 const STATUS_CFG = {
   visitado: { label: 'Visitado hoje',  color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',   icon: CheckCircle2 },
   pendente: { label: 'Pendente',       color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',           icon: Clock },
   revisita: { label: 'Revisita',       color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',   icon: Clock },
-  fechado:  { label: 'Sem acesso',     color: 'bg-gray-100 text-gray-500 dark:bg-gray-800/50 dark:text-gray-400',       icon: Ban },
 } as const;
 
 type StatusKey = keyof typeof STATUS_CFG;
@@ -111,7 +108,8 @@ export default function FichaImovel360() {
   const navigate = useNavigate();
   const { clienteId } = useClienteAtivo();
   const { ativo: modoAnalitico } = useModoAnalitico();
-  const { user } = useAuth();
+  const { usuario } = useAuth();
+  const hoje = new Date().toISOString().slice(0, 10);
 
   const { data: imovel, isLoading } = useImovelResumoById(id);
   const { data: vistorias = [] } = useVistoriasByImovel(id);
@@ -126,9 +124,9 @@ export default function FichaImovel360() {
 
   const [temRascunho, setTemRascunho] = useState(false);
   useEffect(() => {
-    if (!user?.id || !imovel) return;
-    carregarRascunhoExiste(imovel.id, user.id).then(setTemRascunho);
-  }, [imovel?.id, user?.id]);
+    if (!usuario?.id || !imovel) return;
+    carregarRascunhoExiste(imovel.id, usuario.id).then(setTemRascunho);
+  }, [imovel?.id, usuario?.id]);
 
   // ── Loading ────────────────────────────────────────────────────────────────
   if (isLoading) {

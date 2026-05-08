@@ -193,11 +193,11 @@ export default function AgenteFocoDetalhe() {
 
   if (isLoading) {
     return (
-      <div className="p-4 space-y-4 max-w-lg mx-auto">
-        <Skeleton className="h-8 w-40" />
-        <Skeleton className="h-28 w-full rounded-xl" />
+      <div className="p-4 space-y-4">
+        <Skeleton className="h-14 w-full rounded-xl" />
+        <Skeleton className="h-10 w-full rounded-xl" />
         <Skeleton className="h-24 w-full rounded-xl" />
-        <Skeleton className="h-36 w-full rounded-xl" />
+        <Skeleton className="h-32 w-full rounded-xl" />
       </div>
     );
   }
@@ -206,13 +206,13 @@ export default function AgenteFocoDetalhe() {
 
   if (!foco) {
     return (
-      <div className="p-6 max-w-lg mx-auto space-y-4 text-center">
-        <AlertTriangle className="w-10 h-10 text-muted-foreground mx-auto" />
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 gap-4 text-center">
+        <AlertTriangle className="w-10 h-10 text-muted-foreground" />
         <p className="text-sm font-semibold text-foreground">Foco não disponível</p>
         <p className="text-xs text-muted-foreground">
           Este foco pode já ter sido encerrado ou não está mais atribuído a você.
         </p>
-        <Button variant="outline" className="w-full" onClick={() => navigate('/agente/hoje')}>
+        <Button variant="outline" className="w-full max-w-xs" onClick={() => navigate('/agente/hoje')}>
           Voltar para hoje
         </Button>
       </div>
@@ -224,8 +224,8 @@ export default function AgenteFocoDetalhe() {
   if (concluido) {
     const isResolvido = concluido === 'resolvido';
     return (
-      <div className="p-4 lg:p-6 max-w-md mx-auto space-y-6 text-center animate-fade-in">
-        <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto ${
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 gap-5 text-center animate-fade-in">
+        <div className={`w-16 h-16 rounded-full flex items-center justify-center ${
           isResolvido
             ? 'bg-green-100 dark:bg-green-900/30'
             : 'bg-gray-100 dark:bg-gray-800/40'
@@ -245,7 +245,7 @@ export default function AgenteFocoDetalhe() {
         </div>
         <Button
           variant="outline"
-          className="w-full"
+          className="w-full max-w-xs"
           onClick={() => navigate('/agente/hoje')}
         >
           Voltar para hoje
@@ -618,31 +618,27 @@ export default function AgenteFocoDetalhe() {
   // ── Render ─────────────────────────────────────────────────────────────────────
 
   return (
-    <div className="p-4 lg:p-6 max-w-lg mx-auto space-y-5 animate-fade-in pb-10">
-      {/* Header */}
-      <div className="space-y-2">
-        <Button variant="ghost" size="sm" className="-ml-2" onClick={() => navigate(-1)}>
-          <ArrowLeft className="w-4 h-4 mr-1" />
-          Voltar
+    <div className="min-h-screen bg-background">
+      {/* Sticky header */}
+      <div className="sticky top-0 z-10 bg-card border-b px-4 py-3 flex items-center gap-3">
+        <Button variant="ghost" size="icon" className="shrink-0 -ml-1" onClick={() => navigate(-1)}>
+          <ArrowLeft className="h-5 w-5" />
         </Button>
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h1 className="text-lg font-bold leading-tight">Foco de Risco</h1>
-            {foco.codigo_foco && (
-              <div className="flex items-center gap-1 mt-0.5">
-                <Hash className="w-3.5 h-3.5 text-muted-foreground" />
-                <span className="font-mono text-sm text-muted-foreground tracking-wider">
-                  {foco.codigo_foco}
-                </span>
-              </div>
-            )}
-          </div>
-          <div className="flex flex-col items-end gap-1.5 shrink-0">
-            <StatusBadge status={foco.status as FocoRiscoStatus} />
-            <PrioridadeBadge prioridade={foco.prioridade} />
-          </div>
+        <div className="flex-1 min-w-0">
+          <h1 className="font-semibold text-base leading-tight">Foco de Risco</h1>
+          {foco.codigo_foco && (
+            <div className="flex items-center gap-1">
+              <Hash className="w-3 h-3 text-muted-foreground" />
+              <span className="font-mono text-xs text-muted-foreground">{foco.codigo_foco}</span>
+            </div>
+          )}
+        </div>
+        <div className="flex flex-col items-end gap-1 shrink-0">
+          <StatusBadge status={foco.status as FocoRiscoStatus} />
+          <PrioridadeBadge prioridade={foco.prioridade} />
         </div>
       </div>
+      <div className="p-4 space-y-4 pb-24 animate-fade-in">
 
       {/* SLA */}
       {(foco.sla_status || foco.sla_prazo_em) && (
@@ -650,7 +646,7 @@ export default function AgenteFocoDetalhe() {
       )}
 
       {/* Localização */}
-      <div className="rounded-xl border border-border bg-muted/30 p-3 space-y-2">
+      <div className="rounded-xl border border-border/60 bg-muted/30 p-3 space-y-2">
         <div className="flex items-start gap-2">
           <MapPin className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
           <div className="min-w-0">
@@ -676,7 +672,7 @@ export default function AgenteFocoDetalhe() {
       </div>
 
       {/* CTAs */}
-      <div className="pt-1">
+      <div>
         {renderCtaSection()}
       </div>
 
@@ -766,12 +762,13 @@ export default function AgenteFocoDetalhe() {
       )}
 
       {/* Timeline */}
-      <div className="pt-2">
+      <div>
         <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">
           Histórico
         </p>
         <FocoRiscoTimeline focoId={foco.id} />
       </div>
+    </div>
     </div>
   );
 }

@@ -57,7 +57,6 @@ export const focosRisco = {
     focoId: string,
     statusNovo: Parameters<typeof _sb.focosRisco.transicionar>[1],
     motivo?: string,
-    responsavelId?: string,
   ): Promise<Ret<typeof _sb.focosRisco.transicionar>> =>
     http.post(`/focos-risco/${focoId}/transicionar`, { statusPara: statusNovo, motivo }),
 

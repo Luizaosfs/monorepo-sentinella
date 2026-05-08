@@ -108,6 +108,8 @@ export class VistoriaController {
   @ApiOperation({ summary: 'Contar vistorias com filtros' })
   async count(@Query() filters: FilterVistoriaQuery) {
     const parsed = filterVistoriaSchema.parse(filters);
+    // MT-02: clienteId sempre do TenantGuard, nunca da query diretamente
+    parsed.clienteId = getAccessScope(this.req).tenantId ?? undefined;
     return this.countVistoria.execute(parsed);
   }
 
@@ -116,6 +118,8 @@ export class VistoriaController {
   @ApiOperation({ summary: 'Listar vistorias com filtros' })
   async filter(@Query() filters: FilterVistoriaQuery) {
     const parsed = filterVistoriaSchema.parse(filters);
+    // MT-02: clienteId sempre do TenantGuard, nunca da query diretamente
+    parsed.clienteId = getAccessScope(this.req).tenantId ?? undefined;
     const { vistorias } = await this.filterVistoria.execute(parsed);
     return vistorias.map(VistoriaViewModel.toHttp);
   }
@@ -146,7 +150,7 @@ export class VistoriaController {
       'Buscar vistoria por ID (com depósitos, sintomas, riscos e calhas)',
   })
   async findById(@Param('id') id: string) {
-    const clienteId = getAccessScope(this.req).tenantId;
+    const clienteId = requireTenantId(getAccessScope(this.req));
     const { vistoria } = await this.getVistoria.execute(id, clienteId);
     return VistoriaViewModel.toHttp(vistoria);
   }

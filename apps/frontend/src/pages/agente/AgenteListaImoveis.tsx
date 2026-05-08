@@ -39,8 +39,10 @@ import {
   Map as MapIcon,
   LocateFixed,
   AlertTriangle,
+  ChevronRight,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 import { TipoAtividade, TipoImovel, Imovel } from '@/types/database';
 import { MapContainer, TileLayer, CircleMarker, Popup, Tooltip } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -76,14 +78,20 @@ const STATUS_LABEL: Record<string, string> = {
   none: 'Nunca visitado',
 };
 
+const STATUS_VISUAL: Record<string, { label: string; leftBorder: string; badgeClass: string }> = {
+  pendente: { label: 'Pendente',       leftBorder: 'border-l-red-500',   badgeClass: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
+  revisita: { label: 'Revisita',       leftBorder: 'border-l-amber-500', badgeClass: 'bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400' },
+  visitado: { label: 'Visitado',       leftBorder: 'border-l-green-500', badgeClass: 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400' },
+  fechado:  { label: 'Fechado',        leftBorder: 'border-l-gray-400',  badgeClass: 'bg-gray-100 text-gray-500 dark:bg-gray-800/50 dark:text-gray-400' },
+  none:     { label: 'Nunca visitado', leftBorder: 'border-l-red-400',   badgeClass: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
+};
+
 const TIPO_IMOVEL_OPTIONS: { value: TipoImovel; label: string }[] = [
   { value: 'residencial', label: 'Residencial' },
   { value: 'comercial', label: 'Comercial' },
   { value: 'terreno', label: 'Terreno' },
   { value: 'ponto_estrategico', label: 'Ponto Estratégico' },
 ];
-
-const currentCiclo = getCurrentCiclo();
 
 interface NovoImovelForm {
   logradouro: string;
@@ -111,10 +119,14 @@ export default function AgenteListaImoveis() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const atividade = (searchParams.get('atividade') as TipoAtividade) || 'pesquisa';
+  const atividadeExplicita = searchParams.get('atividade') !== null;
 
   const { clienteId, clienteAtivo } = useClienteAtivo();
   const { usuario } = useAuth();
   const usuarioId = usuario?.id ?? null;
+
+  // Ciclo calculado no render para não ficar stale se app cruzar virada de ciclo
+  const currentCiclo = useMemo(() => getCurrentCiclo(), []);
 
   const [search, setSearch] = useState('');
   const [filtroBairro, setFiltroBairro] = useState<string>('__all__');
@@ -271,7 +283,7 @@ export default function AgenteListaImoveis() {
   const isLoading = loadingImoveis || loadingVistorias;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-muted/30 flex flex-col">
       {/* Header */}
       <div className="bg-white border-b px-4 py-3 flex items-center gap-3 sticky top-0 z-10">
         <Button
@@ -284,11 +296,14 @@ export default function AgenteListaImoveis() {
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div className="flex-1 min-w-0">
-          <h1 className="font-semibold text-base leading-tight truncate">
-            {ATIVIDADE_LABEL[atividade] ?? atividade}
-          </h1>
-          <p className="text-xs text-muted-foreground">
+          <h1 className="font-semibold text-base leading-tight truncate">Imóveis</h1>
+          <p className="text-xs text-muted-foreground flex items-center gap-1.5 flex-wrap">
             {isLoading ? 'Carregando…' : `${imoveisFiltrados.length} imóvel(is)`}
+            {atividadeExplicita && (
+              <span className="inline-flex items-center rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
+                {ATIVIDADE_LABEL[atividade] ?? atividade}
+              </span>
+            )}
           </p>
         </div>
       </div>
@@ -301,60 +316,57 @@ export default function AgenteListaImoveis() {
             placeholder="Buscar logradouro, bairro, quarteirão…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 h-9 text-sm"
+            className="pl-9 h-10 text-sm"
           />
         </div>
-        {quarteiraoDoAgente.length === 0 && !loadingImoveis ? (
-          <div className="flex items-center gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-            <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-            Nenhum quarteirão atribuído para este ciclo. Contacte o gestor.
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setFiltrarPorQuarteirao((v) => !v)}
-            className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border transition-colors ${
-              filtrarPorQuarteirao
-                ? 'bg-primary text-primary-foreground border-primary'
-                : 'bg-background text-muted-foreground border-border/60 hover:border-primary/50'
-            }`}
-          >
-            <Layers className="w-3 h-3" />
-            Meus quarteirões ({quarteiraoDoAgente.length})
-          </button>
-        )}
         <div className="flex gap-2 items-center">
+          {quarteiraoDoAgente.length === 0 && !loadingImoveis ? (
+            <div className="flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-2 flex-1 min-w-0">
+              <AlertTriangle className="w-3 h-3 shrink-0" />
+              <span className="truncate">Sem quarteirão atribuído</span>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setFiltrarPorQuarteirao((v) => !v)}
+              className={cn(
+                'flex items-center gap-1.5 text-xs px-3 py-2 rounded-full border transition-colors shrink-0',
+                filtrarPorQuarteirao
+                  ? 'bg-primary text-primary-foreground border-primary'
+                  : 'bg-background text-muted-foreground border-border/60',
+              )}
+            >
+              <Layers className="w-3 h-3" />
+              Qt. ({quarteiraoDoAgente.length})
+            </button>
+          )}
           <Select value={filtroBairro} onValueChange={setFiltroBairro}>
-            <SelectTrigger className="h-8 text-xs flex-1">
+            <SelectTrigger className="h-9 text-xs flex-1">
               <SelectValue placeholder="Todos os bairros" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="__all__">Todos os bairros</SelectItem>
               {bairrosDistintos.map((b) => (
-                <SelectItem key={b} value={b}>
-                  {b}
-                </SelectItem>
+                <SelectItem key={b} value={b}>{b}</SelectItem>
               ))}
             </SelectContent>
           </Select>
-
-          {/* View toggle */}
-          <div className="flex border rounded-md overflow-hidden shrink-0">
+          <div className="flex border rounded-lg overflow-hidden shrink-0">
             <Button
               variant={viewMode === 'lista' ? 'default' : 'ghost'}
               size="sm"
-              className="h-8 px-2 rounded-none"
+              className="h-9 px-2.5 rounded-none"
               onClick={() => setViewMode('lista')}
-              aria-label="Visualização em lista"
+              aria-label="Lista"
             >
               <List className="h-4 w-4" />
             </Button>
             <Button
               variant={viewMode === 'mapa' ? 'default' : 'ghost'}
               size="sm"
-              className="h-8 px-2 rounded-none"
+              className="h-9 px-2.5 rounded-none"
               onClick={() => setViewMode('mapa')}
-              aria-label="Visualização em mapa"
+              aria-label="Mapa"
             >
               <MapIcon className="h-4 w-4" />
             </Button>
@@ -447,29 +459,30 @@ export default function AgenteListaImoveis() {
             )}
           </div>
         ) : isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="space-y-2">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="h-20 rounded-lg bg-gray-200 animate-pulse" />
+              <div key={i} className="h-[68px] rounded-xl bg-muted animate-pulse" />
             ))}
           </div>
         ) : imoveisFiltrados.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-48 text-muted-foreground gap-2">
             <Home className="h-8 w-8 opacity-40" />
-            <p className="text-sm">Nenhum imóvel encontrado.</p>
+            <p className="text-sm font-medium">Nenhum imóvel encontrado.</p>
+            <p className="text-xs opacity-70">Ajuste os filtros ou a busca.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="space-y-2">
             {imoveisFiltrados.map((imovel) => {
               const status = statusPorImovel.get(imovel.id) ?? 'none';
               const ultimaVisita = ultimaVisitaPorImovel.get(imovel.id);
-              const borderClass = STATUS_BORDER[status] ?? STATUS_BORDER.none;
               const bloqueado = status === 'visitado' || status === 'fechado';
               const temPendencia = pendenciasPorImovel.get(imovel.id) ?? false;
+              const visual = STATUS_VISUAL[status] ?? STATUS_VISUAL.none;
 
               return (
-                <Card
+                <button
                   key={imovel.id}
-                  className={`${bloqueado ? 'cursor-not-allowed opacity-75' : 'cursor-pointer hover:shadow-md'} transition-shadow ${borderClass}`}
+                  className="w-full text-left"
                   onClick={() => {
                     if (bloqueado) {
                       toast.info('Este imóvel já foi finalizado neste ciclo.');
@@ -478,42 +491,46 @@ export default function AgenteListaImoveis() {
                     navigate(`/agente/vistoria/${imovel.id}?atividade=${atividade}`);
                   }}
                 >
-                  <CardContent className="p-3 flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm leading-tight truncate">
-                        {imovel.numero ? `${imovel.numero} — ` : ''}
-                        {imovel.logradouro ?? 'Sem logradouro'}
-                      </p>
-                      <div className="flex items-center gap-1 mt-0.5 text-xs text-muted-foreground">
-                        <MapPin className="h-3 w-3 shrink-0" />
-                        <span className="truncate">
-                          {[imovel.bairro, imovel.quarteirao ? `Qt. ${imovel.quarteirao}` : null]
-                            .filter(Boolean)
-                            .join(' · ') || 'Sem localização'}
-                        </span>
+                  <div className={cn(
+                    'bg-card rounded-xl border border-border/60 border-l-4 transition-colors active:bg-muted/20',
+                    visual.leftBorder,
+                    bloqueado && 'opacity-60',
+                  )}>
+                    <div className="px-3.5 py-3 flex items-center gap-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold text-sm leading-tight truncate">
+                          {imovel.numero ? `${imovel.numero} — ` : ''}
+                          {imovel.logradouro ?? 'Sem logradouro'}
+                        </p>
+                        <div className="flex items-center gap-1 mt-0.5">
+                          <MapPin className="h-3 w-3 shrink-0 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground truncate">
+                            {[imovel.bairro, imovel.quarteirao ? `Qt. ${imovel.quarteirao}` : null]
+                              .filter(Boolean)
+                              .join(' · ') || 'Sem localização'}
+                          </span>
+                        </div>
+                        {ultimaVisita && (
+                          <p className="text-[11px] text-muted-foreground mt-0.5">
+                            Visitado {new Date(ultimaVisita).toLocaleDateString('pt-BR')}
+                          </p>
+                        )}
+                        {temPendencia && (
+                          <div className="flex items-center gap-1 mt-0.5 text-[11px] text-amber-600 font-semibold">
+                            <AlertTriangle className="h-3 w-3" />
+                            Evidência pendente
+                          </div>
+                        )}
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {ultimaVisita
-                          ? `Última visita: ${new Date(ultimaVisita).toLocaleDateString('pt-BR')}`
-                          : 'Nunca visitado'}
-                      </p>
-                    </div>
-                    <div className="flex flex-col items-end gap-1 shrink-0">
-                      <Badge variant={STATUS_BADGE_VARIANT[status] ?? 'destructive'} className="text-xs">
-                        {STATUS_LABEL[status] ?? status}
-                      </Badge>
-                      {temPendencia && (
-                        <span
-                          className="flex items-center gap-0.5 text-[10px] text-amber-600 font-medium"
-                          title="Vistoria enviada sem assinatura ou foto"
-                        >
-                          <AlertTriangle className="h-3 w-3" />
-                          Pendente
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-semibold', visual.badgeClass)}>
+                          {visual.label}
                         </span>
-                      )}
+                        {!bloqueado && <ChevronRight className="w-4 h-4 text-muted-foreground" />}
+                      </div>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </button>
               );
             })}
           </div>
@@ -523,7 +540,7 @@ export default function AgenteListaImoveis() {
       {/* FAB */}
       <Button
         size="icon"
-        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-20"
+        className="fixed right-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] lg:right-6 lg:bottom-6 h-14 w-14 rounded-full shadow-lg z-30"
         onClick={() => setDialogOpen(true)}
         aria-label="Cadastrar novo imóvel"
       >

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import {
-  CheckCircle2, Clock, Ban, ChevronRight, WifiOff, AlertCircle,
+  CheckCircle2, Clock, ChevronRight, WifiOff, AlertCircle,
   List, Map as MapIcon, Navigation, RefreshCw, RotateCcw, UserCheck, Route,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -11,7 +11,6 @@ import { CicloBadge } from '@/components/foco/CicloBadge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { FichaImovel } from '@/components/agente/FichaImovel';
 import { useClienteAtivo } from '@/hooks/useClienteAtivo';
@@ -38,25 +37,22 @@ const STATUS_CONFIG = {
     label: 'Visitado',
     color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
     mapColor: '#22c55e',
+    border: 'border-l-green-500',
     icon: CheckCircle2,
   },
   pendente: {
     label: 'Pendente',
     color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
     mapColor: '#ef4444',
+    border: 'border-l-red-400',
     icon: Clock,
   },
   revisita: {
     label: 'Revisita',
     color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
     mapColor: '#f59e0b',
+    border: 'border-l-amber-500',
     icon: Clock,
-  },
-  fechado: {
-    label: 'Fechado',
-    color: 'bg-gray-100 text-gray-500 dark:bg-gray-800/50 dark:text-gray-400',
-    mapColor: '#6b7280',
-    icon: Ban,
   },
 } as const;
 
@@ -72,9 +68,7 @@ const SCORE_BADGE_CLASSES: Record<string, string> = {
 
 // ─── Map legend ───────────────────────────────────────────────────────────────
 
-const MAP_LEGEND = (
-  Object.entries(STATUS_CONFIG) as [StatusKey, typeof STATUS_CONFIG[StatusKey]][]
-).filter(([k]) => k !== 'fechado');
+const MAP_LEGEND = Object.entries(STATUS_CONFIG) as [StatusKey, typeof STATUS_CONFIG[StatusKey]][];
 
 // ─── Rota: nearest-neighbor ───────────────────────────────────────────────────
 
@@ -122,12 +116,12 @@ function MetricCard({
   value, label, colorClass, urgent,
 }: { value: number; label: string; colorClass: string; urgent?: boolean }) {
   return (
-    <div className={cn('rounded-lg p-3 text-center', colorClass)}>
+    <div className={cn('rounded-lg px-2 py-3 text-center', colorClass)}>
       {urgent && value > 0 && (
         <span className="block w-1.5 h-1.5 rounded-full bg-current mx-auto mb-1 animate-pulse" />
       )}
-      <p className="text-2xl font-bold leading-none">{value}</p>
-      <p className="text-[11px] font-medium mt-1 opacity-80 leading-tight">{label}</p>
+      <p className="text-xl font-bold leading-none">{value}</p>
+      <p className="text-[10px] font-medium mt-1 opacity-80 leading-tight">{label}</p>
     </div>
   );
 }
@@ -267,7 +261,7 @@ export default function AgenteHoje() {
   }, [imoveisFiltradosOrdenados, rotaOrdem]);
 
   const handleOtimizarRota = useCallback(() => {
-    const pendentes = imoveisFiltradosOrdenados.filter(
+    const pendentes = imoveisOrdenados.filter(
       (im) => resolveStatusImovel(im, hoje) !== 'visitado',
     );
     if (pendentes.length < 2) {
@@ -297,7 +291,7 @@ export default function AgenteHoje() {
       const first = pendentes.find((im) => im.latitude != null && im.longitude != null);
       if (first) aplicar(first.latitude!, first.longitude!);
     }
-  }, [imoveisFiltradosOrdenados, hoje]);
+  }, [imoveisOrdenados, hoje]);
 
   // ── Próxima ação ────────────────────────────────────────────────────────────
 
@@ -435,39 +429,39 @@ export default function AgenteHoje() {
               {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            {rotaOrdem ? (
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-1.5 text-xs h-8 border-violet-400 text-violet-700 dark:text-violet-400"
-                onClick={() => { setRotaOrdem(null); logEvento('rota_revertida', clienteId); }}
-              >
-                <Route className="w-3.5 h-3.5" />
-                Rota ativa
-              </Button>
-            ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-1.5 text-xs h-8"
-                onClick={handleOtimizarRota}
-              >
-                <Route className="w-3.5 h-3.5" />
-                Otimizar rota
-              </Button>
-            )}
+          <CicloBadge compact />
+        </div>
+        <div className="flex gap-2">
+          {rotaOrdem ? (
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
-              className="gap-1.5 text-xs h-8"
-              onClick={() => navigate('/agente/mapa')}
+              className="flex-1 gap-1.5 text-xs h-9 border-violet-400 text-violet-700 dark:text-violet-400"
+              onClick={() => { setRotaOrdem(null); logEvento('rota_revertida', clienteId); }}
             >
-              <Navigation className="w-3.5 h-3.5" />
-              Mapa
+              <Route className="w-3.5 h-3.5" />
+              Rota otimizada ativa
             </Button>
-            <CicloBadge compact />
-          </div>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 gap-1.5 text-xs h-9"
+              onClick={handleOtimizarRota}
+            >
+              <Route className="w-3.5 h-3.5" />
+              Otimizar rota
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5 text-xs h-9"
+            onClick={() => navigate('/agente/mapa')}
+          >
+            <Navigation className="w-3.5 h-3.5" />
+            Mapa
+          </Button>
         </div>
 
         {/* Sync / offline status */}
@@ -555,47 +549,44 @@ export default function AgenteHoje() {
               ? 'border-red-400 bg-red-50/50 dark:bg-red-900/10'
               : 'border-primary/40',
           )}>
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-2 min-w-0">
-                  <div className={cn(
-                    'w-8 h-8 rounded-lg flex items-center justify-center shrink-0',
-                    proximaAcao.tipo === 'retorno'
-                      ? 'bg-amber-100 dark:bg-amber-900/30'
-                      : proximaAcao.tipo === 'foco'
-                      ? 'bg-red-100 dark:bg-red-900/30'
-                      : 'bg-primary/10',
-                  )}>
-                    {proximaAcao.tipo === 'retorno'
-                      ? <RotateCcw className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                      : proximaAcao.tipo === 'foco'
-                      ? <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400" />
-                      : <Navigation className="w-4 h-4 text-primary" />
-                    }
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                      {proximaAcao.tipo === 'retorno' ? 'Retorno urgente' : proximaAcao.tipo === 'foco' ? 'Foco ativo' : 'Próxima visita'}
-                    </p>
-                    <p className="text-sm font-bold text-foreground truncate leading-tight">
-                      {proximaAcao.imovel.logradouro ?? 'Endereço não informado'}
-                      {proximaAcao.imovel.numero ? `, ${proximaAcao.imovel.numero}` : ''}
-                    </p>
-                    <p className="text-xs text-muted-foreground">{proximaAcao.imovel.bairro ?? '—'}</p>
-                  </div>
+            <CardContent className="p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <div className={cn(
+                  'w-9 h-9 rounded-xl flex items-center justify-center shrink-0',
+                  proximaAcao.tipo === 'retorno'
+                    ? 'bg-amber-100 dark:bg-amber-900/30'
+                    : proximaAcao.tipo === 'foco'
+                    ? 'bg-red-100 dark:bg-red-900/30'
+                    : 'bg-primary/10',
+                )}>
+                  {proximaAcao.tipo === 'retorno'
+                    ? <RotateCcw className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                    : proximaAcao.tipo === 'foco'
+                    ? <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400" />
+                    : <Navigation className="w-4 h-4 text-primary" />
+                  }
                 </div>
-                <Button
-                  size="sm"
-                  className={cn(
-                    'h-9 px-3 font-bold text-xs shrink-0',
-                    proximaAcao.tipo === 'retorno' ? 'bg-amber-500 hover:bg-amber-600 text-white' : '',
-                  )}
-                  variant={proximaAcao.tipo === 'retorno' ? 'default' : 'default'}
-                  onClick={() => handleIniciarVistoria(proximaAcao.imovel.id)}
-                >
-                  Iniciar
-                </Button>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                    {proximaAcao.tipo === 'retorno' ? 'Retorno urgente' : proximaAcao.tipo === 'foco' ? 'Foco ativo' : 'Próxima visita'}
+                  </p>
+                  <p className="text-sm font-bold text-foreground truncate leading-tight">
+                    {proximaAcao.imovel.logradouro ?? 'Endereço não informado'}
+                    {proximaAcao.imovel.numero ? `, ${proximaAcao.imovel.numero}` : ''}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{proximaAcao.imovel.bairro ?? '—'}</p>
+                </div>
               </div>
+              <Button
+                className={cn(
+                  'w-full h-10 font-bold text-sm',
+                  proximaAcao.tipo === 'retorno' ? 'bg-amber-500 hover:bg-amber-600 text-white' : '',
+                )}
+                variant="default"
+                onClick={() => handleIniciarVistoria(proximaAcao.imovel.id)}
+              >
+                Iniciar visita
+              </Button>
             </CardContent>
           </Card>
         )}
@@ -657,7 +648,7 @@ export default function AgenteHoje() {
               type="button"
               onClick={() => setListFiltro(key)}
               className={cn(
-                'relative flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold border transition-all whitespace-nowrap shrink-0',
+                'relative flex items-center gap-1 rounded-full px-3 py-2 text-xs font-semibold border transition-all whitespace-nowrap shrink-0',
                 listFiltro === key
                   ? 'bg-foreground text-background border-transparent'
                   : 'bg-background text-foreground border-border',
@@ -832,45 +823,41 @@ export default function AgenteHoje() {
                   onClick={() => setFichaImovel(im)}
                 >
                   <Card className={cn(
-                    'rounded-xl border transition-colors hover:bg-muted/20 border-border/60',
-                    temRetorno && 'border-l-4 border-l-amber-400',
+                    'rounded-xl border-l-4 border border-border/60 transition-colors hover:bg-muted/20',
+                    temRetorno ? 'border-l-amber-400' : cfg.border,
                   )}>
-                    <CardContent className="p-4 flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center shrink-0', cfg.color)}>
-                          <Icon className="w-4 h-4" />
+                    <CardContent className="p-3 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center shrink-0', cfg.color)}>
+                          <Icon className="w-3.5 h-3.5" />
                         </div>
                         <div className="min-w-0">
-                          <p className="text-sm font-semibold text-foreground truncate">
+                          <p className="text-sm font-semibold text-foreground truncate leading-tight">
                             {im.logradouro ?? 'Endereço não informado'}{im.numero ? `, ${im.numero}` : ''}
                           </p>
                           <p className="text-xs text-muted-foreground">{im.bairro ?? '—'}</p>
                           {temRetorno && (
-                            <p className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-1">
+                            <p className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-1 mt-0.5">
                               <RotateCcw className="w-3 h-3" /> Retorno urgente
                             </p>
                           )}
                           {!temRetorno && temRecorrencia && (
-                            <p className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">
+                            <p className="text-[10px] text-amber-600 dark:text-amber-400 font-medium mt-0.5">
                               {im.focos_recorrentes} foco(s) recorrente(s)
                             </p>
                           )}
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        {temFocoPendente && (
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {temFocoPendente ? (
                           <span className="inline-flex items-center gap-1 rounded-full bg-red-100 dark:bg-red-900/30 px-2 py-0.5 text-[10px] font-bold text-red-700 dark:text-red-400 animate-pulse">
                             <AlertCircle className="w-3 h-3" /> Foco
                           </span>
-                        )}
-                        {scoreClass && im.score_territorial != null && (
+                        ) : scoreClass && im.score_territorial != null ? (
                           <span className={cn('rounded-full px-2 py-0.5 text-[10px]', scoreClass)}>
                             {im.score_territorial}
                           </span>
-                        )}
-                        <Badge variant="outline" className={cn('text-[10px] font-semibold', cfg.color)}>
-                          {cfg.label}
-                        </Badge>
+                        ) : null}
                         <ChevronRight className="w-4 h-4 text-muted-foreground" />
                       </div>
                     </CardContent>
@@ -932,14 +919,14 @@ export default function AgenteHoje() {
           <div ref={mapContainerRef} className="w-full h-full" />
 
           {/* Filter chips overlay */}
-          <div className="absolute top-3 left-3 right-3 z-[1000] flex flex-wrap gap-1.5">
+          <div className="absolute top-3 left-3 right-3 z-[1000] flex gap-1.5 overflow-x-auto scrollbar-none pb-1">
             {(['todos', 'pendente', 'revisita', 'visitado'] as const).map((key) => (
               <button
                 key={key}
                 type="button"
                 onClick={() => setMapFiltro(key)}
                 className={cn(
-                  'rounded-full px-3 py-1.5 text-xs font-semibold shadow-md border transition-all',
+                  'flex-shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold shadow-md border transition-all',
                   mapFiltro === key
                     ? 'bg-foreground text-background border-transparent'
                     : 'bg-background/90 backdrop-blur text-foreground border-border',

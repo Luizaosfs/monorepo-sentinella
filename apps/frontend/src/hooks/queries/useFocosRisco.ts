@@ -101,16 +101,12 @@ export function useAtualizarStatusFoco() {
       focoId,
       statusNovo,
       motivo,
-      responsavelId,
     }: {
       focoId: string;
       statusNovo: FocoRiscoStatus;
       motivo?: string;
-      responsavelId?: string;
     }) => {
-      // Validação client-side antes de chamar o banco
-      // (o banco também valida, mas melhor feedback imediato)
-      return api.focosRisco.transicionar(focoId, statusNovo, motivo, responsavelId);
+      return api.focosRisco.transicionar(focoId, statusNovo, motivo);
     },
     onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: ['focos_risco'] });

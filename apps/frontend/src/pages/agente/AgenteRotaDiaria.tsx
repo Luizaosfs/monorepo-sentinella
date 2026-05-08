@@ -1,6 +1,6 @@
 import { useMemo, useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, CheckCircle2, Circle, Clock, Lock, XCircle } from 'lucide-react';
+import { ArrowLeft, Ban, CheckCircle2, Circle, Clock, Lock, XCircle } from 'lucide-react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Card, CardContent } from '@/components/ui/card';
@@ -129,8 +129,9 @@ export default function AgenteRotaDiaria() {
 
   const filterChips: { key: FiltroStatus; label: string; icon: React.ReactNode; badge?: number }[] = [
     { key: 'todos',    label: 'Todos',    icon: null },
-    { key: 'pendente', label: 'Pend.',    icon: <Circle className="w-3 h-3" /> },
-    { key: 'revisita', label: 'Fechados', icon: <Lock className="w-3 h-3" /> },
+    { key: 'pendente', label: 'Pend.',     icon: <Circle className="w-3 h-3" /> },
+    { key: 'revisita', label: 'Sem acesso', icon: <Lock className="w-3 h-3" /> },
+    { key: 'fechado',  label: 'Fechado',  icon: <Ban className="w-3 h-3" /> },
     { key: 'recusa',   label: 'Recusa',   icon: <XCircle className="w-3 h-3" /> },
     { key: 'visitado', label: 'Tratados', icon: <CheckCircle2 className="w-3 h-3" /> },
     {
@@ -182,14 +183,14 @@ export default function AgenteRotaDiaria() {
         />
 
         {/* Filter chips overlay */}
-        <div className="absolute top-3 left-3 right-3 z-[1000] flex flex-wrap gap-1.5">
+        <div className="absolute top-3 left-3 right-3 z-[1000] flex gap-1.5 overflow-x-auto scrollbar-none pb-1">
           {filterChips.map(({ key, label, icon, badge }) => (
             <button
               key={key}
               type="button"
               onClick={() => setFiltroStatus(key)}
               className={cn(
-                'relative flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold shadow-md border transition-all',
+                'relative flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold shadow-md border transition-all flex-shrink-0',
                 filtroStatus === key
                   ? 'bg-foreground text-background border-transparent'
                   : 'bg-background/90 backdrop-blur text-foreground border-border',

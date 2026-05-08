@@ -21,9 +21,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
-import { useReinspecoesByFoco } from '@/hooks/queries/useReinspecoes';
 import { useRegistrarResultadoReinspecaoMutation } from '@/hooks/queries/useReinspecoes';
-import { useClienteAtivo } from '@/hooks/useClienteAtivo';
 import { api } from '@/services/api';
 import { useQuery } from '@tanstack/react-query';
 import { STALE } from '@/lib/queryConfig';
@@ -68,7 +66,6 @@ const RESULTADO_OPTIONS: {
 export default function AgenteReinspecao() {
   const { reinspecaoId } = useParams<{ reinspecaoId: string }>();
   const navigate = useNavigate();
-  const { clienteId } = useClienteAtivo();
 
   const [resultado, setResultado] = useState<ReinspecaoResultado | null>(null);
   const [observacao, setObservacao] = useState('');
@@ -121,9 +118,9 @@ export default function AgenteReinspecao() {
   if (isLoading) {
     return (
       <div className="p-4 space-y-4">
-        <Skeleton className="h-8 w-40" />
-        <Skeleton className="h-24 w-full rounded-xl" />
-        <Skeleton className="h-40 w-full rounded-xl" />
+        <Skeleton className="h-14 w-full rounded-xl" />
+        <Skeleton className="h-20 w-full rounded-xl" />
+        <Skeleton className="h-36 w-full rounded-xl" />
       </div>
     );
   }
@@ -192,18 +189,20 @@ export default function AgenteReinspecao() {
   // ── Formulário ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="p-4 lg:p-6 max-w-lg mx-auto space-y-5 animate-fade-in">
-      {/* Header */}
-      <div className="space-y-2">
-        <Button variant="ghost" size="sm" className="-ml-2" onClick={() => navigate(-1)}>
-          <ArrowLeft className="w-4 h-4 mr-1" />
-          Voltar
+    <div className="min-h-screen bg-background">
+      {/* Sticky header */}
+      <div className="sticky top-0 z-10 bg-card border-b px-4 py-3 flex items-center gap-3">
+        <Button variant="ghost" size="icon" className="shrink-0" onClick={() => navigate(-1)}>
+          <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="text-lg font-bold">Executar Reinspeção</h1>
-        <p className="text-sm text-muted-foreground">
-          {LABEL_REINSPECAO_TIPO[reinspecao.tipo as keyof typeof LABEL_REINSPECAO_TIPO]}
-        </p>
+        <div>
+          <h1 className="font-semibold text-base leading-tight">Executar Reinspeção</h1>
+          <p className="text-xs text-muted-foreground">
+            {LABEL_REINSPECAO_TIPO[reinspecao.tipo as keyof typeof LABEL_REINSPECAO_TIPO]}
+          </p>
+        </div>
       </div>
+      <div className="p-4 space-y-4 pb-32 animate-fade-in">
 
       {/* Info do foco */}
       <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-1.5">
@@ -273,15 +272,17 @@ export default function AgenteReinspecao() {
         />
       </div>
 
-      {/* Botão */}
-      <Button
-        className="w-full"
-        size="lg"
-        disabled={!resultado || registrar.isPending}
-        onClick={handleSubmit}
-      >
-        {registrar.isPending ? 'Registrando...' : 'Confirmar reinspeção'}
-      </Button>
+      </div>
+      {/* Botão fixo */}
+      <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur border-t px-4 pb-6 pt-3 z-20">
+        <Button
+          className="w-full h-12 rounded-xl font-bold"
+          disabled={!resultado || registrar.isPending}
+          onClick={handleSubmit}
+        >
+          {registrar.isPending ? 'Registrando...' : 'Confirmar reinspeção'}
+        </Button>
+      </div>
     </div>
   );
 }

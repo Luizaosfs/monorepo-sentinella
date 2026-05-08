@@ -9,7 +9,7 @@
  */
 import type { ImovelResumo } from '@/types/database';
 
-export type StatusImovelKey = 'visitado' | 'pendente' | 'revisita' | 'fechado';
+export type StatusImovelKey = 'visitado' | 'pendente' | 'revisita';
 
 export function resolveStatusImovel(
   im: Pick<ImovelResumo, 'focos_ativos' | 'ultima_visita' | 'tentativas_sem_acesso' | 'total_vistorias'>,

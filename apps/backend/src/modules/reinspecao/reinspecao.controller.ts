@@ -16,6 +16,7 @@ import { Request } from 'express';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
+import { AuthenticatedUser } from 'src/guards/auth.guard';
 
 import { Roles } from '@/decorators/roles.decorator';
 
@@ -100,7 +101,11 @@ export class ReinspecaoController {
   async count(@Query('agenteId') agenteId?: string) {
     // MT-03: clienteId vem do TenantGuard, não de query param
     const clienteId = requireTenantId(getAccessScope(this.req));
-    return this.countPendentes.execute(clienteId, agenteId);
+    const user = this.req['user'] as AuthenticatedUser;
+    const isPrivileged = user.isPlatformAdmin || user.papeis.some((p) => p === 'supervisor' || p === 'admin');
+    // Agente só pode consultar o próprio contador — supervisor/admin podem especificar qualquer agente.
+    const resolvedAgenteId = isPrivileged ? agenteId : user.id;
+    return this.countPendentes.execute(clienteId, resolvedAgenteId);
   }
 
   @Get(':id')

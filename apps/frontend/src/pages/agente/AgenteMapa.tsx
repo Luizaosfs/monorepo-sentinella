@@ -32,6 +32,7 @@ function focoToItem(foco: FocoRiscoAtivo): LevantamentoItem {
     item: foco.classificacao_inicial ?? foco.origem_tipo ?? 'Foco de risco',
     endereco_normalizado: foco.endereco_normalizado ?? null,
     image_url: (foco as FocoRiscoAtivo & { origem_image_url?: string }).origem_image_url ?? null,
+    created_at: foco.created_at,
   } as LevantamentoItem;
 }
 
@@ -114,13 +115,16 @@ export default function AgenteMapa() {
   }, [todosItens]);
 
   const filteredItems = useMemo(() => {
+    const days = dateRange === '7d' ? 7 : dateRange === '30d' ? 30 : dateRange === '90d' ? 90 : null;
+    const cutoff = days ? new Date(Date.now() - days * 86400000).toISOString() : null;
     return todosItens.filter((i) => {
       if (filterRisk.length > 0 && (!i.risco || !filterRisk.includes(i.risco.toLowerCase()))) return false;
       if (filterType.length > 0 && (!i.item || !filterType.includes(i.item.toLowerCase()))) return false;
+      if (cutoff && i.created_at && i.created_at < cutoff) return false;
       // status_atendimento removido do banco (migration 20260711) — filtro de status desativado
       return true;
     });
-  }, [todosItens, filterRisk, filterType]);
+  }, [todosItens, filterRisk, filterType, dateRange]);
 
   // IDs de focos que passaram pelos filtros (para sincronizar FocoClusterLayer)
   const filteredFocoIds = useMemo(

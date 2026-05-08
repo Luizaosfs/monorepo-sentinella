@@ -106,13 +106,12 @@ const AgenteLevantamentos = () => {
     refetch: refetchAberta,
   } = useQuery({
     queryKey: ['focos_disponiveis', clienteId],
-    queryFn: async () => {
-      const result = await api.focosRisco.list(clienteId!, {
+    queryFn: () =>
+      api.focosRisco.list(clienteId!, {
         status: ['aguarda_inspecao'],
+        semResponsavel: true,
         pageSize: 100,
-      });
-      return { ...result, data: result.data.filter((f) => !f.responsavel_id) };
-    },
+      }),
     enabled:   !!clienteId && tab === 'fila_aberta',
     staleTime: STALE.SHORT,
   });
@@ -138,7 +137,7 @@ const AgenteLevantamentos = () => {
   // ── Mutation: transição rápida de status ───────────────────────────────────
   const transitionMutation = useMutation({
     mutationFn: ({ focoId, statusNovo }: { focoId: string; statusNovo: FocoRiscoStatus }) =>
-      api.focosRisco.transicionar(focoId, statusNovo, undefined, usuario?.id),
+      api.focosRisco.transicionar(focoId, statusNovo),
     onSuccess: (_, { focoId, statusNovo }) => {
       const label = LABEL_STATUS[statusNovo] ?? statusNovo;
       toast.success(`Atualizado para "${label}"`);
@@ -213,41 +212,41 @@ const AgenteLevantamentos = () => {
       <div className="px-2 py-2 pb-24 space-y-2 animate-fade-in">
 
         {/* ── Header ─────────────────────────────────────────────────────── */}
-        <div className="flex items-center justify-between px-1 pt-1">
+        <div className="px-1 pt-1 space-y-2">
           <div>
             <h1 className="text-xl font-bold text-foreground">Minha Fila</h1>
             <p className="text-xs text-muted-foreground mt-0.5">
               Focos atribuídos a você para atendimento em campo
             </p>
           </div>
-          <div className="flex gap-1">
+          <div className="flex gap-2">
             <Button
               variant="outline" size="sm"
-              className="gap-1.5 rounded-xl"
+              className="flex-1 gap-1.5 rounded-xl h-9 text-sm"
               onClick={() => navigate('/agente/levantamentos/novo-item')}
             >
-              <PlusCircle className="h-4 w-4" />
-              <span className="hidden sm:inline">Novo foco</span>
+              <PlusCircle className="h-4 w-4 shrink-0" />
+              Novo foco
             </Button>
             <Button
               variant="default" size="sm"
-              className="gap-1.5 rounded-xl"
+              className="flex-1 gap-1.5 rounded-xl h-9 text-sm"
               onClick={() => navigate('/agente/mapa')}
             >
-              <Map className="h-4 w-4" />
-              <span className="hidden sm:inline">Mapa</span>
+              <Map className="h-4 w-4 shrink-0" />
+              Mapa
             </Button>
           </div>
         </div>
 
         {/* ── KPI cards ──────────────────────────────────────────────────── */}
         {!loadingFila && (
-          <div className="grid grid-cols-5 gap-1">
+          <div className="flex gap-2 overflow-x-auto pb-1 -mx-2 px-2 scrollbar-none">
             {([
-              { label: 'Aguardando', value: counts.aguarda,    color: 'text-amber-600',   bg: 'bg-amber-50 dark:bg-amber-950/20',    chip: 'aguarda_inspecao' as StatusChip },
-              { label: 'Inspeção',   value: counts.inspecao,   color: 'text-blue-600',    bg: 'bg-blue-50 dark:bg-blue-950/20',      chip: 'em_inspecao' as StatusChip },
-              { label: 'Sem acesso', value: counts.semAcesso,  color: 'text-rose-600',    bg: 'bg-rose-50 dark:bg-rose-950/20',      chip: 'aguardando_nova_tentativa' as StatusChip },
-              { label: 'Tratamento', value: counts.tratamento, color: 'text-purple-600',  bg: 'bg-purple-50 dark:bg-purple-950/20',  chip: 'em_tratamento' as StatusChip },
+              { label: 'Aguardando', value: counts.aguarda,    color: 'text-amber-600',   bg: 'bg-amber-50 dark:bg-amber-950/20',     chip: 'aguarda_inspecao' as StatusChip },
+              { label: 'Inspeção',   value: counts.inspecao,   color: 'text-blue-600',    bg: 'bg-blue-50 dark:bg-blue-950/20',       chip: 'em_inspecao' as StatusChip },
+              { label: 'Sem acesso', value: counts.semAcesso,  color: 'text-rose-600',    bg: 'bg-rose-50 dark:bg-rose-950/20',       chip: 'aguardando_nova_tentativa' as StatusChip },
+              { label: 'Tratamento', value: counts.tratamento, color: 'text-purple-600',  bg: 'bg-purple-50 dark:bg-purple-950/20',   chip: 'em_tratamento' as StatusChip },
               { label: 'Resolvidos', value: counts.resolvidos, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-950/20', chip: 'resolvido' as StatusChip },
             ] as const).map(({ label, value, color, bg, chip }) => (
               <button
@@ -255,13 +254,13 @@ const AgenteLevantamentos = () => {
                 type="button"
                 onClick={() => { setTab('minha_fila'); setStatusChip((prev) => prev === chip ? 'todos' : chip); }}
                 className={cn(
-                  'flex flex-col items-center gap-0.5 rounded-2xl border-2 border-transparent px-1 py-2.5 transition-all active:scale-95',
+                  'flex flex-col items-center gap-1 rounded-2xl border-2 border-transparent min-w-[64px] flex-shrink-0 px-2 py-3 transition-all active:scale-95',
                   bg,
                   statusChip === chip && 'ring-2 ring-offset-1 ring-current'
                 )}
               >
-                <span className={cn('text-2xl font-bold leading-none', color)}>{value}</span>
-                <span className={cn('text-[10px] font-medium leading-tight text-center', color)}>{label}</span>
+                <span className={cn('text-2xl font-bold leading-none tabular-nums', color)}>{value}</span>
+                <span className={cn('text-[11px] font-medium leading-tight text-center whitespace-nowrap', color)}>{label}</span>
               </button>
             ))}
           </div>
@@ -322,14 +321,14 @@ const AgenteLevantamentos = () => {
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-            <div className="flex gap-1.5 flex-wrap">
+            <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-2 px-2 scrollbar-none">
               {STATUS_CHIPS.map(({ key, label }) => (
                 <button
                   key={key}
                   type="button"
                   onClick={() => setStatusChip(key)}
                   className={cn(
-                    'rounded-full border px-3 py-1 text-xs font-medium transition-all',
+                    'flex-shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition-all',
                     statusChip === key
                       ? 'bg-primary text-primary-foreground border-primary'
                       : 'border-border text-muted-foreground hover:border-muted-foreground/40'
@@ -341,7 +340,7 @@ const AgenteLevantamentos = () => {
                       'ml-1 rounded-full px-1 text-[10px] font-bold',
                       statusChip === key ? 'bg-white/20' : 'bg-muted'
                     )}>
-                      {key === 'aguarda_inspecao'          ? counts.aguarda
+                      {key === 'aguarda_inspecao'           ? counts.aguarda
                        : key === 'em_inspecao'              ? counts.inspecao
                        : key === 'aguardando_nova_tentativa'? counts.semAcesso
                        : key === 'em_tratamento'            ? counts.tratamento

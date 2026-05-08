@@ -24,23 +24,33 @@ import type { TipoAtividade } from '@/types/database';
 // ─── Banner de reincidência ───────────────────────────────────────────────────
 
 function ReincidenteBanner({ imovelId, clienteId }: { imovelId: string; clienteId: string }) {
-  const since60d = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
+  // YYYY-MM-DD — stable within a day, safe for queryKey
+  const since60dDate = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
   const { data: focos = [] } = useQuery({
-    queryKey: ['focos-risco-imovel-reincidente', imovelId, clienteId],
+    queryKey: ['focos-risco-imovel-reincidente', imovelId, clienteId, since60dDate],
     queryFn: async () => {
-      const result = await api.focosRisco.list(clienteId, {
-        status: ['confirmado', 'em_tratamento', 'resolvido'],
-        pageSize: 50,
-      });
-      return (result.data ?? []).filter(
-        (f) => f.imovel_id === imovelId && f.created_at >= since60d && !f.deleted_at
-      ).map((f) => ({
-        id: f.id,
-        status: f.status,
-        created_at: f.created_at,
-        foco_anterior_id: f.foco_anterior_id ?? null,
-      }));
+      const result = (await api.focosRisco.listByImovel(imovelId)) as Array<{
+        id: string;
+        status: string;
+        created_at: string;
+        foco_anterior_id: string | null;
+        deleted_at: string | null;
+      }>;
+      const since60dIso = new Date(since60dDate).toISOString();
+      return (Array.isArray(result) ? result : [])
+        .filter(
+          (f) =>
+            ['confirmado', 'em_tratamento', 'resolvido'].includes(f.status) &&
+            f.created_at >= since60dIso &&
+            !f.deleted_at,
+        )
+        .map((f) => ({
+          id: f.id,
+          status: f.status,
+          created_at: f.created_at,
+          foco_anterior_id: f.foco_anterior_id ?? null,
+        }));
     },
     enabled: !!imovelId && !!clienteId,
     staleTime: STALE.MEDIUM,
@@ -187,7 +197,7 @@ function SemAcessoWrapper({
       {focoRiscoId && <TentativasSemAcessoBanner focoId={focoRiscoId} />}
 
       {/* Formulário */}
-      <div className="p-4 pb-24">
+      <div className="p-4 pb-32">
         <VistoriaSemAcesso
           clienteId={clienteId}
           imovelId={imovelId}
@@ -245,9 +255,9 @@ export default function AgenteVistoria() {
   }
 
   return (
-    <div>
+    <div className="min-h-screen bg-background pb-24">
       {focoIdResolvido && (
-        <div className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-xs font-semibold">
+        <div className="flex items-center gap-2 px-4 py-3 bg-blue-600 text-white text-xs font-semibold">
           <UserCheck className="w-4 h-4 shrink-0" />
           Inspeção de foco atribuído — classifique o resultado ao finalizar
         </div>
