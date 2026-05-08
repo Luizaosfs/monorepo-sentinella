@@ -21,6 +21,8 @@ import { UpdateRunTotal } from './use-cases/update-run-total';
 import { UpsertItem } from './use-cases/upsert-item';
 import { UpsertRisco } from './use-cases/upsert-risco';
 import { RiscoByCliente } from './use-cases/risco-by-cliente';
+import { GetStormForecast } from './use-cases/get-storm-forecast';
+import { OpenMeteoService } from './services/open-meteo.service';
 
 @Module({
   providers: [
@@ -39,6 +41,8 @@ import { RiscoByCliente } from './use-cases/risco-by-cliente';
     BulkInsertRisco,
     GerarSlasRun,
     RiscoByCliente,
+    GetStormForecast,
+    OpenMeteoService,
     PluvioSchedulerService,
     PluvioScheduler,
     JwtService,

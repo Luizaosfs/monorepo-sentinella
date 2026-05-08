@@ -85,10 +85,11 @@ import {
 
 // ─── SUPERVISOR / ADMIN: navegação principal ──────────────────────────────────
 const baseNavItems = [
-  { to: '/gestor/central',  label: 'Central do Dia',   icon: Radio },
-  { to: '/gestor/triagem',  label: 'Triagem de Focos', icon: Filter },
-  { to: '/gestor/focos',    label: 'Focos de Risco',   icon: Target },
-  { to: '/gestor/mapa',     label: 'Mapa de Focos',    icon: MapIcon },
+  { to: '/gestor/central',               label: 'Central do Dia',           icon: Radio   },
+  { to: '/gestor/triagem',               label: 'Triagem de Focos',         icon: Filter  },
+  { to: '/gestor/focos',                 label: 'Focos de Risco',           icon: Target  },
+  { to: '/gestor/mapa',                  label: 'Mapa de Focos',            icon: MapIcon },
+  { to: '/gestor/supervisor-tempo-real', label: 'Supervisão em Tempo Real', icon: Eye     },
 ];
 
 // ─── AGENTE DE ENDEMIAS ───────────────────────────────────────────────────────
@@ -122,16 +123,17 @@ const adminMonitorNavItems = [
 ];
 
 // ─── GRUPOS DO SIDEBAR (supervisor/admin) ─────────────────────────────────────
-const grupoPlnejamento = [
+const grupoPlanejamento = [
   // ── Configurar ──────────────────────────────────────────────────────────
-  { to: '/gestor/ciclos',                   label: 'Gestão de Ciclos',           icon: CalendarRange,  adminOnly: false },
-  { to: '/gestor/implantacao-operacional',  label: 'Implantação Operacional',    icon: ListTodo,       adminOnly: false, supervisorOnly: true },
+  { to: '/gestor/ciclos',                   label: 'Gestão de Ciclos',           icon: RotateCcw,      adminOnly: false },
   { to: '/gestor/distribuicao-quarteirao',  label: 'Distribuição de Quarteirão', icon: MapIcon,        adminOnly: false },
+  { to: '/gestor/implantacao-operacional',  label: 'Implantação Operacional',    icon: ListTodo,       adminOnly: false, supervisorOnly: true },
   // ── Planejar & Executar ──────────────────────────────────────────────────
   { to: '/gestor/planejamentos',            label: 'Planejamentos',              icon: CalendarRange,  adminOnly: false },
   { to: '/gestor/operacoes',                label: 'Operações',                  icon: ClipboardCheck, adminOnly: false },
-  { to: '/levantamentos',                   label: 'Levantamentos',              icon: ClipboardList,  adminOnly: false },
-  // ── Monitorar & Analisar ─────────────────────────────────────────────────
+  { to: '/gestor/levantamentos',             label: 'Levantamentos',              icon: ClipboardList,  adminOnly: false },
+  { to: '/gestor/plano-acao',               label: 'Planos de Ação',             icon: BookOpen,       adminOnly: false },
+  // ── Monitorar ───────────────────────────────────────────────────────────
   { to: '/gestor/cobertura-operacional',    label: 'Cobertura Territorial',      icon: BarChart2,      adminOnly: false, supervisorOnly: true },
   { to: '/gestor/reincidencia-territorial', label: 'Reincidência Territorial',   icon: TrendingUp,     adminOnly: false, supervisorOnly: true },
   { to: '/gestor/historico-atendimento',    label: 'Histórico de Atendimento',   icon: User,           adminOnly: false },
@@ -141,21 +143,20 @@ const grupoSaudeVigilancia = [
   { to: '/gestor/casos',         label: 'Casos Notificados',   icon: Stethoscope, adminOnly: false },
   { to: '/gestor/liraa',         label: 'Relatório LIRAa',     icon: BarChart2,   adminOnly: false },
   { to: '/gestor/score-surto',   label: 'Score de Surto',      icon: TrendingUp,  adminOnly: false },
-  { to: '/gestor/reincidencia',  label: 'Reincidência',        icon: RotateCcw,   adminOnly: false },
+  { to: '/gestor/reincidencia',  label: 'Reincidência de Casos', icon: RotateCcw,   adminOnly: false },
   { to: '/admin/canal-cidadao',  label: 'Canal Cidadão',       icon: Megaphone,   adminOnly: true  },
   { to: '/gestor/integracoes',   label: 'Integrações (e-SUS)', icon: Plug,        adminOnly: false },
 ];
 
 const grupoInteligencia = [
-  { to: '/gestor/dashboard/territorial', label: 'Dashboard Territorial',     icon: Globe2,          adminOnly: false },
-  { to: '/gestor/dashboard-analitico',   label: 'Dashboard Analítico',      icon: LayoutDashboard, adminOnly: false },
-  { to: '/gestor/relatorios',            label: 'Relatórios Executivos',     icon: FileSpreadsheet, adminOnly: false },
-  { to: '/gestor/mapa-comparativo',      label: 'Mapa Antes/Depois',        icon: GitCompare,  adminOnly: false },
-  { to: '/gestor/heatmap-temporal',      label: 'Heatmap Temporal',         icon: Activity,    adminOnly: false },
-  { to: '/gestor/produtividade-agentes', label: 'Produtividade',            icon: Users,       adminOnly: false },
-  { to: '/gestor/eficacia-tratamentos',  label: 'Eficácia de Tratamentos',  icon: TrendingUp,  adminOnly: false },
-  { to: '/gestor/executivo',             label: 'Painel Executivo',         icon: Gauge,       adminOnly: false },
-  { to: '/gestor/supervisor-tempo-real', label: 'Supervisão em Tempo Real', icon: Radio,       adminOnly: false },
+  { to: '/gestor/executivo',             label: 'Painel Executivo',         icon: Gauge,          adminOnly: false },
+  { to: '/gestor/dashboard/territorial', label: 'Dashboard Territorial',    icon: Globe2,         adminOnly: false },
+  { to: '/gestor/dashboard-analitico',   label: 'Dashboard Analítico',     icon: LayoutDashboard,adminOnly: false },
+  { to: '/gestor/relatorios',            label: 'Relatórios Executivos',    icon: FileSpreadsheet,adminOnly: false },
+  { to: '/gestor/produtividade-agentes', label: 'Produtividade',            icon: Users,          adminOnly: false },
+  { to: '/gestor/eficacia-tratamentos',  label: 'Eficácia de Tratamentos', icon: TrendingUp,     adminOnly: false },
+  { to: '/gestor/mapa-comparativo',      label: 'Mapa Antes/Depois',       icon: GitCompare,     adminOnly: false },
+  { to: '/gestor/heatmap-temporal',      label: 'Heatmap Temporal',         icon: Activity,       adminOnly: false },
 ];
 
 const grupoRiscoClima = [
@@ -174,7 +175,6 @@ const grupoConfiguracoes = [
   { to: '/gestor/imoveis-problematicos', label: 'Imóveis Problemáticos',      icon: MapPin,         adminOnly: false },
   { to: '/gestor/sla',                   label: 'Configuração de SLA',        icon: Timer,          adminOnly: false },
   { to: '/gestor/sla-feriados',          label: 'Feriados do SLA',            icon: CalendarRange,  adminOnly: false },
-  { to: '/gestor/plano-acao',            label: 'Planos de Ação',             icon: ClipboardCheck, adminOnly: false },
   { to: '/gestor/score-config',          label: 'Config. Score',              icon: Settings2,      adminOnly: false },
 ];
 
@@ -539,7 +539,7 @@ const AppLayout = () => {
               {/* Seção: Planejamento */}
               <div className="mb-1">
                 <p className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-white/40">Planejamento</p>
-                <SidebarGroup label="Planejamento & Campo" icon={CalendarRange} items={grupoPlnejamento} isAdmin={isAdmin} location={location} onClose={() => setSidebarOpen(false)} />
+                <SidebarGroup label="Planejamento & Campo" icon={CalendarRange} items={grupoPlanejamento} isAdmin={isAdmin} location={location} onClose={() => setSidebarOpen(false)} />
               </div>
 
               {/* Seção: Saúde & Vigilância */}

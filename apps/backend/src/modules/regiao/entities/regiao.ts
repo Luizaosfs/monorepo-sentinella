@@ -57,8 +57,14 @@ export class Regiao extends BaseEntity<RegiaoProps> {
   get latitude() {
     return this.props.latitude;
   }
+  set latitude(v: number | null | undefined) {
+    this.props.latitude = v;
+  }
   get longitude() {
     return this.props.longitude;
+  }
+  set longitude(v: number | null | undefined) {
+    this.props.longitude = v;
   }
 }
 

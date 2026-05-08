@@ -21,6 +21,8 @@ export class CreateRegiao {
         tipo: input.tipo,
         cor: input.cor,
         geojson: input.geojson,
+        latitude: input.latitude ?? null,
+        longitude: input.longitude ?? null,
         ativo: true,
       },
       { createdBy: this.req['user']?.id },

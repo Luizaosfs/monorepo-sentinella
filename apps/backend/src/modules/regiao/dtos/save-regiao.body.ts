@@ -12,6 +12,8 @@ export const saveRegiaoSchema = z.object({
   cor: z.string().describe('Cor de exibição no mapa').optional(),
   geojson: jsonRecordOptional('GeoJSON da área da região'),
   ativo: z.boolean().describe('Ativa ou desativa a região').optional(),
+  latitude: z.number().optional().nullable(),
+  longitude: z.number().optional().nullable(),
 });
 
 export class SaveRegiaoBody extends createZodDto(saveRegiaoSchema) {}

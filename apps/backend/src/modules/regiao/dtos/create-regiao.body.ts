@@ -13,6 +13,8 @@ export const createRegiaoSchema = z.object({
     .optional(),
   cor: z.string().describe('Cor de exibição no mapa (hex ou nome)').optional(),
   geojson: jsonRecordOptional('GeoJSON da área da região'),
+  latitude: z.number().optional().nullable(),
+  longitude: z.number().optional().nullable(),
 });
 
 export class CreateRegiaoBody extends createZodDto(createRegiaoSchema) {}

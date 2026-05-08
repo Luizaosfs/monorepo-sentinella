@@ -3,6 +3,16 @@ import { api as _sb } from '../../api-stub';
 import { qs } from '../shared/qs';
 import { deepToCamel, deepToSnake, type Ret } from '../shared/case-mappers';
 
+export interface StormForecastAlert {
+  regiaoId: string;
+  regiao: string;
+  type: string;
+  severity: 'moderado' | 'alto' | 'critico';
+  message: string;
+  day: string;
+  atualizadoEm: string;
+}
+
 export const pluvio = {
   riscoByCliente: async (clienteId?: string) =>
     http.get(`/pluvio/risco/by-cliente${qs({ clienteId })}`),
@@ -10,6 +20,8 @@ export const pluvio = {
     const raw = await http.get(`/pluvio/runs/latest${qs({ clienteId })}`);
     return raw ? (deepToSnake(raw) as Ret<typeof _sb.pluvio.latestRunByCliente>) : null;
   },
+  getStormForecast: async (clienteId: string): Promise<StormForecastAlert[]> =>
+    http.get(`/pluvio/storm-forecast${qs({ clienteId })}`),
 };
 
 export const pluvioOperacional = {

@@ -25,6 +25,8 @@ export class SaveRegiao {
     if (input.cor !== undefined) regiao.cor = input.cor;
     if (input.geojson !== undefined) regiao.geojson = input.geojson;
     if (input.ativo !== undefined) regiao.ativo = input.ativo;
+    if (input.latitude !== undefined) regiao.latitude = input.latitude;
+    if (input.longitude !== undefined) regiao.longitude = input.longitude;
 
     await this.writeRepository.save(regiao);
     return { regiao };

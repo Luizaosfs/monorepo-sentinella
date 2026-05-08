@@ -42,4 +42,14 @@ describe('RiscoByCliente', () => {
 
     expect(result).toEqual([]);
   });
+
+  it('seleciona dt_ref em vez de run_id', async () => {
+    mockQueryRaw.mockResolvedValue([]);
+    await useCase.execute('cliente-uuid');
+
+    const sqlTemplate = mockQueryRaw.mock.calls[0][0];
+    const sqlText: string = sqlTemplate.strings.join('');
+    expect(sqlText).toContain('dt_ref');
+    expect(sqlText).not.toContain('run_id');
+  });
 });

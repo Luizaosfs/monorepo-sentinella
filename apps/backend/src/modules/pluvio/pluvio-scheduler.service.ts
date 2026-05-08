@@ -18,7 +18,7 @@ export class PluvioSchedulerService {
 
   constructor(private prisma: PrismaService) {}
 
-  async riscoDaily(): Promise<{ regioes: number; atualizadas: number }> {
+  async riscoDaily(): Promise<{ regioes: number; atualizadas: number; erros: number; puladas: number }> {
     const clientes = await this.prisma.client.clientes.findMany({
       where: { deleted_at: null, ativo: true },
       select: { id: true },
@@ -27,6 +27,10 @@ export class PluvioSchedulerService {
     const hoje = new Date().toISOString().slice(0, 10);
     let totalRegioes = 0;
     let atualizadas = 0;
+    let erros = 0;
+    let puladas = 0;
+
+    this.logger.log(`[riscoDaily] iniciando — clientes=${clientes.length} dt_ref=${hoje}`);
 
     for (const cliente of clientes) {
       const regioes = await this.prisma.client.regioes.findMany({
@@ -35,7 +39,7 @@ export class PluvioSchedulerService {
       });
 
       for (const regiao of regioes) {
-        if (!regiao.latitude || !regiao.longitude) continue;
+        if (!regiao.latitude || !regiao.longitude) { puladas++; continue; }
         totalRegioes++;
 
         try {
@@ -45,8 +49,17 @@ export class PluvioSchedulerService {
             `&daily=precipitation_sum,temperature_2m_max,wind_speed_10m_max` +
             `&past_days=7&forecast_days=3&timezone=America%2FSao_Paulo`;
 
-          const res = await fetch(url);
-          if (!res.ok) continue;
+          const ctrl = new AbortController();
+          const timer = setTimeout(() => ctrl.abort(), 10_000);
+
+          let res: Response;
+          try {
+            res = await fetch(url, { signal: ctrl.signal });
+          } finally {
+            clearTimeout(timer);
+          }
+
+          if (!res.ok) { erros++; continue; }
 
           const data: OpenMeteoResponse = await res.json() as OpenMeteoResponse;
           const precip = data.daily.precipitation_sum ?? [];
@@ -103,14 +116,15 @@ export class PluvioSchedulerService {
 
           atualizadas++;
         } catch (err: any) {
-          this.logger.warn(`[riscoDaily] Falha regiao ${regiao.id}: ${err?.message}`);
+          erros++;
+          this.logger.warn(`[riscoDaily] falha regiao=${regiao.id} erro="${err?.message}"`);
         }
       }
     }
 
     this.logger.log(
-      `[PluvioSchedulerService.riscoDaily] regioes=${totalRegioes} atualizadas=${atualizadas}`,
+      `[riscoDaily] concluido — regioes=${totalRegioes} atualizadas=${atualizadas} erros=${erros} puladas=${puladas}`,
     );
-    return { regioes: totalRegioes, atualizadas };
+    return { regioes: totalRegioes, atualizadas, erros, puladas };
   }
 }

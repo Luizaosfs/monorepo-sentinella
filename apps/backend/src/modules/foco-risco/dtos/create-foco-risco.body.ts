@@ -6,7 +6,10 @@ export const createFocoRiscoSchema = z.object({
   regiaoId: z.string().uuid().describe('ID da região').optional(),
   origemTipo: z
     .string()
-    .describe('Origem do foco (levantamento, vistoria, cidadao, drone)'),
+    .refine(v => v !== 'pluvio', {
+      message: "origemTipo 'pluvio' não é permitido. Chuva é risco preventivo territorial — registre via módulo pluvio.",
+    })
+    .describe('Origem do foco (agente, drone, cidadao, vistoria, levantamento)'),
   origemLevantamentoItemId: z
     .string()
     .uuid()

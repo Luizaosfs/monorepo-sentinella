@@ -54,6 +54,7 @@ import { UpdateRunTotal } from './use-cases/update-run-total';
 import { UpsertItem } from './use-cases/upsert-item';
 import { UpsertRisco } from './use-cases/upsert-risco';
 import { RiscoByCliente } from './use-cases/risco-by-cliente';
+import { GetStormForecast } from './use-cases/get-storm-forecast';
 import {
   PluvioItemViewModel,
   PluvioRiscoViewModel,
@@ -82,6 +83,7 @@ export class PluvioController {
     private bulkInsertRiscoUC: BulkInsertRisco,
     private gerarSlasRunUC: GerarSlasRun,
     private riscoByClienteUC: RiscoByCliente,
+    private getStormForecastUC: GetStormForecast,
     @Inject(REQUEST) private req: Request,
   ) {}
 
@@ -180,6 +182,14 @@ export class PluvioController {
   }
 
   // ── Risco ─────────────────────────────────────────────────────────────────
+
+  @Get('storm-forecast')
+  @Roles('admin', 'supervisor', 'agente')
+  @ApiOperation({ summary: 'Previsão de tempestades por região do cliente (próximos 4 dias)' })
+  async stormForecast() {
+    const clienteId = requireTenantId(getAccessScope(this.req));
+    return this.getStormForecastUC.execute(clienteId);
+  }
 
   @Get('risco/by-cliente')
   @Roles('admin', 'supervisor', 'agente')

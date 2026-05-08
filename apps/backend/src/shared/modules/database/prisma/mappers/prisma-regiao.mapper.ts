@@ -50,6 +50,8 @@ export class PrismaRegiaoMapper {
           ? Prisma.JsonNull
           : (entity.geojson as Prisma.InputJsonValue),
       ativo: entity.ativo,
+      latitude: entity.latitude ?? null,
+      longitude: entity.longitude ?? null,
       updated_at: new Date(),
     };
   }

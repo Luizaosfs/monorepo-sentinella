@@ -24,7 +24,7 @@ function severityIcon(sev: string) {
 
 export function StormAlertWidget({ clienteId }: { clienteId: string }) {
   const [expanded, setExpanded] = useState(false);
-  const { data: alerts = [], isLoading: loading } = useStormAlerts(clienteId);
+  const { data: alerts = [], isLoading: loading, isError } = useStormAlerts(clienteId);
 
   const criticalCount = alerts.filter((a) => a.severity === 'critico').length;
   const highCount = alerts.filter((a) => a.severity === 'alto').length;
@@ -59,6 +59,11 @@ export function StormAlertWidget({ clienteId }: { clienteId: string }) {
         {loading ? (
           <div className="flex justify-center py-12">
             <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+          </div>
+        ) : isError ? (
+          <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+            <CloudLightning className="w-8 h-8 opacity-30 mb-2" />
+            <p className="text-sm">Dados climáticos temporariamente indisponíveis</p>
           </div>
         ) : alerts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">

@@ -208,7 +208,8 @@ const App = () => (
               }
             >
               <Route path="/dashboard" element={<QueryRedirect />} />
-              <Route path="/levantamentos" element={<AdminOrSupervisorGuard><Levantamentos /></AdminOrSupervisorGuard>} />
+              <Route path="/gestor/levantamentos" element={<AdminOrSupervisorGuard><Levantamentos /></AdminOrSupervisorGuard>} />
+              <Route path="/levantamentos" element={<Navigate to="/gestor/levantamentos" replace />} />
               {/* Agente — rotas canônicas /agente/* */}
               <Route path="/agente/imoveis" element={<AgenteGuard><AgenteListaImoveis /></AgenteGuard>} />
               <Route path="/agente/levantamentos" element={<AgenteGuard><AgenteLevantamentos /></AgenteGuard>} />

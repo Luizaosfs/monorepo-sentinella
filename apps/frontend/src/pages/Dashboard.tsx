@@ -373,7 +373,7 @@ const Dashboard = () => {
               },
             ].map((card, index) => {
               const onClickMap: Record<string, () => void> = {
-                'Levantamentos':       () => navigate('/levantamentos'),
+                'Levantamentos':       () => navigate('/gestor/levantamentos'),
                 'Itens Identificados': () => navigate('/mapa'),
                 'Alto Risco':          () => navigate('/mapa?risco=alto,critico'),
                 'Pendentes':           () => navigate('/mapa?atendimento=pendente'),
@@ -515,7 +515,7 @@ const Dashboard = () => {
                   <p className="text-xs text-muted-foreground mt-1">Histórico de inspeções e envios</p>
                 </div>
                 <button
-                  onClick={() => navigate('/levantamentos')}
+                  onClick={() => navigate('/gestor/levantamentos')}
                   className="h-8 px-3 rounded-lg border border-border/60 text-[11px] font-bold text-foreground hover:bg-muted/40 transition-colors shadow-sm"
                 >
                   Ver todos
@@ -577,7 +577,7 @@ const Dashboard = () => {
                 {levantamentos.length > 5 && (
                   <div className="p-4 border-t border-border/40 bg-muted/10 text-center">
                     <button
-                      onClick={() => navigate('/levantamentos')}
+                      onClick={() => navigate('/gestor/levantamentos')}
                       className="text-xs font-bold text-primary hover:underline transition-all"
                     >
                       Ver histórico completo

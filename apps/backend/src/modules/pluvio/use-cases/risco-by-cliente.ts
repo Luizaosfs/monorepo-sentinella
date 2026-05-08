@@ -13,11 +13,11 @@ export class RiscoByCliente {
         r.nome         AS regiao_nome,
         pr.nivel_risco,
         pr.chuva_24h,
-        pr.run_id,
+        pr.dt_ref,
         pr.updated_at
       FROM regioes r
       LEFT JOIN LATERAL (
-        SELECT nivel_risco, chuva_24h, run_id, updated_at
+        SELECT nivel_risco, chuva_24h, dt_ref, updated_at
         FROM pluvio_risco
         WHERE regiao_id = r.id
         ORDER BY updated_at DESC
