@@ -354,4 +354,5 @@ export function ModalDesenharQuarteirao({ open, regioes, regiaoIdInicial, onClos
         </DialogFooter>
       </DialogContent>
     </Dialog>
- 
+  );
+}
