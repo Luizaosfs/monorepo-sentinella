@@ -1,20 +1,22 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/services/api';
 import { STALE } from '@/lib/queryConfig';
-import type { UsuarioComPapel } from '@/services/api';
+
+export type AgenteSimples = { id: string; nome: string; email?: string; ativo?: boolean };
 
 /**
- * Lista agentes de um cliente para seleção de responsável.
+ * Agentes de campo de um cliente.
+ * Usa filtro server-side (papel=agente) — sem risco cross-tenant.
+ * Nunca chama a API sem clienteId.
  */
-export function useAgentes(
-  clienteId: string | null | undefined,
-): { data: UsuarioComPapel[]; isLoading: boolean } {
-  const { data, isLoading } = useQuery({
+export function useAgentes(clienteId: string | null | undefined) {
+  return useQuery<AgenteSimples[]>({
     queryKey: ['agentes', clienteId],
-    queryFn: () => api.usuarios.listAgentes(clienteId!),
+    queryFn: async () => {
+      const raw = await api.usuarios.listAgentes(clienteId!);
+      return (raw as AgenteSimples[]).filter(Boolean);
+    },
     enabled: !!clienteId,
-    staleTime: STALE.LONG,
+    staleTime: STALE.STATIC,
   });
-
-  return { data: data ?? [], isLoading };
 }

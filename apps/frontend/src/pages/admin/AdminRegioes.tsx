@@ -151,7 +151,7 @@ const AdminRegioes = () => {
       regiao: r.regiao,
       latitude: r.latitude?.toString() ?? '',
       longitude: r.longitude?.toString() ?? '',
-      area: r.area ?? null,
+      area: r.geojson ?? r.area ?? null,
     });
     setShowForm(true);
   };

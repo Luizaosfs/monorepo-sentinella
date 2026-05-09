@@ -22,7 +22,7 @@ describe('CopiarDistribuicao', () => {
       ],
     }).compile();
 
-    useCase = module.get<CopiarDistribuicao>(CopiarDistribuicao);
+    useCase = await module.resolve<CopiarDistribuicao>(CopiarDistribuicao);
   });
 
   it('deve copiar distribuições de cicloOrigem para cicloDestino', async () => {
@@ -63,7 +63,7 @@ describe('CopiarDistribuicao', () => {
         { provide: 'REQUEST', useValue: mockRequest({ tenantId: '' }) },
       ],
     }).compile();
-    const uc = module.get<CopiarDistribuicao>(CopiarDistribuicao);
+    const uc = await module.resolve<CopiarDistribuicao>(CopiarDistribuicao);
 
     await expectHttpException(
       () =>

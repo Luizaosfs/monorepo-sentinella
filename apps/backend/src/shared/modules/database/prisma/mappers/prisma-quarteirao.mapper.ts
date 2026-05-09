@@ -1,3 +1,5 @@
+import type { JsonObject } from '@shared/types/json';
+import { Prisma } from '@prisma/client';
 import {
   DistribuicaoQuarteirao,
   Quarteirao,
@@ -10,6 +12,9 @@ type RawQuarteirao = {
   codigo: string;
   bairro: string | null;
   ativo: boolean;
+  geojson: Prisma.JsonValue | null;
+  latitude: number | null;
+  longitude: number | null;
   created_at: Date;
   updated_at: Date;
   deleted_at: Date | null;
@@ -36,6 +41,9 @@ export class PrismaQuarteiraoMapper {
         codigo: raw.codigo,
         bairro: raw.bairro || undefined,
         ativo: raw.ativo,
+        geojson: raw.geojson ? (raw.geojson as JsonObject) : undefined,
+        latitude: raw.latitude ?? null,
+        longitude: raw.longitude ?? null,
       },
       {
         id: raw.id,

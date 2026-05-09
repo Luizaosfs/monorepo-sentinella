@@ -23,4 +23,16 @@ export const QuarteiraoException = createExceptionFactory({
     type: 'forbidden',
     message: 'Acesso negado a este recurso',
   },
+  invalidGeom: {
+    type: 'badRequest',
+    message: 'Polígono GeoJSON inválido (ST_IsValid falhou)',
+  },
+  geomOutsideRegiao: {
+    type: 'badRequest',
+    message: 'Polígono do quarteirão está fora dos limites da região',
+  },
+  geomOverlap: {
+    type: 'conflict',
+    message: 'Polígono se sobrepõe a um quarteirão já cadastrado neste cliente',
+  },
 });

@@ -26,7 +26,7 @@ describe('DeleteQuarteirao', () => {
       ],
     }).compile();
 
-    useCase = module.get<DeleteQuarteirao>(DeleteQuarteirao);
+    useCase = await module.resolve<DeleteQuarteirao>(DeleteQuarteirao);
   });
 
   it('deve soft delete quarteirão com userId', async () => {
@@ -68,7 +68,7 @@ describe('DeleteQuarteirao', () => {
         },
       ],
     }).compile();
-    const uc = module.get<DeleteQuarteirao>(DeleteQuarteirao);
+    const uc = await module.resolve<DeleteQuarteirao>(DeleteQuarteirao);
 
     const q = new QuarteiraoBuilder().withClienteId('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa').build();
     readRepo.findQuarteiraoById.mockResolvedValue(q);

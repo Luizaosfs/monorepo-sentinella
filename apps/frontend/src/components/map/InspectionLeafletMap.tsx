@@ -431,9 +431,9 @@ const InspectionLeafletMap = ({ items, center, mode = 'cluster', clienteArea, he
     const defaultColor = 'hsl(210, 15%, 60%)';
 
     regioes.forEach((r, idx) => {
-      if (!r.area) return;
+      if (!r.geojson && !r.area) return;
       try {
-        const geojson = r.area as PlanejamentoGeoJSON;
+        const geojson = (r.geojson ?? r.area) as PlanejamentoGeoJSON;
         if (geojson.type === 'Polygon' && geojson.coordinates?.length > 0) {
           const risco = pluvioRiscoMap[r.id];
           const classificacao = risco?.classificacao_final ?? 'Sem dados';

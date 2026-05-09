@@ -1,6 +1,7 @@
 import { DistribuicaoQuarteirao, Quarteirao } from '@modules/quarteirao/entities/quarteirao';
 import { QuarteiraoWriteRepository } from '@modules/quarteirao/repositories/quarteirao-write.repository';
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 
 import { PrismaRepository } from '@/decorators/prisma-repository.decorator';
 
@@ -112,5 +113,48 @@ export class PrismaQuarteiraoWriteRepository implements QuarteiraoWriteRepositor
         data: { cliente_id: clienteId, codigo, bairro: bairro ?? null, ativo: true },
       });
     }
+  }
+
+  async saveQuarteirao(entity: Quarteirao): Promise<Quarteirao> {
+    const geojsonIsNull = entity.geojson == null;
+    await this.prisma.client.quarteiroes.updateMany({
+      where: { id: entity.id, cliente_id: entity.clienteId, deleted_at: null },
+      data: {
+        codigo:     entity.codigo,
+        regiao_id:  entity.regiaoId ?? null,
+        ativo:      entity.ativo,
+        geojson:    geojsonIsNull
+          ? Prisma.JsonNull
+          : (entity.geojson as Prisma.InputJsonValue),
+        updated_at: new Date(),
+      },
+    });
+    if (geojsonIsNull) {
+      // Limpa campos PostGIS quando geojson é removido
+      await this.prisma.client.$executeRaw(Prisma.sql`
+        UPDATE quarteiroes
+           SET area = NULL, latitude = NULL, longitude = NULL
+         WHERE id = ${entity.id!}::uuid
+      `);
+    } else {
+      await this.syncArea(entity.id!);
+    }
+    const fresh = await this.prisma.client.quarteiroes.findUnique({
+      where: { id: entity.id! },
+    });
+    return PrismaQuarteiraoMapper.quarteiraoToDomain(fresh as any);
+  }
+
+  private async syncArea(id: string): Promise<void> {
+    await this.prisma.client.$executeRaw(Prisma.sql`
+      UPDATE quarteiroes
+         SET area      = ST_GeomFromGeoJSON(geojson::text),
+             latitude  = ST_Y(ST_Centroid(ST_GeomFromGeoJSON(geojson::text))),
+             longitude = ST_X(ST_Centroid(ST_GeomFromGeoJSON(geojson::text)))
+       WHERE id = ${id}::uuid
+         AND geojson IS NOT NULL
+         AND jsonb_typeof(geojson) = 'object'
+         AND (geojson->>'type') = 'Polygon'
+    `);
   }
 }

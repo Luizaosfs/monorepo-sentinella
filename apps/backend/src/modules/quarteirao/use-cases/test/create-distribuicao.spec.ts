@@ -24,7 +24,7 @@ describe('CreateDistribuicao', () => {
       ],
     }).compile();
 
-    useCase = module.get<CreateDistribuicao>(CreateDistribuicao);
+    useCase = await module.resolve<CreateDistribuicao>(CreateDistribuicao);
   });
 
   it('deve criar distribuição com dados do input', async () => {
@@ -82,7 +82,7 @@ describe('CreateDistribuicao', () => {
         },
       ],
     }).compile();
-    const uc = module.get<CreateDistribuicao>(CreateDistribuicao);
+    const uc = await module.resolve<CreateDistribuicao>(CreateDistribuicao);
 
     await expectHttpException(
       () =>
@@ -105,7 +105,7 @@ describe('CreateDistribuicao', () => {
         { provide: 'REQUEST', useValue: mockRequest({ tenantId: '' }) },
       ],
     }).compile();
-    const uc = module.get<CreateDistribuicao>(CreateDistribuicao);
+    const uc = await module.resolve<CreateDistribuicao>(CreateDistribuicao);
 
     await expectHttpException(
       () =>

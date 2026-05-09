@@ -16,6 +16,10 @@ import { ListDistribuicoesByAgente } from './use-cases/list-distribuicoes-by-age
 import { UpsertDistribuicoes } from './use-cases/upsert-distribuicoes';
 import { DeletarDistribuicoes } from './use-cases/deletar-distribuicoes';
 import { BulkInsertQuarteiroes } from './use-cases/bulk-insert-quarteiroes';
+import { GerarLoteQuarteiroes } from './use-cases/gerar-lote-quarteiroes';
+import { SaveQuarteirao } from './use-cases/save-quarteirao';
+import { DesenharQuarteirao } from './use-cases/desenhar-quarteirao';
+import { ImportarGeoJSONQuarteiroes } from './use-cases/importar-geojson-quarteiroes';
 
 @Module({
   providers: [
@@ -31,6 +35,10 @@ import { BulkInsertQuarteiroes } from './use-cases/bulk-insert-quarteiroes';
     UpsertDistribuicoes,
     DeletarDistribuicoes,
     BulkInsertQuarteiroes,
+    GerarLoteQuarteiroes,
+    SaveQuarteirao,
+    DesenharQuarteirao,
+    ImportarGeoJSONQuarteiroes,
     JwtService,
     PrismaService,
   ],

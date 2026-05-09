@@ -1,4 +1,5 @@
 import { BaseEntity, BaseProps } from 'src/shared/entities/base';
+import type { JsonObject } from '@shared/types/json';
 
 interface QuarteiraoProps {
   clienteId: string;
@@ -6,6 +7,9 @@ interface QuarteiraoProps {
   codigo: string;
   bairro?: string;
   ativo: boolean;
+  geojson?: JsonObject;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 export class Quarteirao extends BaseEntity<QuarteiraoProps> {
@@ -46,6 +50,27 @@ export class Quarteirao extends BaseEntity<QuarteiraoProps> {
   }
   set ativo(v: boolean) {
     this.props.ativo = v;
+  }
+
+  get geojson() {
+    return this.props.geojson;
+  }
+  set geojson(v: JsonObject | undefined) {
+    this.props.geojson = v;
+  }
+
+  get latitude() {
+    return this.props.latitude;
+  }
+  set latitude(v: number | null | undefined) {
+    this.props.latitude = v;
+  }
+
+  get longitude() {
+    return this.props.longitude;
+  }
+  set longitude(v: number | null | undefined) {
+    this.props.longitude = v;
   }
 }
 

@@ -12,8 +12,40 @@ export const quarteiroes = {
     http.post('/quarteiroes', payload),
   remove: (id: string): Promise<void> =>
     http.delete(`/quarteiroes/${id}`),
-  bulkInsert: (rows: { codigo: string; bairro?: string }[]): Promise<{ inserted: number; updated: number }> =>
+  save: (
+    id: string,
+    payload: { codigo?: string; regiaoId?: string | null; ativo?: boolean; geojson?: Record<string, unknown> | null },
+  ): Promise<Record<string, unknown>> =>
+    http.patch(`/quarteiroes/${id}`, payload),
+  bulkInsert: (rows: { codigo: string; bairro?: string; regiaoId?: string }[]): Promise<{ inserted: number; updated: number }> =>
     http.post('/quarteiroes/bulk-insert', { rows }),
+  gerarLote: (payload: {
+    regiaoId: string;
+    prefixo: string;
+    numeroInicial: number;
+    numeroFinal: number;
+  }): Promise<{
+    totalSolicitado: number;
+    totalCriado: number;
+    totalIgnorado: number;
+    criados: string[];
+    ignorados: Array<{ codigo: string; motivo: string }>;
+  }> => http.post('/quarteiroes/gerar-lote', payload),
+  desenharQuarteirao: (payload: {
+    regiaoId: string;
+    codigo: string;
+    geojson: Record<string, unknown>;
+  }): Promise<Record<string, unknown>> =>
+    http.post('/quarteiroes/desenhar', payload),
+  atualizarGeometria: (
+    id: string,
+    geojson: Record<string, unknown> | null,
+  ): Promise<Record<string, unknown>> =>
+    http.put(`/quarteiroes/${id}/geometria`, { geojson }),
+  importarGeoJSON: (payload: {
+    features: Array<{ codigo: string; geojson: Record<string, unknown>; regiaoId?: string; bairro?: string }>;
+  }): Promise<{ ok: number; criados: string[]; erros: Array<{ codigo: string; motivo: string }> }> =>
+    http.post('/quarteiroes/importar-geojson', payload),
 };
 
 export const distribuicaoQuarteirao = {

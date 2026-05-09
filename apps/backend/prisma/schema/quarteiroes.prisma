@@ -5,6 +5,10 @@ model quarteiroes {
   codigo     String
   bairro     String?
   ativo      Boolean   @default(true)
+  geojson    Json?
+  area       Unsupported("geometry(Polygon,4326)")?
+  latitude   Float?
+  longitude  Float?
   created_at DateTime  @default(now()) @db.Timestamptz
   updated_at DateTime  @default(now()) @db.Timestamptz
   deleted_at DateTime? @db.Timestamptz

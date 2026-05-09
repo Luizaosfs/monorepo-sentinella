@@ -830,7 +830,9 @@ export interface Regiao {
   regiao: string;
   latitude: number | null;
   longitude: number | null;
-  area: Record<string, unknown> | null;
+  geojson: Record<string, unknown> | null;
+  /** @deprecated use geojson — legacy Supabase column name */
+  area?: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
   // joined
@@ -1661,7 +1663,11 @@ export interface Quarteirao {
   codigo: string;
   bairro: string | null;
   ativo: boolean;
+  geojson: Record<string, unknown> | null;
+  latitude: number | null;
+  longitude: number | null;
   created_at: string;
+  updated_at: string;
 }
 
 export interface DistribuicaoQuarteirao {

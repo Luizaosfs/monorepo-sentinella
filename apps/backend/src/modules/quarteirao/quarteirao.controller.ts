@@ -5,7 +5,9 @@ import {
   Get,
   Inject,
   Param,
+  Patch,
   Post,
+  Put,
   Query,
   UseInterceptors,
   UsePipes,
@@ -68,6 +70,30 @@ import {
   BulkInsertQuarteiraoBody,
 } from './dtos/bulk-insert-quarteiroes.body';
 import { BulkInsertQuarteiroes } from './use-cases/bulk-insert-quarteiroes';
+import {
+  GerarLoteQuarteiraoBody,
+  gerarLoteQuarteiraoSchema,
+} from './dtos/gerar-lote-quarteiroes.body';
+import { GerarLoteQuarteiroes } from './use-cases/gerar-lote-quarteiroes';
+import {
+  SaveQuarteiraoBody,
+  saveQuarteiraoSchema,
+} from './dtos/save-quarteirao.body';
+import { SaveQuarteirao } from './use-cases/save-quarteirao';
+import {
+  DesenharQuarteiraoBody,
+  desenharQuarteiraoSchema,
+} from './dtos/desenhar-quarteirao.body';
+import { DesenharQuarteirao } from './use-cases/desenhar-quarteirao';
+import {
+  GeometriaQuarteiraoBody,
+  geometriaQuarteiraoSchema,
+} from './dtos/geometria-quarteirao.body';
+import {
+  ImportarGeoJSONBody,
+  importarGeoJSONSchema,
+} from './dtos/importar-geojson-quarteiroes.body';
+import { ImportarGeoJSONQuarteiroes } from './use-cases/importar-geojson-quarteiroes';
 
 @UseInterceptors(PrismaInterceptor)
 @UsePipes(MyZodValidationPipe)
@@ -87,6 +113,10 @@ export class QuarteiraoController {
     private upsertDistribuicoesUc: UpsertDistribuicoes,
     private deletarDistribuicoesUc: DeletarDistribuicoes,
     private bulkInsertQuarteiraoesUc: BulkInsertQuarteiroes,
+    private gerarLoteQuarteiraoesUc: GerarLoteQuarteiroes,
+    private saveQuarteiraoUc: SaveQuarteirao,
+    private desenharQuarteiraoUc: DesenharQuarteirao,
+    private importarGeoJSONUc: ImportarGeoJSONQuarteiroes,
     @Inject(REQUEST) private req: Request,
   ) {}
 
@@ -172,6 +202,50 @@ export class QuarteiraoController {
     return this.bulkInsertQuarteiraoesUc.execute(clienteId, body);
   }
 
+  @Post('desenhar')
+  @Roles('admin', 'supervisor')
+  @ApiOperation({
+    summary: 'Criar quarteirão desenhando polígono no mapa — valida containment na região e sobreposições via PostGIS',
+  })
+  async desenhar(@Body() body: DesenharQuarteiraoBody) {
+    const clienteId = requireTenantId(getAccessScope(this.req));
+    const parsed = desenharQuarteiraoSchema.parse(body);
+    return this.desenharQuarteiraoUc.execute(clienteId, parsed);
+  }
+
+  @Put(':id/geometria')
+  @Roles('admin', 'supervisor')
+  @ApiOperation({
+    summary: 'Atualizar (ou remover) geometria de um quarteirão existente — null remove o polígono',
+  })
+  async updateGeometria(@Param('id') id: string, @Body() body: GeometriaQuarteiraoBody) {
+    const parsed = geometriaQuarteiraoSchema.parse(body);
+    const { quarteirao } = await this.saveQuarteiraoUc.execute(id, {
+      geojson: parsed.geojson ?? undefined,
+    });
+    return QuarteiraoViewModel.toHttp(quarteirao);
+  }
+
+  @Post('importar-geojson')
+  @Roles('admin', 'supervisor')
+  @ApiOperation({
+    summary: 'Importar N quarteirões de um GeoJSON FeatureCollection — valida cada polígono via PostGIS (containment + sobreposição)',
+  })
+  async importarGeoJSON(@Body() body: ImportarGeoJSONBody) {
+    const clienteId = requireTenantId(getAccessScope(this.req));
+    const parsed = importarGeoJSONSchema.parse(body);
+    return this.importarGeoJSONUc.execute(clienteId, parsed);
+  }
+
+  @Post('gerar-lote')
+  @Roles('admin', 'supervisor')
+  @ApiOperation({ summary: 'Gerar quarteirões em lote por prefixo e intervalo numérico' })
+  async gerarLote(@Body() body: GerarLoteQuarteiraoBody) {
+    const clienteId = requireTenantId(getAccessScope(this.req));
+    const parsed = gerarLoteQuarteiraoSchema.parse(body);
+    return this.gerarLoteQuarteiraoesUc.execute(clienteId, parsed);
+  }
+
   @Get()
   @Roles('admin', 'supervisor', 'agente')
   @ApiOperation({ summary: 'Listar quarteirões' })
@@ -187,6 +261,15 @@ export class QuarteiraoController {
   async create(@Body() body: CreateQuarteiraoBody) {
     const parsed = createQuarteiraoSchema.parse(body);
     const { quarteirao } = await this.createQuarteirao.execute(parsed);
+    return QuarteiraoViewModel.toHttp(quarteirao);
+  }
+
+  @Patch(':id')
+  @Roles('admin', 'supervisor')
+  @ApiOperation({ summary: 'Atualizar quarteirão (patch parcial — geojson gera centroide automaticamente)' })
+  async save(@Param('id') id: string, @Body() body: SaveQuarteiraoBody) {
+    const parsed = saveQuarteiraoSchema.parse(body);
+    const { quarteirao } = await this.saveQuarteiraoUc.execute(id, parsed);
     return QuarteiraoViewModel.toHttp(quarteirao);
   }
 

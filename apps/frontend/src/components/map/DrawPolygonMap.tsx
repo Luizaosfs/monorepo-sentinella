@@ -62,6 +62,8 @@ interface DrawPolygonMapProps {
   onMapClick?: (lat: number, lng: number) => void;
   /** Map center [lat, lng] */
   center?: [number, number];
+  /** Optional background GeoJSON layer rendered as non-editable boundary (e.g. region polygon) */
+  backgroundGeoJSON?: Record<string, unknown> | null;
   className?: string;
   mapClassName?: string;
   hideLegend?: boolean;
@@ -69,11 +71,12 @@ interface DrawPolygonMapProps {
 
 // Removed legacy tileUrlByTheme — now using tileLayerControl
 
-const DrawPolygonMap = ({ value, onChange, onAreaChange, onMapClick, center = [-15.78, -47.93], className, mapClassName, hideLegend }: DrawPolygonMapProps) => {
+const DrawPolygonMap = ({ value, onChange, onAreaChange, onMapClick, center = [-15.78, -47.93], backgroundGeoJSON, className, mapClassName, hideLegend }: DrawPolygonMapProps) => {
   const { theme } = useTheme();
   const mapNodeRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const tileControlRef = useRef<{ setTileType: (t: TileLayerType) => void } | null>(null);
+  const backgroundGroupRef = useRef<L.FeatureGroup>(new L.FeatureGroup());
   const drawnLayerRef = useRef<L.FeatureGroup>(new L.FeatureGroup());
   const drawControlRef = useRef<L.Control.Draw | null>(null);
   const popupRef = useRef<L.Popup | null>(null);
@@ -125,6 +128,7 @@ const DrawPolygonMap = ({ value, onChange, onAreaChange, onMapClick, center = [-
     const initialTile: TileLayerType = theme === 'dark' ? 'dark' : 'street';
     tileControlRef.current = addTileLayerControl(map, initialTile, 'topleft');
 
+    backgroundGroupRef.current.addTo(map);  // background boundary (z-order: below drawn polygon)
     drawnLayerRef.current.addTo(map);
 
     // Draw control - polygon only
@@ -235,13 +239,41 @@ const DrawPolygonMap = ({ value, onChange, onAreaChange, onMapClick, center = [-
     }
   }, [value]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Recenter when parent changes center (e.g., cliente loaded/changed) and no polygon is drawn
+  // Background GeoJSON layer (e.g. region boundary) — non-editable, rendered below drawn polygon
+  useEffect(() => {
+    backgroundGroupRef.current.clearLayers();
+    if (!backgroundGeoJSON) return;
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const layer = L.geoJSON(backgroundGeoJSON as any, {
+        style: {
+          color: '#22c55e',
+          weight: 2.5,
+          fillOpacity: 0.05,
+          dashArray: '8,4',
+        },
+      });
+      backgroundGroupRef.current.addLayer(layer);
+      if (mapRef.current) {
+        const bounds = layer.getBounds();
+        if (bounds.isValid() && drawnLayerRef.current.getLayers().length === 0) {
+          mapRef.current.fitBounds(bounds, { padding: [40, 40] });
+        }
+      }
+    } catch (e) {
+      console.error('DrawPolygonMap: erro ao renderizar backgroundGeoJSON', e);
+    }
+  }, [backgroundGeoJSON]);
+
+  // Recenter when parent changes center (e.g., cliente loaded/changed) and no polygon is drawn.
+  // Skips when backgroundGeoJSON is set — that effect calls fitBounds() and takes priority.
   useEffect(() => {
     if (!mapRef.current || !center) return;
+    if (backgroundGeoJSON) return;
     const hasPolygon = drawnLayerRef.current.getLayers().length > 0;
     if (hasPolygon) return;
     mapRef.current.setView(center, mapRef.current.getZoom(), { animate: false });
-  }, [center]);
+  }, [center, backgroundGeoJSON]);
 
   // Theme swap — user controls tiles via the switcher now
 

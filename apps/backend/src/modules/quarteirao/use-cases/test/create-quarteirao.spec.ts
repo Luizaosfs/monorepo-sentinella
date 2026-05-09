@@ -24,7 +24,7 @@ describe('CreateQuarteirao', () => {
       ],
     }).compile();
 
-    useCase = module.get<CreateQuarteirao>(CreateQuarteirao);
+    useCase = await module.resolve<CreateQuarteirao>(CreateQuarteirao);
   });
 
   it('deve criar quarteirão com ativo=true padrão usando clienteId do tenant (MT-02)', async () => {
@@ -75,7 +75,7 @@ describe('CreateQuarteirao', () => {
         },
       ],
     }).compile();
-    const uc = module.get<CreateQuarteirao>(CreateQuarteirao);
+    const uc = await module.resolve<CreateQuarteirao>(CreateQuarteirao);
 
     await expectHttpException(
       () =>
@@ -99,7 +99,7 @@ describe('CreateQuarteirao', () => {
         },
       ],
     }).compile();
-    const uc = module.get<CreateQuarteirao>(CreateQuarteirao);
+    const uc = await module.resolve<CreateQuarteirao>(CreateQuarteirao);
 
     await expectHttpException(() => uc.execute({ codigo: 'Q' }), QuarteiraoException.badRequest());
   });

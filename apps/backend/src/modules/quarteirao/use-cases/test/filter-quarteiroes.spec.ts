@@ -23,7 +23,7 @@ describe('FilterQuarteiroes', () => {
       ],
     }).compile();
 
-    useCase = module.get<FilterQuarteiroes>(FilterQuarteiroes);
+    useCase = await module.resolve<FilterQuarteiroes>(FilterQuarteiroes);
   });
 
   it('deve usar clienteId do tenant (MT-02) e delegar ao findAllQuarteiroes', async () => {
@@ -57,7 +57,7 @@ describe('FilterQuarteiroes', () => {
         },
       ],
     }).compile();
-    const uc = module.get<FilterQuarteiroes>(FilterQuarteiroes);
+    const uc = await module.resolve<FilterQuarteiroes>(FilterQuarteiroes);
 
     await expectHttpException(
       () =>

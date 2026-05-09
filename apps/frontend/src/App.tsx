@@ -45,6 +45,7 @@ const AdminPlanejamentos = safeLazy(() => import("@/pages/admin/AdminPlanejament
 const AdminDrones = safeLazy(() => import("@/pages/admin/AdminDrones"));
 const AdminRegioes = safeLazy(() => import("@/pages/admin/AdminRegioes"));
 const AdminQuarteiroes = safeLazy(() => import("@/pages/admin/AdminQuarteiroes"));
+const GestaoQuadras = safeLazy(() => import("@/pages/gestor/GestaoQuadras"));
 const AdminRiskPolicy = safeLazy(() => import("@/pages/admin/AdminRiskPolicy"));
 const AdminVoos = safeLazy(() => import("@/pages/admin/AdminVoos"));
 const AdminPluvioRisco = safeLazy(() => import("@/pages/admin/AdminPluvioRisco"));
@@ -311,6 +312,7 @@ const App = () => (
               <Route path="/gestor/pluvio/alerta-territorial" element={<SupervisorOnlyGuard><GestorPluvioAlertaTerritorial /></SupervisorOnlyGuard>} />
               <Route path="/gestor/regioes"                 element={<AdminOrSupervisorGuard><AdminRegioes /></AdminOrSupervisorGuard>} />
               <Route path="/gestor/quarteiroes"             element={<AdminOrSupervisorGuard><AdminQuarteiroes /></AdminOrSupervisorGuard>} />
+              <Route path="/gestor/quadras"                 element={<AdminOrSupervisorGuard><GestaoQuadras /></AdminOrSupervisorGuard>} />
               <Route path="/gestor/unidades-saude"          element={<AdminOrSupervisorGuard><AdminUnidadesSaude /></AdminOrSupervisorGuard>} />
               <Route path="/gestor/imoveis"                 element={<AdminOrSupervisorGuard><AdminImoveis /></AdminOrSupervisorGuard>} />
               <Route path="/gestor/imoveis-problematicos"   element={<AdminOrSupervisorGuard><AdminImoveisProblematicos /></AdminOrSupervisorGuard>} />

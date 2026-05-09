@@ -1,0 +1,103 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "_comentario": "Caso 1 — bairro informado por nome (mais comum em arquivos municipais)",
+      "type": "Feature",
+      "properties": {
+        "codigo": "A01",
+        "bairro": "Centro"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-47.9350, -15.7800],
+            [-47.9340, -15.7800],
+            [-47.9340, -15.7810],
+            [-47.9350, -15.7810],
+            [-47.9350, -15.7800]
+          ]
+        ]
+      }
+    },
+    {
+      "_comentario": "Caso 2 — variações de nome aceitas pelo parser (regiao, neighborhood, district)",
+      "type": "Feature",
+      "properties": {
+        "codigo": "A02",
+        "regiao": "Centro"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-47.9340, -15.7800],
+            [-47.9330, -15.7800],
+            [-47.9330, -15.7810],
+            [-47.9340, -15.7810],
+            [-47.9340, -15.7800]
+          ]
+        ]
+      }
+    },
+    {
+      "_comentario": "Caso 3 — sem bairro nas propriedades; PostGIS detecta automaticamente via ST_Contains",
+      "type": "Feature",
+      "properties": {
+        "codigo": "A03"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-47.9330, -15.7800],
+            [-47.9320, -15.7800],
+            [-47.9320, -15.7810],
+            [-47.9330, -15.7810],
+            [-47.9330, -15.7800]
+          ]
+        ]
+      }
+    },
+    {
+      "_comentario": "Caso 4 — código gerado por outros sistemas (aliases aceitos: code, id, quarteirao)",
+      "type": "Feature",
+      "properties": {
+        "id": "B01",
+        "bairro": "Setor Norte"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-47.9350, -15.7810],
+            [-47.9340, -15.7810],
+            [-47.9340, -15.7820],
+            [-47.9350, -15.7820],
+            [-47.9350, -15.7810]
+          ]
+        ]
+      }
+    },
+    {
+      "_comentario": "Caso 5 — sem código nas propriedades; o modal gera automaticamente (Q01, Q02...)",
+      "type": "Feature",
+      "properties": {
+        "bairro": "Setor Norte"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-47.9340, -15.7810],
+            [-47.9330, -15.7810],
+            [-47.9330, -15.7820],
+            [-47.9340, -15.7820],
+            [-47.9340, -15.7810]
+          ]
+        ]
+      }
+    }
+  ]
+}

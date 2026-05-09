@@ -26,7 +26,7 @@ describe('DeleteDistribuicao', () => {
       ],
     }).compile();
 
-    useCase = module.get<DeleteDistribuicao>(DeleteDistribuicao);
+    useCase = await module.resolve<DeleteDistribuicao>(DeleteDistribuicao);
   });
 
   it('deve deletar distribuição existente', async () => {
@@ -68,7 +68,7 @@ describe('DeleteDistribuicao', () => {
         },
       ],
     }).compile();
-    const uc = module.get<DeleteDistribuicao>(DeleteDistribuicao);
+    const uc = await module.resolve<DeleteDistribuicao>(DeleteDistribuicao);
 
     const row = new DistribuicaoBuilder().withClienteId('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa').build();
     readRepo.findDistribuicaoById.mockResolvedValue(row);
