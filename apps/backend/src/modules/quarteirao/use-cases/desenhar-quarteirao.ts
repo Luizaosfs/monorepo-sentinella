@@ -69,6 +69,7 @@ export class DesenharQuarteirao {
           codigo:     input.codigo,
           geojson:    input.geojson as unknown as Prisma.InputJsonValue,
           ativo:      true,
+          ...(input.areaM2 != null ? { area_m2: input.areaM2 } : {}),
         },
       });
       // Sincroniza area (PostGIS) + centróide na mesma transação

@@ -111,7 +111,7 @@ export function useImportarGeoJSONQuarteiroes() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (payload: {
-      features: Array<{ codigo: string; geojson: Record<string, unknown>; regiaoId?: string; bairro?: string }>;
+      features: Array<{ codigo: string; geojson: Record<string, unknown>; regiaoId?: string; bairro?: string; areaM2?: number }>;
     }) => api.quarteiroes.importarGeoJSON(payload),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['quadras'] });

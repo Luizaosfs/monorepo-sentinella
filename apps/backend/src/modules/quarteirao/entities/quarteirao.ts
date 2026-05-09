@@ -10,6 +10,7 @@ interface QuarteiraoProps {
   geojson?: JsonObject;
   latitude?: number | null;
   longitude?: number | null;
+  areaM2?: number | null;
 }
 
 export class Quarteirao extends BaseEntity<QuarteiraoProps> {
@@ -71,6 +72,13 @@ export class Quarteirao extends BaseEntity<QuarteiraoProps> {
   }
   set longitude(v: number | null | undefined) {
     this.props.longitude = v;
+  }
+
+  get areaM2() {
+    return this.props.areaM2;
+  }
+  set areaM2(v: number | null | undefined) {
+    this.props.areaM2 = v;
   }
 }
 

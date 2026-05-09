@@ -15,6 +15,8 @@ const featureSchema = z.object({
   regiaoId: z.string().uuid().optional(),
   /** Nome do bairro — fallback antes da resolução espacial */
   bairro: z.string().optional(),
+  /** Área em m² pré-calculada (ex: via turf.area) — persistida para uso operacional */
+  areaM2: z.number().int().positive().optional(),
 });
 
 export const importarGeoJSONSchema = z.object({

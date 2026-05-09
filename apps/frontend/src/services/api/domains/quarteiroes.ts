@@ -43,7 +43,7 @@ export const quarteiroes = {
   ): Promise<Record<string, unknown>> =>
     http.put(`/quarteiroes/${id}/geometria`, { geojson }),
   importarGeoJSON: (payload: {
-    features: Array<{ codigo: string; geojson: Record<string, unknown>; regiaoId?: string; bairro?: string }>;
+    features: Array<{ codigo: string; geojson: Record<string, unknown>; regiaoId?: string; bairro?: string; areaM2?: number }>;
   }): Promise<{ ok: number; criados: string[]; erros: Array<{ codigo: string; motivo: string }> }> =>
     http.post('/quarteiroes/importar-geojson', payload),
   gerarQuadrasOSM: (payload: {

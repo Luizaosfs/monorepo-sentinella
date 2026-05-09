@@ -1666,6 +1666,7 @@ export interface Quarteirao {
   geojson: Record<string, unknown> | null;
   latitude: number | null;
   longitude: number | null;
+  area_m2: number | null;
   created_at: string;
   updated_at: string;
 }

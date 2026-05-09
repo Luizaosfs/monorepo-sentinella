@@ -22,6 +22,7 @@ export const desenharQuarteiraoSchema = z.object({
   geojson: polygonGeoJSONSchema.describe(
     'Polígono GeoJSON do quarteirão (type: Polygon, coordinates em [lng, lat])',
   ),
+  areaM2: z.number().int().positive().optional(),
 });
 
 export type DesenharQuarteiraoInput = z.infer<typeof desenharQuarteiraoSchema>;

@@ -14,6 +14,7 @@ export class QuarteiraoViewModel {
       geojson: q.geojson ?? null,
       latitude: q.latitude ?? null,
       longitude: q.longitude ?? null,
+      areaM2: q.areaM2 ?? null,
       createdAt: q.createdAt,
       updatedAt: q.updatedAt,
       ...baseAuditToHttp(q),

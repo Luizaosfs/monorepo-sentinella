@@ -23,6 +23,7 @@ import { cn } from '@/lib/utils';
 import {
   useImportarGeoJSONQuarteiroes,
   useGerarQuadrasOSM,
+  useQuadrasList,
   type QuadraCandidataOSM,
 } from '@/hooks/queries/useGestaoQuadras';
 import { useClienteAtivo } from '@/hooks/useClienteAtivo';
@@ -59,7 +60,13 @@ function fmtArea(m2: number): string {
 export function ModalDesenharQuarteirao({ open, regioes, regiaoIdInicial, onClose, onSalvo }: Props) {
   const importar = useImportarGeoJSONQuarteiroes();
   const gerarOSM = useGerarQuadrasOSM();
-  const { clienteAtivo } = useClienteAtivo();
+  const { clienteId, clienteAtivo } = useClienteAtivo();
+  const { data: quadrasExistentes } = useQuadrasList(clienteId);
+
+  const existingCodes = useMemo(
+    () => new Set((quadrasExistentes ?? []).map(q => q.codigo)),
+    [quadrasExistentes],
+  );
 
   type Etapa = 'desenho' | 'preview';
   const [etapa, setEtapa] = useState<Etapa>('desenho');
@@ -71,6 +78,16 @@ export function ModalDesenharQuarteirao({ open, regioes, regiaoIdInicial, onClos
   const [selecionadas, setSelecionadas] = useState<Set<string>>(new Set());
 
   const regiao = useMemo(() => regioes.find((r) => r.id === regiaoId) ?? null, [regioes, regiaoId]);
+
+  // Conjunto dos candidatos cujo código editado atual já existe no sistema
+  const duplicatas = useMemo(
+    () => new Set(
+      candidatos
+        .filter(c => existingCodes.has(codigos[c.codigo] ?? c.codigo))
+        .map(c => c.codigo),
+    ),
+    [candidatos, codigos, existingCodes],
+  );
 
   const clienteCenter = useMemo<[number, number] | null>(() => {
     if (clienteAtivo?.latitude_centro && clienteAtivo?.longitude_centro)
@@ -114,11 +131,14 @@ export function ModalDesenharQuarteirao({ open, regioes, regiaoIdInicial, onClos
           }
           const map: Record<string, string> = {};
           data.candidatos.forEach(c => { map[c.codigo] = c.codigo; });
+          const novas = data.candidatos.filter(c => !existingCodes.has(c.codigo));
+          const jaExistem = data.candidatos.length - novas.length;
           setCandidatos(data.candidatos);
           setCodigos(map);
-          setSelecionadas(new Set(data.candidatos.map(c => c.codigo)));
+          setSelecionadas(new Set(novas.map(c => c.codigo)));
           setEtapa('preview');
-          toast.success(`${data.candidatos.length} quadras geradas (${data.totalViasEncontradas} vias OSM)`);
+          const msg = `${data.candidatos.length} quadras geradas (${data.totalViasEncontradas} vias OSM)`;
+          toast.success(jaExistem > 0 ? `${msg} — ${jaExistem} já existem e foram desmarcadas` : msg);
         },
         onError: (err: unknown) => toast.error((err as { message?: string })?.message ?? 'Erro ao consultar OSM'),
       },
@@ -126,10 +146,13 @@ export function ModalDesenharQuarteirao({ open, regioes, regiaoIdInicial, onClos
   }
 
   function handleSalvar() {
-    const features = candidatos
-      .filter(c => selecionadas.has(c.codigo))
-      .map(c => ({ codigo: codigos[c.codigo] ?? c.codigo, geojson: c.geojson as Record<string, unknown>, regiaoId }));
-    if (features.length === 0) { toast.error('Selecione ao menos uma quadra'); return; }
+    const aptas = candidatos.filter(c => selecionadas.has(c.codigo) && !duplicatas.has(c.codigo));
+    const ignoradas = candidatos.filter(c => selecionadas.has(c.codigo) && duplicatas.has(c.codigo));
+    if (ignoradas.length > 0)
+      toast.warning(`${ignoradas.length} quadra${ignoradas.length !== 1 ? 's' : ''} ignorada${ignoradas.length !== 1 ? 's' : ''} — código já cadastrado`);
+    if (aptas.length === 0) { toast.error('Nenhuma quadra nova para salvar'); return; }
+    const features = aptas
+      .map(c => ({ codigo: codigos[c.codigo] ?? c.codigo, geojson: c.geojson as Record<string, unknown>, regiaoId, areaM2: c.areaM2 }));
 
     importar.mutate({ features }, {
       onSuccess: (res) => {
@@ -147,10 +170,14 @@ export function ModalDesenharQuarteirao({ open, regioes, regiaoIdInicial, onClos
   }
 
   function toggleTodas() {
-    setSelecionadas(prev => prev.size === candidatos.length ? new Set() : new Set(candidatos.map(c => c.codigo)));
+    const novas = candidatos.filter(c => !duplicatas.has(c.codigo)).map(c => c.codigo);
+    setSelecionadas(prev =>
+      novas.length > 0 && novas.every(c => prev.has(c)) ? new Set() : new Set(novas),
+    );
   }
 
   const totalSel = selecionadas.size;
+  const totalAptas = candidatos.filter(c => selecionadas.has(c.codigo) && !duplicatas.has(c.codigo)).length;
   const isPending = gerarOSM.isPending || importar.isPending;
 
   return (
@@ -240,6 +267,9 @@ export function ModalDesenharQuarteirao({ open, regioes, regiaoIdInicial, onClos
                 <p className="text-sm font-medium">
                   {candidatos.length} quadras candidatas
                   <span className="text-xs text-muted-foreground ml-2">({totalSel} selecionadas)</span>
+                  {duplicatas.size > 0 && (
+                    <span className="text-xs text-destructive ml-2">· {duplicatas.size} já existem</span>
+                  )}
                 </p>
                 <div className="flex gap-3">
                   <button type="button" onClick={toggleTodas} className="text-xs text-primary hover:underline">
@@ -266,24 +296,35 @@ export function ModalDesenharQuarteirao({ open, regioes, regiaoIdInicial, onClos
               <div className="border rounded-lg divide-y max-h-48 overflow-y-auto">
                 {candidatos.map((c) => {
                   const sel = selecionadas.has(c.codigo);
+                  const dup = duplicatas.has(c.codigo);
                   return (
                     <div
                       key={c.codigo}
-                      className={cn('flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-muted/30 transition-colors', sel && 'bg-primary/5')}
-                      onClick={() => toggleSelecionada(c.codigo)}
+                      className={cn(
+                        'flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-muted/30 transition-colors',
+                        sel && !dup && 'bg-primary/5',
+                        dup && 'bg-destructive/5 opacity-60',
+                      )}
+                      onClick={() => !dup && toggleSelecionada(c.codigo)}
                     >
-                      {sel
-                        ? <CheckSquare className="h-3.5 w-3.5 text-primary shrink-0" />
-                        : <Square className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
+                      {dup
+                        ? <Square className="h-3.5 w-3.5 text-destructive shrink-0" />
+                        : sel
+                          ? <CheckSquare className="h-3.5 w-3.5 text-primary shrink-0" />
+                          : <Square className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
                       <Input
                         value={codigos[c.codigo] ?? c.codigo}
                         onChange={(e) => { e.stopPropagation(); setCodigos(prev => ({ ...prev, [c.codigo]: e.target.value.toUpperCase() })); }}
                         onClick={(e) => e.stopPropagation()}
-                        className="h-6 text-xs font-mono w-28 shrink-0"
+                        className={cn('h-6 text-xs font-mono w-28 shrink-0', dup && 'border-destructive/50')}
+                        disabled={dup}
                       />
                       <Badge variant="outline" className="text-[10px] h-5 shrink-0">
                         {fmtArea(c.areaM2)}
                       </Badge>
+                      {dup && (
+                        <Badge variant="destructive" className="text-[10px] h-5 shrink-0">já existe</Badge>
+                      )}
                     </div>
                   );
                 })}
@@ -304,14 +345,13 @@ export function ModalDesenharQuarteirao({ open, regioes, regiaoIdInicial, onClos
           )}
 
           {etapa === 'preview' && (
-            <Button onClick={handleSalvar} disabled={importar.isPending || totalSel === 0}>
+            <Button onClick={handleSalvar} disabled={importar.isPending || totalAptas === 0}>
               {importar.isPending
                 ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Salvando…</>
-                : `Salvar ${totalSel} quadra${totalSel !== 1 ? 's' : ''}`}
+                : `Salvar ${totalAptas} quadra${totalAptas !== 1 ? 's' : ''}`}
             </Button>
           )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  );
-}
+ 

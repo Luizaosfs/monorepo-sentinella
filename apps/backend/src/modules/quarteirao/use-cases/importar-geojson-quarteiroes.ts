@@ -49,6 +49,7 @@ export class ImportarGeoJSONQuarteiroes {
             regiaoId,
             codigo: feature.codigo,
             geojson: feature.geojson,
+            areaM2: feature.areaM2,
           });
         } else {
           await this.criarSemRegiao(clienteId, feature);
@@ -103,7 +104,7 @@ export class ImportarGeoJSONQuarteiroes {
 
   private async criarSemRegiao(
     clienteId: string,
-    feature: { codigo: string; geojson: GeoJSONPolygon },
+    feature: { codigo: string; geojson: GeoJSONPolygon; areaM2?: number },
   ) {
     const geojsonStr = JSON.stringify(feature.geojson);
 
@@ -137,6 +138,7 @@ export class ImportarGeoJSONQuarteiroes {
           codigo:     feature.codigo,
           geojson:    feature.geojson as unknown as Prisma.InputJsonValue,
           ativo:      true,
+          ...(feature.areaM2 != null ? { area_m2: feature.areaM2 } : {}),
         },
       });
       await tx.$executeRaw(Prisma.sql`
