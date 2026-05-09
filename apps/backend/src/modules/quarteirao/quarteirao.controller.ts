@@ -94,6 +94,11 @@ import {
   importarGeoJSONSchema,
 } from './dtos/importar-geojson-quarteiroes.body';
 import { ImportarGeoJSONQuarteiroes } from './use-cases/importar-geojson-quarteiroes';
+import {
+  GerarQuadrasOSMBody,
+  gerarQuadrasOSMSchema,
+} from './dtos/gerar-quadras-osm.body';
+import { GerarQuadrasOSM } from './use-cases/gerar-quadras-osm';
 
 @UseInterceptors(PrismaInterceptor)
 @UsePipes(MyZodValidationPipe)
@@ -117,6 +122,7 @@ export class QuarteiraoController {
     private saveQuarteiraoUc: SaveQuarteirao,
     private desenharQuarteiraoUc: DesenharQuarteirao,
     private importarGeoJSONUc: ImportarGeoJSONQuarteiroes,
+    private gerarQuadrasOSMUc: GerarQuadrasOSM,
     @Inject(REQUEST) private req: Request,
   ) {}
 
@@ -235,6 +241,17 @@ export class QuarteiraoController {
     const clienteId = requireTenantId(getAccessScope(this.req));
     const parsed = importarGeoJSONSchema.parse(body);
     return this.importarGeoJSONUc.execute(clienteId, parsed);
+  }
+
+  @Post('gerar-quadras-osm')
+  @Roles('admin', 'supervisor')
+  @ApiOperation({
+    summary: 'Gerar quadras candidatas a partir da malha viária do OpenStreetMap (buffer-and-subtract) — apenas preview, não persiste',
+  })
+  async gerarQuadrasOSM(@Body() body: GerarQuadrasOSMBody) {
+    const clienteId = requireTenantId(getAccessScope(this.req));
+    const parsed = gerarQuadrasOSMSchema.parse(body);
+    return this.gerarQuadrasOSMUc.execute(clienteId, parsed);
   }
 
   @Post('gerar-lote')

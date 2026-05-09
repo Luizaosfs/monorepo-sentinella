@@ -20,6 +20,7 @@ import { GerarLoteQuarteiroes } from './use-cases/gerar-lote-quarteiroes';
 import { SaveQuarteirao } from './use-cases/save-quarteirao';
 import { DesenharQuarteirao } from './use-cases/desenhar-quarteirao';
 import { ImportarGeoJSONQuarteiroes } from './use-cases/importar-geojson-quarteiroes';
+import { GerarQuadrasOSM } from './use-cases/gerar-quadras-osm';
 
 @Module({
   providers: [
@@ -39,6 +40,7 @@ import { ImportarGeoJSONQuarteiroes } from './use-cases/importar-geojson-quartei
     SaveQuarteirao,
     DesenharQuarteirao,
     ImportarGeoJSONQuarteiroes,
+    GerarQuadrasOSM,
     JwtService,
     PrismaService,
   ],

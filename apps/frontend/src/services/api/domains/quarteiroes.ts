@@ -46,6 +46,15 @@ export const quarteiroes = {
     features: Array<{ codigo: string; geojson: Record<string, unknown>; regiaoId?: string; bairro?: string }>;
   }): Promise<{ ok: number; criados: string[]; erros: Array<{ codigo: string; motivo: string }> }> =>
     http.post('/quarteiroes/importar-geojson', payload),
+  gerarQuadrasOSM: (payload: {
+    regiaoId: string;
+    geojson: { type: 'Polygon'; coordinates: number[][][] };
+    prefixo?: string;
+    areaMinima?: number;
+  }): Promise<{
+    candidatos: Array<{ codigo: string; areaM2: number; geojson: { type: 'Polygon'; coordinates: number[][][] } }>;
+    totalViasEncontradas: number;
+  }> => http.post('/quarteiroes/gerar-quadras-osm', payload),
 };
 
 export const distribuicaoQuarteirao = {

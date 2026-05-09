@@ -33,6 +33,7 @@
     "@prisma/adapter-pg": "^7.7.0",
     "@prisma/client": "7.7.0",
     "@scalar/nestjs-api-reference": "^0.4.3",
+    "@turf/turf": "^7.3.5",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^2.9.0",

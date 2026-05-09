@@ -119,3 +119,25 @@ export function useImportarGeoJSONQuarteiroes() {
     },
   });
 }
+
+export type QuadraCandidataOSM = {
+  codigo: string;
+  areaM2: number;
+  geojson: { type: 'Polygon'; coordinates: number[][][] };
+};
+
+export type GerarQuadrasOSMResult = {
+  candidatos: QuadraCandidataOSM[];
+  totalViasEncontradas: number;
+};
+
+export function useGerarQuadrasOSM() {
+  return useMutation({
+    mutationFn: (payload: {
+      regiaoId: string;
+      geojson: { type: 'Polygon'; coordinates: number[][][] };
+      prefixo?: string;
+      areaMinima?: number;
+    }): Promise<GerarQuadrasOSMResult> => api.quarteiroes.gerarQuadrasOSM(payload),
+  });
+}
