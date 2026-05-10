@@ -78,13 +78,13 @@ describe('RegistrarSemAcessoVistoria', () => {
     recalcularScore = module.get(RecalcularScorePrioridadeFoco);
   });
 
-  it('fechado: transiciona para aguardando_nova_tentativa e calcula 1 dia útil', async () => {
+  it('fechado_ausente: transiciona para aguardando_nova_tentativa e calcula 1 dia útil', async () => {
     const vistoria = makeVistoria();
     const foco = makeFoco();
     vistoriaRead.findById.mockResolvedValue(vistoria as never);
     focoRead.findById.mockResolvedValue(foco as never);
 
-    const result = await useCase.execute('vistoria-1', { motivo: 'fechado', focoRiscoId: 'foco-1' });
+    const result = await useCase.execute('vistoria-1', { motivo: 'fechado_ausente', focoRiscoId: 'foco-1' });
 
     expect(result.escaladoSupervisor).toBe(false);
     expect(foco.status).toBe('aguardando_nova_tentativa');
@@ -99,13 +99,13 @@ describe('RegistrarSemAcessoVistoria', () => {
     expect(focoWrite.updateScorePrioridade).not.toHaveBeenCalled();
   });
 
-  it('recusa: score recalculado e histórico com motivo enriquecido', async () => {
+  it('recusa_entrada: score recalculado e histórico com motivo enriquecido', async () => {
     const vistoria = makeVistoria();
     const foco = makeFoco({ scorePrioridade: 30 });
     vistoriaRead.findById.mockResolvedValue(vistoria as never);
     focoRead.findById.mockResolvedValue(foco as never);
 
-    const result = await useCase.execute('vistoria-1', { motivo: 'recusa', focoRiscoId: 'foco-1' });
+    const result = await useCase.execute('vistoria-1', { motivo: 'recusa_entrada', focoRiscoId: 'foco-1' });
 
     expect(result.escaladoSupervisor).toBe(false);
     expect(foco.status).toBe('aguardando_nova_tentativa');
@@ -118,25 +118,25 @@ describe('RegistrarSemAcessoVistoria', () => {
     );
   });
 
-  it('desocupado: +3 dias úteis, score recalculado', async () => {
+  it('fechado_viagem: score recalculado', async () => {
     const vistoria = makeVistoria();
     const foco = makeFoco({ scorePrioridade: 50 });
     vistoriaRead.findById.mockResolvedValue(vistoria as never);
     focoRead.findById.mockResolvedValue(foco as never);
 
-    await useCase.execute('vistoria-1', { motivo: 'desocupado', focoRiscoId: 'foco-1' });
+    await useCase.execute('vistoria-1', { motivo: 'fechado_viagem', focoRiscoId: 'foco-1' });
 
     expect(foco.status).toBe('aguardando_nova_tentativa');
     expect(recalcularScore.execute).toHaveBeenCalledWith('foco-1');
   });
 
-  it('sem_previsao: vai para aguardando_nova_tentativa + pendente_decisao_supervisor=true + sem data', async () => {
+  it('calha_inacessivel: vai para aguardando_nova_tentativa + pendente_decisao_supervisor=true + sem data', async () => {
     const vistoria = makeVistoria();
     const foco = makeFoco();
     vistoriaRead.findById.mockResolvedValue(vistoria as never);
     focoRead.findById.mockResolvedValue(foco as never);
 
-    const result = await useCase.execute('vistoria-1', { motivo: 'sem_previsao', focoRiscoId: 'foco-1' });
+    const result = await useCase.execute('vistoria-1', { motivo: 'calha_inacessivel', focoRiscoId: 'foco-1' });
 
     expect(foco.status).toBe('aguardando_nova_tentativa');
     expect(foco.pendentDecisaoSupervisor).toBe(true);
@@ -153,7 +153,7 @@ describe('RegistrarSemAcessoVistoria', () => {
     vistoriaRead.findById.mockResolvedValue(vistoria as never);
     focoRead.findById.mockResolvedValue(foco as never);
 
-    const result = await useCase.execute('vistoria-1', { motivo: 'recusa', focoRiscoId: 'foco-1' });
+    const result = await useCase.execute('vistoria-1', { motivo: 'recusa_entrada', focoRiscoId: 'foco-1' });
 
     expect(result.escaladoSupervisor).toBe(true);
     expect(foco.pendentDecisaoSupervisor).toBe(true);
@@ -167,7 +167,7 @@ describe('RegistrarSemAcessoVistoria', () => {
     vistoriaRead.findById.mockResolvedValue(vistoria as never);
     focoRead.findById.mockResolvedValue(foco as never);
 
-    await useCase.execute('vistoria-1', { motivo: 'recusa', focoRiscoId: 'foco-1' });
+    await useCase.execute('vistoria-1', { motivo: 'recusa_entrada', focoRiscoId: 'foco-1' });
 
     const calls = focoWrite.createHistorico.mock.calls;
     expect(calls.length).toBe(2); // sem_acesso_registrado + retorno_planejado
@@ -175,13 +175,13 @@ describe('RegistrarSemAcessoVistoria', () => {
     expect(calls[1][0].motivo).toContain('Retorno planejado para');
   });
 
-  it('sem_previsao: NÃO registra retorno_planejado (sem data)', async () => {
+  it('calha_inacessivel: NÃO registra retorno_planejado (sem data)', async () => {
     const vistoria = makeVistoria();
     const foco = makeFoco();
     vistoriaRead.findById.mockResolvedValue(vistoria as never);
     focoRead.findById.mockResolvedValue(foco as never);
 
-    await useCase.execute('vistoria-1', { motivo: 'sem_previsao', focoRiscoId: 'foco-1' });
+    await useCase.execute('vistoria-1', { motivo: 'calha_inacessivel', focoRiscoId: 'foco-1' });
 
     const calls = focoWrite.createHistorico.mock.calls;
     expect(calls.length).toBe(1);
@@ -192,7 +192,7 @@ describe('RegistrarSemAcessoVistoria', () => {
     const vistoria = makeVistoria({ focoRiscoId: undefined });
     vistoriaRead.findById.mockResolvedValue(vistoria as never);
 
-    const result = await useCase.execute('vistoria-1', { motivo: 'desocupado' });
+    const result = await useCase.execute('vistoria-1', { motivo: 'fechado_viagem' });
 
     expect(result.escaladoSupervisor).toBe(false);
     expect(focoRead.findById).not.toHaveBeenCalled();
@@ -205,7 +205,7 @@ describe('RegistrarSemAcessoVistoria', () => {
     vistoriaRead.findById.mockResolvedValue(vistoria as never);
     focoRead.findById.mockResolvedValue(foco as never);
 
-    await useCase.execute('vistoria-1', { motivo: 'fechado', focoRiscoId: 'foco-1' });
+    await useCase.execute('vistoria-1', { motivo: 'fechado_ausente', focoRiscoId: 'foco-1' });
 
     // nenhum create foi chamado — apenas save
     expect(focoWrite.save).toHaveBeenCalledWith(expect.objectContaining({ id: 'foco-1' }));

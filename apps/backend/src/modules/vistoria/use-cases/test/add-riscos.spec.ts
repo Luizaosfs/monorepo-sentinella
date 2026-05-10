@@ -15,6 +15,8 @@ const baseInput = {
   vistoriaId:              'vistoria-uuid-1',
   menorIncapaz:            false,
   idosoIncapaz:            true,
+  acamado:                 false,
+  mobilidadeReduzida:      false,
   depQuimico:              false,
   riscoAlimentar:          false,
   riscoMoradia:            true,

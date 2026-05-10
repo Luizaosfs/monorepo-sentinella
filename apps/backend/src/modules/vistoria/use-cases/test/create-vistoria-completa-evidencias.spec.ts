@@ -48,7 +48,6 @@ function buildMockTx(overrides: Record<string, jest.Mock> = {}) {
     vistorias: {
       create: jest.fn().mockResolvedValue({
         id: 'v-created-id',
-        cliente_id: 'c-tenant-id',
         ...PrismaVistoriaMapper.toPrisma(makeVistoria()),
       }),
     },
@@ -65,7 +64,7 @@ function buildMockPrisma(tx: ReturnType<typeof buildMockTx>) {
   return {
     client: {
       vistorias: { findFirst: jest.fn().mockResolvedValue(null) },
-      $transaction: jest.fn().mockImplementation(async (cb: (tx: typeof tx) => Promise<string>) => cb(tx)),
+      $transaction: jest.fn().mockImplementation(async (cb: (tx: ReturnType<typeof buildMockTx>) => Promise<string>) => cb(tx)),
     },
   } as any;
 }

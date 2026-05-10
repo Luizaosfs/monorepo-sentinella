@@ -97,7 +97,7 @@ describe('SaveVistoria', () => {
     const v = new VistoriaBuilder().withId('00000000-0000-4000-8000-0000000000d5').withStatus('pendente').build();
     readRepo.findById.mockResolvedValue(v);
 
-    await useCase.execute(v.id!, { status: 'concluida', gravidas: true, idosos: true });
+    await useCase.execute(v.id!, { status: 'concluida', gravidas: 1, idosos: 1 });
 
     expect(mockConsolidar.execute).toHaveBeenCalledTimes(1);
   });

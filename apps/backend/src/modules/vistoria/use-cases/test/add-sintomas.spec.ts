@@ -14,6 +14,7 @@ const mockConsolidar = { execute: jest.fn().mockResolvedValue(undefined) } as an
 const baseInput = {
   vistoriaId:           'vistoria-uuid-1',
   febre:                true,
+  nausea:               false,
   manchasVermelhas:     false,
   dorArticulacoes:      false,
   dorCabeca:            true,

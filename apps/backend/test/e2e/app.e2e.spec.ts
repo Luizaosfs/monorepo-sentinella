@@ -1,4 +1,5 @@
 import { INestApplication } from '@nestjs/common';
+import { ExpressAdapter } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { Test } from '@nestjs/testing';
 import { patchNestJsSwagger } from 'nestjs-zod';
@@ -16,17 +17,12 @@ const skipE2e = process.env.SKIP_E2E === '1';
   beforeAll(async () => {
     const { AppModule } = await import('@/app.module');
     const { MyZodValidationPipe } = await import('@/pipes/zod-validations.pipe');
-    const { GlobalExceptionFilter } = await import(
-      '@/common/filters/global-exception.filter'
-    );
-
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
 
-    app = moduleRef.createNestApplication();
+    app = moduleRef.createNestApplication(new ExpressAdapter());
     app.useGlobalPipes(new MyZodValidationPipe());
-    app.useGlobalFilters(new GlobalExceptionFilter());
 
     // Replica setup mínimo do main.ts para o teste do Swagger funcionar.
     patchNestJsSwagger();

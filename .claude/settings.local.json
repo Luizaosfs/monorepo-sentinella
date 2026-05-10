@@ -340,7 +340,8 @@
       "PowerShell(cmd /c \"cd D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend && pnpm test --testPathPattern=quarteirao 2>&1 | findstr /R /C:\\\\\"PASS\\\\\" /C:\\\\\"FAIL\\\\\" /C:\\\\\"Tests:\\\\\" /C:\\\\\"Suites:\\\\\"\")",
       "PowerShell(cmd /c \"cd D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\frontend && node node_modules\\\\.bin\\\\tsc --noEmit 2>&1 | head -50\")",
       "PowerShell(cmd /c \"cd D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend && pnpm test --testPathPattern=desenhar-quarteirao 2>&1\")",
-      "PowerShell(cmd /c \"cd D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend && pnpm test --testPathPattern=quarteirao 2>&1\")"
+      "PowerShell(cmd /c \"cd D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend && pnpm test --testPathPattern=quarteirao 2>&1\")",
+      "PowerShell(cmd /c \"cd D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend && node_modules\\\\.bin\\\\tsc.CMD --noEmit 2>&1\")"
     ]
   }
 }
