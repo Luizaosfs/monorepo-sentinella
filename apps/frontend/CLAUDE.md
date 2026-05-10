@@ -4,7 +4,7 @@
 
 Frontend React do Sentinella Web — plataforma B2G SaaS de vigilância entomológica municipal.
 
-**Stack:** React 18.3 · Vite · TypeScript 5.7 · TanStack Query v5 · React Router v6 · Zod · Leaflet 1.9 · Shadcn/Radix UI
+**Stack:** React 18.3 · Vite · TypeScript 5.8 · TanStack Query v5 · React Router v6 · Zod · Leaflet 1.9 · Shadcn/Radix UI
 
 **Contexto:** Migração do Supabase concluída (2026-04-20). Auth e todas as queries via `@sentinella/api-client` (HTTP + JWT). `supabase-js` removido.
 
@@ -52,7 +52,7 @@ Imports:      alias @/            → import { http } from '@sentinella/api-clie
 
 ## Padrão de hook de query
 
-Hooks de query ficam em `src/hooks/queries/` (68 arquivos atualmente — `ls src/hooks/queries/ | wc -l` = 68).
+Hooks de query ficam em `src/hooks/queries/` (76 arquivos atualmente — `ls src/hooks/queries/ | wc -l` = 76).
 
 ```typescript
 // src/hooks/queries/useNomeFuncionalidade.ts
@@ -72,7 +72,7 @@ export function useNomeFuncionalidade(clienteId: string | null | undefined) {
 
 ## Padrão de serviço (src/services/api/)
 
-Services ficam em `src/services/api/domains/` (**22 arquivos**, um por domínio: `billing`, `clientes`, `cloudinary`, `dashboard`, `drones`, `focos-risco`, `ia`, `imoveis`, `levantamentos`, `misc`, `notificacoes`, `operacoes`, `planejamentos`, `plano-acao`, `pluvio`, `quarteiroes`, `reinspecoes`, `risk-engine`, `sistema`, `sla`, `usuarios`, `vistorias`) + utilitários compartilhados em `src/services/api/shared/`.
+Services ficam em `src/services/api/domains/` (**26 arquivos**, um por domínio: `billing`, `clientes`, `cloudinary`, `cobertura-operacional`, `dashboard`, `drones`, `focos-risco`, `ia`, `imoveis`, `implantacao-operacional`, `levantamentos`, `misc`, `notificacoes`, `operacoes`, `planejamentos`, `plano-acao`, `pluvio`, `quarteiroes`, `reincidencia-territorial`, `reinspecoes`, `risk-engine`, `security-logs`, `sistema`, `sla`, `usuarios`, `vistorias`) + utilitários compartilhados em `src/services/api/shared/`.
 
 ```typescript
 // src/services/api/domains/focos-risco.ts

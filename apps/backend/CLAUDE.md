@@ -46,7 +46,7 @@ Nem todos os 32 módulos seguem essa estrutura completa. Módulos de infraestrut
 - `agrupamentos/` — `controller` + `module` + `dtos` + `use-cases/` (+ `tags.controller.ts`).
 - `denuncia/` — sem `entities/`/`repositories/`/`view-model/`. Tem `dtos/`, `errors/`, `use-cases/`.
 - `cnes/` — sem `entities/`/`repositories/`/`view-model/`. Tem `cnes.service.ts`, `cnes.scheduler.ts`, `use-cases/`.
-- `dashboard/` — múltiplos controllers (`analitico`, `analytics`, `dashboard`, `eficacia`, `executivo`, `health`, `piloto`, `reincidencia`) + services (`dashboard-scheduler`, `health-check`, `liraa-export`) + estrutura domínio.
+- `dashboard/` — múltiplos controllers (`analitico`, `analytics`, `dashboard`, `eficacia`, `executivo`, `health`, `piloto`, `reincidencia`, `territorial`, `tiles`) + services (`dashboard-scheduler`, `health-check`, `liraa-export`) + estrutura domínio. `territorial.controller.ts` expõe `GET /dashboard/territorial`. `tiles.controller.ts` expõe `GET /tiles/:service/:z/:y/:x` (MVT map tiles).
 - `job/` — estrutura domínio + `job.scheduler.ts` + `score-worker.service.ts` + `audit-cleanup.service.ts`.
 - `notificacao/` — estrutura domínio + `push.service.ts` + `canal-cidadao.service.ts` + `helpers/`.
 
@@ -70,19 +70,34 @@ Os 4 guards são **globais** via `APP_GUARD` em `src/app.module.ts` (ordem: `thr
 
 ---
 
-## MÓDULOS (32)
+## MÓDULOS (39)
 
 Saída real de `ls apps/backend/src/modules/ | sort`:
 
 ```
-agrupamentos   alerta-retorno auth           billing        ciclo
-cliente        cloudinary     cnes           dashboard      denuncia
-drone          foco-risco     ia             imovel         import-log
-job            levantamento   notificacao    operacao       piloto
-planejamento   plano-acao     pluvio         quarteirao     recorrencias
-regiao         reinspecao     risk-engine    seed           sla
-usuario        vistoria
+agrupamentos              alerta-retorno            auth
+billing                   ciclo                     cliente
+cloudinary                cnes                      cobertura-operacional
+consolidacao-pesos-config dashboard                 denuncia
+drone                     foco-risco                ia
+imovel                    implantacao-operacional   import-log
+job                       levantamento              notificacao
+operacao                  piloto                    planejamento
+plano-acao                pluvio                    quarteirao
+recorrencias              regiao                    reincidencia-territorial
+reinspecao                risk-engine               security-log
+seed                      sla                       territorial-importacao
+territorial-saneamento    usuario                   vistoria
 ```
+
+Módulos adicionados após a documentação original (abr-mai/2026):
+- `cobertura-operacional` — analytics de cobertura: resumo, quarteirões, agentes, imóveis nunca visitados (`GET /cobertura-operacional/{resumo,quarteiroes,agentes,imoveis-nunca-visitados}`)
+- `consolidacao-pesos-config` — configuração de pesos de consolidação de score (estrutura domínio mínima, sem use-cases além de testes)
+- `implantacao-operacional` — operações de implantação (controller + module + use-cases + view-model, `errors/`)
+- `reincidencia-territorial` — analytics de reincidência por resumo/imóveis/quarteirões/bairros (`GET /reincidencia-territorial/{resumo,imoveis,quarteiroes,bairros}`)
+- `security-log` — log de eventos de segurança (controller + service + repositories + view-model; use-cases: `list-security-logs`, `security-logs-stats`)
+- `territorial-importacao` — importação de dados territoriais (parsers, services, entities, dtos, use-cases)
+- `territorial-saneamento` — saneamento de dados territoriais (entities, services, use-cases)
 
 ---
 
@@ -397,6 +412,9 @@ Porte de **7 triggers AFTER INSERT** em `clientes` do Supabase legado para um ú
 - **Fase C.2 (abr/2026):** criação automática pós-tratamento e cancelamento em massa ao fechar foco migraram dos triggers SQL `fn_criar_reinspecao_pos_tratamento` / `fn_cancelar_reinspecoes_ao_fechar_foco` para 2 use-cases TypeScript: `CriarReinspecaoPosTratamento` (dispara no `em_tratamento`, cria pendente com `data_prevista = now() + 7 dias`, tipo `eficacia_pos_tratamento`, origem `tratamento_confirmado`) e `CancelarReinspecoesAoFecharFoco` (dispara em `resolvido`/`descartado`, cancela todas pendentes com motivo `Foco fechado automaticamente`). Invocados dentro do mesmo `$transaction(callback)` do `TransicionarFocoRisco` criado na Fase C.1. Reaproveitam a compensação em `sla_erros_criacao` (variável `slaError` é compartilhada entre hooks para simplicidade).
 - Idempotência de `CriarReinspecaoPosTratamento` é via `findFirst` pendente (o schema atual não traz o unique partial index do Supabase legado).
 - Máx. 1 reinspeção pendente por `(foco_risco_id, tipo)` — invariante mantido em software; restrição histórica do banco ainda documentada mas não enforced em CONSTRAINT no self-hosted.
+
+### quarteirao
+Módulo rico com gestão territorial completa. Use-cases: `create-quarteirao`, `save-quarteirao`, `delete-quarteirao`, `filter-quarteiroes`, `bulk-insert-quarteiroes`, `desenhar-quarteirao` (geometria manual), `gerar-lote-quarteiroes`, `gerar-quadras-osm` (geração via OpenStreetMap), `importar-geojson-quarteiroes`, gestão de distribuições por ciclo (`create-distribuicao`, `filter-distribuicoes`, `upsert-distribuicoes`, `deletar-distribuicoes`, `delete-distribuicao`, `copiar-distribuicao`, `list-distribuicoes-by-agente`) e `cobertura-ciclo`.
 
 ### regiao
 - `area geometry(Polygon,4326)` populada via `ST_GeomFromGeoJSON(geojson::text)` no `PrismaRegiaoWriteRepository.syncArea()`
