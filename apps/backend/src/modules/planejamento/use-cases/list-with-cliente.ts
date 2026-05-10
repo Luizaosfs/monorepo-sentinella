@@ -17,7 +17,7 @@ export class ListWithCliente {
                 'latitude_centro',  c.latitude_centro,
                 'longitude_centro', c.longitude_centro
               ) AS cliente
-            FROM planejamento p
+            FROM planejamentos p
             INNER JOIN clientes c ON c.id = p.cliente_id
             WHERE p.deleted_at IS NULL
               AND p.cliente_id = ${clienteId}::uuid
@@ -31,7 +31,7 @@ export class ListWithCliente {
                 'latitude_centro',  c.latitude_centro,
                 'longitude_centro', c.longitude_centro
               ) AS cliente
-            FROM planejamento p
+            FROM planejamentos p
             INNER JOIN clientes c ON c.id = p.cliente_id
             WHERE p.deleted_at IS NULL
             ORDER BY p.data_planejamento DESC NULLS LAST

@@ -29,7 +29,7 @@ export interface ResumoCoberturaDto {
   };
 }
 
-export interface CoberturaQuarteiraoDto {
+export interface CoberturaBairroQuadraDto {
   quarteirao: string;
   total_imoveis: number;
   visitados: number;
@@ -64,7 +64,7 @@ export const coberturaOperacionalApi = {
     return deepToSnake(raw);
   },
 
-  async getQuarteiroes(): Promise<CoberturaQuarteiraoDto[]> {
+  async getQuarteiroes(): Promise<CoberturaBairroQuadraDto[]> {
     const raw = await http.get('/cobertura-operacional/quarteiroes');
     return deepToSnake(raw);
   },

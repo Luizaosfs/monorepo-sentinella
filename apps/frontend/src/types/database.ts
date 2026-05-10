@@ -1684,7 +1684,7 @@ export interface BairrosDistribuicao {
   agente_nome?: string;
 }
 
-export interface CoberturaQuarteirao {
+export interface CoberturaBairroQuadra {
   quarteirao: string;
   bairro: string | null;
   agente_id: string;

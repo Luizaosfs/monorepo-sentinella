@@ -34,7 +34,7 @@ const MODELS_WITH_UPDATED_AT = new Set<string>([
   'plano_acao_catalogo',
   'pluvio_risco',
   'bairros_quadras',
-  'regioes',
+  'bairros',
   'reinspecoes_programadas',
   'score_config',
   'sentinela_drone_risk_config',
