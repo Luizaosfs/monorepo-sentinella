@@ -71,7 +71,7 @@ const PreviewQuadrasOSMMap = ({ candidatos, selecionadas, onToggle, center }: Pr
     });
   }, [selecionadas]);
 
-  return <div ref={containerRef} className="h-[340px] w-full rounded-lg border" />;
+  return <div ref={containerRef} className="h-[calc(100vh-420px)] min-h-[260px] w-full rounded-lg border" />;
 };
 
 export default PreviewQuadrasOSMMap;
