@@ -3,7 +3,7 @@ import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { Map as MapIcon, List, Loader2, Save, Copy, Plus, PenLine, FileJson, Undo2, Users, Grid2X2 } from 'lucide-react';
 import { useClienteAtivo } from '@/hooks/useClienteAtivo';
 import { api } from '@/services/api';
-import { useCicloAtivo, useHistoricoCiclos, CICLO_LABELS } from '@/hooks/queries/useCicloAtivo';
+import { useCicloAtivo, useHistoricoCiclos, CICLO_LABELS, CICLO_STATUS_COR, CICLO_STATUS_LABEL } from '@/hooks/queries/useCicloAtivo';
 import { useAgentes } from '@/hooks/queries/useAgentes';
 import {
   useDistribuicaoQuarteiraoByCiclo,
@@ -101,6 +101,12 @@ export default function AdminDistribuicaoQuarteirao() {
     [agentes],
   );
 
+  const cicloSelecionado = useMemo(
+    () => todosCiclos.find(c => c.id === cicloId),
+    [todosCiclos, cicloId],
+  );
+  const isCicloFechado = cicloSelecionado?.status === 'fechado';
+
   /** Regiões para ModalGerarLote (sem geometria — não precisa). */
   const regioesMapped = useMemo<RegiaoOpcao[]>(
     () =>
@@ -119,14 +125,24 @@ export default function AdminDistribuicaoQuarteirao() {
     () =>
       (regioesList as Array<Record<string, unknown>>)
         .filter((r) => r.id)
-        .map((r) => ({
-          id: String(r.id),
-          nome: r.nome ? String(r.nome) : undefined,
-          regiao: r.regiao ? String(r.regiao) : undefined,
-          geojson: r.geojson ? (r.geojson as Record<string, unknown>) : null,
-          latitude: r.latitude ? Number(r.latitude) : null,
-          longitude: r.longitude ? Number(r.longitude) : null,
-        })),
+        .map((r) => {
+          let geojson: Record<string, unknown> | null = null;
+          if (r.geojson) {
+            if (typeof r.geojson === 'string') {
+              try { geojson = JSON.parse(r.geojson); } catch { geojson = null; }
+            } else {
+              geojson = r.geojson as Record<string, unknown>;
+            }
+          }
+          return {
+            id: String(r.id),
+            nome: r.nome ? String(r.nome) : undefined,
+            regiao: r.regiao ? String(r.regiao) : undefined,
+            geojson,
+            latitude: r.latitude ? Number(r.latitude) : null,
+            longitude: r.longitude ? Number(r.longitude) : null,
+          };
+        }),
     [regioesList],
   );
 
@@ -360,11 +376,12 @@ export default function AdminDistribuicaoQuarteirao() {
   // ── Actions ───────────────────────────────────────────────────────────────
 
   const setAtribuicao = useCallback((quarteirao: string, agenteId: string) => {
+    if (isCicloFechado) return;
     setAtribuicoes((prev) => ({
       ...prev,
       [quarteirao]: { salvo: prev[quarteirao]?.salvo ?? '', pendente: agenteId },
     }));
-  }, []);
+  }, [isCicloFechado]);
 
   const toggleQuadra = useCallback((q: string) => {
     setSelecionadas((prev) => {
@@ -625,11 +642,20 @@ export default function AdminDistribuicaoQuarteirao() {
                   ))}
                 </SelectContent>
               </Select>
+              {cicloSelecionado && (
+                <span className={cn(
+                  'text-[10px] font-semibold px-1.5 py-0.5 rounded border shrink-0',
+                  CICLO_STATUS_COR[cicloSelecionado.status],
+                )}>
+                  {CICLO_STATUS_LABEL[cicloSelecionado.status]}
+                </span>
+              )}
             </div>
             <Button
               variant="outline"
               size="sm"
               onClick={() => handleDesenharNova()}
+              disabled={isCicloFechado}
               className="gap-1.5 h-8"
             >
               <PenLine className="h-3.5 w-3.5" />
@@ -639,6 +665,7 @@ export default function AdminDistribuicaoQuarteirao() {
               variant="outline"
               size="sm"
               onClick={() => setModalImportarOpen(true)}
+              disabled={isCicloFechado}
               className="gap-1.5 h-8"
             >
               <FileJson className="h-3.5 w-3.5" />
@@ -648,6 +675,7 @@ export default function AdminDistribuicaoQuarteirao() {
               variant="outline"
               size="sm"
               onClick={() => { setModalGerarRegiaoId(null); setModalGerarOpen(true); }}
+              disabled={isCicloFechado}
               className="gap-1.5 h-8"
             >
               <Plus className="h-3.5 w-3.5" />
@@ -657,7 +685,7 @@ export default function AdminDistribuicaoQuarteirao() {
               variant="outline"
               size="sm"
               onClick={() => copiarMutation.mutate()}
-              disabled={copiarMutation.isPending || isLoading}
+              disabled={copiarMutation.isPending || isLoading || isCicloFechado}
               className="gap-1.5 h-8"
               title="Copiar distribuição do ciclo anterior"
             >
@@ -673,7 +701,7 @@ export default function AdminDistribuicaoQuarteirao() {
                 variant="ghost"
                 size="sm"
                 onClick={descartarAlteracoes}
-                disabled={salvarMutation.isPending}
+                disabled={salvarMutation.isPending || isCicloFechado}
                 className="gap-1.5 h-8 text-muted-foreground"
                 title="Descartar todas as alterações não salvas"
               >
@@ -684,7 +712,7 @@ export default function AdminDistribuicaoQuarteirao() {
             <Button
               size="sm"
               onClick={() => salvarMutation.mutate()}
-              disabled={salvarMutation.isPending || !temPendentes}
+              disabled={salvarMutation.isPending || !temPendentes || isCicloFechado}
               className="gap-1.5 h-8"
             >
               {salvarMutation.isPending ? (

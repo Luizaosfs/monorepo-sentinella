@@ -1,12 +1,13 @@
 import { useState, useMemo, useEffect, lazy, Suspense } from 'react';
-import { Loader2, MapPin, PenLine, Wand2, CheckSquare, Square, AlertTriangle } from 'lucide-react';
+import {
+  Loader2, MapPin, PenLine, Wand2, CheckSquare, Square,
+  AlertTriangle, ArrowLeft, ChevronRight, Map,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
-  DialogFooter,
-  DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -20,6 +21,7 @@ import {
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   useImportarGeoJSONQuarteiroes,
   useGerarQuadrasOSM,
@@ -27,6 +29,7 @@ import {
   type QuadraCandidataOSM,
 } from '@/hooks/queries/useGestaoQuadras';
 import { useClienteAtivo } from '@/hooks/useClienteAtivo';
+import { api } from '@/services/api';
 
 const DrawPolygonMap = lazy(() => import('@/components/map/DrawPolygonMap'));
 const PreviewQuadrasOSMMap = lazy(() => import('./PreviewQuadrasOSMMap'));
@@ -53,14 +56,14 @@ function nomeRegiao(r: RegiaoParaDesenho): string {
 }
 
 function fmtArea(m2: number): string {
-  if (m2 >= 10000) return `${(m2 / 10000).toFixed(2)} ha`;
-  return `${m2.toLocaleString('pt-BR')} m²`;
+  return `${Math.round(m2).toLocaleString('pt-BR')} m²`;
 }
 
 export function ModalDesenharQuarteirao({ open, regioes, bairroIdInicial, onClose, onSalvo }: Props) {
   const importar = useImportarGeoJSONQuarteiroes();
   const gerarOSM = useGerarQuadrasOSM();
   const { clienteId, clienteAtivo } = useClienteAtivo();
+  const queryClient = useQueryClient();
   const { data: quadrasExistentes } = useQuadrasList(clienteId);
 
   const existingCodes = useMemo(
@@ -79,7 +82,6 @@ export function ModalDesenharQuarteirao({ open, regioes, bairroIdInicial, onClos
 
   const regiao = useMemo(() => regioes.find((r) => r.id === bairroId) ?? null, [regioes, bairroId]);
 
-  // Conjunto dos candidatos cujo código editado atual já existe no sistema
   const duplicatas = useMemo(
     () => new Set(
       candidatos
@@ -102,14 +104,17 @@ export function ModalDesenharQuarteirao({ open, regioes, bairroIdInicial, onClos
 
   useEffect(() => {
     if (open) {
-      setBairroId(bairroIdInicial ?? '');
-      setGeojson(null);
+      const id = bairroIdInicial ?? '';
+      setBairroId(id);
+      const r = id ? regioes.find((x) => x.id === id) ?? null : null;
+      setGeojson(r?.geojson ? (r.geojson as Record<string, unknown>) : null);
       setPrefixo('Q');
       setCandidatos([]);
       setCodigos({});
       setSelecionadas(new Set());
       setEtapa('desenho');
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, bairroIdInicial]);
 
   function handleClose() {
@@ -117,9 +122,28 @@ export function ModalDesenharQuarteirao({ open, regioes, bairroIdInicial, onClos
     onClose();
   }
 
+  function handleBairroChange(v: string) {
+    setBairroId(v);
+    const r = regioes.find((x) => x.id === v) ?? null;
+    setGeojson(r?.geojson ? (r.geojson as Record<string, unknown>) : null);
+  }
+
   function handleGerar() {
     if (!bairroId) { toast.error('Selecione uma região'); return; }
     if (!geojson) { toast.error('Desenhe o polígono da área a analisar'); return; }
+
+    // Persiste o polígono no cadastro do bairro (fire-and-forget)
+    if (regiao) {
+      api.regioes.update(bairroId, {
+        nome: nomeRegiao(regiao),
+        latitude: regiao.latitude ?? undefined,
+        longitude: regiao.longitude ?? undefined,
+        geojson,
+      })
+        .then(() => queryClient.invalidateQueries({ queryKey: ['regioes', clienteId] }))
+        .catch(() => { /* silencioso */ });
+    }
+
     const p = prefixo.trim().toUpperCase() || 'Q';
     gerarOSM.mutate(
       { bairroId, geojson: geojson as { type: 'Polygon'; coordinates: number[][][] }, prefixo: p },
@@ -180,73 +204,130 @@ export function ModalDesenharQuarteirao({ open, regioes, bairroIdInicial, onClos
   const totalAptas = candidatos.filter(c => selecionadas.has(c.codigo) && !duplicatas.has(c.codigo)).length;
   const isPending = gerarOSM.isPending || importar.isPending;
 
+  const statusText = etapa === 'desenho'
+    ? geojson
+      ? 'Polígono definido — pronto para gerar'
+      : bairroId
+        ? 'Ajuste o polígono no mapa'
+        : 'Selecione um bairro para começar'
+    : `${totalAptas} quadra${totalAptas !== 1 ? 's' : ''} nova${totalAptas !== 1 ? 's' : ''} para salvar`;
+
   return (
     <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <PenLine className="h-4 w-4" />
-            Gerar quadras pelo OpenStreetMap
-          </DialogTitle>
-        </DialogHeader>
+      <DialogContent className="max-w-3xl p-0 max-h-[92vh] flex flex-col gap-0 overflow-hidden">
 
-        <div className="space-y-4 py-1">
-          {/* Região + Prefixo — só na etapa de desenho */}
-          {etapa === 'desenho' && (
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label>Região / Bairro *</Label>
-                <Select value={bairroId} onValueChange={(v) => { setBairroId(v); setGeojson(null); }}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione uma região" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {regioes.map((r) => (
-                      <SelectItem key={r.id} value={r.id}>{nomeRegiao(r)}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="osm-prefixo">Prefixo dos códigos</Label>
-                <Input
-                  id="osm-prefixo"
-                  placeholder="Ex: Q, A, BNS"
-                  value={prefixo}
-                  onChange={(e) => setPrefixo(e.target.value.toUpperCase())}
-                  maxLength={10}
-                />
-                <p className="text-[10px] text-muted-foreground">Gera: {prefixo || 'Q'}001, {prefixo || 'Q'}002…</p>
-              </div>
+        {/* ── Cabeçalho ─────────────────────────────────────────────── */}
+        <div className="flex items-start justify-between px-6 pt-5 pb-4 border-b shrink-0">
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-lg bg-primary/10 shrink-0 mt-0.5">
+              <PenLine className="h-4 w-4 text-primary" />
             </div>
-          )}
+            <div>
+              <DialogTitle className="text-base font-semibold leading-tight">
+                Gerar quadras via OpenStreetMap
+              </DialogTitle>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Defina o limite do bairro — o sistema gera quadras pela malha viária automaticamente
+              </p>
+            </div>
+          </div>
 
-          {/* Avisos sobre geometria da região */}
-          {etapa === 'desenho' && regiao?.geojson && (
-            <div className="flex items-start gap-2 text-xs text-muted-foreground bg-muted/40 rounded-lg px-3 py-2">
-              <MapPin className="h-3.5 w-3.5 text-green-600 shrink-0 mt-0.5" />
-              <span>
-                Limite de <strong>{nomeRegiao(regiao)}</strong> exibido em verde tracejado.
-                Desenhe a área a analisar — pode ser o bairro inteiro.
-              </span>
+          {/* Indicador de etapas */}
+          <div className="flex items-center gap-1 shrink-0 ml-4">
+            <div className={cn(
+              'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-colors',
+              etapa === 'desenho'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-muted text-muted-foreground',
+            )}>
+              <Map className="h-3 w-3" />
+              <span>Área</span>
             </div>
-          )}
-          {etapa === 'desenho' && bairroId && !regiao?.geojson && (
-            <div className="flex items-start gap-2 text-xs text-amber-700 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2">
-              <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-              <span>Esta região não tem geometria cadastrada. Desenhe o polígono da área de análise.</span>
+            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+            <div className={cn(
+              'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-colors',
+              etapa === 'preview'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-muted text-muted-foreground',
+            )}>
+              <CheckSquare className="h-3 w-3" />
+              <span>Revisar</span>
             </div>
-          )}
+          </div>
+        </div>
 
-          {/* Mapa de desenho */}
+        {/* ── Conteúdo (scroll) ──────────────────────────────────────── */}
+        <div className="flex-1 min-h-0 overflow-y-auto px-6 py-5 space-y-4">
+
+          {/* Etapa 1 — Definição de área */}
           {etapa === 'desenho' && (
             <>
-              <p className="text-xs text-muted-foreground">
-                Desenhe o polígono da área. O sistema buscará a malha viária do OSM e gerará os quarteirões entre as ruas.
-              </p>
+              <div className="grid grid-cols-[1fr_170px] gap-3 items-end">
+                <div className="space-y-1.5">
+                  <Label>Região / Bairro *</Label>
+                  <Select value={bairroId} onValueChange={handleBairroChange}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione uma região…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {regioes.map((r) => (
+                        <SelectItem key={r.id} value={r.id}>
+                          <span className="flex items-center gap-2">
+                            <span className={cn(
+                              'w-2 h-2 rounded-full shrink-0',
+                              r.geojson ? 'bg-green-500' : 'bg-muted-foreground/30',
+                            )} />
+                            {nomeRegiao(r)}
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="osm-prefixo">
+                    Prefixo dos códigos
+                  </Label>
+                  <Input
+                    id="osm-prefixo"
+                    placeholder="Ex: Q, A, BNS"
+                    value={prefixo}
+                    onChange={(e) => setPrefixo(e.target.value.toUpperCase())}
+                    maxLength={10}
+                  />
+                  <p className="text-[10px] text-muted-foreground leading-tight">
+                    Gera: <span className="font-mono">{prefixo || 'Q'}001</span>, <span className="font-mono">{prefixo || 'Q'}002</span>…
+                  </p>
+                </div>
+              </div>
+
+              {/* Banner — bairro com geojson */}
+              {bairroId && regiao?.geojson && (
+                <div className="flex items-start gap-2.5 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg px-3.5 py-2.5">
+                  <MapPin className="h-3.5 w-3.5 text-green-600 dark:text-green-400 shrink-0 mt-0.5" />
+                  <p className="text-xs text-green-800 dark:text-green-300 leading-relaxed">
+                    Limite de <strong>{nomeRegiao(regiao)}</strong> carregado e exibido em verde tracejado.
+                    {' '}Ajuste o polígono se necessário antes de gerar.
+                  </p>
+                </div>
+              )}
+
+              {/* Banner — bairro sem geojson */}
+              {bairroId && !regiao?.geojson && (
+                <div className="flex items-start gap-2.5 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg px-3.5 py-2.5">
+                  <AlertTriangle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                  <p className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
+                    Este bairro ainda não tem limite cadastrado.{' '}
+                    <strong>Desenhe o polígono</strong> — ele será salvo automaticamente no cadastro ao gerar as quadras.
+                  </p>
+                </div>
+              )}
+
+              {/* Mapa */}
               <Suspense fallback={
-                <div className="h-[360px] rounded-lg border bg-muted/30 flex items-center justify-center text-xs text-muted-foreground">
-                  <Loader2 className="h-5 w-5 animate-spin mr-2" /> Carregando mapa…
+                <div className="h-[420px] rounded-lg border bg-muted/30 flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                  <Loader2 className="h-5 w-5 animate-spin" /> Carregando mapa…
                 </div>
               }>
                 <DrawPolygonMap
@@ -254,46 +335,74 @@ export function ModalDesenharQuarteirao({ open, regioes, bairroIdInicial, onClos
                   onChange={(g) => setGeojson(g as Record<string, unknown> | null)}
                   center={mapCenter}
                   backgroundGeoJSON={regiao?.geojson ?? null}
-                  mapClassName="h-[360px]"
+                  mapClassName="h-[420px]"
                 />
               </Suspense>
             </>
           )}
 
-          {/* Preview das quadras candidatas */}
+          {/* Etapa 2 — Preview das quadras */}
           {etapa === 'preview' && (
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium">
-                  {candidatos.length} quadras candidatas
-                  <span className="text-xs text-muted-foreground ml-2">({totalSel} selecionadas)</span>
+
+              {/* Cabeçalho do preview */}
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge variant="secondary" className="gap-1.5 text-xs">
+                    <Map className="h-3 w-3" />
+                    {candidatos.length} candidatas
+                  </Badge>
+                  <Badge variant="outline" className="gap-1.5 text-xs text-primary border-primary/30 bg-primary/5">
+                    <CheckSquare className="h-3 w-3" />
+                    {totalSel} selecionadas
+                  </Badge>
                   {duplicatas.size > 0 && (
-                    <span className="text-xs text-destructive ml-2">· {duplicatas.size} já existem</span>
+                    <Badge variant="destructive" className="gap-1.5 text-xs">
+                      {duplicatas.size} já existem
+                    </Badge>
                   )}
-                </p>
-                <div className="flex gap-3">
-                  <button type="button" onClick={toggleTodas} className="text-xs text-primary hover:underline">
-                    {totalSel === candidatos.length ? 'Desmarcar todas' : 'Selecionar todas'}
-                  </button>
-                  <button
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Button
                     type="button"
-                    onClick={() => { setEtapa('desenho'); setGeojson(null); }}
-                    className="text-xs text-muted-foreground hover:text-foreground"
+                    variant="ghost"
+                    size="sm"
+                    onClick={toggleTodas}
+                    className="h-7 text-xs px-3"
                   >
-                    ← Redesenhar
-                  </button>
+                    {totalSel === candidatos.filter(c => !duplicatas.has(c.codigo)).length
+                      ? 'Desmarcar todas'
+                      : 'Selecionar novas'}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => { setEtapa('desenho'); setGeojson(null); }}
+                    className="h-7 text-xs gap-1.5"
+                  >
+                    <ArrowLeft className="h-3 w-3" />
+                    Redesenhar
+                  </Button>
                 </div>
               </div>
 
+              {/* Mapa preview */}
               <Suspense fallback={
-                <div className="h-[260px] rounded-lg border bg-muted/30 flex items-center justify-center text-xs text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" /> Carregando mapa…
+                <div className="h-[220px] rounded-lg border bg-muted/30 flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" /> Carregando mapa…
                 </div>
               }>
-                <PreviewQuadrasOSMMap candidatos={candidatos} selecionadas={selecionadas} onToggle={toggleSelecionada} center={clienteCenter ?? undefined} />
+                <PreviewQuadrasOSMMap
+                  candidatos={candidatos}
+                  selecionadas={selecionadas}
+                  onToggle={toggleSelecionada}
+                  center={clienteCenter ?? undefined}
+                />
               </Suspense>
 
-              <div className="border rounded-lg divide-y max-h-48 overflow-y-auto">
+              {/* Lista de quadras */}
+              <div className="border rounded-lg divide-y max-h-44 overflow-y-auto">
                 {candidatos.map((c) => {
                   const sel = selecionadas.has(c.codigo);
                   const dup = duplicatas.has(c.codigo);
@@ -301,29 +410,43 @@ export function ModalDesenharQuarteirao({ open, regioes, bairroIdInicial, onClos
                     <div
                       key={c.codigo}
                       className={cn(
-                        'flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-muted/30 transition-colors',
+                        'flex items-center gap-2.5 px-3 py-2 transition-colors select-none',
+                        !dup && 'cursor-pointer hover:bg-muted/40',
                         sel && !dup && 'bg-primary/5',
-                        dup && 'bg-destructive/5 opacity-60',
+                        dup && 'opacity-50 cursor-not-allowed bg-destructive/5',
                       )}
                       onClick={() => !dup && toggleSelecionada(c.codigo)}
                     >
-                      {dup
-                        ? <Square className="h-3.5 w-3.5 text-destructive shrink-0" />
-                        : sel
-                          ? <CheckSquare className="h-3.5 w-3.5 text-primary shrink-0" />
-                          : <Square className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
+                      {/* Checkbox visual */}
+                      <div className={cn(
+                        'w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center',
+                        dup
+                          ? 'border-destructive/40'
+                          : sel
+                            ? 'border-primary bg-primary'
+                            : 'border-muted-foreground/40',
+                      )}>
+                        {sel && !dup && <CheckSquare className="h-3 w-3 text-primary-foreground" />}
+                        {dup && <Square className="h-3 w-3 text-destructive/50" />}
+                      </div>
+
                       <Input
                         value={codigos[c.codigo] ?? c.codigo}
-                        onChange={(e) => { e.stopPropagation(); setCodigos(prev => ({ ...prev, [c.codigo]: e.target.value.toUpperCase() })); }}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          setCodigos(prev => ({ ...prev, [c.codigo]: e.target.value.toUpperCase() }));
+                        }}
                         onClick={(e) => e.stopPropagation()}
-                        className={cn('h-6 text-xs font-mono w-28 shrink-0', dup && 'border-destructive/50')}
+                        className={cn('h-6 text-xs font-mono w-28 shrink-0', dup && 'border-destructive/30 text-muted-foreground')}
                         disabled={dup}
                       />
-                      <Badge variant="outline" className="text-[10px] h-5 shrink-0">
-                        {fmtArea(c.areaM2)}
-                      </Badge>
+
+                      <span className="text-xs text-muted-foreground">{fmtArea(c.areaM2)}</span>
+
                       {dup && (
-                        <Badge variant="destructive" className="text-[10px] h-5 shrink-0">já existe</Badge>
+                        <Badge variant="destructive" className="text-[10px] h-5 ml-auto shrink-0">
+                          já existe
+                        </Badge>
                       )}
                     </div>
                   );
@@ -333,25 +456,43 @@ export function ModalDesenharQuarteirao({ open, regioes, bairroIdInicial, onClos
           )}
         </div>
 
-        <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={handleClose} disabled={isPending}>Cancelar</Button>
+        {/* ── Rodapé ─────────────────────────────────────────────────── */}
+        <div className="flex items-center justify-between gap-4 px-6 py-4 border-t bg-muted/20 shrink-0">
+          <p className="text-xs text-muted-foreground truncate">{statusText}</p>
 
-          {etapa === 'desenho' && (
-            <Button onClick={handleGerar} disabled={isPending || !bairroId || !geojson}>
-              {gerarOSM.isPending
-                ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Consultando OSM…</>
-                : <><Wand2 className="h-4 w-4 mr-2" /> Gerar quadras</>}
+          <div className="flex items-center gap-2 shrink-0">
+            <Button variant="ghost" size="sm" onClick={handleClose} disabled={isPending}>
+              Cancelar
             </Button>
-          )}
 
-          {etapa === 'preview' && (
-            <Button onClick={handleSalvar} disabled={importar.isPending || totalAptas === 0}>
-              {importar.isPending
-                ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Salvando…</>
-                : `Salvar ${totalAptas} quadra${totalAptas !== 1 ? 's' : ''}`}
-            </Button>
-          )}
-        </DialogFooter>
+            {etapa === 'desenho' && (
+              <Button
+                size="sm"
+                onClick={handleGerar}
+                disabled={isPending || !bairroId || !geojson}
+                className="gap-2 min-w-[140px]"
+              >
+                {gerarOSM.isPending
+                  ? <><Loader2 className="h-4 w-4 animate-spin" /> Consultando OSM…</>
+                  : <><Wand2 className="h-4 w-4" /> Gerar quadras</>}
+              </Button>
+            )}
+
+            {etapa === 'preview' && (
+              <Button
+                size="sm"
+                onClick={handleSalvar}
+                disabled={importar.isPending || totalAptas === 0}
+                className="gap-2 min-w-[140px]"
+              >
+                {importar.isPending
+                  ? <><Loader2 className="h-4 w-4 animate-spin" /> Salvando…</>
+                  : <><CheckSquare className="h-4 w-4" /> Salvar {totalAptas} quadra{totalAptas !== 1 ? 's' : ''}</>}
+              </Button>
+            )}
+          </div>
+        </div>
+
       </DialogContent>
     </Dialog>
   );

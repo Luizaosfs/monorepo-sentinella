@@ -35,4 +35,8 @@ export const QuarteiraoException = createExceptionFactory({
     type: 'conflict',
     message: 'Polígono se sobrepõe a um quarteirão já cadastrado neste cliente',
   },
+  cicloFechado: {
+    type: 'forbidden',
+    message: 'Não é possível alterar distribuições de um ciclo fechado',
+  },
 });

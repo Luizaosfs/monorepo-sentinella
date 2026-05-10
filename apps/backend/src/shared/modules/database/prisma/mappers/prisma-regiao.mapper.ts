@@ -23,7 +23,9 @@ export class PrismaRegiaoMapper {
         nome: raw.nome,
         cor: raw.cor || undefined,
         geojson: raw.geojson
-          ? (raw.geojson as JsonObject)
+          ? (typeof raw.geojson === 'string'
+              ? JSON.parse(raw.geojson) as JsonObject
+              : raw.geojson as JsonObject)
           : undefined,
         ativo: raw.ativo,
         latitude: raw.latitude ?? null,

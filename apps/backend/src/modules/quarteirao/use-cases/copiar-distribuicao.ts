@@ -7,11 +7,13 @@ import { assertTenantOwnership } from 'src/shared/security/tenant-ownership.util
 import { CopiarDistribuicaoBody } from '../dtos/create-distribuicao.body';
 import { QuarteiraoException } from '../errors/quarteirao.exception';
 import { QuarteiraoWriteRepository } from '../repositories/quarteirao-write.repository';
+import { EnsureCicloEditavel } from './ensure-ciclo-editavel';
 
 @Injectable({ scope: Scope.REQUEST })
 export class CopiarDistribuicao {
   constructor(
     private repository: QuarteiraoWriteRepository,
+    private ensureCicloEditavel: EnsureCicloEditavel,
     @Inject(REQUEST) private req: Request,
   ) {}
 
@@ -29,6 +31,9 @@ export class CopiarDistribuicao {
     if (input.cicloOrigemId === input.cicloDestinoId) {
       throw QuarteiraoException.badRequest();
     }
+
+    // Destino deve ser editável — origem pode estar fechada (só estamos lendo dela)
+    await this.ensureCicloEditavel.execute(input.cicloDestinoId, clienteId);
 
     const result = await this.repository.copiarDistribuicoesCiclo({
       clienteId,

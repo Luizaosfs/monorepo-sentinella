@@ -19,3 +19,20 @@ model bairros_distribuicao {
   @@map("bairros_distribuicao")
   @@schema("public")
 }
+
+model bairros_distribuicao_historico {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cliente_id String   @db.Uuid
+  ciclo_id   String   @db.Uuid
+  quadra_id  String   @db.Uuid
+  agente_id  String?  @db.Uuid
+  acao       String
+  usuario_id String?  @db.Uuid
+  created_at DateTime @default(now()) @db.Timestamptz
+
+  @@index([ciclo_id])
+  @@index([quadra_id])
+  @@index([cliente_id])
+  @@map("bairros_distribuicao_historico")
+  @@schema("public")
+}
