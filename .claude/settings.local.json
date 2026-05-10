@@ -352,7 +352,8 @@
       "PowerShell($env:PGPASSWORD=\"Sentinella147852369\"; & \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -U luizAntonio -h 177.7.37.14 -d sentinella -c \"SELECT column_name, data_type FROM information_schema.columns WHERE table_schema='public' AND table_name='bairros' ORDER BY ordinal_position;\" 2>&1)",
       "PowerShell($env:PGPASSWORD=\"Sentinella147852369\"; & \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -U luizAntonio -h 177.7.37.14 -d sentinella -c \"ALTER TABLE bairros RENAME COLUMN regiao TO bairro;\" 2>&1)",
       "PowerShell(& \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" \"postgresql://luizAntonio:Sentinella147852369@177.7.37.14:5432/sentinella\" -f \"D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend\\\\prisma\\\\migrations\\\\refactor_distribuicao_fk.sql\" 2>&1)",
-      "PowerShell(cd D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend; $tsc = \"D:\\\\sentinella\\\\monorepo-sentinella\\\\node_modules\\\\.bin\\\\tsc.cmd\"; & $tsc --noEmit --project tsconfig.json 2>&1 | Where-Object { $_ -match \"error TS\" } | Select-Object -First 20)"
+      "PowerShell(cd D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend; $tsc = \"D:\\\\sentinella\\\\monorepo-sentinella\\\\node_modules\\\\.bin\\\\tsc.cmd\"; & $tsc --noEmit --project tsconfig.json 2>&1 | Where-Object { $_ -match \"error TS\" } | Select-Object -First 20)",
+      "Bash(node_modules\\\\.bin\\\\tsc.CMD --noEmit --project tsconfig.json)"
     ]
   }
 }

@@ -50,16 +50,17 @@ export class GetResumoCoberturaUc {
       this.prisma.client.$queryRaw<RawQStats[]>(Prisma.sql`
         WITH q_stats AS (
           SELECT
-            dq.quarteirao,
+            dq.quadra_id,
             COUNT(DISTINCT i.id)::float AS total_imoveis,
             COUNT(DISTINCT v.imovel_id)::float AS visitados
           FROM bairros_distribuicao dq
+          JOIN bairros_quadras q ON q.id = dq.quadra_id
           LEFT JOIN imoveis i
-            ON i.quarteirao = dq.quarteirao AND i.cliente_id = dq.cliente_id AND i.deleted_at IS NULL
+            ON i.quarteirao = q.codigo AND i.cliente_id = dq.cliente_id AND i.deleted_at IS NULL
           LEFT JOIN vistorias v
             ON v.imovel_id = i.id AND v.ciclo = ${cicloNum} AND v.deleted_at IS NULL AND v.imovel_id IS NOT NULL
-          WHERE dq.cliente_id = ${clienteId}::uuid AND dq.ciclo = ${cicloNum}
-          GROUP BY dq.quarteirao
+          WHERE dq.cliente_id = ${clienteId}::uuid AND dq.ciclo_id = ${cicloAtivo.id}::uuid
+          GROUP BY dq.quadra_id
         )
         SELECT
           COUNT(*)::int AS total,
@@ -85,7 +86,7 @@ export class GetResumoCoberturaUc {
           AND v.cliente_id = dq.cliente_id
           AND v.ciclo = ${cicloNum}
           AND v.deleted_at IS NULL
-        WHERE dq.cliente_id = ${clienteId}::uuid AND dq.ciclo = ${cicloNum}
+        WHERE dq.cliente_id = ${clienteId}::uuid AND dq.ciclo_id = ${cicloAtivo.id}::uuid
       `),
 
       this.prisma.client.$queryRaw<RawCount[]>(Prisma.sql`
@@ -99,14 +100,15 @@ export class GetResumoCoberturaUc {
       `),
 
       this.prisma.client.$queryRaw<RawCount[]>(Prisma.sql`
-        SELECT COUNT(DISTINCT dq.quarteirao)::int AS total
+        SELECT COUNT(DISTINCT dq.quadra_id)::int AS total
         FROM bairros_distribuicao dq
-        WHERE dq.cliente_id = ${clienteId}::uuid AND dq.ciclo = ${cicloNum}
+        JOIN bairros_quadras q ON q.id = dq.quadra_id
+        WHERE dq.cliente_id = ${clienteId}::uuid AND dq.ciclo_id = ${cicloAtivo.id}::uuid
           AND NOT EXISTS (
             SELECT 1
             FROM vistorias v
             INNER JOIN imoveis i ON i.id = v.imovel_id
-            WHERE i.quarteirao = dq.quarteirao
+            WHERE i.quarteirao = q.codigo
               AND v.cliente_id = ${clienteId}::uuid
               AND v.deleted_at IS NULL
               AND i.deleted_at IS NULL

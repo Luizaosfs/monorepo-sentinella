@@ -16,7 +16,7 @@ export class GetCoberturaAgentesUc {
   async execute(clienteId: string): Promise<CoberturaAgenteDto[]> {
     const cicloAtivo = await this.prisma.client.ciclos.findFirst({
       where: { cliente_id: clienteId, status: 'ativo' },
-      select: { numero: true },
+      select: { id: true, numero: true },
     });
     if (!cicloAtivo) return [];
 
@@ -27,15 +27,16 @@ export class GetCoberturaAgentesUc {
         COUNT(DISTINCT i.id)::int AS total_imoveis,
         COUNT(DISTINCT v.imovel_id)::int AS visitados
       FROM bairros_distribuicao dq
+      JOIN bairros_quadras q ON q.id = dq.quadra_id
       INNER JOIN usuarios u ON u.id = dq.agente_id
       LEFT JOIN imoveis i
-        ON i.quarteirao = dq.quarteirao AND i.cliente_id = dq.cliente_id AND i.deleted_at IS NULL
+        ON i.quarteirao = q.codigo AND i.cliente_id = dq.cliente_id AND i.deleted_at IS NULL
       LEFT JOIN vistorias v
         ON v.imovel_id = i.id
         AND v.ciclo = ${cicloAtivo.numero}
         AND v.deleted_at IS NULL
         AND v.imovel_id IS NOT NULL
-      WHERE dq.cliente_id = ${clienteId}::uuid AND dq.ciclo = ${cicloAtivo.numero}
+      WHERE dq.cliente_id = ${clienteId}::uuid AND dq.ciclo_id = ${cicloAtivo.id}::uuid
       GROUP BY dq.agente_id, u.nome
       ORDER BY visitados DESC, u.nome
     `);

@@ -651,6 +651,11 @@ export default function AdminDistribuicaoQuarteirao() {
                 </span>
               )}
             </div>
+
+            {/* Separator: ciclo | territorial ops */}
+            <div className="h-6 w-px bg-border/60 hidden sm:block shrink-0" />
+
+            {/* Territorial ops */}
             <Button
               variant="outline"
               size="sm"
@@ -659,7 +664,7 @@ export default function AdminDistribuicaoQuarteirao() {
               className="gap-1.5 h-8"
             >
               <PenLine className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Desenhar quadra</span>
+              <span className="hidden sm:inline">Desenhar</span>
             </Button>
             <Button
               variant="outline"
@@ -669,7 +674,7 @@ export default function AdminDistribuicaoQuarteirao() {
               className="gap-1.5 h-8"
             >
               <FileJson className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Importar GeoJSON</span>
+              <span className="hidden sm:inline">Importar</span>
             </Button>
             <Button
               variant="outline"
@@ -679,8 +684,12 @@ export default function AdminDistribuicaoQuarteirao() {
               className="gap-1.5 h-8"
             >
               <Plus className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Gerar quadras</span>
+              <span className="hidden sm:inline">Gerar</span>
             </Button>
+
+            {/* Separator: territorial | distribution ops */}
+            <div className="h-6 w-px bg-border/60 hidden sm:block shrink-0" />
+
             <Button
               variant="outline"
               size="sm"
@@ -744,30 +753,34 @@ export default function AdminDistribuicaoQuarteirao() {
 
       {/* 3-panel layout */}
       {isLoading ? (
-        <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-[320px_1fr_256px]">
+        <div className="grid grid-cols-1 items-stretch gap-3 lg:grid-cols-[minmax(0,26fr)_minmax(0,58fr)_minmax(0,16fr)]">
           <Skeleton className={cn('rounded-xl', DISTRIB_AREA_BOX)} />
           <Skeleton className={cn('rounded-xl', DISTRIB_AREA_BOX)} />
           <Skeleton className={cn('rounded-xl', DISTRIB_AREA_BOX)} />
         </div>
       ) : !cicloId ? (
         /* Estado vazio — sem ciclo selecionado */
-        <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed py-16 text-center">
-          <MapIcon className="h-10 w-10 text-muted-foreground/30" />
-          <div className="space-y-1">
-            <p className="text-sm font-medium">Selecione um ciclo operacional</p>
-            <p className="text-xs text-muted-foreground">
-              Escolha o ciclo no seletor acima para visualizar e gerenciar a distribuição de quadras.
+        <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed bg-muted/20 py-20 text-center">
+          <div className="rounded-full bg-muted/60 p-4">
+            <MapIcon className="h-8 w-8 text-muted-foreground/40" />
+          </div>
+          <div className="space-y-1.5">
+            <p className="text-sm font-semibold">Selecione um ciclo operacional</p>
+            <p className="text-xs text-muted-foreground max-w-xs">
+              Escolha o ciclo no seletor acima para visualizar e gerenciar a distribuição territorial de quadras.
             </p>
           </div>
         </div>
       ) : quarteiroes.length === 0 ? (
         /* Estado vazio — sem quadras cadastradas */
-        <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed py-16 text-center">
-          <Grid2X2 className="h-10 w-10 text-muted-foreground/30" />
-          <div className="space-y-1">
-            <p className="text-sm font-medium">Este município ainda não possui quadras cadastradas</p>
+        <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed bg-muted/20 py-20 text-center">
+          <div className="rounded-full bg-muted/60 p-4">
+            <Grid2X2 className="h-8 w-8 text-muted-foreground/40" />
+          </div>
+          <div className="space-y-1.5">
+            <p className="text-sm font-semibold">Nenhuma quadra cadastrada</p>
             <p className="text-xs text-muted-foreground max-w-sm">
-              Gere quadras em lote por bairro, desenhe quadras manualmente ou importe um arquivo GeoJSON.
+              Gere quadras automaticamente por bairro, desenhe manualmente ou importe um arquivo GeoJSON.
             </p>
           </div>
           <div className="flex gap-2 flex-wrap justify-center">
@@ -778,7 +791,7 @@ export default function AdminDistribuicaoQuarteirao() {
               className="gap-1.5"
             >
               <Plus className="h-3.5 w-3.5" />
-              Gerar quadras em lote
+              Gerar quadras
             </Button>
             <Button
               variant="outline"
@@ -802,17 +815,19 @@ export default function AdminDistribuicaoQuarteirao() {
         </div>
       ) : agentes.length === 0 ? (
         /* Estado vazio — sem agentes */
-        <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed py-16 text-center">
-          <Users className="h-10 w-10 text-muted-foreground/30" />
-          <div className="space-y-1">
-            <p className="text-sm font-medium">Não há agentes disponíveis para distribuição</p>
-            <p className="text-xs text-muted-foreground">
-              Cadastre agentes de campo no módulo de usuários para poder atribuir quadras.
+        <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed bg-muted/20 py-20 text-center">
+          <div className="rounded-full bg-muted/60 p-4">
+            <Users className="h-8 w-8 text-muted-foreground/40" />
+          </div>
+          <div className="space-y-1.5">
+            <p className="text-sm font-semibold">Nenhum agente disponível</p>
+            <p className="text-xs text-muted-foreground max-w-xs">
+              Cadastre agentes de campo no módulo de usuários para poder distribuir quadras.
             </p>
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-[320px_1fr_256px]">
+        <div className="grid grid-cols-1 items-stretch gap-3 lg:grid-cols-[minmax(0,26fr)_minmax(0,58fr)_minmax(0,16fr)]">
           {/* Left panel */}
           <div className={cn('lg:sticky lg:top-4', DISTRIB_AREA_BOX)}>
             <PainelRegioesQuadras

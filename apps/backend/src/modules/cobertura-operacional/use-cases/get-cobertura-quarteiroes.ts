@@ -17,26 +17,27 @@ export class GetCoberturaQuarteiroesSUc {
   async execute(clienteId: string): Promise<CoberturaQuarteiraoDto[]> {
     const cicloAtivo = await this.prisma.client.ciclos.findFirst({
       where: { cliente_id: clienteId, status: 'ativo' },
-      select: { numero: true },
+      select: { id: true, numero: true },
     });
     if (!cicloAtivo) return [];
 
     const rows = await this.prisma.client.$queryRaw<RawRow[]>(Prisma.sql`
       SELECT
-        dq.quarteirao,
+        q.codigo AS quarteirao,
         COUNT(DISTINCT i.id)::int AS total_imoveis,
         COUNT(DISTINCT v.imovel_id)::int AS visitados
       FROM bairros_distribuicao dq
+      JOIN bairros_quadras q ON q.id = dq.quadra_id
       LEFT JOIN imoveis i
-        ON i.quarteirao = dq.quarteirao AND i.cliente_id = dq.cliente_id AND i.deleted_at IS NULL
+        ON i.quarteirao = q.codigo AND i.cliente_id = dq.cliente_id AND i.deleted_at IS NULL
       LEFT JOIN vistorias v
         ON v.imovel_id = i.id
         AND v.ciclo = ${cicloAtivo.numero}
         AND v.deleted_at IS NULL
         AND v.imovel_id IS NOT NULL
-      WHERE dq.cliente_id = ${clienteId}::uuid AND dq.ciclo = ${cicloAtivo.numero}
-      GROUP BY dq.quarteirao
-      ORDER BY dq.quarteirao
+      WHERE dq.cliente_id = ${clienteId}::uuid AND dq.ciclo_id = ${cicloAtivo.id}::uuid
+      GROUP BY q.codigo
+      ORDER BY q.codigo
     `);
 
     return rows.map(r => {

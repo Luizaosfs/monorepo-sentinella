@@ -24,10 +24,10 @@ export class GetImoveisNuncaVisitadosUc {
   async execute(clienteId: string): Promise<ImovelNuncaVisitadoDto[]> {
     const cicloAtivo = await this.prisma.client.ciclos.findFirst({
       where: { cliente_id: clienteId, status: 'ativo' },
-      select: { numero: true },
+      select: { id: true },
     });
 
-    const cicloNum = cicloAtivo?.numero ?? null;
+    const cicloId = cicloAtivo?.id ?? '00000000-0000-0000-0000-000000000000';
 
     const rows = await this.prisma.client.$queryRaw<RawRow[]>(Prisma.sql`
       SELECT
@@ -43,9 +43,10 @@ export class GetImoveisNuncaVisitadosUc {
       LEFT JOIN LATERAL (
         SELECT dq2.agente_id
         FROM bairros_distribuicao dq2
-        WHERE dq2.quarteirao = i.quarteirao
+        JOIN bairros_quadras q2 ON q2.id = dq2.quadra_id
+        WHERE q2.codigo = i.quarteirao
           AND dq2.cliente_id = i.cliente_id
-          AND dq2.ciclo = ${cicloNum ?? 0}
+          AND dq2.ciclo_id = ${cicloId}::uuid
         LIMIT 1
       ) dq ON true
       LEFT JOIN usuarios u ON u.id = dq.agente_id

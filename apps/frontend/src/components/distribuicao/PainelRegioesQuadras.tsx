@@ -173,7 +173,8 @@ export function PainelRegioesQuadras({
             return (
               <div key={bairroId}>
                 {/* Cabeçalho da região */}
-                <div className="flex items-center gap-1.5 px-3 py-2 bg-muted/30 hover:bg-muted/50 transition-colors">
+                <div className="bg-muted/30 hover:bg-muted/50 transition-colors">
+                <div className="flex items-center gap-1.5 px-3 py-2">
                   <button
                     type="button"
                     onClick={() => vis.length > 0 && onSelectQuadras(vis, !todasSel)}
@@ -236,6 +237,23 @@ export function PainelRegioesQuadras({
                       <Plus className="h-3.5 w-3.5" />
                     </button>
                   )}
+                </div>
+                {/* Attribution progress strip */}
+                {vis.length > 0 && (
+                  <div className="h-0.5 bg-border/30">
+                    <div
+                      className={cn(
+                        'h-full transition-all duration-300',
+                        atribuidos === vis.length
+                          ? 'bg-emerald-400/70'
+                          : atribuidos > 0
+                            ? 'bg-amber-400/60'
+                            : '',
+                      )}
+                      style={{ width: `${Math.round((atribuidos / vis.length) * 100)}%` }}
+                    />
+                  </div>
+                )}
                 </div>
 
                 {/* Linhas de quadra */}

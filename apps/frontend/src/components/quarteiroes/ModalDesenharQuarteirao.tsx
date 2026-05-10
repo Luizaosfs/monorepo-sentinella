@@ -214,7 +214,7 @@ export function ModalDesenharQuarteirao({ open, regioes, bairroIdInicial, onClos
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
-      <DialogContent className="max-w-3xl p-0 max-h-[92vh] flex flex-col gap-0 overflow-hidden">
+      <DialogContent className="max-w-5xl p-0 max-h-[94vh] flex flex-col gap-0 overflow-hidden">
 
         {/* ── Cabeçalho ─────────────────────────────────────────────── */}
         <div className="flex items-start justify-between px-6 pt-5 pb-4 border-b shrink-0">
@@ -326,7 +326,7 @@ export function ModalDesenharQuarteirao({ open, regioes, bairroIdInicial, onClos
 
               {/* Mapa */}
               <Suspense fallback={
-                <div className="h-[420px] rounded-lg border bg-muted/30 flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                <div className="h-[560px] rounded-lg border bg-muted/30 flex items-center justify-center gap-2 text-xs text-muted-foreground">
                   <Loader2 className="h-5 w-5 animate-spin" /> Carregando mapa…
                 </div>
               }>
@@ -335,7 +335,7 @@ export function ModalDesenharQuarteirao({ open, regioes, bairroIdInicial, onClos
                   onChange={(g) => setGeojson(g as Record<string, unknown> | null)}
                   center={mapCenter}
                   backgroundGeoJSON={regiao?.geojson ?? null}
-                  mapClassName="h-[420px]"
+                  mapClassName="h-[560px]"
                 />
               </Suspense>
             </>
@@ -389,7 +389,7 @@ export function ModalDesenharQuarteirao({ open, regioes, bairroIdInicial, onClos
 
               {/* Mapa preview */}
               <Suspense fallback={
-                <div className="h-[220px] rounded-lg border bg-muted/30 flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                <div className="h-[340px] rounded-lg border bg-muted/30 flex items-center justify-center gap-2 text-xs text-muted-foreground">
                   <Loader2 className="h-4 w-4 animate-spin" /> Carregando mapa…
                 </div>
               }>
