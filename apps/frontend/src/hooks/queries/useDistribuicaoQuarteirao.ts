@@ -7,12 +7,12 @@ import { STALE } from '@/lib/queryConfig';
  */
 export function useDistribuicaoQuarteiraoByCiclo(
   clienteId: string | null | undefined,
-  ciclo: number,
+  cicloId: string | null | undefined,
 ) {
   return useQuery({
-    queryKey: ['dist_quarteirao', clienteId, ciclo],
-    queryFn: () => api.distribuicaoQuarteirao.listByCiclo(clienteId!, ciclo),
-    enabled: !!clienteId,
+    queryKey: ['dist_quarteirao', clienteId, cicloId],
+    queryFn: () => api.distribuicaoQuarteirao.listByCiclo(clienteId!, cicloId!),
+    enabled: !!clienteId && !!cicloId,
     staleTime: STALE.MEDIUM,
   });
 }
@@ -24,12 +24,12 @@ export function useDistribuicaoQuarteiraoByCiclo(
 export function useQuarteiroesByAgente(
   clienteId: string | null | undefined,
   agenteId: string | null | undefined,
-  ciclo: number,
+  cicloId: string | null | undefined,
 ) {
   return useQuery<string[]>({
-    queryKey: ['distribuicao_quarteirao_agente', clienteId, agenteId, ciclo],
-    queryFn: () => api.distribuicaoQuarteirao.listByAgente(clienteId!, agenteId!, ciclo),
-    enabled: !!clienteId && !!agenteId,
+    queryKey: ['distribuicao_quarteirao_agente', clienteId, agenteId, cicloId],
+    queryFn: () => api.distribuicaoQuarteirao.listByAgente(clienteId!, agenteId!, cicloId!),
+    enabled: !!clienteId && !!agenteId && !!cicloId,
     staleTime: STALE.LONG,
   });
 }
@@ -51,12 +51,12 @@ export function useQuarteiroesMestre(clienteId: string | null | undefined) {
  */
 export function useCoberturaQuarteirao(
   clienteId: string | null | undefined,
-  ciclo: number,
+  cicloId: string | null | undefined,
 ) {
   return useQuery({
-    queryKey: ['cobertura_quarteirao', clienteId, ciclo],
-    queryFn: () => api.distribuicaoQuarteirao.coberturaByCliente(clienteId!, ciclo),
-    enabled: !!clienteId,
+    queryKey: ['cobertura_quarteirao', clienteId, cicloId],
+    queryFn: () => api.distribuicaoQuarteirao.coberturaByCliente(clienteId!, cicloId!),
+    enabled: !!clienteId && !!cicloId,
     staleTime: STALE.SHORT,
   });
 }

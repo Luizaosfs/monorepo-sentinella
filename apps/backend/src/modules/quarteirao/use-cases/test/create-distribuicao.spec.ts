@@ -33,8 +33,8 @@ describe('CreateDistribuicao', () => {
 
     const result = await useCase.execute({
       clienteId: 'test-cliente-id',
-      ciclo: 2,
-      quarteirao: 'Q002',
+      cicloId:  '00000000-0000-0000-0000-000000000002',
+      quadraId: '00000000-0000-0000-0000-000000000002',
       agenteId: '99999999-9999-4999-8999-999999999999',
     });
 
@@ -54,8 +54,8 @@ describe('CreateDistribuicao', () => {
       () =>
         useCase.execute({
           clienteId: 'test-cliente-id',
-          ciclo: 1,
-          quarteirao: 'Q',
+          cicloId:  '00000000-0000-0000-0000-000000000001',
+          quadraId: '00000000-0000-0000-0000-000000000001',
           agenteId: '99999999-9999-4999-8999-999999999999',
         }),
       QuarteiraoException.conflictDistribuicao(),
@@ -88,8 +88,8 @@ describe('CreateDistribuicao', () => {
       () =>
         uc.execute({
           clienteId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
-          ciclo: 1,
-          quarteirao: 'Q',
+          cicloId:  '00000000-0000-0000-0000-000000000001',
+          quadraId: '00000000-0000-0000-0000-000000000001',
           agenteId: '99999999-9999-4999-8999-999999999999',
         }),
       QuarteiraoException.forbiddenTenant(),
@@ -110,8 +110,8 @@ describe('CreateDistribuicao', () => {
     await expectHttpException(
       () =>
         uc.execute({
-          ciclo: 1,
-          quarteirao: 'Q',
+          cicloId:  '00000000-0000-0000-0000-000000000001',
+          quadraId: '00000000-0000-0000-0000-000000000001',
           agenteId: '99999999-9999-4999-8999-999999999999',
         }),
       QuarteiraoException.badRequest(),

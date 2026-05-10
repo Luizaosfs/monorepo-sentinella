@@ -38,7 +38,7 @@ export class IniciarImplantacao {
 
     // Validação 4: ao menos um quarteirão distribuído
     const distribuicoes = await this.prisma.client.bairros_distribuicao.count({
-      where: { cliente_id: clienteId, ciclo: cicloAtivo.numero },
+      where: { cliente_id: clienteId, ciclo_id: cicloAtivo.id },
     });
     if (distribuicoes === 0) throw ImplantacaoException.semDistribuicao();
 

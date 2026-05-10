@@ -350,7 +350,8 @@
       "PowerShell($env:PGPASSWORD=\"Sentinella147852369\"; & \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -U luizAntonio -h 177.7.37.14 -d sentinella -c \"SELECT column_name FROM information_schema.columns WHERE table_name IN \\('pluvio_risco','imoveis'\\) AND column_name LIKE '%bairro%' OR column_name LIKE '%regiao%' ORDER BY table_name, column_name;\" 2>&1)",
       "PowerShell($env:PGPASSWORD=\"Sentinella147852369\"; & \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -U luizAntonio -h 177.7.37.14 -d sentinella -c \"SELECT table_name, column_name FROM information_schema.columns WHERE table_schema='public' AND column_name='regiao_id' ORDER BY table_name;\" 2>&1)",
       "PowerShell($env:PGPASSWORD=\"Sentinella147852369\"; & \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -U luizAntonio -h 177.7.37.14 -d sentinella -c \"SELECT column_name, data_type FROM information_schema.columns WHERE table_schema='public' AND table_name='bairros' ORDER BY ordinal_position;\" 2>&1)",
-      "PowerShell($env:PGPASSWORD=\"Sentinella147852369\"; & \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -U luizAntonio -h 177.7.37.14 -d sentinella -c \"ALTER TABLE bairros RENAME COLUMN regiao TO bairro;\" 2>&1)"
+      "PowerShell($env:PGPASSWORD=\"Sentinella147852369\"; & \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -U luizAntonio -h 177.7.37.14 -d sentinella -c \"ALTER TABLE bairros RENAME COLUMN regiao TO bairro;\" 2>&1)",
+      "PowerShell(& \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" \"postgresql://luizAntonio:Sentinella147852369@177.7.37.14:5432/sentinella\" -f \"D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend\\\\prisma\\\\migrations\\\\refactor_distribuicao_fk.sql\" 2>&1)"
     ]
   }
 }

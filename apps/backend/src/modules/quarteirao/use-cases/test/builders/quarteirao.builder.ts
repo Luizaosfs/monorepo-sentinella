@@ -50,8 +50,8 @@ export class QuarteiraoBuilder {
 export class DistribuicaoBuilder {
   private id = 'dist-uuid-1';
   private clienteId = 'test-cliente-id';
-  private ciclo = 1;
-  private quarteirao = 'Q001';
+  private cicloId = 'ciclo-uuid-1';
+  private quadraId = 'quadra-uuid-1';
   private agenteId = 'agente-uuid-1';
   private bairroId: string | undefined = 'regiao-uuid-1';
 
@@ -63,12 +63,12 @@ export class DistribuicaoBuilder {
     this.clienteId = id;
     return this;
   }
-  withCiclo(c: number) {
-    this.ciclo = c;
+  withCicloId(id: string) {
+    this.cicloId = id;
     return this;
   }
-  withQuarteirao(q: string) {
-    this.quarteirao = q;
+  withQuadraId(id: string) {
+    this.quadraId = id;
     return this;
   }
   withAgenteId(id: string) {
@@ -80,10 +80,10 @@ export class DistribuicaoBuilder {
     return new DistribuicaoQuarteirao(
       {
         clienteId: this.clienteId,
-        ciclo: this.ciclo,
-        quarteirao: this.quarteirao,
-        agenteId: this.agenteId,
-        bairroId: this.bairroId,
+        cicloId:   this.cicloId,
+        quadraId:  this.quadraId,
+        agenteId:  this.agenteId,
+        bairroId:  this.bairroId,
       },
       { id: this.id },
     );

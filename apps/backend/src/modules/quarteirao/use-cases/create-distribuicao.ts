@@ -35,8 +35,8 @@ export class CreateDistribuicao {
     const entity = new DistribuicaoQuarteirao(
       {
         clienteId,
-        ciclo: input.ciclo,
-        quarteirao: input.quarteirao,
+        cicloId:  input.cicloId,
+        quadraId: input.quadraId,
         agenteId: input.agenteId,
         bairroId: input.bairroId,
       },

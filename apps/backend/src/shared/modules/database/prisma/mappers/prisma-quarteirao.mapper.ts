@@ -24,8 +24,8 @@ type RawQuarteirao = {
 type RawDistribuicao = {
   id: string;
   cliente_id: string;
-  ciclo: number;
-  quarteirao: string;
+  ciclo_id: string;
+  quadra_id: string;
   agente_id: string;
   bairro_id: string | null;
   created_at: Date;
@@ -59,8 +59,8 @@ export class PrismaQuarteiraoMapper {
     return new DistribuicaoQuarteirao(
       {
         clienteId: raw.cliente_id,
-        ciclo: raw.ciclo,
-        quarteirao: raw.quarteirao,
+        cicloId: raw.ciclo_id,
+        quadraId: raw.quadra_id,
         agenteId: raw.agente_id,
         bairroId: raw.bairro_id || undefined,
       },

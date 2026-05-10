@@ -26,14 +26,14 @@ export class CopiarDistribuicao {
       QuarteiraoException.forbiddenTenant(),
     );
 
-    if (input.cicloOrigem === input.cicloDestino) {
+    if (input.cicloOrigemId === input.cicloDestinoId) {
       throw QuarteiraoException.badRequest();
     }
 
     const result = await this.repository.copiarDistribuicoesCiclo({
       clienteId,
-      cicloOrigem: input.cicloOrigem,
-      cicloDestino: input.cicloDestino,
+      cicloOrigemId:  input.cicloOrigemId,
+      cicloDestinoId: input.cicloDestinoId,
     });
 
     return result;

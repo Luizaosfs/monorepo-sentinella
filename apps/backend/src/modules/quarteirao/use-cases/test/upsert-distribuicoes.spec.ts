@@ -14,8 +14,8 @@ describe('UpsertDistribuicoes', () => {
   it('executes one upsert per row in a transaction', async () => {
     await uc.execute('cli-1', {
       rows: [
-        { ciclo: 1, quarteirao: 'Q1', agenteId: '00000000-0000-0000-0000-000000000001' },
-        { ciclo: 1, quarteirao: 'Q2', agenteId: '00000000-0000-0000-0000-000000000002' },
+        { cicloId: 'ciclo-uuid-1', quadraId: 'quadra-uuid-1', agenteId: '00000000-0000-0000-0000-000000000001' },
+        { cicloId: 'ciclo-uuid-1', quadraId: 'quadra-uuid-2', agenteId: '00000000-0000-0000-0000-000000000002' },
       ],
     });
     expect(transaction).toHaveBeenCalledTimes(1);
@@ -30,7 +30,7 @@ describe('UpsertDistribuicoes', () => {
 
   it('passes clienteId to the raw SQL for each row', async () => {
     await uc.execute('cli-1', {
-      rows: [{ ciclo: 2, quarteirao: 'Q3', agenteId: '00000000-0000-0000-0000-000000000003' }],
+      rows: [{ cicloId: 'ciclo-uuid-2', quadraId: 'quadra-uuid-3', agenteId: '00000000-0000-0000-0000-000000000003' }],
     });
     expect(transaction).toHaveBeenCalledTimes(1);
     expect(executeRaw).toHaveBeenCalledTimes(1);

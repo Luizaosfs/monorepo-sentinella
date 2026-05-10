@@ -29,6 +29,6 @@ export abstract class QuarteiraoReadRepository {
 
   abstract coberturaQuarteiraoCiclo(input: {
     clienteId: string;
-    ciclo: number;
+    cicloId: string;
   }): Promise<CoberturaCicloResult>;
 }

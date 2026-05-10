@@ -37,7 +37,7 @@ export class CoberturaCiclo {
 
     return this.repository.coberturaQuarteiraoCiclo({
       clienteId,
-      ciclo: input.ciclo,
+      cicloId: input.cicloId,
     });
   }
 }

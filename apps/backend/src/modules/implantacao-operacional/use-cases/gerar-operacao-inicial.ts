@@ -37,13 +37,13 @@ export class GerarOperacaoInicial {
 
     // 3. Ao menos um quarteirão distribuído no ciclo ativo
     const distribuicoes = await this.prisma.client.bairros_distribuicao.findMany({
-      where: { cliente_id: clienteId, ciclo: cicloAtivo.numero },
-      select: { quarteirao: true, agente_id: true },
+      where: { cliente_id: clienteId, ciclo_id: cicloAtivo.id },
+      select: { quadra_rel: { select: { codigo: true } }, agente_id: true },
     });
     if (distribuicoes.length === 0) throw ImplantacaoException.semDistribuicao();
 
     // 4. Ao menos um imóvel elegível nos quarteirões distribuídos
-    const codigosQuarteiroes = [...new Set(distribuicoes.map(d => d.quarteirao))];
+    const codigosQuarteiroes = [...new Set(distribuicoes.map(d => d.quadra_rel!.codigo))];
     const totalImoveisElegiveis = await this.prisma.client.imoveis.count({
       where: {
         cliente_id: clienteId,
@@ -78,7 +78,7 @@ export class GerarOperacaoInicial {
     }
 
     // 6. Estatísticas de agentes com/sem rota (baseado em distribuição)
-    const agentesComRota = new Set(distribuicoes.map(d => d.agente_id)).size;
+    const agentesComRota = new Set(distribuicoes.map((d) => d.agente_id)).size;
     const totalAgentesSemRota = Math.max(0, totalAgentes - agentesComRota);
 
     return {

@@ -27,8 +27,8 @@ export class DistribuicaoQuarteiraoViewModel {
     return {
       id: d.id,
       clienteId: d.clienteId,
-      ciclo: d.ciclo,
-      quarteirao: d.quarteirao,
+      cicloId: d.cicloId,
+      quadraId: d.quadraId,
       agenteId: d.agenteId,
       bairroId: d.bairroId,
       createdAt: d.createdAt,

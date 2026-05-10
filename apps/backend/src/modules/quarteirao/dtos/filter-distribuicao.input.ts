@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 export const filterDistribuicaoSchema = z.object({
   clienteId: z.string().uuid().optional(),
-  ciclo: z.coerce.number().int(),
+  cicloId:   z.string().uuid(),
 });
 
 export class FilterDistribuicaoInput extends createZodDto(

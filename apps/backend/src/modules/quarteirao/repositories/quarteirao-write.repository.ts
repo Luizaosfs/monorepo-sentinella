@@ -16,8 +16,8 @@ export abstract class QuarteiraoWriteRepository {
   abstract deleteDistribuicao(id: string): Promise<void>;
   abstract copiarDistribuicoesCiclo(input: {
     clienteId: string;
-    cicloOrigem: number;
-    cicloDestino: number;
+    cicloOrigemId: string;
+    cicloDestinoId: string;
   }): Promise<{ copiadas: number }>;
 
   abstract upsertMestreIfMissing(

@@ -176,16 +176,16 @@ export function useFecharCiclo() {
 }
 
 /**
- * Copia distribuição de quarteirões do ciclo anterior para o próximo.
+ * Copia distribuição de quarteirões de um ciclo (UUID) para outro (UUID).
  */
 export function useCopiarDistribuicao() {
   const { clienteId } = useClienteAtivo();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ origem, destino }: { origem: number; destino: number }) =>
-      api.ciclos.copiarDistribuicao(clienteId!, origem, destino),
-    onSuccess: (_, { destino }) => {
-      qc.invalidateQueries({ queryKey: ['dist_quarteirao', clienteId, destino] });
+    mutationFn: ({ origemId, destinoId }: { origemId: string; destinoId: string }) =>
+      api.distribuicaoQuarteirao.copiarDoCiclo(clienteId!, origemId, destinoId),
+    onSuccess: (_, { destinoId }) => {
+      qc.invalidateQueries({ queryKey: ['dist_quarteirao', clienteId, destinoId] });
     },
   });
 }

@@ -18,6 +18,7 @@ model ciclos {
 
   cliente         clientes        @relation(fields: [cliente_id], references: [id])
   levantamentos   levantamentos[]
+  distribuicoes   bairros_distribuicao[]
   aberto_usuario  usuarios?       @relation("ciclo_aberto_por", fields: [aberto_por], references: [id])
   fechado_usuario usuarios?       @relation("ciclo_fechado_por", fields: [fechado_por], references: [id])
 

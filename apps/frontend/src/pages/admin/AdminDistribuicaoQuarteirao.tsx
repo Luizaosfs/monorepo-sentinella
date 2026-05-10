@@ -1,9 +1,9 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { Map as MapIcon, List, Loader2, Save, Copy, Plus, PenLine, FileJson } from 'lucide-react';
+import { Map as MapIcon, List, Loader2, Save, Copy, Plus, PenLine, FileJson, Undo2, Users, Grid2X2 } from 'lucide-react';
 import { useClienteAtivo } from '@/hooks/useClienteAtivo';
 import { api } from '@/services/api';
-import { useCicloAtivo, CICLO_LABELS } from '@/hooks/queries/useCicloAtivo';
+import { useCicloAtivo, useHistoricoCiclos, CICLO_LABELS } from '@/hooks/queries/useCicloAtivo';
 import { useAgentes } from '@/hooks/queries/useAgentes';
 import {
   useDistribuicaoQuarteiraoByCiclo,
@@ -15,12 +15,22 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { STALE } from '@/lib/queryConfig';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import type { BairrosDistribuicao } from '@/types/database';
 
 import { DistribuicaoKpiCards } from '@/components/distribuicao/DistribuicaoKpiCards';
+import { FluxoOperacionalStepper } from '@/components/distribuicao/FluxoOperacionalStepper';
+import type { StepInfo } from '@/components/distribuicao/FluxoOperacionalStepper';
 import { PainelRegioesQuadras } from '@/components/distribuicao/PainelRegioesQuadras';
 import { PainelAgentesDistribuicao } from '@/components/distribuicao/PainelAgentesDistribuicao';
 import { ListaQuadrasDistribuicao } from '@/components/distribuicao/ListaQuadrasDistribuicao';
@@ -36,7 +46,6 @@ import type { RegiaoPolygon } from '@/components/distribuicao/MapaDistribuicao';
 import type { RegiaoOpcao } from '@/components/distribuicao/ModalGerarLoteQuarteiroes';
 import type { RegiaoParaDesenho } from '@/components/quarteiroes/ModalDesenharQuarteirao';
 
-const CICLOS = [1, 2, 3, 4, 5, 6] as const;
 const SEM_REGIAO = '__sem_regiao__';
 
 /** Mesma altura do mapa e dos painéis laterais (viewport menos cabeçalho + KPIs). */
@@ -45,9 +54,18 @@ const DISTRIB_AREA_BOX = 'h-[calc(100vh-340px)] min-h-[480px]';
 export default function AdminDistribuicaoQuarteirao() {
   const { clienteId } = useClienteAtivo();
   const queryClient = useQueryClient();
-  const { cicloNumero } = useCicloAtivo();
+  const { data: cicloAtivo, cicloNumero } = useCicloAtivo();
+  const { data: todosCiclos = [] } = useHistoricoCiclos();
 
-  const [ciclo, setCiclo] = useState(() => cicloNumero);
+  const [cicloId, setCicloId] = useState<string>(() => cicloAtivo?.id ?? '');
+  /** UUID do ciclo aguardando confirmação (troca com pendentes não salvos). */
+  const [pendingCicloId, setPendingCicloId] = useState<string | null>(null);
+
+  // Sincroniza cicloId inicial quando cicloAtivo carrega
+  useEffect(() => {
+    if (cicloAtivo?.id && !cicloId) setCicloId(cicloAtivo.id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cicloAtivo?.id]);
   const [aba, setAba] = useState<'mapa' | 'lista'>('mapa');
   const [abertas, setAbertas] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState('');
@@ -65,8 +83,8 @@ export default function AdminDistribuicaoQuarteirao() {
 
   // ── Data ──────────────────────────────────────────────────────────────────
   const { data: distribuicaoSalva = [], isLoading: loadingDist } =
-    useDistribuicaoQuarteiraoByCiclo(clienteId, ciclo);
-  const { data: cobertura = [] } = useCoberturaQuarteirao(clienteId, ciclo);
+    useDistribuicaoQuarteiraoByCiclo(clienteId, cicloId);
+  const { data: cobertura = [] } = useCoberturaQuarteirao(clienteId, cicloId);
   const { data: quarteiroesMestre = [], isLoading: loadingQ } = useQuarteiroesMestre(clienteId);
   const { data: regioesList = [], isLoading: loadingRegioes } = useQuery({
     queryKey: ['regioes', clienteId],
@@ -147,6 +165,24 @@ export default function AdminDistribuicaoQuarteirao() {
     const m: Record<string, string | null> = {};
     for (const q of quarteiroesMestre as Array<Record<string, unknown>>) {
       m[String(q.codigo)] = q.bairro_id ? String(q.bairro_id) : null;
+    }
+    return m;
+  }, [quarteiroesMestre]);
+
+  /** codigo → UUID da quadra (para enviar nas mutations) */
+  const qIdMap = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const q of quarteiroesMestre as Array<Record<string, unknown>>) {
+      m[String(q.codigo)] = String(q.id);
+    }
+    return m;
+  }, [quarteiroesMestre]);
+
+  /** UUID da quadra → codigo (para sync com distribuicaoSalva) */
+  const quadraIdToCode = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const q of quarteiroesMestre as Array<Record<string, unknown>>) {
+      m[String(q.id)] = String(q.codigo);
     }
     return m;
   }, [quarteiroesMestre]);
@@ -306,7 +342,7 @@ export default function AdminDistribuicaoQuarteirao() {
       const next: Record<string, AtribuicaoState> = {};
       for (const q of quarteiroes) {
         const savedEntry = (distribuicaoSalva as BairrosDistribuicao[]).find(
-          (d) => d.quarteirao === q,
+          (d) => quadraIdToCode[d.quadra_id] === q,
         );
         const salvo = savedEntry?.agente_id ?? '';
         const pendente = prev[q]?.pendente !== undefined ? prev[q].pendente : salvo;
@@ -370,6 +406,38 @@ export default function AdminDistribuicaoQuarteirao() {
     });
   }, []);
 
+  /** Troca de ciclo: pede confirmação se houver pendentes não salvos. */
+  const handleCicloChange = useCallback((newId: string) => {
+    if (newId === cicloId) return;
+    if (temPendentes) {
+      setPendingCicloId(newId);
+    } else {
+      setCicloId(newId);
+      setSelecionadas(new Set());
+    }
+  }, [cicloId, temPendentes]);
+
+  /** Confirma troca de ciclo — descarta pendentes e troca. */
+  const confirmarTrocarCiclo = useCallback(() => {
+    if (!pendingCicloId) return;
+    setCicloId(pendingCicloId);
+    setSelecionadas(new Set());
+    setAtribuicoes({});
+    setPendingCicloId(null);
+  }, [pendingCicloId]);
+
+  /** Descarta todas as alterações locais, voltando ao estado salvo. */
+  const descartarAlteracoes = useCallback(() => {
+    setAtribuicoes((prev) => {
+      const next: Record<string, AtribuicaoState> = {};
+      for (const [q, st] of Object.entries(prev)) {
+        next[q] = { salvo: st.salvo, pendente: st.salvo };
+      }
+      return next;
+    });
+    setSelecionadas(new Set());
+  }, []);
+
   /** Abre modal de desenho de nova quadra (do header ou de uma região específica). */
   const handleDesenharNova = useCallback((bairroId?: string) => {
     setModalDesenharRegiaoId(bairroId ?? null);
@@ -431,23 +499,25 @@ export default function AdminDistribuicaoQuarteirao() {
 
   const salvarMutation = useMutation({
     mutationFn: async () => {
-      if (!clienteId) return;
-      const toUpsert: { ciclo: number; quarteirao: string; agenteId: string; bairroId?: string | null }[] = [];
-      const toDelete: string[] = [];
-      for (const [quarteirao, st] of Object.entries(atribuicoes)) {
+      if (!clienteId || !cicloId) return;
+      const toUpsert: { cicloId: string; quadraId: string; agenteId: string; bairroId?: string | null }[] = [];
+      const toDeleteIds: string[] = [];
+      for (const [codigo, st] of Object.entries(atribuicoes)) {
         if (st.pendente === st.salvo) continue;
+        const quadraId = qIdMap[codigo];
+        if (!quadraId) continue;
         if (st.pendente) {
-          toUpsert.push({ ciclo, quarteirao, agenteId: st.pendente, bairroId: qBairroMap[quarteirao] ?? null });
+          toUpsert.push({ cicloId, quadraId, agenteId: st.pendente, bairroId: qBairroMap[codigo] ?? null });
         } else {
-          toDelete.push(quarteirao);
+          toDeleteIds.push(quadraId);
         }
       }
       if (toUpsert.length > 0) await api.distribuicaoQuarteirao.upsert(toUpsert);
-      if (toDelete.length > 0) await api.distribuicaoQuarteirao.deletar(ciclo, toDelete);
+      if (toDeleteIds.length > 0) await api.distribuicaoQuarteirao.deletar(cicloId, toDeleteIds);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['dist_quarteirao', clienteId, ciclo] });
-      queryClient.invalidateQueries({ queryKey: ['cobertura_quarteirao', clienteId, ciclo] });
+      queryClient.invalidateQueries({ queryKey: ['dist_quarteirao', clienteId, cicloId] });
+      queryClient.invalidateQueries({ queryKey: ['cobertura_quarteirao', clienteId, cicloId] });
       toast.success(`Distribuição salva. ${pendentes.length} quarteirão(ões) atualizado(s).`);
     },
     onError: () => toast.error('Erro ao salvar distribuição.'),
@@ -455,12 +525,17 @@ export default function AdminDistribuicaoQuarteirao() {
 
   const copiarMutation = useMutation({
     mutationFn: async () => {
-      if (!clienteId) return 0;
-      const cicloOrigem = ciclo === 1 ? 6 : ciclo - 1;
-      return api.distribuicaoQuarteirao.copiarDoCiclo(clienteId, cicloOrigem, ciclo);
+      if (!clienteId || !cicloId) return 0;
+      const cicloSelecionado = todosCiclos.find(c => c.id === cicloId);
+      if (!cicloSelecionado) return 0;
+      const prevNumero = cicloSelecionado.numero === 1 ? 6 : cicloSelecionado.numero - 1;
+      const prevAno    = cicloSelecionado.numero === 1 ? cicloSelecionado.ano - 1 : cicloSelecionado.ano;
+      const cicloPrev  = todosCiclos.find(c => c.numero === prevNumero && c.ano === prevAno);
+      if (!cicloPrev) { toast.error('Ciclo anterior não encontrado'); return 0; }
+      return api.distribuicaoQuarteirao.copiarDoCiclo(clienteId, cicloPrev.id, cicloId);
     },
     onSuccess: (count) => {
-      queryClient.invalidateQueries({ queryKey: ['dist_quarteirao', clienteId, ciclo] });
+      queryClient.invalidateQueries({ queryKey: ['dist_quarteirao', clienteId, cicloId] });
       if ((count ?? 0) > 0) {
         toast.success(`${count} quarteirão(ões) copiado(s) do ciclo anterior.`);
       } else {
@@ -471,6 +546,57 @@ export default function AdminDistribuicaoQuarteirao() {
   });
 
   const isLoading = loadingDist || loadingAgentes || loadingQ || loadingRegioes;
+
+  // ── Stepper de fluxo operacional ──────────────────────────────────────────
+  const passosConcluidos = useMemo<StepInfo[]>(() => {
+    const temCiclo     = !!cicloId;
+    const temTerrit    = regioesList.length > 0;
+    const temQs        = quarteiroes.length > 0;
+    const geomCompleta = temQs && semGeometria === 0;
+    const temDistrib   = totalDistribuidos > 0;
+    const distCompleta = temQs && totalSemAtribuicao === 0;
+
+    return [
+      {
+        label: 'Ciclo',
+        status: temCiclo ? 'done' : 'pending',
+        detail: temCiclo
+          ? (() => { const c = todosCiclos.find(x => x.id === cicloId); return c ? `Ciclo ${c.numero}/${c.ano}` : undefined; })()
+          : 'Selecione',
+      },
+      {
+        label: 'Território',
+        status: !temCiclo ? 'pending' : temTerrit ? 'done' : 'attention',
+        detail: temTerrit ? `${regioesList.length} bairro(s)` : 'Sem bairros',
+      },
+      {
+        label: 'Quadras',
+        status: !temTerrit ? 'pending' : temQs ? 'done' : 'attention',
+        detail: temQs ? `${quarteiroes.length} quadra(s)` : 'Nenhuma',
+      },
+      {
+        label: 'Geometria',
+        status: !temQs ? 'pending' : geomCompleta ? 'done' : 'attention',
+        detail: temQs ? `${comGeometria}/${quarteiroes.length} c/ mapa` : undefined,
+      },
+      {
+        label: 'Distribuição',
+        status: !temQs ? 'pending' : distCompleta ? 'done' : temDistrib ? 'attention' : 'attention',
+        detail: temQs ? `${totalDistribuidos}/${quarteiroes.length} atribuídas` : undefined,
+      },
+      {
+        label: 'Cobertura',
+        status: !temDistrib ? 'pending' : totalImoveis > 0 ? 'done' : 'attention',
+        detail: totalImoveis > 0
+          ? `${Math.round((totalVisitados / totalImoveis) * 100)}% visitados`
+          : 'Sem imóveis',
+      },
+    ];
+  }, [
+    cicloId, todosCiclos, regioesList.length, quarteiroes.length,
+    semGeometria, comGeometria, totalDistribuidos, totalSemAtribuicao,
+    totalImoveis, totalVisitados,
+  ]);
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
@@ -484,15 +610,15 @@ export default function AdminDistribuicaoQuarteirao() {
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-1.5">
               <Label className="text-xs shrink-0 hidden sm:block">Ciclo</Label>
-              <Select value={String(ciclo)} onValueChange={(v) => setCiclo(Number(v))}>
-                <SelectTrigger className="w-40 h-8 text-sm">
-                  <SelectValue />
+              <Select value={cicloId} onValueChange={handleCicloChange} disabled={todosCiclos.length === 0}>
+                <SelectTrigger className="w-48 h-8 text-sm">
+                  <SelectValue placeholder="Selecione um ciclo" />
                 </SelectTrigger>
                 <SelectContent>
-                  {CICLOS.map((c) => (
-                    <SelectItem key={c} value={String(c)}>
-                      {CICLO_LABELS[c]}
-                      {c === cicloNumero && (
+                  {todosCiclos.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {CICLO_LABELS[c.numero] ?? `Ciclo ${c.numero}`} {c.ano}
+                      {c.id === cicloAtivo?.id && (
                         <span className="ml-1 text-[10px] text-emerald-600 font-semibold">atual</span>
                       )}
                     </SelectItem>
@@ -533,7 +659,7 @@ export default function AdminDistribuicaoQuarteirao() {
               onClick={() => copiarMutation.mutate()}
               disabled={copiarMutation.isPending || isLoading}
               className="gap-1.5 h-8"
-              title={`Copia do ${CICLO_LABELS[ciclo === 1 ? 6 : ciclo - 1]}`}
+              title="Copiar distribuição do ciclo anterior"
             >
               {copiarMutation.isPending ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -542,6 +668,19 @@ export default function AdminDistribuicaoQuarteirao() {
               )}
               <span className="hidden sm:inline">Copiar anterior</span>
             </Button>
+            {temPendentes && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={descartarAlteracoes}
+                disabled={salvarMutation.isPending}
+                className="gap-1.5 h-8 text-muted-foreground"
+                title="Descartar todas as alterações não salvas"
+              >
+                <Undo2 className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Descartar</span>
+              </Button>
+            )}
             <Button
               size="sm"
               onClick={() => salvarMutation.mutate()}
@@ -572,12 +711,77 @@ export default function AdminDistribuicaoQuarteirao() {
         totalVisitados={totalVisitados}
       />
 
+      {/* Stepper de fluxo operacional */}
+      {!isLoading && <FluxoOperacionalStepper steps={passosConcluidos} />}
+
       {/* 3-panel layout */}
       {isLoading ? (
         <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-[320px_1fr_256px]">
           <Skeleton className={cn('rounded-xl', DISTRIB_AREA_BOX)} />
           <Skeleton className={cn('rounded-xl', DISTRIB_AREA_BOX)} />
           <Skeleton className={cn('rounded-xl', DISTRIB_AREA_BOX)} />
+        </div>
+      ) : !cicloId ? (
+        /* Estado vazio — sem ciclo selecionado */
+        <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed py-16 text-center">
+          <MapIcon className="h-10 w-10 text-muted-foreground/30" />
+          <div className="space-y-1">
+            <p className="text-sm font-medium">Selecione um ciclo operacional</p>
+            <p className="text-xs text-muted-foreground">
+              Escolha o ciclo no seletor acima para visualizar e gerenciar a distribuição de quadras.
+            </p>
+          </div>
+        </div>
+      ) : quarteiroes.length === 0 ? (
+        /* Estado vazio — sem quadras cadastradas */
+        <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed py-16 text-center">
+          <Grid2X2 className="h-10 w-10 text-muted-foreground/30" />
+          <div className="space-y-1">
+            <p className="text-sm font-medium">Este município ainda não possui quadras cadastradas</p>
+            <p className="text-xs text-muted-foreground max-w-sm">
+              Gere quadras em lote por bairro, desenhe quadras manualmente ou importe um arquivo GeoJSON.
+            </p>
+          </div>
+          <div className="flex gap-2 flex-wrap justify-center">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => { setModalGerarRegiaoId(null); setModalGerarOpen(true); }}
+              className="gap-1.5"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Gerar quadras em lote
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleDesenharNova()}
+              className="gap-1.5"
+            >
+              <PenLine className="h-3.5 w-3.5" />
+              Desenhar quadra
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setModalImportarOpen(true)}
+              className="gap-1.5"
+            >
+              <FileJson className="h-3.5 w-3.5" />
+              Importar GeoJSON
+            </Button>
+          </div>
+        </div>
+      ) : agentes.length === 0 ? (
+        /* Estado vazio — sem agentes */
+        <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed py-16 text-center">
+          <Users className="h-10 w-10 text-muted-foreground/30" />
+          <div className="space-y-1">
+            <p className="text-sm font-medium">Não há agentes disponíveis para distribuição</p>
+            <p className="text-xs text-muted-foreground">
+              Cadastre agentes de campo no módulo de usuários para poder atribuir quadras.
+            </p>
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-[320px_1fr_256px]">
@@ -730,6 +934,27 @@ export default function AdminDistribuicaoQuarteirao() {
         onLimpar={() => { setSelecionadas(new Set()); setHighlightEntry(null); }}
         onToggleQuadra={toggleQuadra}
       />
+
+      {/* Confirmação — troca de ciclo com pendentes não salvos */}
+      <Dialog open={!!pendingCicloId} onOpenChange={(open) => { if (!open) setPendingCicloId(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Alterações não salvas</DialogTitle>
+            <DialogDescription>
+              Existem <strong>{pendentes.length}</strong> alteração(ões) não salva(s) neste ciclo.
+              Ao trocar de ciclo, essas alterações serão descartadas.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setPendingCicloId(null)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={confirmarTrocarCiclo}>
+              Descartar e trocar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

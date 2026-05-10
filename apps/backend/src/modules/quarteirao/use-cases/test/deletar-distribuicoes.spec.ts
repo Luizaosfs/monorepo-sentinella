@@ -10,20 +10,20 @@ describe('DeletarDistribuicoes', () => {
   });
 
   it('returns deleted count', async () => {
-    const result = await uc.execute('cli-1', { ciclo: 1, quarteiroes: ['Q1', 'Q2'] });
+    const result = await uc.execute('cli-1', { cicloId: 'ciclo-uuid-1', quadraIds: ['quadra-uuid-1', 'quadra-uuid-2'] });
     expect(result).toEqual({ deleted: 2 });
   });
 
-  it('returns 0 and skips DB when quarteiroes is empty', async () => {
-    const result = await uc.execute('cli-1', { ciclo: 1, quarteiroes: [] });
+  it('returns 0 and skips DB when quadraIds is empty', async () => {
+    const result = await uc.execute('cli-1', { cicloId: 'ciclo-uuid-1', quadraIds: [] });
     expect(result).toEqual({ deleted: 0 });
     expect(deleteMany).not.toHaveBeenCalled();
   });
 
-  it('filters by clienteId and ciclo for tenant isolation', async () => {
-    await uc.execute('cli-1', { ciclo: 3, quarteiroes: ['Q1'] });
+  it('filters by clienteId and ciclo_id for tenant isolation', async () => {
+    await uc.execute('cli-1', { cicloId: 'ciclo-uuid-3', quadraIds: ['quadra-uuid-1'] });
     expect(deleteMany).toHaveBeenCalledWith(expect.objectContaining({
-      where: expect.objectContaining({ cliente_id: 'cli-1', ciclo: 3 }),
+      where: expect.objectContaining({ cliente_id: 'cli-1', ciclo_id: 'ciclo-uuid-3' }),
     }));
   });
 });

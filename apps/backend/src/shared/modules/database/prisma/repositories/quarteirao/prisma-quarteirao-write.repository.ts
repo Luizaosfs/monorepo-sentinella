@@ -41,10 +41,10 @@ export class PrismaQuarteiraoWriteRepository implements QuarteiraoWriteRepositor
   ): Promise<DistribuicaoQuarteirao> {
     const data = {
       cliente_id: entity.clienteId,
-      ciclo: entity.ciclo,
-      quarteirao: entity.quarteirao,
-      agente_id: entity.agenteId,
-      bairro_id: entity.bairroId || null,
+      ciclo_id:   entity.cicloId,
+      quadra_id:  entity.quadraId,
+      agente_id:  entity.agenteId,
+      bairro_id:  entity.bairroId || null,
     };
     const created = await this.prisma.client.bairros_distribuicao.create({
       data,
@@ -58,13 +58,13 @@ export class PrismaQuarteiraoWriteRepository implements QuarteiraoWriteRepositor
 
   async copiarDistribuicoesCiclo(input: {
     clienteId: string;
-    cicloOrigem: number;
-    cicloDestino: number;
+    cicloOrigemId: string;
+    cicloDestinoId: string;
   }): Promise<{ copiadas: number }> {
     const origens = await this.prisma.client.bairros_distribuicao.findMany({
       where: {
         cliente_id: input.clienteId,
-        ciclo: input.cicloOrigem,
+        ciclo_id:   input.cicloOrigemId,
       },
     });
 
@@ -73,22 +73,22 @@ export class PrismaQuarteiraoWriteRepository implements QuarteiraoWriteRepositor
       for (const row of origens) {
         await tx.bairros_distribuicao.upsert({
           where: {
-            cliente_id_ciclo_quarteirao: {
+            cliente_id_ciclo_id_quadra_id: {
               cliente_id: input.clienteId,
-              ciclo: input.cicloDestino,
-              quarteirao: row.quarteirao,
+              ciclo_id:   input.cicloDestinoId,
+              quadra_id:  row.quadra_id,
             },
           },
           create: {
             cliente_id: input.clienteId,
-            ciclo: input.cicloDestino,
-            quarteirao: row.quarteirao,
-            agente_id: row.agente_id,
-            bairro_id: row.bairro_id,
+            ciclo_id:   input.cicloDestinoId,
+            quadra_id:  row.quadra_id,
+            agente_id:  row.agente_id,
+            bairro_id:  row.bairro_id,
           },
           update: {
-            agente_id: row.agente_id,
-            bairro_id: row.bairro_id,
+            agente_id:  row.agente_id,
+            bairro_id:  row.bairro_id,
             updated_at: new Date(),
           },
         });
@@ -130,7 +130,6 @@ export class PrismaQuarteiraoWriteRepository implements QuarteiraoWriteRepositor
       },
     });
     if (geojsonIsNull) {
-      // Limpa campos PostGIS quando geojson é removido
       await this.prisma.client.$executeRaw(Prisma.sql`
         UPDATE bairros_quadras
            SET area = NULL, latitude = NULL, longitude = NULL

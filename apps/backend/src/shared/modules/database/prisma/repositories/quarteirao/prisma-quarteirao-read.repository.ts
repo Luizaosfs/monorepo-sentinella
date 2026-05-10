@@ -47,9 +47,8 @@ export class PrismaQuarteiraoReadRepository implements QuarteiraoReadRepository 
     const rows = await this.prisma.client.bairros_distribuicao.findMany({
       where: {
         ...(filters.clienteId != null && { cliente_id: filters.clienteId }),
-        ciclo: filters.ciclo,
+        ciclo_id: filters.cicloId,
       },
-      orderBy: { quarteirao: 'asc' },
     });
     return rows.map((r) =>
       PrismaQuarteiraoMapper.distribuicaoToDomain(r as any),
@@ -67,9 +66,9 @@ export class PrismaQuarteiraoReadRepository implements QuarteiraoReadRepository 
 
   async coberturaQuarteiraoCiclo(input: {
     clienteId: string;
-    ciclo: number;
+    cicloId: string;
   }): Promise<CoberturaCicloResult> {
-    const { clienteId, ciclo } = input;
+    const { clienteId, cicloId } = input;
     return this.prisma.client.$queryRaw<CoberturaQuarteiraoItem[]>(Prisma.sql`
       SELECT
         i.quarteirao,
@@ -82,7 +81,7 @@ export class PrismaQuarteiraoReadRepository implements QuarteiraoReadRepository 
       FROM imoveis i
       LEFT JOIN vistorias v
         ON v.imovel_id = i.id
-       AND v.ciclo      = ${ciclo}
+       AND v.ciclo      = (SELECT numero FROM ciclos WHERE id = ${cicloId}::uuid)
        AND v.deleted_at IS NULL
       WHERE i.cliente_id = ${clienteId}::uuid
         AND i.deleted_at  IS NULL

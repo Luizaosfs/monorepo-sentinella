@@ -7,12 +7,12 @@ export class DeletarDistribuicoes {
   constructor(private prisma: PrismaService) {}
 
   async execute(clienteId: string, input: DeletarDistribuicoesInput): Promise<{ deleted: number }> {
-    if (input.quarteiroes.length === 0) return { deleted: 0 };
+    if (input.quadraIds.length === 0) return { deleted: 0 };
     const result = await this.prisma.client.bairros_distribuicao.deleteMany({
       where: {
         cliente_id: clienteId,
-        ciclo:      input.ciclo,
-        quarteirao: { in: input.quarteiroes },
+        ciclo_id:   input.cicloId,
+        quadra_id:  { in: input.quadraIds },
       },
     });
     return { deleted: result.count };

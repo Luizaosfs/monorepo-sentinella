@@ -25,29 +25,29 @@ describe('CopiarDistribuicao', () => {
     useCase = await module.resolve<CopiarDistribuicao>(CopiarDistribuicao);
   });
 
-  it('deve copiar distribuições de cicloOrigem para cicloDestino', async () => {
+  it('deve copiar distribuições de cicloOrigemId para cicloDestinoId', async () => {
     writeRepo.copiarDistribuicoesCiclo.mockResolvedValue({ copiadas: 3 });
 
     const result = await useCase.execute({
-      cicloOrigem: 1,
-      cicloDestino: 2,
+      cicloOrigemId:  'ciclo-uuid-1',
+      cicloDestinoId: 'ciclo-uuid-2',
       clienteId: 'test-cliente-id',
     });
 
     expect(writeRepo.copiarDistribuicoesCiclo).toHaveBeenCalledWith({
-      clienteId: 'test-cliente-id',
-      cicloOrigem: 1,
-      cicloDestino: 2,
+      clienteId:      'test-cliente-id',
+      cicloOrigemId:  'ciclo-uuid-1',
+      cicloDestinoId: 'ciclo-uuid-2',
     });
     expect(result).toEqual({ copiadas: 3 });
   });
 
-  it('deve rejeitar cicloOrigem === cicloDestino', async () => {
+  it('deve rejeitar cicloOrigemId === cicloDestinoId', async () => {
     await expectHttpException(
       () =>
         useCase.execute({
-          cicloOrigem: 5,
-          cicloDestino: 5,
+          cicloOrigemId:  'ciclo-uuid-5',
+          cicloDestinoId: 'ciclo-uuid-5',
           clienteId: 'test-cliente-id',
         }),
       QuarteiraoException.badRequest(),
@@ -68,8 +68,8 @@ describe('CopiarDistribuicao', () => {
     await expectHttpException(
       () =>
         uc.execute({
-          cicloOrigem: 1,
-          cicloDestino: 2,
+          cicloOrigemId:  'ciclo-uuid-1',
+          cicloDestinoId: 'ciclo-uuid-2',
         }),
       QuarteiraoException.badRequest(),
     );

@@ -1674,8 +1674,8 @@ export interface BairroQuadra {
 export interface BairrosDistribuicao {
   id: string;
   cliente_id: string;
-  ciclo: number;
-  quarteirao: string;
+  ciclo_id: string;
+  quadra_id: string;
   agente_id: string;
   bairro_id: string | null;
   created_at: string;

@@ -58,22 +58,22 @@ export const quarteiroes = {
 };
 
 export const distribuicaoQuarteirao = {
-  listByCiclo: async (clienteId: string, ciclo: number) => {
-    const raw = await http.get(`/quarteiroes/distribuicoes${qs({ clienteId, ciclo })}`);
+  listByCiclo: async (clienteId: string, cicloId: string) => {
+    const raw = await http.get(`/quarteiroes/distribuicoes${qs({ clienteId, cicloId })}`);
     return deepToSnake(raw) as Ret<typeof _sb.distribuicaoQuarteirao.listByCiclo>;
   },
-  listByAgente: (clienteId: string, agenteId: string, ciclo: number): Promise<string[]> =>
-    http.get(`/quarteiroes/distribuicoes/por-agente${qs({ agenteId, ciclo })}`),
-  upsert: (rows: { ciclo: number; quarteirao: string; agenteId: string; bairroId?: string | null }[]): Promise<{ ok: boolean }> =>
+  listByAgente: (clienteId: string, agenteId: string, cicloId: string): Promise<string[]> =>
+    http.get(`/quarteiroes/distribuicoes/por-agente${qs({ agenteId, cicloId })}`),
+  upsert: (rows: { cicloId: string; quadraId: string; agenteId: string; bairroId?: string | null }[]): Promise<{ ok: boolean }> =>
     http.post('/quarteiroes/distribuicoes/upsert', { rows }),
-  deletar: (ciclo: number, quarteiroes: string[]): Promise<{ deleted: number }> =>
-    http.post('/quarteiroes/distribuicoes/deletar', { ciclo, quarteiroes }),
-  copiarDoCiclo: async (clienteId: string, cicloOrigem: number, cicloDestino: number) => {
-    const raw = await http.post('/quarteiroes/distribuicoes/copiar', deepToCamel({ clienteId, cicloOrigem, cicloDestino }));
+  deletar: (cicloId: string, quadraIds: string[]): Promise<{ deleted: number }> =>
+    http.post('/quarteiroes/distribuicoes/deletar', { cicloId, quadraIds }),
+  copiarDoCiclo: async (clienteId: string, cicloOrigemId: string, cicloDestinoId: string) => {
+    const raw = await http.post('/quarteiroes/distribuicoes/copiar', deepToCamel({ clienteId, cicloOrigemId, cicloDestinoId }));
     return ((raw as Record<string, unknown>).count as number) ?? 0;
   },
-  coberturaByCliente: async (clienteId: string, ciclo: number) => {
-    const raw = await http.get(`/quarteiroes/cobertura${qs({ clienteId, ciclo })}`);
+  coberturaByCliente: async (clienteId: string, cicloId: string) => {
+    const raw = await http.get(`/quarteiroes/cobertura${qs({ clienteId, cicloId })}`);
     return deepToSnake(raw) as Ret<typeof _sb.distribuicaoQuarteirao.coberturaByCliente>;
   },
 };

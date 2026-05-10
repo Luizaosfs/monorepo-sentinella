@@ -131,10 +131,10 @@ export class QuarteiraoController {
   @ApiOperation({ summary: 'Listar códigos de quarteirões atribuídos a um agente no ciclo' })
   async listDistribuicoesByAgente(
     @Query('agenteId') agenteId: string,
-    @Query('ciclo') ciclo: string,
+    @Query('cicloId') cicloId: string,
   ) {
     const clienteId = requireTenantId(getAccessScope(this.req));
-    return this.listByAgenteUc.execute(clienteId, agenteId, parseInt(ciclo, 10));
+    return this.listByAgenteUc.execute(clienteId, agenteId, cicloId);
   }
 
   @Post('distribuicoes/upsert')

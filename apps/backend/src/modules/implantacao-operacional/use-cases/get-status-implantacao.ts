@@ -28,12 +28,11 @@ export class GetStatusImplantacao {
     let codigosQuarteiroes: string[] = [];
     if (cicloAtivo) {
       const distribuicoes = await this.prisma.client.bairros_distribuicao.findMany({
-        where: { cliente_id: clienteId, ciclo: cicloAtivo.numero },
-        select: { quarteirao: true },
-        distinct: ['quarteirao'],
+        where: { cliente_id: clienteId, ciclo_id: cicloAtivo.id },
+        select: { quadra_rel: { select: { codigo: true } } },
       });
       quarteiroesComAgente = distribuicoes.length;
-      codigosQuarteiroes = distribuicoes.map(d => d.quarteirao);
+      codigosQuarteiroes = distribuicoes.map(d => d.quadra_rel!.codigo);
     }
 
     // 4. Total de agentes ativos do cliente
@@ -57,7 +56,7 @@ export class GetStatusImplantacao {
           SELECT COUNT(DISTINCT agente_id)::int AS total
           FROM bairros_distribuicao
           WHERE cliente_id = ${clienteId}::uuid
-            AND ciclo = ${cicloAtivo.numero}
+            AND ciclo_id = ${cicloAtivo.id}::uuid
         `,
       );
       agentesComQuarteirao = Number(agentesDistRows[0]?.total ?? 0);

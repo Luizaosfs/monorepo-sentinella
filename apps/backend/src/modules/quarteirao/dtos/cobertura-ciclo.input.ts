@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 export const coberturaCicloSchema = z.object({
   clienteId: z.string().uuid().optional(),
-  ciclo: z.coerce.number().int(),
+  cicloId:   z.string().uuid(),
 });
 
 export class CoberturaCicloInput extends createZodDto(coberturaCicloSchema) {}

@@ -1,17 +1,21 @@
 model bairros_distribuicao {
   id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   cliente_id String   @db.Uuid
-  ciclo      Int
-  quarteirao String
+  ciclo_id   String   @db.Uuid
+  quadra_id  String   @db.Uuid
   agente_id  String   @db.Uuid
   bairro_id  String?  @db.Uuid
   created_at DateTime @default(now()) @db.Timestamptz
   updated_at DateTime @default(now()) @db.Timestamptz
 
-  quarteirao_rel bairros_quadras? @relation(fields: [cliente_id, quarteirao], references: [cliente_id, codigo])
-  @@unique([cliente_id, ciclo, quarteirao])
+  ciclo_rel  ciclos          @relation(fields: [ciclo_id],  references: [id], onDelete: Restrict)
+  quadra_rel bairros_quadras @relation(fields: [quadra_id], references: [id], onDelete: Restrict)
+
+  @@unique([cliente_id, ciclo_id, quadra_id])
   @@index([agente_id])
   @@index([bairro_id])
+  @@index([ciclo_id])
+  @@index([quadra_id])
   @@map("bairros_distribuicao")
   @@schema("public")
 }

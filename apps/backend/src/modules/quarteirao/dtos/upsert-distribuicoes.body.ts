@@ -5,10 +5,10 @@ export const upsertDistribuicoesSchema = z.object({
   rows: z
     .array(
       z.object({
-        ciclo:     z.coerce.number().int(),
-        quarteirao: z.string().min(1),
-        agenteId:  z.string().uuid(),
-        bairroId:  z.string().uuid().nullable().optional(),
+        cicloId:  z.string().uuid(),
+        quadraId: z.string().uuid(),
+        agenteId: z.string().uuid(),
+        bairroId: z.string().uuid().nullable().optional(),
       }),
     )
     .min(1),
