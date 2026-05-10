@@ -861,7 +861,7 @@ export default function AdminImportarImoveis() {
               <Copy className="h-4 w-4" /> Importar outro arquivo
             </Button>
             <Button asChild className="gap-2">
-              <Link to="/admin/imoveis">
+              <Link to="/gestor/imoveis">
                 <ExternalLink className="h-4 w-4" /> Ver imóveis cadastrados
               </Link>
             </Button>

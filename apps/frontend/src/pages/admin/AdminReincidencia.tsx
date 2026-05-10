@@ -125,7 +125,7 @@ export default function AdminReincidencia() {
                   key={imovel.imovel_id}
                   imovel={imovel}
                   compact
-                  onClick={() => navigate(`/admin/imoveis?id=${imovel.imovel_id}`)}
+                  onClick={() => navigate(`/gestor/imoveis?id=${imovel.imovel_id}`)}
                 />
               ))}
             </div>

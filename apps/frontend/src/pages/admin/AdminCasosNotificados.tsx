@@ -111,11 +111,11 @@ export default function AdminCasosNotificados() {
   function handleCriarPlanejamentoBairro(bairro: string) {
     if (planejamentosJaSolicitados.has(bairro)) {
       toast.warning(`Planejamento para "${bairro}" já foi solicitado nesta sessão. Verifique em Planejamentos antes de criar outro.`);
-      navigate('/admin/planejamentos');
+      navigate('/gestor/planejamentos');
       return;
     }
     setPlanejamentosJaSolicitados((prev) => new Set(prev).add(bairro));
-    navigate('/admin/planejamentos', { state: { bairroDestaque: bairro, fromCluster: true } });
+    navigate('/gestor/planejamentos', { state: { bairroDestaque: bairro, fromCluster: true } });
   }
 
   // Bairros únicos para o filtro dropdown
