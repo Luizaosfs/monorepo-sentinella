@@ -21,8 +21,8 @@ export class BulkInsertQuarteiroes {
       regioes.map(r => [r.nome.toLowerCase().trim(), r.id]),
     );
 
-    const resolveRegiaoId = (r: { regiaoId?: string; bairro?: string }) =>
-      r.regiaoId ?? (r.bairro ? (regiaoByNome.get(r.bairro.toLowerCase().trim()) ?? null) : null);
+    const resolveBairroId = (r: { bairroId?: string; bairro?: string }) =>
+      r.bairroId ?? (r.bairro ? (regiaoByNome.get(r.bairro.toLowerCase().trim()) ?? null) : null);
 
     // Verifica quais códigos já existem
     const codigos = input.rows.map(r => r.codigo);
@@ -40,11 +40,11 @@ export class BulkInsertQuarteiroes {
 
     // Atualiza existentes (bairro_id, bairro, ativo)
     for (const r of toUpdate) {
-      const regiaoId = resolveRegiaoId(r);
+      const bairroId = resolveBairroId(r);
       await this.prisma.client.bairros_quadras.update({
         where: { id: existingMap.get(r.codigo)! },
         data: {
-          ...(regiaoId              !== null      ? { bairro_id: regiaoId }  : {}),
+          ...(bairroId              !== null      ? { bairro_id: bairroId }  : {}),
           ...(r.bairro              !== undefined ? { bairro: r.bairro }     : {}),
           ...(r.ativo               !== undefined ? { ativo: r.ativo }       : {}),
         },
@@ -58,7 +58,7 @@ export class BulkInsertQuarteiroes {
         data: toInsert.map(r => ({
           cliente_id: clienteId,
           codigo:     r.codigo,
-          bairro_id:  resolveRegiaoId(r),
+          bairro_id:  resolveBairroId(r),
           bairro:     r.bairro ?? null,
           ativo:      r.ativo ?? true,
         })),

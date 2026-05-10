@@ -38,7 +38,7 @@ export function ModalEditarGeometriaQuarteirao({ open, quarteirao, regioes, onCl
   // Bump key to remount DrawPolygonMap when a different quarteirao is opened.
   const [mapKey, setMapKey] = useState(0);
 
-  const regiao = regioes.find((r) => r.id === quarteirao?.regiaoId) ?? null;
+  const regiao = regioes.find((r) => r.id === quarteirao?.bairroId) ?? null;
 
   useEffect(() => {
     if (open && quarteirao) {
@@ -103,7 +103,7 @@ export function ModalEditarGeometriaQuarteirao({ open, quarteirao, regioes, onCl
                 quarteirão <strong>dentro</strong> deste limite — o backend valida com PostGIS.
               </span>
             </div>
-          ) : quarteirao?.regiaoId ? (
+          ) : quarteirao?.bairroId ? (
             <div className="text-xs text-amber-700 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2">
               Esta região não tem geometria cadastrada. O backend validará apenas a validade do polígono.
             </div>

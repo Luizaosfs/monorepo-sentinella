@@ -37,7 +37,7 @@ export class PrismaQuarteiraoMapper {
     return new Quarteirao(
       {
         clienteId: raw.cliente_id,
-        regiaoId: raw.bairro_id || undefined,
+        bairroId: raw.bairro_id || undefined,
         codigo: raw.codigo,
         bairro: raw.bairro || undefined,
         ativo: raw.ativo,
@@ -62,7 +62,7 @@ export class PrismaQuarteiraoMapper {
         ciclo: raw.ciclo,
         quarteirao: raw.quarteirao,
         agenteId: raw.agente_id,
-        regiaoId: raw.bairro_id || undefined,
+        bairroId: raw.bairro_id || undefined,
       },
       {
         id: raw.id,

@@ -38,7 +38,7 @@ export class CreateDistribuicao {
         ciclo: input.ciclo,
         quarteirao: input.quarteirao,
         agenteId: input.agenteId,
-        regiaoId: input.regiaoId,
+        bairroId: input.bairroId,
       },
       {},
     );

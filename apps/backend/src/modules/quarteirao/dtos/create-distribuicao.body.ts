@@ -6,7 +6,7 @@ export const createDistribuicaoSchema = z.object({
   ciclo: z.coerce.number().int(),
   quarteirao: z.string().min(1, 'Quarteirão obrigatório'),
   agenteId: z.string().uuid(),
-  regiaoId: z.string().uuid().optional(),
+  bairroId: z.string().uuid().optional(),
 });
 
 export class CreateDistribuicaoBody extends createZodDto(

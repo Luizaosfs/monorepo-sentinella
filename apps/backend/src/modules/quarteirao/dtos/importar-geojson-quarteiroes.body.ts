@@ -11,8 +11,8 @@ const polygonGeoJSONSchema = z.object({
 const featureSchema = z.object({
   codigo: z.string().min(1).max(20).transform((v) => v.trim().toUpperCase()),
   geojson: polygonGeoJSONSchema,
-  /** UUID da região — opcional; backend resolve via PostGIS quando ausente */
-  regiaoId: z.string().uuid().optional(),
+  /** UUID do bairro — opcional; backend resolve via PostGIS quando ausente */
+  bairroId: z.string().uuid().optional(),
   /** Nome do bairro — fallback antes da resolução espacial */
   bairro: z.string().optional(),
   /** Área em m² pré-calculada (ex: via turf.area) — persistida para uso operacional */

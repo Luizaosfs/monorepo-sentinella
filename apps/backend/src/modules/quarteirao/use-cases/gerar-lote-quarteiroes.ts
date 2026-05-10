@@ -18,11 +18,11 @@ export class GerarLoteQuarteiroes {
   async execute(clienteId: string, input: GerarLoteQuarteiraoInput): Promise<GerarLoteResult> {
     // Defensive normalization — DTO already does this via Zod; belt-and-suspenders for direct callers
     const prefixo = input.prefixo.trim().toUpperCase();
-    const { regiaoId, numeroInicial, numeroFinal } = input;
+    const { bairroId, numeroInicial, numeroFinal } = input;
 
     // Tenant isolation: region must belong to the authenticated client
     const regiao = await this.prisma.client.bairros.findFirst({
-      where: { id: regiaoId, cliente_id: clienteId, deleted_at: null },
+      where: { id: bairroId, cliente_id: clienteId, deleted_at: null },
       select: { id: true },
     });
     if (!regiao) {
@@ -58,7 +58,7 @@ export class GerarLoteQuarteiroes {
           const { count } = await tx.bairros_quadras.createMany({
             data: toCreate.map((codigo) => ({
               cliente_id: clienteId,
-              bairro_id: regiaoId,
+              bairro_id: bairroId,
               codigo,
               ativo: true,
             })),

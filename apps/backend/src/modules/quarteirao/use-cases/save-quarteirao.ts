@@ -36,7 +36,7 @@ export class SaveQuarteirao {
     }
 
     if (input.codigo   !== undefined) quarteirao.codigo   = input.codigo;
-    if (input.regiaoId !== undefined) quarteirao.regiaoId = input.regiaoId ?? undefined;
+    if (input.bairroId !== undefined) quarteirao.bairroId = input.bairroId ?? undefined;
     if (input.ativo    !== undefined) quarteirao.ativo    = input.ativo;
     if (input.geojson  !== undefined) quarteirao.geojson  = input.geojson ?? undefined;
 

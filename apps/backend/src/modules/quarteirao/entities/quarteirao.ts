@@ -3,7 +3,7 @@ import type { JsonObject } from '@shared/types/json';
 
 interface QuarteiraoProps {
   clienteId: string;
-  regiaoId?: string;
+  bairroId?: string;
   codigo: string;
   bairro?: string;
   ativo: boolean;
@@ -25,11 +25,11 @@ export class Quarteirao extends BaseEntity<QuarteiraoProps> {
     return this.props.clienteId;
   }
 
-  get regiaoId() {
-    return this.props.regiaoId;
+  get bairroId() {
+    return this.props.bairroId;
   }
-  set regiaoId(v: string | undefined) {
-    this.props.regiaoId = v;
+  set bairroId(v: string | undefined) {
+    this.props.bairroId = v;
   }
 
   get codigo() {
@@ -87,7 +87,7 @@ interface DistribuicaoQuarteiraoProps {
   ciclo: number;
   quarteirao: string;
   agenteId: string;
-  regiaoId?: string;
+  bairroId?: string;
 }
 
 export class DistribuicaoQuarteirao extends BaseEntity<DistribuicaoQuarteiraoProps> {
@@ -123,10 +123,10 @@ export class DistribuicaoQuarteirao extends BaseEntity<DistribuicaoQuarteiraoPro
     this.props.agenteId = v;
   }
 
-  get regiaoId() {
-    return this.props.regiaoId;
+  get bairroId() {
+    return this.props.bairroId;
   }
-  set regiaoId(v: string | undefined) {
-    this.props.regiaoId = v;
+  set bairroId(v: string | undefined) {
+    this.props.bairroId = v;
   }
 }

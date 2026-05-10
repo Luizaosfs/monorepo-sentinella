@@ -8,7 +8,7 @@ import type { AtribuicaoState, QuarteiraoPolygon, QuarteiraoParaEdicao } from '.
 // ── Public types ──────────────────────────────────────────────────────────────
 
 export interface RegiaoPolygon {
-  regiaoId: string;
+  bairroId: string;
   nome: string;
   geojson: Record<string, unknown>;
 }
@@ -121,7 +121,7 @@ export function MapaDistribuicao({
     type: 'FeatureCollection',
     features: regiaoPolygons.map((r) => ({
       type: 'Feature',
-      properties: { regiaoId: r.regiaoId, nome: r.nome },
+      properties: { bairroId: r.bairroId, nome: r.nome },
       geometry: r.geojson,
     })),
   }), [regiaoPolygons]);
@@ -131,7 +131,7 @@ export function MapaDistribuicao({
     type: 'FeatureCollection',
     features: quarteiraoPolygons.map((q) => ({
       type: 'Feature',
-      properties: { id: q.id, codigo: q.codigo, regiaoId: q.regiaoId },
+      properties: { id: q.id, codigo: q.codigo, bairroId: q.bairroId },
       geometry: q.geojson,
     })),
   }), [quarteiraoPolygons]);
@@ -162,14 +162,14 @@ export function MapaDistribuicao({
     regionLayerRef.current = L.geoJSON(regiaoFeatures, {
       style: () => REGIAO_STYLE,
       onEachFeature: (f, layer) => {
-        const regiaoId: string = f.properties?.regiaoId ?? '';
+        const bairroId: string = f.properties?.bairroId ?? '';
         const nome: string = f.properties?.nome ?? '—';
 
         (layer as L.Path).bindTooltip(`<b style="font-size:12px">${nome}</b>`, { sticky: true });
 
         layer.on('click', (e: L.LeafletMouseEvent) => {
           L.DomEvent.stopPropagation(e);
-          const entry = porRegiaoRef.current.get(regiaoId);
+          const entry = porRegiaoRef.current.get(bairroId);
           const qs = entry?.qs ?? [];
           const allSel = qs.length > 0 && qs.every((q) => selecionadasRef.current.has(q));
           onSelectRRef.current(qs, !allSel);
@@ -205,7 +205,7 @@ export function MapaDistribuicao({
       onEachFeature: (f, layer) => {
         const id: string = f.properties?.id ?? '';
         const codigo: string = f.properties?.codigo ?? '';
-        const regiaoId: string | null = f.properties?.regiaoId ?? null;
+        const bairroId: string | null = f.properties?.bairroId ?? null;
         // Capture geojson from feature geometry for edit modal
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const geomGeoJSON: Record<string, unknown> = (f as any).geometry ?? {};
@@ -215,7 +215,7 @@ export function MapaDistribuicao({
           () => {
             const agenteId = atribuicoesRef.current[codigo]?.pendente ?? '';
             const nomeAgente = agenteId ? (agentesMapRef.current[agenteId] ?? '?') : 'Sem atribuição';
-            const regiaoNome = regiaoId ? (regiaoNomeMapRef.current[regiaoId] ?? '—') : '—';
+            const regiaoNome = bairroId ? (regiaoNomeMapRef.current[bairroId] ?? '—') : '—';
             const color = agenteId ? '#16a34a' : '#9ca3af';
             const status = agenteId ? 'Atribuído' : 'Sem atribuição';
             const imoveis = contagemRef.current[codigo] ?? 0;
@@ -268,7 +268,7 @@ export function MapaDistribuicao({
 
             L.DomEvent.on(btn, 'click', () => {
               map.closePopup();
-              onEditarRef.current?.({ id, codigo, regiaoId, geojson: geomGeoJSON });
+              onEditarRef.current?.({ id, codigo, bairroId, geojson: geomGeoJSON });
             });
             container.appendChild(btn);
 

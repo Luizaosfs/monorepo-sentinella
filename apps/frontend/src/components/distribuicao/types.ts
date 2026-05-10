@@ -18,7 +18,7 @@ export interface CoberturaItem {
 export interface QuarteiraoPolygon {
   id: string;
   codigo: string;
-  regiaoId: string | null;
+  bairroId: string | null;
   geojson: Record<string, unknown>;
 }
 
@@ -26,6 +26,6 @@ export interface QuarteiraoPolygon {
 export interface QuarteiraoParaEdicao {
   id: string;
   codigo: string;
-  regiaoId: string | null;
+  bairroId: string | null;
   geojson: Record<string, unknown> | null;
 }

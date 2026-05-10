@@ -45,7 +45,7 @@ function makeUc(overrides: {
 describe('gerarLoteQuarteiraoSchema', () => {
   it('normaliza prefixo com espaços e minúsculas → uppercase sem espaços', () => {
     const result = gerarLoteQuarteiraoSchema.parse({
-      regiaoId: REGIAO_ID,
+      bairroId: REGIAO_ID,
       prefixo: '  abc  ',
       numeroInicial: 1,
       numeroFinal: 3,
@@ -56,7 +56,7 @@ describe('gerarLoteQuarteiraoSchema', () => {
   it('rejeita prefixo com caracteres inválidos', () => {
     expect(() =>
       gerarLoteQuarteiraoSchema.parse({
-        regiaoId: REGIAO_ID,
+        bairroId: REGIAO_ID,
         prefixo: 'A!B',
         numeroInicial: 1,
         numeroFinal: 3,
@@ -67,7 +67,7 @@ describe('gerarLoteQuarteiraoSchema', () => {
   it('rejeita prefixo com espaço interno', () => {
     expect(() =>
       gerarLoteQuarteiraoSchema.parse({
-        regiaoId: REGIAO_ID,
+        bairroId: REGIAO_ID,
         prefixo: 'A B',
         numeroInicial: 1,
         numeroFinal: 3,
@@ -78,7 +78,7 @@ describe('gerarLoteQuarteiraoSchema', () => {
   it('rejeita lote acima de 300', () => {
     expect(() =>
       gerarLoteQuarteiraoSchema.parse({
-        regiaoId: REGIAO_ID,
+        bairroId: REGIAO_ID,
         prefixo: 'A',
         numeroInicial: 1,
         numeroFinal: 301,
@@ -88,7 +88,7 @@ describe('gerarLoteQuarteiraoSchema', () => {
 
   it('aceita lote exato de 300', () => {
     const result = gerarLoteQuarteiraoSchema.parse({
-      regiaoId: REGIAO_ID,
+      bairroId: REGIAO_ID,
       prefixo: 'A',
       numeroInicial: 1,
       numeroFinal: 300,
@@ -99,7 +99,7 @@ describe('gerarLoteQuarteiraoSchema', () => {
   it('rejeita numeroFinal < numeroInicial', () => {
     expect(() =>
       gerarLoteQuarteiraoSchema.parse({
-        regiaoId: REGIAO_ID,
+        bairroId: REGIAO_ID,
         prefixo: 'A',
         numeroInicial: 5,
         numeroFinal: 3,
@@ -110,7 +110,7 @@ describe('gerarLoteQuarteiraoSchema', () => {
   it('rejeita numeroInicial < 1', () => {
     expect(() =>
       gerarLoteQuarteiraoSchema.parse({
-        regiaoId: REGIAO_ID,
+        bairroId: REGIAO_ID,
         prefixo: 'A',
         numeroInicial: 0,
         numeroFinal: 5,
@@ -118,10 +118,10 @@ describe('gerarLoteQuarteiraoSchema', () => {
     ).toThrow();
   });
 
-  it('rejeita regiaoId inválido (não UUID)', () => {
+  it('rejeita bairroId inválido (não UUID)', () => {
     expect(() =>
       gerarLoteQuarteiraoSchema.parse({
-        regiaoId: 'nao-e-uuid',
+        bairroId: 'nao-e-uuid',
         prefixo: 'A',
         numeroInicial: 1,
         numeroFinal: 5,
@@ -139,7 +139,7 @@ describe('GerarLoteQuarteiroes', () => {
     });
 
     const result = await uc.execute(CLIENTE_ID, {
-      regiaoId: REGIAO_ID,
+      bairroId: REGIAO_ID,
       prefixo: 'A',
       numeroInicial: 1,
       numeroFinal: 30,
@@ -169,7 +169,7 @@ describe('GerarLoteQuarteiroes', () => {
     });
 
     const result = await uc.execute(CLIENTE_ID, {
-      regiaoId: REGIAO_ID,
+      bairroId: REGIAO_ID,
       prefixo: 'B',
       numeroInicial: 1,
       numeroFinal: 3,
@@ -188,7 +188,7 @@ describe('GerarLoteQuarteiroes', () => {
     });
 
     const result = await uc.execute(CLIENTE_ID, {
-      regiaoId: REGIAO_ID,
+      bairroId: REGIAO_ID,
       prefixo: 'C',
       numeroInicial: 1,
       numeroFinal: 2,
@@ -205,7 +205,7 @@ describe('GerarLoteQuarteiroes', () => {
     });
 
     await expect(
-      uc.execute(CLIENTE_ID, { regiaoId: REGIAO_ID, prefixo: 'D', numeroInicial: 1, numeroFinal: 5 }),
+      uc.execute(CLIENTE_ID, { bairroId: REGIAO_ID, prefixo: 'D', numeroInicial: 1, numeroFinal: 5 }),
     ).rejects.toBeInstanceOf(NotFoundException);
   });
 
@@ -214,7 +214,7 @@ describe('GerarLoteQuarteiroes', () => {
       quarteiroCreateMany: jest.fn().mockResolvedValue({ count: 2 }),
     });
 
-    await uc.execute(CLIENTE_ID, { regiaoId: REGIAO_ID, prefixo: 'E', numeroInicial: 1, numeroFinal: 2 });
+    await uc.execute(CLIENTE_ID, { bairroId: REGIAO_ID, prefixo: 'E', numeroInicial: 1, numeroFinal: 2 });
 
     expect(quarteiroFindMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: expect.objectContaining({ cliente_id: CLIENTE_ID }) }),
@@ -234,7 +234,7 @@ describe('GerarLoteQuarteiroes', () => {
     });
 
     const result = await uc.execute(CLIENTE_ID, {
-      regiaoId: REGIAO_ID,
+      bairroId: REGIAO_ID,
       prefixo: '  xy  ', // simula entrada não normalizada chegando diretamente ao use-case
       numeroInicial: 1,
       numeroFinal: 2,
@@ -255,7 +255,7 @@ describe('GerarLoteQuarteiroes', () => {
     });
 
     const result = await uc.execute(CLIENTE_ID, {
-      regiaoId: REGIAO_ID,
+      bairroId: REGIAO_ID,
       prefixo: 'F',
       numeroInicial: 1,
       numeroFinal: 2,
@@ -274,7 +274,7 @@ describe('GerarLoteQuarteiroes', () => {
     });
 
     await expect(
-      uc.execute(CLIENTE_ID, { regiaoId: REGIAO_ID, prefixo: 'G', numeroInicial: 1, numeroFinal: 2 }),
+      uc.execute(CLIENTE_ID, { bairroId: REGIAO_ID, prefixo: 'G', numeroInicial: 1, numeroFinal: 2 }),
     ).rejects.toThrow('DB unavailable');
   });
 
@@ -291,7 +291,7 @@ describe('GerarLoteQuarteiroes', () => {
     });
 
     const result = await uc.execute(CLIENTE_ID, {
-      regiaoId: REGIAO_ID,
+      bairroId: REGIAO_ID,
       prefixo: 'H',
       numeroInicial: 1,
       numeroFinal: 2,

@@ -8,7 +8,7 @@ export const upsertDistribuicoesSchema = z.object({
         ciclo:     z.coerce.number().int(),
         quarteirao: z.string().min(1),
         agenteId:  z.string().uuid(),
-        regiaoId:  z.string().uuid().nullable().optional(),
+        bairroId:  z.string().uuid().nullable().optional(),
       }),
     )
     .min(1),

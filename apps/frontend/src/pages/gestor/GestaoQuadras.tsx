@@ -113,7 +113,7 @@ function ModalNovaQuadra({
   const isEdit = !!editando;
 
   const [codigo, setCodigo] = useState(editando?.codigo ?? '');
-  const [regiaoId, setRegiaoId] = useState(editando?.bairro_id ?? '__none__');
+  const [bairroId, setBairroId] = useState(editando?.bairro_id ?? '__none__');
   const [ativo, setAtivo] = useState(editando?.ativo ?? true);
 
   function handleSubmit() {
@@ -122,7 +122,7 @@ function ModalNovaQuadra({
 
     const payload = {
       codigo: c,
-      regiaoId: regiaoId === '__none__' ? null : regiaoId,
+      bairroId: bairroId === '__none__' ? null : bairroId,
       ativo,
     };
 
@@ -161,7 +161,7 @@ function ModalNovaQuadra({
 
           <div className="space-y-1.5">
             <Label>Região / Bairro</Label>
-            <Select value={regiaoId} onValueChange={setRegiaoId}>
+            <Select value={bairroId} onValueChange={setBairroId}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione uma região" />
               </SelectTrigger>
@@ -376,10 +376,10 @@ export default function GestaoQuadras() {
     });
   }, [filtradas, regioes]);
 
-  function nomeDoGrupo(regiaoId: string | null) {
-    if (!regiaoId) return '(Sem região)';
-    const r = regioes.find((r) => r.id === regiaoId);
-    return r ? nomeRegiao(r) : regiaoId;
+  function nomeDoGrupo(bairroId: string | null) {
+    if (!bairroId) return '(Sem região)';
+    const r = regioes.find((r) => r.id === bairroId);
+    return r ? nomeRegiao(r) : bairroId;
   }
 
   function handleToggleAtivo(q: BairroQuadra) {
@@ -490,10 +490,10 @@ export default function GestaoQuadras() {
         </div>
       ) : (
         <div className="space-y-3">
-          {porRegiao.map(([regiaoId, grupo]) => (
+          {porRegiao.map(([bairroId, grupo]) => (
             <GrupoRegiao
-              key={regiaoId ?? '__sem__'}
-              nome={nomeDoGrupo(regiaoId)}
+              key={bairroId ?? '__sem__'}
+              nome={nomeDoGrupo(bairroId)}
               quadras={grupo}
               onEdit={(q) => { setEditando(q); setModalNova(true); }}
               onEditMapa={setEditandoMapa}

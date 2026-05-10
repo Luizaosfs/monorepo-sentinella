@@ -143,7 +143,7 @@ export default function AdminDistribuicaoQuarteirao() {
     [quarteiroesMestre],
   );
 
-  const qRegiaoMap = useMemo(() => {
+  const qBairroMap = useMemo(() => {
     const m: Record<string, string | null> = {};
     for (const q of quarteiroesMestre as Array<Record<string, unknown>>) {
       m[String(q.codigo)] = q.bairro_id ? String(q.bairro_id) : null;
@@ -173,7 +173,7 @@ export default function AdminDistribuicaoQuarteirao() {
       .map((q) => ({
         id: String(q.id),
         codigo: String(q.codigo),
-        regiaoId: q.bairro_id ? String(q.bairro_id) : null,
+        bairroId: q.bairro_id ? String(q.bairro_id) : null,
         geojson: q.geojson as Record<string, unknown>,
       }));
   }, [quarteiroesMestre]);
@@ -188,14 +188,14 @@ export default function AdminDistribuicaoQuarteirao() {
     for (const q of quarteiroesMestre as Array<Record<string, unknown>>) {
       if (q.ativo === false) continue;
       const codigo = String(q.codigo);
-      const regiaoId = q.bairro_id ? String(q.bairro_id) : SEM_REGIAO;
-      if (!map.has(regiaoId)) {
-        map.set(regiaoId, {
-          nome: regiaoId === SEM_REGIAO ? 'Sem região' : (regiaoNomeMap[regiaoId] ?? 'Sem região'),
+      const bairroId = q.bairro_id ? String(q.bairro_id) : SEM_REGIAO;
+      if (!map.has(bairroId)) {
+        map.set(bairroId, {
+          nome: bairroId === SEM_REGIAO ? 'Sem região' : (regiaoNomeMap[bairroId] ?? 'Sem região'),
           qs: [],
         });
       }
-      const entry = map.get(regiaoId)!;
+      const entry = map.get(bairroId)!;
       if (!entry.qs.includes(codigo)) entry.qs.push(codigo);
     }
     for (const entry of map.values()) {
@@ -204,7 +204,7 @@ export default function AdminDistribuicaoQuarteirao() {
     return map;
   }, [regioesList, quarteiroesMestre, regiaoNomeMap]);
 
-  const regiaoIds = useMemo(
+  const bairroIds = useMemo(
     () =>
       [...porRegiao.keys()].sort((a, b) => {
         if (a === SEM_REGIAO) return 1;
@@ -234,7 +234,7 @@ export default function AdminDistribuicaoQuarteirao() {
         return gj && (gj.type === 'Polygon' || gj.type === 'MultiPolygon');
       })
       .map((r) => ({
-        regiaoId: String(r.id),
+        bairroId: String(r.id),
         nome: String(r.nome ?? r.regiao ?? 'Sem região'),
         geojson: r.geojson as Record<string, unknown>,
       }));
@@ -289,7 +289,7 @@ export default function AdminDistribuicaoQuarteirao() {
     const term = searchTerm.trim().toLowerCase();
     return quarteiroes.filter((q) => {
       if (term) {
-        const rId = qRegiaoMap[q];
+        const rId = qBairroMap[q];
         const rNome = rId ? (regiaoNomeMap[rId] ?? '') : '';
         if (!q.toLowerCase().includes(term) && !rNome.toLowerCase().includes(term)) return false;
       }
@@ -297,7 +297,7 @@ export default function AdminDistribuicaoQuarteirao() {
       if (filtro === 'sem_atribuicao') return !atribuicoes[q]?.pendente;
       return true;
     });
-  }, [quarteiroes, searchTerm, filtro, atribuicoes, qRegiaoMap, regiaoNomeMap]);
+  }, [quarteiroes, searchTerm, filtro, atribuicoes, qBairroMap, regiaoNomeMap]);
 
   // ── Sync local state with server data ─────────────────────────────────────
   useEffect(() => {
@@ -316,7 +316,7 @@ export default function AdminDistribuicaoQuarteirao() {
     });
     setAbertas((prev) => {
       if (prev.size > 0) return prev;
-      return new Set(regiaoIds);
+      return new Set(bairroIds);
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [distribuicaoSalva, loadingDist, quarteiroes.join(',')]);
@@ -371,8 +371,8 @@ export default function AdminDistribuicaoQuarteirao() {
   }, []);
 
   /** Abre modal de desenho de nova quadra (do header ou de uma região específica). */
-  const handleDesenharNova = useCallback((regiaoId?: string) => {
-    setModalDesenharRegiaoId(regiaoId ?? null);
+  const handleDesenharNova = useCallback((bairroId?: string) => {
+    setModalDesenharRegiaoId(bairroId ?? null);
     setModalDesenharOpen(true);
   }, []);
 
@@ -391,25 +391,25 @@ export default function AdminDistribuicaoQuarteirao() {
     [selecionadas],
   );
 
-  const toggleAberta = useCallback((regiaoId: string) => {
+  const toggleAberta = useCallback((bairroId: string) => {
     setAbertas((prev) => {
       const next = new Set(prev);
-      if (next.has(regiaoId)) next.delete(regiaoId);
-      else next.add(regiaoId);
+      if (next.has(bairroId)) next.delete(bairroId);
+      else next.add(bairroId);
       return next;
     });
   }, []);
 
-  const expandAll = useCallback(() => setAbertas(new Set(regiaoIds)), [regiaoIds]);
+  const expandAll = useCallback(() => setAbertas(new Set(bairroIds)), [bairroIds]);
   const collapseAll = useCallback(() => setAbertas(new Set()), []);
 
-  const handleGerarQuarteiroes = useCallback((regiaoId: string) => {
-    setModalGerarRegiaoId(regiaoId);
+  const handleGerarQuarteiroes = useCallback((bairroId: string) => {
+    setModalGerarRegiaoId(bairroId);
     setModalGerarOpen(true);
   }, []);
 
   /** Abre modal de edição/desenho de geometria a partir do painel lateral. */
-  const handleDesenharFromPanel = useCallback((codigo: string, regiaoId: string | null) => {
+  const handleDesenharFromPanel = useCallback((codigo: string, bairroId: string | null) => {
     const q = (quarteiroesMestre as Array<Record<string, unknown>>).find(
       (m) => String(m.codigo) === codigo,
     );
@@ -417,7 +417,7 @@ export default function AdminDistribuicaoQuarteirao() {
     setModalEditarGeometria({
       id: String(q.id),
       codigo: String(q.codigo),
-      regiaoId,
+      bairroId,
       geojson: (q.geojson as Record<string, unknown>) ?? null,
     });
   }, [quarteiroesMestre]);
@@ -432,12 +432,12 @@ export default function AdminDistribuicaoQuarteirao() {
   const salvarMutation = useMutation({
     mutationFn: async () => {
       if (!clienteId) return;
-      const toUpsert: { ciclo: number; quarteirao: string; agenteId: string; regiaoId?: string | null }[] = [];
+      const toUpsert: { ciclo: number; quarteirao: string; agenteId: string; bairroId?: string | null }[] = [];
       const toDelete: string[] = [];
       for (const [quarteirao, st] of Object.entries(atribuicoes)) {
         if (st.pendente === st.salvo) continue;
         if (st.pendente) {
-          toUpsert.push({ ciclo, quarteirao, agenteId: st.pendente, regiaoId: qRegiaoMap[quarteirao] ?? null });
+          toUpsert.push({ ciclo, quarteirao, agenteId: st.pendente, bairroId: qBairroMap[quarteirao] ?? null });
         } else {
           toDelete.push(quarteirao);
         }
@@ -585,7 +585,7 @@ export default function AdminDistribuicaoQuarteirao() {
           <div className={cn('lg:sticky lg:top-4', DISTRIB_AREA_BOX)}>
             <PainelRegioesQuadras
               porRegiao={porRegiao}
-              regiaoIds={regiaoIds}
+              bairroIds={bairroIds}
               atribuicoes={atribuicoes}
               selecionadas={selecionadas}
               abertas={abertas}
@@ -654,7 +654,7 @@ export default function AdminDistribuicaoQuarteirao() {
                 <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
                   <ListaQuadrasDistribuicao
                     quadrasFiltradas={quadrasFiltradas}
-                    qRegiaoMap={qRegiaoMap}
+                    qBairroMap={qBairroMap}
                     regiaoNomeMap={regiaoNomeMap}
                     atribuicoes={atribuicoes}
                     agentes={agentes}
@@ -686,7 +686,7 @@ export default function AdminDistribuicaoQuarteirao() {
       <ModalGerarLoteQuarteiroes
         open={modalGerarOpen}
         regioes={regioesMapped}
-        regiaoIdInicial={modalGerarRegiaoId}
+        bairroIdInicial={modalGerarRegiaoId}
         onClose={() => { setModalGerarOpen(false); setModalGerarRegiaoId(null); }}
       />
 
@@ -700,7 +700,7 @@ export default function AdminDistribuicaoQuarteirao() {
       <ModalDesenharQuarteirao
         open={modalDesenharOpen}
         regioes={regioesMappedFull}
-        regiaoIdInicial={modalDesenharRegiaoId}
+        bairroIdInicial={modalDesenharRegiaoId}
         onClose={() => { setModalDesenharOpen(false); setModalDesenharRegiaoId(null); }}
         onSalvo={() => {
           queryClient.invalidateQueries({ queryKey: ['quarteiroes_mestre', clienteId] });
@@ -721,7 +721,7 @@ export default function AdminDistribuicaoQuarteirao() {
         agentes={agentes}
         atribuicoes={atribuicoes}
         agentesMap={agentesMap}
-        qRegiaoMap={qRegiaoMap}
+        qBairroMap={qBairroMap}
         regiaoNomeMap={regiaoNomeMap}
         contagemPorQ={contagemPorQ}
         agentColorMap={agentColorMap}

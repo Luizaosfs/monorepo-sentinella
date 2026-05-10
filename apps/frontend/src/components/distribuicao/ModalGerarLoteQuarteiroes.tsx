@@ -31,7 +31,7 @@ interface Props {
   open: boolean;
   regioes: RegiaoOpcao[];
   /** Pre-select a region when opening from a specific region row. */
-  regiaoIdInicial?: string | null;
+  bairroIdInicial?: string | null;
   onClose: () => void;
 }
 
@@ -40,11 +40,11 @@ function nomeOpcao(r: RegiaoOpcao): string {
 }
 
 export function ModalGerarLoteQuarteiroes({
-  open, regioes, regiaoIdInicial, onClose,
+  open, regioes, bairroIdInicial, onClose,
 }: Props) {
   const gerarLote = useGerarLoteQuadras();
 
-  const [regiaoId, setRegiaoId] = useState(regiaoIdInicial ?? '');
+  const [bairroId, setBairroId] = useState(bairroIdInicial ?? '');
   const [prefixo, setPrefixo] = useState('');
   const [inicio, setInicio] = useState('1');
   const [fim, setFim] = useState('30');
@@ -53,10 +53,10 @@ export function ModalGerarLoteQuarteiroes({
   // Sync region + reset form whenever the modal opens
   useEffect(() => {
     if (open) {
-      setRegiaoId(regiaoIdInicial ?? '');
+      setBairroId(bairroIdInicial ?? '');
       setResultado(null);
     }
-  }, [open, regiaoIdInicial]);
+  }, [open, bairroIdInicial]);
 
   const preview = useMemo(() => {
     const p = prefixo.trim().toUpperCase();
@@ -70,14 +70,14 @@ export function ModalGerarLoteQuarteiroes({
     const p = prefixo.trim();
     const a = parseInt(inicio, 10);
     const b = parseInt(fim, 10);
-    if (!regiaoId)          { toast.error('Selecione uma região'); return; }
+    if (!bairroId)          { toast.error('Selecione uma região'); return; }
     if (!p)                 { toast.error('Prefixo é obrigatório'); return; }
     if (isNaN(a) || a < 1) { toast.error('Número inicial inválido (mín. 1)'); return; }
     if (isNaN(b) || b < a) { toast.error('Número final deve ser ≥ inicial'); return; }
     if (b - a + 1 > 300)   { toast.error('Máximo 300 quadras por lote'); return; }
 
     gerarLote.mutate(
-      { regiaoId, prefixo: p, numeroInicial: a, numeroFinal: b },
+      { bairroId, prefixo: p, numeroInicial: a, numeroFinal: b },
       {
         onSuccess: (res) => {
           setResultado(res);
@@ -160,7 +160,7 @@ export function ModalGerarLoteQuarteiroes({
         <div className="space-y-4 py-2">
           <div className="space-y-1.5">
             <Label>Região / Bairro *</Label>
-            <Select value={regiaoId} onValueChange={setRegiaoId}>
+            <Select value={bairroId} onValueChange={setBairroId}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione uma região" />
               </SelectTrigger>

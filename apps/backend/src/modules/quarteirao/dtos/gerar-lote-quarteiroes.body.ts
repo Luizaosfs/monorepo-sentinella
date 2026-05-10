@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 export const gerarLoteQuarteiraoSchema = z
   .object({
-    regiaoId: z.string().uuid({ message: 'regiaoId deve ser UUID válido' }),
+    bairroId: z.string().uuid({ message: 'bairroId deve ser UUID válido' }),
     prefixo: z
       .string({ required_error: 'Prefixo obrigatório' })
       .trim()

@@ -35,7 +35,7 @@ export class CreateQuarteirao {
     const entity = new Quarteirao(
       {
         clienteId,
-        regiaoId: input.regiaoId,
+        bairroId: input.bairroId,
         codigo: input.codigo,
         bairro: input.bairro,
         ativo: input.ativo ?? true,

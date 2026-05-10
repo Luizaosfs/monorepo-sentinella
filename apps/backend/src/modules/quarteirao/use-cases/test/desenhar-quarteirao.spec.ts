@@ -87,29 +87,29 @@ function makeUc(overrides: {
 describe('desenharQuarteiraoSchema', () => {
   it('normaliza código com espaços e minúsculas → uppercase sem espaços', () => {
     const result = desenharQuarteiraoSchema.parse({
-      regiaoId: REGIAO_ID,
+      bairroId: REGIAO_ID,
       codigo: '  a1  ',
       geojson: VALID_POLYGON,
     });
     expect(result.codigo).toBe('A1');
   });
 
-  it('rejeita regiaoId inválido (não UUID)', () => {
+  it('rejeita bairroId inválido (não UUID)', () => {
     expect(() =>
-      desenharQuarteiraoSchema.parse({ regiaoId: 'nao-uuid', codigo: 'A1', geojson: VALID_POLYGON }),
+      desenharQuarteiraoSchema.parse({ bairroId: 'nao-uuid', codigo: 'A1', geojson: VALID_POLYGON }),
     ).toThrow();
   });
 
   it('rejeita código vazio', () => {
     expect(() =>
-      desenharQuarteiraoSchema.parse({ regiaoId: REGIAO_ID, codigo: '   ', geojson: VALID_POLYGON }),
+      desenharQuarteiraoSchema.parse({ bairroId: REGIAO_ID, codigo: '   ', geojson: VALID_POLYGON }),
     ).toThrow();
   });
 
   it('rejeita código acima de 20 caracteres', () => {
     expect(() =>
       desenharQuarteiraoSchema.parse({
-        regiaoId: REGIAO_ID,
+        bairroId: REGIAO_ID,
         codigo: 'X'.repeat(21),
         geojson: VALID_POLYGON,
       }),
@@ -119,7 +119,7 @@ describe('desenharQuarteiraoSchema', () => {
   it('rejeita geojson que não seja Polygon', () => {
     expect(() =>
       desenharQuarteiraoSchema.parse({
-        regiaoId: REGIAO_ID,
+        bairroId: REGIAO_ID,
         codigo: 'A1',
         geojson: { type: 'MultiPolygon', coordinates: [] },
       }),
@@ -129,7 +129,7 @@ describe('desenharQuarteiraoSchema', () => {
   it('rejeita Polygon com anel exterior com menos de 3 pontos', () => {
     expect(() =>
       desenharQuarteiraoSchema.parse({
-        regiaoId: REGIAO_ID,
+        bairroId: REGIAO_ID,
         codigo: 'A1',
         geojson: { type: 'Polygon', coordinates: [[[0, 0], [1, 1]]] },
       }),
@@ -138,7 +138,7 @@ describe('desenharQuarteiraoSchema', () => {
 
   it('aceita Polygon GeoJSON válido', () => {
     const r = desenharQuarteiraoSchema.parse({
-      regiaoId: REGIAO_ID, codigo: 'B2', geojson: VALID_POLYGON,
+      bairroId: REGIAO_ID, codigo: 'B2', geojson: VALID_POLYGON,
     });
     expect(r.geojson.type).toBe('Polygon');
     expect(r.codigo).toBe('B2');
@@ -152,7 +152,7 @@ describe('DesenharQuarteirao', () => {
     const { uc, txCreate, txExecuteRaw, txFindUnique } = makeUc();
 
     const result = await uc.execute(CLIENTE_ID, {
-      regiaoId: REGIAO_ID,
+      bairroId: REGIAO_ID,
       codigo: 'A1',
       geojson: VALID_POLYGON,
     });
@@ -175,7 +175,7 @@ describe('DesenharQuarteirao', () => {
   it('executa exatamente 4 queries PostGIS na ordem correta', async () => {
     const { uc, queryRaw } = makeUc();
 
-    await uc.execute(CLIENTE_ID, { regiaoId: REGIAO_ID, codigo: 'A1', geojson: VALID_POLYGON });
+    await uc.execute(CLIENTE_ID, { bairroId: REGIAO_ID, codigo: 'A1', geojson: VALID_POLYGON });
 
     expect(queryRaw).toHaveBeenCalledTimes(4);
   });
@@ -186,7 +186,7 @@ describe('DesenharQuarteirao', () => {
     });
 
     await expect(
-      uc.execute(CLIENTE_ID, { regiaoId: REGIAO_ID, codigo: 'A1', geojson: VALID_POLYGON }),
+      uc.execute(CLIENTE_ID, { bairroId: REGIAO_ID, codigo: 'A1', geojson: VALID_POLYGON }),
     ).rejects.toMatchObject({ message: expect.stringContaining('Acesso') });
   });
 
@@ -199,7 +199,7 @@ describe('DesenharQuarteirao', () => {
     });
 
     await expect(
-      uc.execute(CLIENTE_ID, { regiaoId: REGIAO_ID, codigo: 'A1', geojson: VALID_POLYGON }),
+      uc.execute(CLIENTE_ID, { bairroId: REGIAO_ID, codigo: 'A1', geojson: VALID_POLYGON }),
     ).rejects.toMatchObject({ message: expect.stringContaining('inválido') });
   });
 
@@ -213,7 +213,7 @@ describe('DesenharQuarteirao', () => {
     });
 
     await expect(
-      uc.execute(CLIENTE_ID, { regiaoId: REGIAO_ID, codigo: 'A1', geojson: VALID_POLYGON }),
+      uc.execute(CLIENTE_ID, { bairroId: REGIAO_ID, codigo: 'A1', geojson: VALID_POLYGON }),
     ).rejects.toMatchObject({ message: expect.stringContaining('fora') });
   });
 
@@ -228,7 +228,7 @@ describe('DesenharQuarteirao', () => {
     });
 
     await expect(
-      uc.execute(CLIENTE_ID, { regiaoId: REGIAO_ID, codigo: 'A1', geojson: VALID_POLYGON }),
+      uc.execute(CLIENTE_ID, { bairroId: REGIAO_ID, codigo: 'A1', geojson: VALID_POLYGON }),
     ).rejects.toMatchObject({ message: expect.stringContaining('sobrepõe') });
   });
 
@@ -238,7 +238,7 @@ describe('DesenharQuarteirao', () => {
     });
 
     await expect(
-      uc.execute(CLIENTE_ID, { regiaoId: REGIAO_ID, codigo: 'A1', geojson: VALID_POLYGON }),
+      uc.execute(CLIENTE_ID, { bairroId: REGIAO_ID, codigo: 'A1', geojson: VALID_POLYGON }),
     ).rejects.toMatchObject({ message: expect.stringContaining('código') });
   });
 
@@ -252,7 +252,7 @@ describe('DesenharQuarteirao', () => {
       ],
     });
 
-    await uc.execute(CLIENTE_ID, { regiaoId: REGIAO_ID, codigo: 'A1', geojson: VALID_POLYGON });
+    await uc.execute(CLIENTE_ID, { bairroId: REGIAO_ID, codigo: 'A1', geojson: VALID_POLYGON });
 
     // 3 queries: region check, ST_IsValid, ST_Intersects (sem ST_Covers)
     expect(queryRaw).toHaveBeenCalledTimes(3);
@@ -261,7 +261,7 @@ describe('DesenharQuarteirao', () => {
   it('garante que cliente_id vem do tenant, nunca do payload', async () => {
     const { uc, txCreate } = makeUc();
 
-    await uc.execute(CLIENTE_ID, { regiaoId: REGIAO_ID, codigo: 'A1', geojson: VALID_POLYGON });
+    await uc.execute(CLIENTE_ID, { bairroId: REGIAO_ID, codigo: 'A1', geojson: VALID_POLYGON });
 
     expect(txCreate).toHaveBeenCalledWith(
       expect.objectContaining({

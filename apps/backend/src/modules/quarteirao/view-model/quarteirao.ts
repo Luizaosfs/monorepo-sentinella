@@ -7,7 +7,7 @@ export class QuarteiraoViewModel {
     return {
       id: q.id,
       clienteId: q.clienteId,
-      regiaoId: q.regiaoId,
+      bairroId: q.bairroId,
       codigo: q.codigo,
       bairro: q.bairro,
       ativo: q.ativo,
@@ -30,7 +30,7 @@ export class DistribuicaoQuarteiraoViewModel {
       ciclo: d.ciclo,
       quarteirao: d.quarteirao,
       agenteId: d.agenteId,
-      regiaoId: d.regiaoId,
+      bairroId: d.bairroId,
       createdAt: d.createdAt,
       updatedAt: d.updatedAt,
       ...baseAuditToHttp(d),

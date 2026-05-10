@@ -7,7 +7,7 @@ import type { AtribuicaoState, Filtro, RegiaoEntry } from './types';
 
 interface Props {
   porRegiao: Map<string, RegiaoEntry>;
-  regiaoIds: string[];
+  bairroIds: string[];
   atribuicoes: Record<string, AtribuicaoState>;
   selecionadas: Set<string>;
   abertas: Set<string>;
@@ -24,11 +24,11 @@ interface Props {
   onFiltroChange: (f: Filtro) => void;
   onToggleQuadra: (q: string) => void;
   onSelectQuadras: (qs: string[], select: boolean) => void;
-  onToggleAberta: (regiaoId: string) => void;
-  onGerarQuarteiroes?: (regiaoId: string) => void;
-  onDesenharQuarteirao?: (codigo: string, regiaoId: string | null) => void;
+  onToggleAberta: (bairroId: string) => void;
+  onGerarQuarteiroes?: (bairroId: string) => void;
+  onDesenharQuarteirao?: (codigo: string, bairroId: string | null) => void;
   /** Abre modal de desenho de nova quadra para uma região específica */
-  onDesenharNova?: (regiaoId: string) => void;
+  onDesenharNova?: (bairroId: string) => void;
   onExpandAll?: () => void;
   onCollapseAll?: () => void;
 }
@@ -61,7 +61,7 @@ function qsVisiveis(
 }
 
 export function PainelRegioesQuadras({
-  porRegiao, regiaoIds, atribuicoes, selecionadas, abertas,
+  porRegiao, bairroIds, atribuicoes, selecionadas, abertas,
   searchTerm, filtro, agentesMap, agentColorMap, contagemPorQ, quarteiraoGeomMap,
   highlightQ,
   onSearchChange, onFiltroChange, onToggleQuadra, onSelectQuadras, onToggleAberta,
@@ -86,14 +86,14 @@ export function PainelRegioesQuadras({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [highlightQ]);
 
-  const regiaoIdsFiltrados = useMemo(() => {
-    return regiaoIds.filter((rId) => {
+  const bairroIdsFiltrados = useMemo(() => {
+    return bairroIds.filter((rId) => {
       if (!term && filtro === 'todas') return true;
       const { nome, qs } = porRegiao.get(rId)!;
       const vis = qsVisiveis(qs, nome, term, filtro, atribuicoes, quarteiraoGeomMap, selecionadas);
       return vis.length > 0 || (term && nome.toLowerCase().includes(term));
     });
-  }, [regiaoIds, porRegiao, term, filtro, atribuicoes, quarteiraoGeomMap, selecionadas]);
+  }, [bairroIds, porRegiao, term, filtro, atribuicoes, quarteiraoGeomMap, selecionadas]);
 
   return (
     <div className="flex flex-col h-full border rounded-xl bg-card overflow-hidden">
@@ -154,14 +154,14 @@ export function PainelRegioesQuadras({
 
       {/* Lista */}
       <div className="flex-1 overflow-y-auto divide-y divide-border/40">
-        {regiaoIdsFiltrados.length === 0 ? (
+        {bairroIdsFiltrados.length === 0 ? (
           <p className="text-xs text-muted-foreground p-4 text-center">
             {!term && filtro === 'todas' ? 'Nenhum bairro cadastrado.' : 'Nenhuma quadra encontrada.'}
           </p>
         ) : (
-          regiaoIdsFiltrados.map((regiaoId) => {
-            const { nome, qs } = porRegiao.get(regiaoId)!;
-            const aberto = abertas.has(regiaoId);
+          bairroIdsFiltrados.map((bairroId) => {
+            const { nome, qs } = porRegiao.get(bairroId)!;
+            const aberto = abertas.has(bairroId);
             const vis = qsVisiveis(qs, nome, term, filtro, atribuicoes, quarteiraoGeomMap, selecionadas);
             const todasSel = vis.length > 0 && vis.every((q) => selecionadas.has(q));
             const algumasSel = vis.some((q) => selecionadas.has(q));
@@ -171,7 +171,7 @@ export function PainelRegioesQuadras({
               : 0;
 
             return (
-              <div key={regiaoId}>
+              <div key={bairroId}>
                 {/* Cabeçalho da região */}
                 <div className="flex items-center gap-1.5 px-3 py-2 bg-muted/30 hover:bg-muted/50 transition-colors">
                   <button
@@ -190,7 +190,7 @@ export function PainelRegioesQuadras({
                   </button>
                   <button
                     type="button"
-                    onClick={() => onToggleAberta(regiaoId)}
+                    onClick={() => onToggleAberta(bairroId)}
                     className="flex flex-1 items-center gap-1.5 min-w-0 text-left"
                   >
                     {aberto ? (
@@ -216,10 +216,10 @@ export function PainelRegioesQuadras({
                     )}
                   </button>
                   {/* Botão: desenhar nova quadra nesta região */}
-                  {onDesenharNova && regiaoId !== '__sem_regiao__' && (
+                  {onDesenharNova && bairroId !== '__sem_regiao__' && (
                     <button
                       type="button"
-                      onClick={(e) => { e.stopPropagation(); onDesenharNova(regiaoId); }}
+                      onClick={(e) => { e.stopPropagation(); onDesenharNova(bairroId); }}
                       className="shrink-0 text-muted-foreground hover:text-primary p-0.5 rounded transition-colors"
                       title="Desenhar nova quadra nesta região"
                     >
@@ -229,7 +229,7 @@ export function PainelRegioesQuadras({
                   {onGerarQuarteiroes && (
                     <button
                       type="button"
-                      onClick={(e) => { e.stopPropagation(); onGerarQuarteiroes(regiaoId); }}
+                      onClick={(e) => { e.stopPropagation(); onGerarQuarteiroes(bairroId); }}
                       className="shrink-0 text-muted-foreground hover:text-primary p-0.5 rounded transition-colors"
                       title="Gerar quarteirões nesta região"
                     >
@@ -318,7 +318,7 @@ export function PainelRegioesQuadras({
                             title={hasGeom ? 'Editar geometria' : 'Desenhar geometria'}
                             onClick={(e) => {
                               e.stopPropagation();
-                              onDesenharQuarteirao(q, regiaoId === '__sem_regiao__' ? null : regiaoId);
+                              onDesenharQuarteirao(q, bairroId === '__sem_regiao__' ? null : bairroId);
                             }}
                           >
                             <PenLine

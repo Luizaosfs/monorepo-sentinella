@@ -32,21 +32,21 @@ export class ImportarGeoJSONQuarteiroes {
     const erros: Array<{ codigo: string; motivo: string }> = [];
     const resultados: Array<{
       codigo: string;
-      regiaoId: string | null;
+      bairroId: string | null;
       regiaoNome: string | null;
     }> = [];
 
     for (const feature of input.features) {
       try {
-        const regiaoId = await this.resolveRegiaoId(
+        const bairroId = await this.resolveBairroId(
           clienteId,
           feature,
           regiaoByNome,
         );
 
-        if (regiaoId) {
+        if (bairroId) {
           await this.desenharUc.execute(clienteId, {
-            regiaoId,
+            bairroId,
             codigo: feature.codigo,
             geojson: feature.geojson,
             areaM2: feature.areaM2,
@@ -58,9 +58,9 @@ export class ImportarGeoJSONQuarteiroes {
         criados.push(feature.codigo);
         resultados.push({
           codigo: feature.codigo,
-          regiaoId,
-          regiaoNome: regiaoId
-            ? (regioes.find((r) => r.id === regiaoId)?.nome ?? null)
+          bairroId,
+          regiaoNome: bairroId
+            ? (regioes.find((r) => r.id === bairroId)?.nome ?? null)
             : null,
         });
       } catch (err: unknown) {
@@ -74,13 +74,13 @@ export class ImportarGeoJSONQuarteiroes {
     return { ok: criados.length, criados, resultados, erros };
   }
 
-  private async resolveRegiaoId(
+  private async resolveBairroId(
     clienteId: string,
-    feature: { regiaoId?: string; bairro?: string; geojson: GeoJSONPolygon },
+    feature: { bairroId?: string; bairro?: string; geojson: GeoJSONPolygon },
     regiaoByNome: Map<string, string>,
   ): Promise<string | null> {
     // 1. UUID explícito nas propriedades
-    if (feature.regiaoId) return feature.regiaoId;
+    if (feature.bairroId) return feature.bairroId;
 
     // 2. Nome do bairro → lookup
     if (feature.bairro) {

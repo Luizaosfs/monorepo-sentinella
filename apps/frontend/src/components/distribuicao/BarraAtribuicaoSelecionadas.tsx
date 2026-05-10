@@ -12,7 +12,7 @@ interface Props {
   agentes: AgenteSimples[];
   atribuicoes: Record<string, AtribuicaoState>;
   agentesMap: Record<string, string>;
-  qRegiaoMap: Record<string, string | null>;
+  qBairroMap: Record<string, string | null>;
   regiaoNomeMap: Record<string, string>;
   contagemPorQ: Record<string, number>;
   agentColorMap: Record<string, string>;
@@ -24,7 +24,7 @@ interface Props {
 
 export function BarraAtribuicaoSelecionadas({
   selecionadas, agentes, atribuicoes, agentesMap,
-  qRegiaoMap, regiaoNomeMap, contagemPorQ, agentColorMap,
+  qBairroMap, regiaoNomeMap, contagemPorQ, agentColorMap,
   isPending, onAtribuir, onLimpar, onToggleQuadra,
 }: Props) {
   const [agenteId, setAgenteId] = useState('');
@@ -95,8 +95,8 @@ export function BarraAtribuicaoSelecionadas({
             {quadrasSel.map((q) => {
               const st = atribuicoes[q] ?? { salvo: '', pendente: '' };
               const alterado = st.pendente !== st.salvo;
-              const regiaoId = qRegiaoMap[q] ?? null;
-              const rNome = regiaoId ? (regiaoNomeMap[regiaoId] ?? '—') : '—';
+              const bairroId = qBairroMap[q] ?? null;
+              const rNome = bairroId ? (regiaoNomeMap[bairroId] ?? '—') : '—';
               const nIm = contagemPorQ[q] ?? 0;
               const agNome = st.pendente ? (agentesMap[st.pendente] ?? '?') : null;
               const agColor = st.pendente ? (agentColorMap[st.pendente] ?? '#6b7280') : null;

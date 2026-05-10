@@ -15,7 +15,7 @@ export function useQuadrasList(clienteId: string | null | undefined) {
 export function useCriarQuadra() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: { codigo: string; regiaoId?: string | null; ativo: boolean }) =>
+    mutationFn: (payload: { codigo: string; bairroId?: string | null; ativo: boolean }) =>
       api.quarteiroes.create(payload),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['quadras'] });
@@ -27,7 +27,7 @@ export function useCriarQuadra() {
 export function useSalvarQuadra() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...payload }: { id: string; codigo?: string; regiaoId?: string | null; ativo?: boolean; geojson?: Record<string, unknown> | null }) =>
+    mutationFn: ({ id, ...payload }: { id: string; codigo?: string; bairroId?: string | null; ativo?: boolean; geojson?: Record<string, unknown> | null }) =>
       api.quarteiroes.save(id, payload),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['quadras'] });
@@ -50,7 +50,7 @@ export function useRemoverQuadra() {
 export function useBulkInsertQuadras() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (rows: { codigo: string; regiaoId?: string }[]) =>
+    mutationFn: (rows: { codigo: string; bairroId?: string }[]) =>
       api.quarteiroes.bulkInsert(rows),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['quadras'] });
@@ -70,7 +70,7 @@ export type GerarLoteResult = {
 export function useDesenharQuarteirao() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: { regiaoId: string; codigo: string; geojson: Record<string, unknown> }) =>
+    mutationFn: (payload: { bairroId: string; codigo: string; geojson: Record<string, unknown> }) =>
       api.quarteiroes.desenharQuarteirao(payload),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['quadras'] });
@@ -95,7 +95,7 @@ export function useGerarLoteQuadras() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (payload: {
-      regiaoId: string;
+      bairroId: string;
       prefixo: string;
       numeroInicial: number;
       numeroFinal: number;
@@ -111,7 +111,7 @@ export function useImportarGeoJSONQuarteiroes() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (payload: {
-      features: Array<{ codigo: string; geojson: Record<string, unknown>; regiaoId?: string; bairro?: string; areaM2?: number }>;
+      features: Array<{ codigo: string; geojson: Record<string, unknown>; bairroId?: string; bairro?: string; areaM2?: number }>;
     }) => api.quarteiroes.importarGeoJSON(payload),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['quadras'] });
@@ -134,7 +134,7 @@ export type GerarQuadrasOSMResult = {
 export function useGerarQuadrasOSM() {
   return useMutation({
     mutationFn: (payload: {
-      regiaoId: string;
+      bairroId: string;
       geojson: { type: 'Polygon'; coordinates: number[][][] };
       prefixo?: string;
       areaMinima?: number;

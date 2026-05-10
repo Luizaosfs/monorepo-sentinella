@@ -8,7 +8,7 @@ import type { AgenteSimples } from '@/hooks/queries/useAgentes';
 
 interface Props {
   quadrasFiltradas: string[];
-  qRegiaoMap: Record<string, string | null>;
+  qBairroMap: Record<string, string | null>;
   regiaoNomeMap: Record<string, string>;
   atribuicoes: Record<string, AtribuicaoState>;
   agentes: AgenteSimples[];
@@ -21,7 +21,7 @@ interface Props {
 }
 
 export function ListaQuadrasDistribuicao({
-  quadrasFiltradas, qRegiaoMap, regiaoNomeMap,
+  quadrasFiltradas, qBairroMap, regiaoNomeMap,
   atribuicoes, agentes, agentesMap, cobertura, contagemPorQ,
   selecionadas, onToggleQuadra, onSetAtribuicao,
 }: Props) {
@@ -50,8 +50,8 @@ export function ListaQuadrasDistribuicao({
           const st = atribuicoes[q] ?? { salvo: '', pendente: '' };
           const alterado = st.pendente !== st.salvo;
           const sel = selecionadas.has(q);
-          const regiaoId = qRegiaoMap[q] ?? null;
-          const regiaoNome = regiaoId ? (regiaoNomeMap[regiaoId] ?? '—') : '—';
+          const bairroId = qBairroMap[q] ?? null;
+          const regiaoNome = bairroId ? (regiaoNomeMap[bairroId] ?? '—') : '—';
           const cobQ = cobertura.find((c) => c.quarteirao === q);
           const nImoveis = contagemPorQ[q] ?? 0;
 

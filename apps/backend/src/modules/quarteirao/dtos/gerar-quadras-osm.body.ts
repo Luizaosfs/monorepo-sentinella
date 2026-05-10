@@ -9,7 +9,7 @@ const polygonGeoJSONSchema = z.object({
 });
 
 export const gerarQuadrasOSMSchema = z.object({
-  regiaoId: z.string().uuid(),
+  bairroId: z.string().uuid(),
   geojson: polygonGeoJSONSchema,
   prefixo: z.string().min(1).max(10).default('Q'),
   areaMinima: z.number().int().min(50).max(50000).default(200),

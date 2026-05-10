@@ -4,7 +4,7 @@ import { z } from 'zod';
 const quarteiraoItemNormalizedSchema = z.object({
   codigo:   z.string().min(1),
   bairro:   z.string().optional(),
-  regiaoId: z.string().uuid().optional(),
+  bairroId: z.string().uuid().optional(),
   ativo:    z.boolean().optional(),
 });
 

@@ -3,7 +3,7 @@ import { DistribuicaoQuarteirao, Quarteirao } from '../../../entities/quarteirao
 export class QuarteiraoBuilder {
   private id = 'quarteirao-uuid-1';
   private clienteId = 'test-cliente-id';
-  private regiaoId: string | undefined = 'regiao-uuid-1';
+  private bairroId: string | undefined = 'regiao-uuid-1';
   private codigo = 'Q001';
   private bairro: string | undefined = 'Centro';
   private ativo = true;
@@ -17,7 +17,7 @@ export class QuarteiraoBuilder {
     return this;
   }
   withRegiaoId(id: string) {
-    this.regiaoId = id;
+    this.bairroId = id;
     return this;
   }
   withCodigo(c: string) {
@@ -37,7 +37,7 @@ export class QuarteiraoBuilder {
     return new Quarteirao(
       {
         clienteId: this.clienteId,
-        regiaoId: this.regiaoId,
+        bairroId: this.bairroId,
         codigo: this.codigo,
         bairro: this.bairro,
         ativo: this.ativo,
@@ -53,7 +53,7 @@ export class DistribuicaoBuilder {
   private ciclo = 1;
   private quarteirao = 'Q001';
   private agenteId = 'agente-uuid-1';
-  private regiaoId: string | undefined = 'regiao-uuid-1';
+  private bairroId: string | undefined = 'regiao-uuid-1';
 
   withId(id: string) {
     this.id = id;
@@ -83,7 +83,7 @@ export class DistribuicaoBuilder {
         ciclo: this.ciclo,
         quarteirao: this.quarteirao,
         agenteId: this.agenteId,
-        regiaoId: this.regiaoId,
+        bairroId: this.bairroId,
       },
       { id: this.id },
     );

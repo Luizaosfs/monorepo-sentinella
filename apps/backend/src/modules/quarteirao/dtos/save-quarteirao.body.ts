@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 export const saveQuarteiraoSchema = z.object({
   codigo:   z.string().min(1).describe('Código do quarteirão').optional(),
-  regiaoId: z.string().uuid().nullable().describe('ID da região/bairro').optional(),
+  bairroId: z.string().uuid().nullable().describe('ID do bairro').optional(),
   ativo:    z.boolean().describe('Ativa ou desativa o quarteirão').optional(),
   geojson:  jsonRecordOptional('GeoJSON do polígono (somente Polygon simples — MultiPolygon não suportado)'),
 });

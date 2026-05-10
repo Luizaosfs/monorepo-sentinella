@@ -10,9 +10,9 @@ const polygonGeoJSONSchema = z.object({
 });
 
 export const desenharQuarteiraoSchema = z.object({
-  regiaoId: z
-    .string({ required_error: 'Região obrigatória' })
-    .uuid('regiaoId deve ser UUID'),
+  bairroId: z
+    .string({ required_error: 'Bairro obrigatório' })
+    .uuid('bairroId deve ser UUID'),
   codigo: z
     .string({ required_error: 'Código obrigatório' })
     .trim()

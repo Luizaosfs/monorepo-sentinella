@@ -8,19 +8,19 @@ export const quarteiroes = {
     const raw = await http.get(`/quarteiroes${qs({ clienteId })}`);
     return deepToSnake(raw) as Ret<typeof _sb.quarteiroes.listByCliente>;
   },
-  create: (payload: { codigo: string; regiaoId?: string | null; bairro?: string | null; ativo?: boolean }): Promise<Record<string, unknown>> =>
+  create: (payload: { codigo: string; bairroId?: string | null; bairro?: string | null; ativo?: boolean }): Promise<Record<string, unknown>> =>
     http.post('/quarteiroes', payload),
   remove: (id: string): Promise<void> =>
     http.delete(`/quarteiroes/${id}`),
   save: (
     id: string,
-    payload: { codigo?: string; regiaoId?: string | null; ativo?: boolean; geojson?: Record<string, unknown> | null },
+    payload: { codigo?: string; bairroId?: string | null; ativo?: boolean; geojson?: Record<string, unknown> | null },
   ): Promise<Record<string, unknown>> =>
     http.patch(`/quarteiroes/${id}`, payload),
-  bulkInsert: (rows: { codigo: string; bairro?: string; regiaoId?: string }[]): Promise<{ inserted: number; updated: number }> =>
+  bulkInsert: (rows: { codigo: string; bairro?: string; bairroId?: string }[]): Promise<{ inserted: number; updated: number }> =>
     http.post('/quarteiroes/bulk-insert', { rows }),
   gerarLote: (payload: {
-    regiaoId: string;
+    bairroId: string;
     prefixo: string;
     numeroInicial: number;
     numeroFinal: number;
@@ -32,7 +32,7 @@ export const quarteiroes = {
     ignorados: Array<{ codigo: string; motivo: string }>;
   }> => http.post('/quarteiroes/gerar-lote', payload),
   desenharQuarteirao: (payload: {
-    regiaoId: string;
+    bairroId: string;
     codigo: string;
     geojson: Record<string, unknown>;
   }): Promise<Record<string, unknown>> =>
@@ -43,11 +43,11 @@ export const quarteiroes = {
   ): Promise<Record<string, unknown>> =>
     http.put(`/quarteiroes/${id}/geometria`, { geojson }),
   importarGeoJSON: (payload: {
-    features: Array<{ codigo: string; geojson: Record<string, unknown>; regiaoId?: string; bairro?: string; areaM2?: number }>;
+    features: Array<{ codigo: string; geojson: Record<string, unknown>; bairroId?: string; bairro?: string; areaM2?: number }>;
   }): Promise<{ ok: number; criados: string[]; erros: Array<{ codigo: string; motivo: string }> }> =>
     http.post('/quarteiroes/importar-geojson', payload),
   gerarQuadrasOSM: (payload: {
-    regiaoId: string;
+    bairroId: string;
     geojson: { type: 'Polygon'; coordinates: number[][][] };
     prefixo?: string;
     areaMinima?: number;
@@ -64,7 +64,7 @@ export const distribuicaoQuarteirao = {
   },
   listByAgente: (clienteId: string, agenteId: string, ciclo: number): Promise<string[]> =>
     http.get(`/quarteiroes/distribuicoes/por-agente${qs({ agenteId, ciclo })}`),
-  upsert: (rows: { ciclo: number; quarteirao: string; agenteId: string; regiaoId?: string | null }[]): Promise<{ ok: boolean }> =>
+  upsert: (rows: { ciclo: number; quarteirao: string; agenteId: string; bairroId?: string | null }[]): Promise<{ ok: boolean }> =>
     http.post('/quarteiroes/distribuicoes/upsert', { rows }),
   deletar: (ciclo: number, quarteiroes: string[]): Promise<{ deleted: number }> =>
     http.post('/quarteiroes/distribuicoes/deletar', { ciclo, quarteiroes }),

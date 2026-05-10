@@ -27,7 +27,7 @@ interface PolygonFeature {
   tempId: number;
   codigo: string;
   geojson: { type: 'Polygon'; coordinates: number[][][] };
-  regiaoId?: string;
+  bairroId?: string;
   bairro?: string;
   regiaoNomeDetectada?: string;
 }
@@ -131,7 +131,7 @@ function parseGeoJSONFile(
       const bairro = String(
         props.bairro ?? props.regiao ?? props.neighborhood ?? props.district ?? '',
       ).trim() || undefined;
-      const regiaoIdProp = String(props.bairro_id ?? props.regiaoId ?? '').trim() || undefined;
+      const bairroIdProp = String(props.bairro_id ?? props.regiaoId ?? '').trim() || undefined;
 
       // Local name match for display
       const regiaoNomeDetectada = bairro
@@ -144,7 +144,7 @@ function parseGeoJSONFile(
         tempId: polys.length,
         codigo,
         geojson: geom as PolygonFeature['geojson'],
-        regiaoId: regiaoIdProp,
+        bairroId: bairroIdProp,
         bairro,
         regiaoNomeDetectada,
       });
@@ -272,7 +272,7 @@ export function ModalImportarGeoJSONQuarteiroes({
         features: features.map((f) => ({
           codigo: f.codigo.trim().toUpperCase(),
           geojson: f.geojson as unknown as Record<string, unknown>,
-          regiaoId: f.regiaoId || undefined,
+          bairroId: f.bairroId || undefined,
           bairro: f.bairro || undefined,
         })),
       },
@@ -297,7 +297,7 @@ export function ModalImportarGeoJSONQuarteiroes({
   };
 
   const hasFeatures = features.length > 0;
-  const comRegiao = features.filter((f) => f.bairro || f.regiaoId).length;
+  const comRegiao = features.filter((f) => f.bairro || f.bairroId).length;
   const semRegiao = features.length - comRegiao;
 
   return (

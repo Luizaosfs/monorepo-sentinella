@@ -17,7 +17,7 @@ export class UpsertDistribuicoes {
           ${row.ciclo},
           ${row.quarteirao},
           ${row.agenteId}::uuid,
-          ${row.regiaoId ?? null}::uuid
+          ${row.bairroId ?? null}::uuid
         )
         ON CONFLICT (cliente_id, ciclo, quarteirao)
         DO UPDATE SET

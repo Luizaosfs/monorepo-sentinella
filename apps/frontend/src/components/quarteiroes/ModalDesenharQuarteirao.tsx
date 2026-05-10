@@ -43,7 +43,7 @@ export interface RegiaoParaDesenho {
 interface Props {
   open: boolean;
   regioes: RegiaoParaDesenho[];
-  regiaoIdInicial?: string | null;
+  bairroIdInicial?: string | null;
   onClose: () => void;
   onSalvo?: () => void;
 }
@@ -57,7 +57,7 @@ function fmtArea(m2: number): string {
   return `${m2.toLocaleString('pt-BR')} m²`;
 }
 
-export function ModalDesenharQuarteirao({ open, regioes, regiaoIdInicial, onClose, onSalvo }: Props) {
+export function ModalDesenharQuarteirao({ open, regioes, bairroIdInicial, onClose, onSalvo }: Props) {
   const importar = useImportarGeoJSONQuarteiroes();
   const gerarOSM = useGerarQuadrasOSM();
   const { clienteId, clienteAtivo } = useClienteAtivo();
@@ -70,14 +70,14 @@ export function ModalDesenharQuarteirao({ open, regioes, regiaoIdInicial, onClos
 
   type Etapa = 'desenho' | 'preview';
   const [etapa, setEtapa] = useState<Etapa>('desenho');
-  const [regiaoId, setRegiaoId] = useState(regiaoIdInicial ?? '');
+  const [bairroId, setBairroId] = useState(bairroIdInicial ?? '');
   const [prefixo, setPrefixo] = useState('Q');
   const [geojson, setGeojson] = useState<Record<string, unknown> | null>(null);
   const [candidatos, setCandidatos] = useState<QuadraCandidataOSM[]>([]);
   const [codigos, setCodigos] = useState<Record<string, string>>({});
   const [selecionadas, setSelecionadas] = useState<Set<string>>(new Set());
 
-  const regiao = useMemo(() => regioes.find((r) => r.id === regiaoId) ?? null, [regioes, regiaoId]);
+  const regiao = useMemo(() => regioes.find((r) => r.id === bairroId) ?? null, [regioes, bairroId]);
 
   // Conjunto dos candidatos cujo código editado atual já existe no sistema
   const duplicatas = useMemo(
@@ -102,7 +102,7 @@ export function ModalDesenharQuarteirao({ open, regioes, regiaoIdInicial, onClos
 
   useEffect(() => {
     if (open) {
-      setRegiaoId(regiaoIdInicial ?? '');
+      setBairroId(bairroIdInicial ?? '');
       setGeojson(null);
       setPrefixo('Q');
       setCandidatos([]);
@@ -110,7 +110,7 @@ export function ModalDesenharQuarteirao({ open, regioes, regiaoIdInicial, onClos
       setSelecionadas(new Set());
       setEtapa('desenho');
     }
-  }, [open, regiaoIdInicial]);
+  }, [open, bairroIdInicial]);
 
   function handleClose() {
     setGeojson(null);
@@ -118,11 +118,11 @@ export function ModalDesenharQuarteirao({ open, regioes, regiaoIdInicial, onClos
   }
 
   function handleGerar() {
-    if (!regiaoId) { toast.error('Selecione uma região'); return; }
+    if (!bairroId) { toast.error('Selecione uma região'); return; }
     if (!geojson) { toast.error('Desenhe o polígono da área a analisar'); return; }
     const p = prefixo.trim().toUpperCase() || 'Q';
     gerarOSM.mutate(
-      { regiaoId, geojson: geojson as { type: 'Polygon'; coordinates: number[][][] }, prefixo: p },
+      { bairroId, geojson: geojson as { type: 'Polygon'; coordinates: number[][][] }, prefixo: p },
       {
         onSuccess: (data) => {
           if (data.candidatos.length === 0) {
@@ -152,7 +152,7 @@ export function ModalDesenharQuarteirao({ open, regioes, regiaoIdInicial, onClos
       toast.warning(`${ignoradas.length} quadra${ignoradas.length !== 1 ? 's' : ''} ignorada${ignoradas.length !== 1 ? 's' : ''} — código já cadastrado`);
     if (aptas.length === 0) { toast.error('Nenhuma quadra nova para salvar'); return; }
     const features = aptas
-      .map(c => ({ codigo: codigos[c.codigo] ?? c.codigo, geojson: c.geojson as Record<string, unknown>, regiaoId, areaM2: c.areaM2 }));
+      .map(c => ({ codigo: codigos[c.codigo] ?? c.codigo, geojson: c.geojson as Record<string, unknown>, bairroId, areaM2: c.areaM2 }));
 
     importar.mutate({ features }, {
       onSuccess: (res) => {
@@ -196,7 +196,7 @@ export function ModalDesenharQuarteirao({ open, regioes, regiaoIdInicial, onClos
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Região / Bairro *</Label>
-                <Select value={regiaoId} onValueChange={(v) => { setRegiaoId(v); setGeojson(null); }}>
+                <Select value={bairroId} onValueChange={(v) => { setBairroId(v); setGeojson(null); }}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione uma região" />
                   </SelectTrigger>
@@ -231,7 +231,7 @@ export function ModalDesenharQuarteirao({ open, regioes, regiaoIdInicial, onClos
               </span>
             </div>
           )}
-          {etapa === 'desenho' && regiaoId && !regiao?.geojson && (
+          {etapa === 'desenho' && bairroId && !regiao?.geojson && (
             <div className="flex items-start gap-2 text-xs text-amber-700 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2">
               <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
               <span>Esta região não tem geometria cadastrada. Desenhe o polígono da área de análise.</span>
@@ -337,7 +337,7 @@ export function ModalDesenharQuarteirao({ open, regioes, regiaoIdInicial, onClos
           <Button variant="outline" onClick={handleClose} disabled={isPending}>Cancelar</Button>
 
           {etapa === 'desenho' && (
-            <Button onClick={handleGerar} disabled={isPending || !regiaoId || !geojson}>
+            <Button onClick={handleGerar} disabled={isPending || !bairroId || !geojson}>
               {gerarOSM.isPending
                 ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Consultando OSM…</>
                 : <><Wand2 className="h-4 w-4 mr-2" /> Gerar quadras</>}

@@ -22,7 +22,7 @@ import ConfirmDialog from '@/components/admin/ConfirmDialog';
 interface QuarteiraoRow {
   id: string;
   codigo: string;
-  regiaoId?: string | null;
+  bairroId?: string | null;
   bairro?: string | null;
   ativo: boolean;
 }
@@ -43,7 +43,7 @@ export default function AdminQuarteiroes() {
   const [search, setSearch] = useState('');
   const [filterBairro, setFilterBairro] = useState('__all__');
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ codigo: '', regiaoId: '', bairro: '' });
+  const [form, setForm] = useState({ codigo: '', bairroId: '', bairro: '' });
   const [importing, setImporting] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState<{
     title: string; description: string; onConfirm: () => void;
@@ -75,11 +75,11 @@ export default function AdminQuarteiroes() {
   );
 
   const bairrosUnicos = [...new Set(
-    rows.map(q => (q.regiaoId ? regiaoNomeMap.get(q.regiaoId) : q.bairro) ?? 'Sem bairro')
+    rows.map(q => (q.bairroId ? regiaoNomeMap.get(q.bairroId) : q.bairro) ?? 'Sem bairro')
   )].sort((a, b) => a.localeCompare(b, 'pt-BR'));
 
   const rowsFiltrados = rows.filter(q => {
-    const nome = (q.regiaoId ? regiaoNomeMap.get(q.regiaoId) : q.bairro) ?? 'Sem bairro';
+    const nome = (q.bairroId ? regiaoNomeMap.get(q.bairroId) : q.bairro) ?? 'Sem bairro';
     const matchBairro = filterBairro === '__all__' || nome === filterBairro;
     const matchSearch = !search.trim() ||
       q.codigo.toLowerCase().includes(search.toLowerCase()) ||
@@ -93,13 +93,13 @@ export default function AdminQuarteiroes() {
     mutationFn: () =>
       api.quarteiroes.create({
         codigo: form.codigo.trim(),
-        regiaoId: form.regiaoId || null,
+        bairroId: form.bairroId || null,
         bairro:   form.bairro.trim() || null,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quarteiroes_mestre', clienteId] });
       setShowForm(false);
-      setForm({ codigo: '', regiaoId: '', bairro: '' });
+      setForm({ codigo: '', bairroId: '', bairro: '' });
       toast.success('Quarteirão cadastrado');
     },
     onError: () => toast.error('Erro ao cadastrar quarteirão'),
@@ -236,8 +236,8 @@ export default function AdminQuarteiroes() {
               <div className="space-y-1">
                 <Label>Bairro (Região)</Label>
                 <Select
-                  value={form.regiaoId || '__none__'}
-                  onValueChange={v => setForm(p => ({ ...p, regiaoId: v === '__none__' ? '' : v }))}
+                  value={form.bairroId || '__none__'}
+                  onValueChange={v => setForm(p => ({ ...p, bairroId: v === '__none__' ? '' : v }))}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecionar bairro…" />
@@ -324,8 +324,8 @@ export default function AdminQuarteiroes() {
               </TableHeader>
               <TableBody>
                 {rowsFiltrados.map(q => {
-                  const bairroNome = q.regiaoId
-                    ? (regiaoNomeMap.get(q.regiaoId) ?? q.bairro ?? '—')
+                  const bairroNome = q.bairroId
+                    ? (regiaoNomeMap.get(q.bairroId) ?? q.bairro ?? '—')
                     : (q.bairro ?? '—');
                   return (
                     <TableRow key={q.id}>

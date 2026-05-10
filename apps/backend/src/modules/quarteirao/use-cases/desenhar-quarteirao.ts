@@ -18,7 +18,7 @@ export class DesenharQuarteirao {
       SELECT id::text,
              (area IS NOT NULL) AS has_area
         FROM bairros
-       WHERE id          = ${input.regiaoId}::uuid
+       WHERE id          = ${input.bairroId}::uuid
          AND cliente_id  = ${clienteId}::uuid
          AND deleted_at IS NULL
     `);
@@ -36,7 +36,7 @@ export class DesenharQuarteirao {
       const [containsRow] = await this.prisma.client.$queryRaw<Array<{ within: boolean }>>(Prisma.sql`
         SELECT ST_Covers(r.area, ST_GeomFromGeoJSON(${geojsonStr})) AS within
           FROM bairros r
-         WHERE r.id = ${input.regiaoId}::uuid
+         WHERE r.id = ${input.bairroId}::uuid
       `);
       if (!containsRow.within) throw QuarteiraoException.geomOutsideRegiao();
     }
@@ -65,7 +65,7 @@ export class DesenharQuarteirao {
       const row = await tx.bairros_quadras.create({
         data: {
           cliente_id: clienteId,
-          bairro_id:  input.regiaoId,
+          bairro_id:  input.bairroId,
           codigo:     input.codigo,
           geojson:    input.geojson as unknown as Prisma.InputJsonValue,
           ativo:      true,
