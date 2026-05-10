@@ -8,7 +8,7 @@ export class VoosByPlanejamento {
 
   async execute(planejamentoId: string, clienteId: string | null) {
     if (clienteId) {
-      const p = await this.prisma.client.planejamento.findFirst({
+      const p = await this.prisma.client.planejamentos.findFirst({
         where: { id: planejamentoId, cliente_id: clienteId, deleted_at: null },
         select: { id: true },
       });

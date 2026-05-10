@@ -1,4 +1,4 @@
-model planejamento {
+model planejamentos {
   id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   descricao           String?
   data_planejamento   DateTime  @default(now()) @db.Timestamptz
@@ -23,6 +23,6 @@ model planejamento {
 
   @@index([cliente_id])
   @@index([bairro_id])
-  @@map("planejamento")
+  @@map("planejamentos")
   @@schema("public")
 }

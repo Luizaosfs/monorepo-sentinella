@@ -20,7 +20,7 @@ model bairros {
   cliente           clientes            @relation(fields: [cliente_id], references: [id])
   focos_risco       focos_risco[]
   sla_config_regiao sla_config_regiao[]
-  planejamento      planejamento[]
+  planejamento      planejamentos[]
 
   @@index([cliente_id])
   @@index([cliente_id, deleted_at])

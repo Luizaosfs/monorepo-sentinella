@@ -41,7 +41,7 @@ model clientes {
   sla_foco_config    sla_foco_config[]
   sla_config_audit   sla_config_audit[]
   operacoes              operacoes[]
-  planejamento           planejamento[]
+  planejamento           planejamentos[]
   unidades_saude         unidades_saude[]
   casos_notificados      casos_notificados[]
   push_subscriptions     push_subscriptions[]

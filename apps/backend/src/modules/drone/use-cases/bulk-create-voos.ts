@@ -15,7 +15,7 @@ export class BulkCreateVoos {
     ));
 
     if (planIds.length > 0) {
-      const ownedCount = await this.prisma.client.planejamento.count({
+      const ownedCount = await this.prisma.client.planejamentos.count({
         where: { id: { in: planIds }, cliente_id: clienteId, deleted_at: null },
       });
       if (ownedCount !== planIds.length) throw DroneException.forbidden();

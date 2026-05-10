@@ -97,7 +97,7 @@ export class PrismaLevantamentoReadRepository implements LevantamentoReadReposit
   }
 
   async findPlanejamento(id: string): Promise<PlanejamentoInfo | null> {
-    const raw = await this.prisma.client.planejamento.findFirst({
+    const raw = await this.prisma.client.planejamentos.findFirst({
       where: { id, deleted_at: null },
       select: { id: true, ativo: true, cliente_id: true, tipo_entrada: true },
     });

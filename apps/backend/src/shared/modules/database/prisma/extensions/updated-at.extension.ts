@@ -30,7 +30,7 @@ const MODELS_WITH_UPDATED_AT = new Set<string>([
   'levantamento_itens',
   'levantamentos',
   'operacoes',
-  'planejamento',
+  'planejamentos',
   'plano_acao_catalogo',
   'pluvio_risco',
   'bairros_quadras',

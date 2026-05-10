@@ -64,7 +64,7 @@ export class GetStatusImplantacao {
     }
 
     // 6. Planejamento MANUAL mais antigo (candidato ao "levantamento inicial")
-    const planejamento = await this.prisma.client.planejamento.findFirst({
+    const planejamento = await this.prisma.client.planejamentos.findFirst({
       where: {
         cliente_id: clienteId,
         tipo_levantamento: 'MANUAL',

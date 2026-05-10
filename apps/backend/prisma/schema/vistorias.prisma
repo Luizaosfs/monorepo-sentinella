@@ -60,7 +60,7 @@ model vistorias {
   cliente      clientes      @relation(fields: [cliente_id], references: [id])
   imovel       imoveis?      @relation(fields: [imovel_id], references: [id])
   agente       usuarios      @relation(fields: [agente_id], references: [id])
-  planejamento planejamento? @relation(fields: [planejamento_id], references: [id])
+  planejamento planejamentos? @relation(fields: [planejamento_id], references: [id])
   depositos             vistoria_depositos[]
   sintomas              vistoria_sintomas[]
   riscos                vistoria_riscos[]

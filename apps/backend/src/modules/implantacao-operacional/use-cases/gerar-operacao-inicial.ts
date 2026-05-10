@@ -54,13 +54,13 @@ export class GerarOperacaoInicial {
     if (totalImoveisElegiveis === 0) throw ImplantacaoException.semImoveis();
 
     // 5. Idempotente: garantir planejamento MANUAL ativo (cria se não existir, ativa se inativo)
-    let planejamento = await this.prisma.client.planejamento.findFirst({
+    let planejamento = await this.prisma.client.planejamentos.findFirst({
       where: { cliente_id: clienteId, tipo_levantamento: 'MANUAL', deleted_at: null },
       select: { id: true, ativo: true },
     });
 
     if (!planejamento) {
-      planejamento = await this.prisma.client.planejamento.create({
+      planejamento = await this.prisma.client.planejamentos.create({
         data: {
           cliente_id: clienteId,
           descricao: `Levantamento inicial - Ciclo ${cicloAtivo.numero}`,
@@ -71,7 +71,7 @@ export class GerarOperacaoInicial {
         select: { id: true, ativo: true },
       });
     } else if (!planejamento.ativo) {
-      await this.prisma.client.planejamento.update({
+      await this.prisma.client.planejamentos.update({
         where: { id: planejamento.id },
         data: { ativo: true },
       });

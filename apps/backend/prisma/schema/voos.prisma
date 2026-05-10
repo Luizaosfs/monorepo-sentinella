@@ -19,7 +19,7 @@ model voos {
   updated_at        DateTime? @default(now()) @db.Timestamptz
   piloto_id         String?   @db.Uuid
 
-  planejamento planejamento? @relation(fields: [planejamento_id], references: [id])
+  planejamento planejamentos? @relation(fields: [planejamento_id], references: [id])
   piloto       usuarios?     @relation("voo_piloto", fields: [piloto_id], references: [id])
 
   @@index([planejamento_id])

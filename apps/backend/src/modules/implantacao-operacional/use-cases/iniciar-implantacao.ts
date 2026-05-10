@@ -43,7 +43,7 @@ export class IniciarImplantacao {
     if (distribuicoes === 0) throw ImplantacaoException.semDistribuicao();
 
     // Criar planejamento inicial MANUAL se não existir
-    const existente = await this.prisma.client.planejamento.findFirst({
+    const existente = await this.prisma.client.planejamentos.findFirst({
       where: { cliente_id: clienteId, tipo_levantamento: 'MANUAL', deleted_at: null },
       select: { id: true },
     });
@@ -52,7 +52,7 @@ export class IniciarImplantacao {
       return { planejamentoId: existente.id, criado: false };
     }
 
-    const criado = await this.prisma.client.planejamento.create({
+    const criado = await this.prisma.client.planejamentos.create({
       data: {
         cliente_id: clienteId,
         descricao: `Levantamento inicial - Ciclo ${cicloAtivo.numero}`,

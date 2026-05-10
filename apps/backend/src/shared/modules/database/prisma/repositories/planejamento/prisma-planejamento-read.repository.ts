@@ -14,14 +14,14 @@ export class PrismaPlanejamentoReadRepository implements PlanejamentoReadReposit
   constructor(private prisma: PrismaService) {}
 
   async findById(id: string, clienteId: string | null): Promise<Planejamento | null> {
-    const raw = await this.prisma.client.planejamento.findFirst({
+    const raw = await this.prisma.client.planejamentos.findFirst({
       where: { id, deleted_at: null, ...(clienteId != null && { cliente_id: clienteId }) },
     });
     return raw ? PrismaPlanejamentoMapper.toDomain(raw as any) : null;
   }
 
   async findAll(filters: FilterPlanejamentoInput): Promise<Planejamento[]> {
-    const rows = await this.prisma.client.planejamento.findMany({
+    const rows = await this.prisma.client.planejamentos.findMany({
       where: this.buildWhere(filters),
       orderBy: { data_planejamento: 'desc' },
     });
@@ -29,7 +29,7 @@ export class PrismaPlanejamentoReadRepository implements PlanejamentoReadReposit
   }
 
   async findAtivos(clienteId: string): Promise<Planejamento[]> {
-    const rows = await this.prisma.client.planejamento.findMany({
+    const rows = await this.prisma.client.planejamentos.findMany({
       where: { cliente_id: clienteId, ativo: true, deleted_at: null },
       orderBy: { data_planejamento: 'desc' },
     });
@@ -37,7 +37,7 @@ export class PrismaPlanejamentoReadRepository implements PlanejamentoReadReposit
   }
 
   async findAtivosManuais(clienteId: string): Promise<Planejamento[]> {
-    const rows = await this.prisma.client.planejamento.findMany({
+    const rows = await this.prisma.client.planejamentos.findMany({
       where: {
         cliente_id: clienteId,
         ativo: true,
