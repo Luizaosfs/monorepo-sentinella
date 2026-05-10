@@ -7,10 +7,6 @@ export const createRegiaoSchema = z.object({
     .string()
     .min(2, 'Nome deve ter no mínimo 2 caracteres')
     .describe('Nome da região'),
-  tipo: z
-    .string()
-    .describe('Tipo da região (ex: bairro, setor, zona)')
-    .optional(),
   cor: z.string().describe('Cor de exibição no mapa (hex ou nome)').optional(),
   geojson: jsonRecordOptional('GeoJSON da área da região'),
   latitude: z.number().optional().nullable(),

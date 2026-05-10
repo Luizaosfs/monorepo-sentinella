@@ -143,8 +143,8 @@ Toda transição DEVE gerar registro em `foco_risco_historico` (append-only).
 - Configurável por cliente e por região (`sla_config`, `sla_config_regiao`)
 
 ### PostGIS
-- `regioes.area` — `geometry(Polygon,4326)` — populado automaticamente pelo `PrismaRegiaoWriteRepository` a partir do campo `geojson` via `ST_GeomFromGeoJSON()`
-- `planejamento.area` — `geometry(Polygon,4326)`
+- `bairros.area` — `geometry(Polygon,4326)` — populado automaticamente pelo `PrismaRegiaoWriteRepository` a partir do campo `geojson` via `ST_GeomFromGeoJSON()`
+- `planejamentos.area` — `geometry(Polygon,4326)`
 - Índices GIST em ambas as colunas para `ST_Contains` no despacho de agentes
 
 ### Analytics — sem views consumidas pelo código
@@ -418,7 +418,7 @@ Módulo rico com gestão territorial completa. Use-cases: `create-quarteirao`, `
 
 ### regiao
 - `area geometry(Polygon,4326)` populada via `ST_GeomFromGeoJSON(geojson::text)` no `PrismaRegiaoWriteRepository.syncArea()`
-- `ST_Contains(regioes.area, ponto)` usado no despacho para inferir `regiao_id` automaticamente
+- `ST_Contains(bairros.area, ponto)` usado no despacho para inferir `bairro_id` automaticamente
 
 ### sla
 - `sla_foco_config` define prazos por fase

@@ -18,7 +18,6 @@ export class CreateRegiao {
       {
         clienteId: requireTenantId(getAccessScope(this.req)),
         nome: input.nome,
-        tipo: input.tipo,
         cor: input.cor,
         geojson: input.geojson,
         latitude: input.latitude ?? null,

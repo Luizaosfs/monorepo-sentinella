@@ -12,20 +12,22 @@ export class RegiaoGeocodeService {
   private readonly logger = new Logger(RegiaoGeocodeService.name);
 
   async geocodeRegioes(clienteId: string): Promise<{ total: number; geocodificadas: number }> {
-    const regioes = await this.prisma.client.bairros.findMany({
-      where: {
-        cliente_id: clienteId,
-        deleted_at: null,
-        latitude: null,
-      },
-      select: { id: true, nome: true, municipio: true, uf: true },
-    });
+    const [regioes, cliente] = await Promise.all([
+      this.prisma.client.bairros.findMany({
+        where: { cliente_id: clienteId, deleted_at: null, latitude: null },
+        select: { id: true, nome: true },
+      }),
+      this.prisma.client.clientes.findUnique({
+        where: { id: clienteId },
+        select: { cidade: true, uf: true },
+      }),
+    ]);
 
     let geocodificadas = 0;
 
     for (const regiao of regioes) {
       try {
-        const query = [regiao.nome, regiao.municipio, regiao.uf, 'Brasil']
+        const query = [regiao.nome, cliente?.cidade, cliente?.uf, 'Brasil']
           .filter(Boolean)
           .join(', ');
 

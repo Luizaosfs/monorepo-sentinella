@@ -9,7 +9,6 @@ export class RegiaoViewModel {
       clienteId: regiao.clienteId,
       nome: regiao.nome,
       regiao: regiao.nome, // alias — frontend type uses `regiao` as primary field
-      tipo: regiao.tipo,
       cor: regiao.cor,
       geojson: regiao.geojson,
       ativo: regiao.ativo,

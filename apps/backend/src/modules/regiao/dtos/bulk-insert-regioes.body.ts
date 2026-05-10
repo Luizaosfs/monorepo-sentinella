@@ -3,13 +3,10 @@ import { z } from 'zod';
 
 const regiaoItemNormalizedSchema = z.object({
   nome:      z.string().min(1),
-  tipo:      z.string().optional(),
   cor:       z.string().optional(),
   geojson:   z.unknown().optional(),
   latitude:  z.number().nullish(),
   longitude: z.number().nullish(),
-  municipio: z.string().optional(),
-  uf:        z.string().optional(),
   ativo:     z.boolean().optional(),
 });
 

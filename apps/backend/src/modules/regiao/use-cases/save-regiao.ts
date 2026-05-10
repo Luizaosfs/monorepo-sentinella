@@ -21,7 +21,6 @@ export class SaveRegiao {
     if (!regiao) throw RegiaoException.notFound();
 
     if (input.nome !== undefined) regiao.nome = input.nome;
-    if (input.tipo !== undefined) regiao.tipo = input.tipo;
     if (input.cor !== undefined) regiao.cor = input.cor;
     if (input.geojson !== undefined) regiao.geojson = input.geojson;
     if (input.ativo !== undefined) regiao.ativo = input.ativo;

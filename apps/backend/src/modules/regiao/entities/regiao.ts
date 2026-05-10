@@ -5,7 +5,6 @@ import { Paginated } from 'src/utils/pagination';
 interface RegiaoProps {
   clienteId: string;
   nome: string;
-  tipo?: string;
   cor?: string;
   geojson?: JsonObject;
   ativo: boolean;
@@ -29,12 +28,6 @@ export class Regiao extends BaseEntity<RegiaoProps> {
   }
   set nome(v: string) {
     this.props.nome = v;
-  }
-  get tipo() {
-    return this.props.tipo;
-  }
-  set tipo(v: string | undefined) {
-    this.props.tipo = v;
   }
   get cor() {
     return this.props.cor;

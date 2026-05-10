@@ -132,7 +132,7 @@ export default function SlaRegioesTab({ clienteId }: Props) {
   const openEdit = (c: SlaConfigRegiao) => { setSelected(c); setDialogOpen(true); };
 
   const handleRemove = (c: SlaConfigRegiao) => {
-    const nome = c.bairro?.bairro ?? c.bairro_id;
+    const nome = c.bairro?.nome ?? c.bairro_id;
     if (!confirm(`Remover override da região "${nome}"? A config cliente-wide voltará a ser usada.`)) return;
     remove.mutate(c.id, {
       onSuccess: () => toast.success('Override removido.'),
@@ -180,7 +180,7 @@ export default function SlaRegioesTab({ clienteId }: Props) {
                   <div key={c.id} className="flex items-center gap-3 px-4 py-3">
                     <MapPin className="w-4 h-4 text-muted-foreground shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium">{c.bairro?.bairro ?? c.bairro_id}</p>
+                      <p className="text-sm font-medium">{c.bairro?.nome ?? c.bairro_id}</p>
                       <div className="flex flex-wrap gap-1 mt-1">
                         {PRIORIDADES.filter((p) => prioridades[p]).map((p) => (
                           <Badge key={p} variant="outline" className="text-xs px-1.5 py-0 font-normal">

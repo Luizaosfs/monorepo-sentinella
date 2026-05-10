@@ -6,7 +6,6 @@ type RawRegiao = {
   id: string;
   cliente_id: string;
   nome: string;
-  tipo: string | null;
   cor: string | null;
   geojson: Prisma.JsonValue | null;
   ativo: boolean;
@@ -22,7 +21,6 @@ export class PrismaRegiaoMapper {
       {
         clienteId: raw.cliente_id,
         nome: raw.nome,
-        tipo: raw.tipo || undefined,
         cor: raw.cor || undefined,
         geojson: raw.geojson
           ? (raw.geojson as JsonObject)
@@ -43,7 +41,6 @@ export class PrismaRegiaoMapper {
     return {
       cliente_id: entity.clienteId,
       nome: entity.nome,
-      tipo: entity.tipo || null,
       cor: entity.cor || null,
       geojson:
         entity.geojson == null

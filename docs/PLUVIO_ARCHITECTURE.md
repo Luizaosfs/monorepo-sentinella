@@ -18,7 +18,7 @@ Série temporal de risco pluviométrico por região e data de referência.
 | Coluna | Tipo | Descrição |
 |---|---|---|
 | `id` | uuid | PK |
-| `regiao_id` | uuid | FK → `regioes` |
+| `bairro_id` | uuid | FK → `bairros` |
 | `cliente_id` | uuid (nullable) | Denormalizado — pode ser NULL |
 | `dt_ref` | date | Data de referência (YYYY-MM-DD) |
 | `chuva_24h` | float | Precipitação nas últimas 24h (mm) |
@@ -30,7 +30,7 @@ Série temporal de risco pluviométrico por região e data de referência.
 | `nivel_risco` | string | `baixo` \| `medio` \| `alto` \| `critico` |
 | `situacao_ambiental` | string | `normal` \| `atencao` \| `favoravel_proliferacao` |
 
-**Constraint única:** `(regiao_id, dt_ref)` — uma leitura por região por dia.
+**Constraint única:** `(bairro_id, dt_ref)` — uma leitura por bairro por dia.
 
 ### `pluvio_operacional_run` / `pluvio_operacional_item`
 Tabelas de CRUD manual para registro de operações pluviométricas avulsas. Separadas do scheduler. Não populadas pelo cron diário.
@@ -49,7 +49,7 @@ PluvioScheduler @Cron('0 6 * * *')
             ├─ GET Open-Meteo /v1/forecast (7 dias passado + 3 previsão)
             ├─ calcula chuva_24h / chuva_72h / chuva_7d / persistencia_7d / tendencia
             ├─ classifica nivel_risco e situacao_ambiental
-            └─ upsert pluvio_risco WHERE (regiao_id, dt_ref)
+            └─ upsert pluvio_risco WHERE (bairro_id, dt_ref)
 ```
 
 **Classificação de risco:**
@@ -134,7 +134,7 @@ Vento no D+0: ≥ 90 km/h → `critico`, 60–89 km/h → `alto`.
 Browser → GET /pluvio/alerta-territorial
   └─ PluvioController.alertaTerritorial()
        └─ GetAlertaTerritorial.execute(clienteId)
-            ├─ $queryRaw — DISTINCT ON (regiao_id) ORDER BY regiao_id, dt_ref DESC
+            ├─ $queryRaw — DISTINCT ON (bairro_id) ORDER BY bairro_id, dt_ref DESC
             │    (último registro por região, sem scan de corrida)
             ├─ filtra nivel_risco ∈ {medio, alto, critico}
             ├─ mapeia → AlertaTerritorialItem (justificativas + recomendação)
@@ -157,7 +157,7 @@ Browser → GET /pluvio/alerta-territorial
 | `medio` | Monitorar e manter rota preventiva |
 | `baixo` | Sem ação extraordinária |
 
-**Limitação conhecida — cross-join com cobertura operacional:** o cruzamento `pluvio_risco ↔ cobertura_operacional/reincidência` **não é possível** sem migração de schema. `cobertura_operacional` agrupa por `quarteirao` (texto) e `distribuicao_quarteirao`; `reincidência` agrupa por `quarteirao/bairro` (texto em `imoveis`). Nenhuma dessas tabelas tem FK para `regioes.id`. O campo `operacao` foi omitido do `AlertaTerritorialItem` por esse motivo. Roadmap: adicionar `regiao_id` em `cobertura_operacional` como coluna calculada via PostGIS.
+**Limitação conhecida — cross-join com cobertura operacional:** o cruzamento `pluvio_risco ↔ cobertura_operacional/reincidência` **não é possível** sem migração de schema. `cobertura_operacional` agrupa por `quarteirao` (texto) e `distribuicao_quarteirao`; `reincidência` agrupa por `quarteirao/bairro` (texto em `imoveis`). Nenhuma dessas tabelas tem FK para `bairros.id`. O campo `operacao` foi omitido do `AlertaTerritorialItem` por esse motivo. Roadmap: adicionar `bairro_id` em `cobertura_operacional` como coluna calculada via PostGIS.
 
 **Frontend:**
 - `usePluvioAlertaTerritorial(clienteId)` — `staleTime: STALE.MODERATE` (5min), queryKey `['pluvio-alerta-territorial', clienteId]`

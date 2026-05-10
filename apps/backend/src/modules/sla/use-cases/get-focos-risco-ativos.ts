@@ -78,7 +78,7 @@ export class GetFocosRiscoAtivos {
       SELECT
         fr.*,
         i.logradouro, i.numero, i.bairro, i.quarteirao, i.tipo_imovel,
-        r.bairro AS regiao_nome,
+        r.nome AS regiao_nome,
         u.nome AS responsavel_nome,
         sla.prazo_final AS sla_prazo_em,
         sla.violado AS sla_violado,

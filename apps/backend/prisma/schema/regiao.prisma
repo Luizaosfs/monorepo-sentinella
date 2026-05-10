@@ -2,8 +2,6 @@ model bairros {
   id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   cliente_id    String    @db.Uuid
   nome          String    @default("")
-  bairro        String?
-  tipo          String?
   cor           String?
   geojson       Json?
   ativo         Boolean   @default(true)
@@ -11,8 +9,6 @@ model bairros {
   updated_at    DateTime  @default(now()) @db.Timestamptz
   latitude      Float?
   longitude     Float?
-  municipio     String?
-  uf            String?
   area          Unsupported("geometry(Polygon,4326)")?
   deleted_at    DateTime? @db.Timestamptz
   deleted_by    String?   @db.Uuid

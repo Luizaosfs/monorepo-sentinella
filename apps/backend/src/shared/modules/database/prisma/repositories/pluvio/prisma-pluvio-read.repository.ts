@@ -97,11 +97,11 @@ export class PrismaPluvioReadRepository implements PluvioReadRepository {
         pr.prev_d3_mm,
         pr.created_at,
         pr.updated_at,
-        json_build_object('id', r.id, 'regiao', r.bairro, 'nome', r.nome) AS regiao
+        json_build_object('id', r.id, 'regiao', r.nome, 'nome', r.nome) AS regiao
       FROM pluvio_risco pr
       LEFT JOIN bairros r ON r.id = pr.bairro_id AND r.deleted_at IS NULL
       WHERE pr.bairro_id = ANY(${regiaoIds}::uuid[])
-      ORDER BY pr.dt_ref DESC, r.bairro ASC
+      ORDER BY pr.dt_ref DESC, r.nome ASC
     `);
     return rows;
   }
