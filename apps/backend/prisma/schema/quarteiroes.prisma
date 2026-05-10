@@ -16,7 +16,7 @@ model bairros_quadras {
   deleted_by String?   @db.Uuid
 
   distribuicoes bairros_distribuicao[]
-  @@unique([cliente_id, codigo])
+  @@unique([cliente_id, bairro_id, codigo])
   @@index([bairro_id])
   @@map("bairros_quadras")
   @@schema("public")

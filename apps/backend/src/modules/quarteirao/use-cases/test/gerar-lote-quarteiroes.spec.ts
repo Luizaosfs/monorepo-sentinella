@@ -133,7 +133,7 @@ describe('gerarLoteQuarteiraoSchema', () => {
 // ── Use-case tests ────────────────────────────────────────────────────────────
 
 describe('GerarLoteQuarteiroes', () => {
-  it('gera A1 até A30 com códigos e contagens corretas', async () => {
+  it('gera A01 até A30 com zero-padding determinado pelo numeroFinal', async () => {
     const { uc, quarteiroCreateMany } = makeUc({
       quarteiroCreateMany: jest.fn().mockResolvedValue({ count: 30 }),
     });
@@ -149,17 +149,33 @@ describe('GerarLoteQuarteiroes', () => {
     expect(result.totalCriado).toBe(30);
     expect(result.totalIgnorado).toBe(0);
     expect(result.criados).toHaveLength(30);
-    expect(result.criados[0]).toBe('A1');
+    expect(result.criados[0]).toBe('A01');  // pad=2 pois String(30).length=2
     expect(result.criados[29]).toBe('A30');
     expect(quarteiroCreateMany).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.arrayContaining([
-          expect.objectContaining({ codigo: 'A1', cliente_id: CLIENTE_ID, bairro_id: REGIAO_ID, ativo: true }),
+          expect.objectContaining({ codigo: 'A01', cliente_id: CLIENTE_ID, bairro_id: REGIAO_ID, ativo: true }),
           expect.objectContaining({ codigo: 'A30' }),
         ]),
         skipDuplicates: true,
       }),
     );
+  });
+
+  it('gera A001 até A200 com pad=3 quando numeroFinal=200', async () => {
+    const { uc, quarteiroCreateMany } = makeUc({
+      quarteiroCreateMany: jest.fn().mockResolvedValue({ count: 200 }),
+    });
+
+    const result = await uc.execute(CLIENTE_ID, {
+      bairroId: REGIAO_ID,
+      prefixo: 'A',
+      numeroInicial: 1,
+      numeroFinal: 200,
+    });
+
+    expect(result.criados[0]).toBe('A001');
+    expect(result.criados[199]).toBe('A200');
   });
 
   it('ignora códigos pré-existentes e reflete na lista ignorados', async () => {
@@ -217,7 +233,9 @@ describe('GerarLoteQuarteiroes', () => {
     await uc.execute(CLIENTE_ID, { bairroId: REGIAO_ID, prefixo: 'E', numeroInicial: 1, numeroFinal: 2 });
 
     expect(quarteiroFindMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: expect.objectContaining({ cliente_id: CLIENTE_ID }) }),
+      expect.objectContaining({
+        where: expect.objectContaining({ cliente_id: CLIENTE_ID, bairro_id: REGIAO_ID }),
+      }),
     );
     expect(quarteiroCreateMany).toHaveBeenCalledWith(
       expect.objectContaining({

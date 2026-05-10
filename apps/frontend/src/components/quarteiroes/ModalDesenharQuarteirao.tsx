@@ -217,7 +217,7 @@ export function ModalDesenharQuarteirao({ open, regioes, bairroIdInicial, onClos
       <DialogContent className="max-w-5xl p-0 max-h-[94vh] flex flex-col gap-0 overflow-hidden">
 
         {/* ── Cabeçalho ─────────────────────────────────────────────── */}
-        <div className="flex items-start justify-between px-6 pt-5 pb-4 border-b shrink-0">
+        <div className="flex items-start justify-between px-6 pt-4 pb-3 border-b shrink-0">
           <div className="flex items-start gap-3">
             <div className="p-2 rounded-lg bg-primary/10 shrink-0 mt-0.5">
               <PenLine className="h-4 w-4 text-primary" />
@@ -257,7 +257,7 @@ export function ModalDesenharQuarteirao({ open, regioes, bairroIdInicial, onClos
         </div>
 
         {/* ── Conteúdo (scroll) ──────────────────────────────────────── */}
-        <div className="flex-1 min-h-0 overflow-y-auto px-6 py-5 space-y-4">
+        <div className="flex-1 min-h-0 overflow-y-auto px-6 pt-3 pb-4 space-y-3">
 
           {/* Etapa 1 — Definição de área */}
           {etapa === 'desenho' && (

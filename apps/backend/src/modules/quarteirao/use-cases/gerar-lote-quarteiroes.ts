@@ -29,18 +29,21 @@ export class GerarLoteQuarteiroes {
       throw new NotFoundException('Região não encontrada ou não pertence ao cliente');
     }
 
-    // Generate the full ordered code list
+    // Padding width is driven by the highest number in the range.
+    // 20 quadras → width 2 (01–20), 200 → width 3 (001–200), 1200 → width 4, etc.
+    const padWidth = String(numeroFinal).length;
+
     const codigos = Array.from(
       { length: numeroFinal - numeroInicial + 1 },
-      (_, i) => `${prefixo}${numeroInicial + i}`,
+      (_, i) => `${prefixo}${String(numeroInicial + i).padStart(padWidth, '0')}`,
     );
 
     // Transaction tightens the race window between duplicate-check and insert
     const { criados, ignorados, totalCriado } =
       await this.prisma.client.$transaction(async (tx) => {
-        // Detect codes that already exist for this tenant (any region)
+        // Detect codes that already exist for this tenant within the same bairro
         const existing = await tx.bairros_quadras.findMany({
-          where: { cliente_id: clienteId, codigo: { in: codigos } },
+          where: { cliente_id: clienteId, bairro_id: bairroId, codigo: { in: codigos } },
           select: { codigo: true },
         });
         const existingSet = new Set(existing.map((e) => e.codigo));
