@@ -100,7 +100,7 @@ export class PrismaQuarteiraoReadRepository implements QuarteiraoReadRepository 
       ...(filters.codigo && {
         codigo: { contains: filters.codigo, mode: 'insensitive' as const },
       }),
-      ...(filters.regiaoId && { bairro_id: filters.regiaoId }),
+      ...(filters.bairroId && { bairro_id: filters.bairroId }),
       ...(filters.ativo !== undefined && { ativo: filters.ativo }),
     };
   }

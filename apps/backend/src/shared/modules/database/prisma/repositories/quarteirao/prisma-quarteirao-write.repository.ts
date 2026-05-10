@@ -16,7 +16,7 @@ export class PrismaQuarteiraoWriteRepository implements QuarteiraoWriteRepositor
   async createQuarteirao(entity: Quarteirao): Promise<Quarteirao> {
     const data = {
       cliente_id: entity.clienteId,
-      bairro_id: entity.regiaoId || null,
+      bairro_id: entity.bairroId || null,
       codigo: entity.codigo,
       bairro: entity.bairro || null,
       ativo: entity.ativo,
@@ -44,7 +44,7 @@ export class PrismaQuarteiraoWriteRepository implements QuarteiraoWriteRepositor
       ciclo: entity.ciclo,
       quarteirao: entity.quarteirao,
       agente_id: entity.agenteId,
-      bairro_id: entity.regiaoId || null,
+      bairro_id: entity.bairroId || null,
     };
     const created = await this.prisma.client.bairros_distribuicao.create({
       data,
@@ -121,7 +121,7 @@ export class PrismaQuarteiraoWriteRepository implements QuarteiraoWriteRepositor
       where: { id: entity.id, cliente_id: entity.clienteId, deleted_at: null },
       data: {
         codigo:     entity.codigo,
-        bairro_id:  entity.regiaoId ?? null,
+        bairro_id:  entity.bairroId ?? null,
         ativo:      entity.ativo,
         geojson:    geojsonIsNull
           ? Prisma.JsonNull
