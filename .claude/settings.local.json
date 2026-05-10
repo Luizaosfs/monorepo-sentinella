@@ -355,7 +355,8 @@
       "PowerShell(cd D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend; $tsc = \"D:\\\\sentinella\\\\monorepo-sentinella\\\\node_modules\\\\.bin\\\\tsc.cmd\"; & $tsc --noEmit --project tsconfig.json 2>&1 | Where-Object { $_ -match \"error TS\" } | Select-Object -First 20)",
       "Bash(node_modules\\\\.bin\\\\tsc.CMD --noEmit --project tsconfig.json)",
       "Read(//c/Users/luiz/Downloads/**)",
-      "Bash(unzip -l sentinella-territorial.zip)"
+      "Bash(unzip -l sentinella-territorial.zip)",
+      "PowerShell(cd \"D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\frontend\"; $f = & \".\\\\node_modules\\\\.bin\\\\tsc.CMD\" --noEmit 2>&1; cd \"D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend\"; $b = & \".\\\\node_modules\\\\.bin\\\\tsc.CMD\" --noEmit 2>&1; \"FRONTEND: $\\(if \\($f\\) { $f | Select-Object -First 3 } else { 'OK' }\\)\"; \"BACKEND:  $\\(if \\($b\\) { $b | Select-Object -First 3 } else { 'OK' }\\)\")"
     ]
   }
 }
