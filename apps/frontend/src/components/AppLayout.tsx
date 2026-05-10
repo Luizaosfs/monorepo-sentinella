@@ -126,7 +126,7 @@ const adminMonitorNavItems = [
 const grupoPlanejamento = [
   // ── Configurar ──────────────────────────────────────────────────────────
   { to: '/gestor/ciclos',                   label: 'Gestão de Ciclos',           icon: RotateCcw,      adminOnly: false },
-  { to: '/gestor/distribuicao-quarteirao',  label: 'Distribuição de Quarteirão', icon: MapIcon,        adminOnly: false },
+  { to: '/gestor/distribuicao-quarteiroes',  label: 'Distribuição de Quarteirões', icon: MapIcon,        adminOnly: false },
   { to: '/gestor/implantacao-operacional',  label: 'Implantação Operacional',    icon: ListTodo,       adminOnly: false, supervisorOnly: true },
   // ── Planejar & Executar ──────────────────────────────────────────────────
   { to: '/gestor/planejamentos',            label: 'Planejamentos',              icon: CalendarRange,  adminOnly: false },
@@ -167,7 +167,7 @@ const grupoRiscoClima = [
 ];
 
 const grupoConfiguracoes = [
-  { to: '/gestor/regioes',               label: 'Regiões',                    icon: MapPin,         adminOnly: false },
+  { to: '/gestor/bairros',               label: 'Bairros',                    icon: MapPin,         adminOnly: false },
   { to: '/admin/usuarios',              label: 'Usuários da Plataforma',      icon: Users,          adminOnly: true  },
   { to: '/operador/usuarios',            label: 'Usuários',                   icon: Users,          adminOnly: false },
   { to: '/gestor/unidades-saude',        label: 'Unidades de Saúde',          icon: Building2,      adminOnly: false },

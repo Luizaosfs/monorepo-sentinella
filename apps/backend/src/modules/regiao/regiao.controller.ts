@@ -55,8 +55,8 @@ const geocodeLoteSchema = z.object({
 
 @UseInterceptors(PrismaInterceptor)
 @UsePipes(MyZodValidationPipe)
-@ApiTags('Regiões')
-@Controller('regioes')
+@ApiTags('Bairros')
+@Controller('bairros')
 export class RegiaoController {
   constructor(
     private createRegiao: CreateRegiao,

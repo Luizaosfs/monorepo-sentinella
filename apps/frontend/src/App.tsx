@@ -252,8 +252,8 @@ const App = () => (
                 {/* backwards-compat: old /admin/* municipal bookmarks → /gestor/* */}
                 <Route path="planejamentos"            element={<Navigate to="/gestor/planejamentos" replace />} />
                 <Route path="ciclos"                   element={<Navigate to="/gestor/ciclos" replace />} />
-                <Route path="regioes"                  element={<Navigate to="/gestor/regioes" replace />} />
-                <Route path="distribuicao-quarteirao"  element={<Navigate to="/gestor/distribuicao-quarteirao" replace />} />
+                <Route path="regioes"                  element={<Navigate to="/gestor/bairros" replace />} />
+                <Route path="distribuicao-quarteirao"  element={<Navigate to="/gestor/distribuicao-quarteiroes" replace />} />
                 <Route path="operacoes"                element={<Navigate to="/gestor/operacoes" replace />} />
                 <Route path="historico-atendimento"    element={<Navigate to="/gestor/historico-atendimento" replace />} />
                 <Route path="casos"                    element={<Navigate to="/gestor/casos" replace />} />
@@ -292,7 +292,8 @@ const App = () => (
               {/* Operacional municipal — admin ou supervisor */}
               <Route path="/gestor/planejamentos"           element={<AdminOrSupervisorGuard><AdminPlanejamentos /></AdminOrSupervisorGuard>} />
               <Route path="/gestor/ciclos"                  element={<AdminOrSupervisorGuard><AdminGestaCiclos /></AdminOrSupervisorGuard>} />
-              <Route path="/gestor/distribuicao-quarteirao" element={<AdminOrSupervisorGuard><AdminDistribuicaoQuarteirao /></AdminOrSupervisorGuard>} />
+              <Route path="/gestor/distribuicao-quarteiroes" element={<AdminOrSupervisorGuard><AdminDistribuicaoQuarteirao /></AdminOrSupervisorGuard>} />
+              <Route path="/gestor/distribuicao-quarteirao" element={<Navigate to="/gestor/distribuicao-quarteiroes" replace />} />
               <Route path="/gestor/operacoes"               element={<AdminOrSupervisorGuard><AdminOperacoes /></AdminOrSupervisorGuard>} />
               <Route path="/gestor/historico-atendimento"   element={<AdminOrSupervisorGuard><AdminHistoricoAtendimento /></AdminOrSupervisorGuard>} />
               <Route path="/gestor/casos"                   element={<AdminOrSupervisorGuard><AdminCasosNotificados /></AdminOrSupervisorGuard>} />
@@ -310,7 +311,8 @@ const App = () => (
               <Route path="/gestor/pluvio-risco"            element={<AdminOrSupervisorGuard><AdminPluvioRisco /></AdminOrSupervisorGuard>} />
               <Route path="/gestor/pluvio-operacional"      element={<AdminOrSupervisorGuard><AdminPluvioOperacional /></AdminOrSupervisorGuard>} />
               <Route path="/gestor/pluvio/alerta-territorial" element={<SupervisorOnlyGuard><GestorPluvioAlertaTerritorial /></SupervisorOnlyGuard>} />
-              <Route path="/gestor/regioes"                 element={<AdminOrSupervisorGuard><AdminRegioes /></AdminOrSupervisorGuard>} />
+              <Route path="/gestor/bairros"                 element={<AdminOrSupervisorGuard><AdminRegioes /></AdminOrSupervisorGuard>} />
+              <Route path="/gestor/regioes"                 element={<Navigate to="/gestor/bairros" replace />} />
               <Route path="/gestor/quarteiroes"             element={<AdminOrSupervisorGuard><AdminQuarteiroes /></AdminOrSupervisorGuard>} />
               <Route path="/gestor/quadras"                 element={<AdminOrSupervisorGuard><GestaoQuadras /></AdminOrSupervisorGuard>} />
               <Route path="/gestor/unidades-saude"          element={<AdminOrSupervisorGuard><AdminUnidadesSaude /></AdminOrSupervisorGuard>} />

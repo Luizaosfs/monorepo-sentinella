@@ -66,12 +66,12 @@ export const clientes = {
 
 export const regioes = {
   listByCliente: async (clienteId: string): Promise<Ret<typeof _sb.regioes.listByCliente>> => {
-    const raw = await http.get(`/regioes${qs({ clienteId })}`);
+    const raw = await http.get(`/bairros${qs({ clienteId })}`);
     const arr = (Array.isArray(raw) ? raw : [raw]) as Record<string, unknown>[];
     return deepToSnake(arr.map((r) => ({ ...r, bairro: r.bairro ?? r.nome }))) as Ret<typeof _sb.regioes.listByCliente>;
   },
   listAll: async (): Promise<Ret<typeof _sb.regioes.listAll>> => {
-    const raw = await http.get('/regioes');
+    const raw = await http.get('/bairros');
     const arr = (Array.isArray(raw) ? raw : [raw]) as Record<string, unknown>[];
     return deepToSnake(arr.map((r) => ({ ...r, regiao: r.nome ?? r.regiao }))) as Ret<typeof _sb.regioes.listAll>;
   },
@@ -84,7 +84,7 @@ export const regioes = {
       longitude: (p.longitude as number | null | undefined) ?? null,
       ...(geojson != null ? { geojson } : {}),
     };
-    const raw = await http.post('/regioes', body) as Record<string, unknown>;
+    const raw = await http.post('/bairros', body) as Record<string, unknown>;
     return (raw?.id ?? raw) as Ret<typeof _sb.regioes.create>;
   },
   update: (id: string, payload: Parameters<typeof _sb.regioes.update>[1]): Promise<void> => {
@@ -96,10 +96,10 @@ export const regioes = {
       longitude: (p.longitude as number | null | undefined) ?? null,
       ...(geojson != null ? { geojson } : {}),
     };
-    return http.put(`/regioes/${id}`, body);
+    return http.put(`/bairros/${id}`, body);
   },
   remove: (id: string): Promise<void> =>
-    http.delete(`/regioes/${id}`),
+    http.delete(`/bairros/${id}`),
   bulkInsert: (rows: Record<string, unknown>[]): Promise<{ count: number }> => {
     const mapped = rows.map((r) => {
       const obj: Record<string, unknown> = { nome: r.bairro ?? r.regiao ?? r.nome };
@@ -111,8 +111,8 @@ export const regioes = {
       if (geojson != null) obj.geojson = geojson;
       return obj;
     });
-    return http.post('/regioes/bulk-insert', { rows: mapped });
+    return http.post('/bairros/bulk-insert', { rows: mapped });
   },
   porCoordenada: (clienteId: string, lat: number, lng: number): Promise<{ bairroId: string | null }> =>
-    http.get(`/regioes/por-coordenada${qs({ clienteId, lat, lng })}`),
+    http.get(`/bairros/por-coordenada${qs({ clienteId, lat, lng })}`),
 };

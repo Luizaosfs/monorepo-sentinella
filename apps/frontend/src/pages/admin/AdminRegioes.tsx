@@ -70,7 +70,7 @@ const AdminRegioes = () => {
       queryClient.invalidateQueries({ queryKey: ['admin_regioes', clienteId] });
       setShowForm(false);
       setEditing(null);
-      toast.success(editing ? 'Região atualizada' : 'Região cadastrada');
+      toast.success(editing ? 'Bairro atualizado' : 'Bairro cadastrado');
     },
     onError: (err: unknown) => toast.error(err instanceof Error ? err.message : 'Erro ao salvar'),
   });
@@ -79,14 +79,14 @@ const AdminRegioes = () => {
     mutationFn: (id: string) => api.regioes.remove(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin_regioes', clienteId] });
-      toast.success('Região excluída');
+      toast.success('Bairro excluído');
     },
     onError: (err: unknown) => toast.error(err instanceof Error ? err.message : 'Erro ao excluir'),
   });
 
   const handleGeocode = async (silent = false) => {
     const nome = form.regiao.trim();
-    if (!nome) { if (!silent) toast.error('Digite o nome da região primeiro'); return; }
+    if (!nome) { if (!silent) toast.error('Digite o nome do bairro primeiro'); return; }
     setGeocoding(true);
     try {
       // Compose query: "bairro, cidade" for better accuracy
@@ -162,15 +162,15 @@ const AdminRegioes = () => {
   };
 
   const handleSave = () => {
-    if (!form.regiao.trim()) { toast.error('Nome da região é obrigatório'); return; }
+    if (!form.regiao.trim()) { toast.error('Nome do bairro é obrigatório'); return; }
     if (!clienteId) { toast.error('Selecione um cliente'); return; }
     saveMutation.mutate({ ...form, ...(editing ? { id: editing.id } : {}) });
   };
 
   const handleDelete = (r: Regiao) => {
     setConfirmDialog({
-      title: 'Excluir região',
-      description: `Excluir a região "${r.regiao}"? Esta ação não pode ser desfeita.`,
+      title: 'Excluir bairro',
+      description: `Excluir o bairro "${r.regiao}"? Esta ação não pode ser desfeita.`,
       onConfirm: () => deleteMutation.mutate(r.id),
     });
   };
@@ -249,7 +249,7 @@ const AdminRegioes = () => {
         toast.info(`Buscando coordenadas para ${semCoords.length} região(ões)...`);
         try {
           const data = await http.post<{ results: { nome: string; latitude: number | null; longitude: number | null }[] }>(
-            '/regioes/geocode-lote',
+            '/bairros/geocode-lote',
             {
               nomes: semCoords.map(r => String(r.regiao)),
               cidade: clienteAtivo?.cidade || clienteAtivo?.nome || '',
@@ -279,7 +279,7 @@ const AdminRegioes = () => {
       }
 
       if (insertedCount > 0) {
-        const parts = [`${insertedCount} regiões importadas`];
+        const parts = [`${insertedCount} bairros importados`];
         if (geocodedCount > 0) parts.push(`${geocodedCount} geocodificada(s)`);
         if (skippedCount > 0) parts.push(`${skippedCount} ignorada(s)`);
         toast.success(parts.join(', ') + '!');
@@ -327,9 +327,9 @@ const AdminRegioes = () => {
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div>
-            <h2 className="text-lg font-semibold">{editing ? 'Editar Região' : 'Nova Região'}</h2>
+            <h2 className="text-lg font-semibold">{editing ? 'Editar Bairro' : 'Novo Bairro'}</h2>
             <p className="text-sm text-muted-foreground">
-              {editing ? 'Atualize os dados da região.' : 'Preencha os dados para cadastrar uma nova região.'}
+              {editing ? 'Atualize os dados do bairro.' : 'Preencha os dados para cadastrar um novo bairro.'}
             </p>
           </div>
         </div>
@@ -338,7 +338,7 @@ const AdminRegioes = () => {
           <CardContent className="p-6">
             <div className="grid gap-4">
               <div className="space-y-2">
-                <Label>Região *</Label>
+                <Label>Bairro *</Label>
                 <div className="flex gap-2">
                   <Input
                     value={form.regiao}
@@ -431,15 +431,15 @@ const AdminRegioes = () => {
         onConfirm={() => { confirmDialog?.onConfirm(); setConfirmDialog(null); }}
       />
       <AdminPageHeader
-        title="Regiões"
-        description="Cadastro de regiões vinculadas aos clientes."
+        title="Bairros"
+        description="Cadastro de bairros vinculados aos clientes."
         icon={MapPin}
       />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar por nome da região..."
+            placeholder="Buscar por nome do bairro..."
             className="pl-9"
             value={search}
             onChange={(e) => { setSearch(e.target.value); reset(); }}
@@ -468,7 +468,7 @@ const AdminRegioes = () => {
           <input id="regioes-json-import" type="file" accept=".json" className="hidden" onChange={handleImportJson} />
           <Button onClick={openCreate} className="w-full sm:w-auto gap-2">
             <Plus className="w-4 h-4" />
-            Nova Região
+            Novo Bairro
           </Button>
         </div>
       </div>
@@ -496,7 +496,7 @@ const AdminRegioes = () => {
                   />
                 ))}
                 {filtered.length === 0 && (
-                  <p className="text-center py-12 text-muted-foreground text-sm">Nenhuma região encontrada</p>
+                  <p className="text-center py-12 text-muted-foreground text-sm">Nenhum bairro encontrado</p>
                 )}
               </div>
               {/* Desktop table */}
@@ -504,7 +504,7 @@ const AdminRegioes = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Região</TableHead>
+                      <TableHead>Bairro</TableHead>
                       <TableHead>Latitude</TableHead>
                       <TableHead>Longitude</TableHead>
                       <TableHead className="text-right">Ações</TableHead>
@@ -538,7 +538,7 @@ const AdminRegioes = () => {
                     {filtered.length === 0 && (
                       <TableRow>
                         <TableCell colSpan={4} className="text-center py-12 text-muted-foreground">
-                          Nenhuma região encontrada
+                          Nenhum bairro encontrado
                         </TableCell>
                       </TableRow>
                     )}
