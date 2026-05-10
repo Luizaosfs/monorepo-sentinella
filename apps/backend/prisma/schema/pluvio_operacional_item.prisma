@@ -1,7 +1,7 @@
 model pluvio_operacional_item {
   id                     String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   run_id                 String   @db.Uuid
-  regiao_id              String?  @db.Uuid
+  bairro_id              String?  @db.Uuid
   bairro_nome            String
   classificacao_risco    String
   situacao_ambiental     String?

@@ -74,7 +74,7 @@ export class ListarComVinculos {
       FROM operacoes o
       LEFT JOIN usuarios u ON o.responsavel_id = u.id
       LEFT JOIN focos_risco fr ON o.foco_risco_id = fr.id AND fr.deleted_at IS NULL
-      LEFT JOIN regioes r ON o.regiao_id = r.id AND r.deleted_at IS NULL
+      LEFT JOIN bairros r ON o.bairro_id = r.id AND r.deleted_at IS NULL
       WHERE ${where}
       ORDER BY o.created_at DESC
       LIMIT ${limit}

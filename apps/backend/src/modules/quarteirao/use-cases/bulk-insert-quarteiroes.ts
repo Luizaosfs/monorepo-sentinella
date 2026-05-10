@@ -12,8 +12,8 @@ export class BulkInsertQuarteiroes {
   ): Promise<{ inserted: number; updated: number }> {
     if (input.rows.length === 0) return { inserted: 0, updated: 0 };
 
-    // Resolve nome do bairro → regiao_id
-    const regioes = await this.prisma.client.regioes.findMany({
+    // Resolve nome do bairro → bairro_id
+    const regioes = await this.prisma.client.bairros.findMany({
       where: { cliente_id: clienteId, deleted_at: null },
       select: { id: true, nome: true },
     });
@@ -26,7 +26,7 @@ export class BulkInsertQuarteiroes {
 
     // Verifica quais códigos já existem
     const codigos = input.rows.map(r => r.codigo);
-    const existing = await this.prisma.client.quarteiroes.findMany({
+    const existing = await this.prisma.client.bairros_quadras.findMany({
       where: { cliente_id: clienteId, codigo: { in: codigos } },
       select: { id: true, codigo: true },
     });
@@ -38,13 +38,13 @@ export class BulkInsertQuarteiroes {
     let inserted = 0;
     let updated = 0;
 
-    // Atualiza existentes (regiao_id, bairro, ativo)
+    // Atualiza existentes (bairro_id, bairro, ativo)
     for (const r of toUpdate) {
       const regiaoId = resolveRegiaoId(r);
-      await this.prisma.client.quarteiroes.update({
+      await this.prisma.client.bairros_quadras.update({
         where: { id: existingMap.get(r.codigo)! },
         data: {
-          ...(regiaoId              !== null      ? { regiao_id: regiaoId }  : {}),
+          ...(regiaoId              !== null      ? { bairro_id: regiaoId }  : {}),
           ...(r.bairro              !== undefined ? { bairro: r.bairro }     : {}),
           ...(r.ativo               !== undefined ? { ativo: r.ativo }       : {}),
         },
@@ -54,11 +54,11 @@ export class BulkInsertQuarteiroes {
 
     // Insere novos em lote
     if (toInsert.length > 0) {
-      const result = await this.prisma.client.quarteiroes.createMany({
+      const result = await this.prisma.client.bairros_quadras.createMany({
         data: toInsert.map(r => ({
           cliente_id: clienteId,
           codigo:     r.codigo,
-          regiao_id:  resolveRegiaoId(r),
+          bairro_id:  resolveRegiaoId(r),
           bairro:     r.bairro ?? null,
           ativo:      r.ativo ?? true,
         })),

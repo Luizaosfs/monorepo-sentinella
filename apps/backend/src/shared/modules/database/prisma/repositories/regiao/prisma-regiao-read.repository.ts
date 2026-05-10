@@ -17,7 +17,7 @@ export class PrismaRegiaoReadRepository implements RegiaoReadRepository {
   constructor(private prisma: PrismaService) {}
 
   async findById(id: string, clienteId: string | null): Promise<Regiao | null> {
-    const raw = await this.prisma.client.regioes.findFirst({
+    const raw = await this.prisma.client.bairros.findFirst({
       where: { id, ...(clienteId != null && { cliente_id: clienteId }) },
     });
     return raw ? PrismaRegiaoMapper.toDomain(raw as any) : null;
@@ -25,7 +25,7 @@ export class PrismaRegiaoReadRepository implements RegiaoReadRepository {
 
   async findAll(filters: FilterRegiaoInput): Promise<Regiao[]> {
     const where = this.buildWhere(filters);
-    const rows = await this.prisma.client.regioes.findMany({
+    const rows = await this.prisma.client.bairros.findMany({
       where,
       orderBy: { nome: 'asc' },
     });
@@ -38,13 +38,13 @@ export class PrismaRegiaoReadRepository implements RegiaoReadRepository {
   ): Promise<RegiaoPaginated> {
     const where = this.buildWhere(filters);
     const [items, count] = await this.prisma.client.$transaction([
-      this.prisma.client.regioes.findMany({
+      this.prisma.client.bairros.findMany({
         where,
         skip: perPage * (currentPage - 1),
         take: perPage,
         orderBy: { [orderKey]: orderValue },
       }),
-      this.prisma.client.regioes.count({ where }),
+      this.prisma.client.bairros.count({ where }),
     ]);
     const pagination = await Paginate(count, perPage, currentPage);
     return {
@@ -56,7 +56,7 @@ export class PrismaRegiaoReadRepository implements RegiaoReadRepository {
   async findPorCoordenada(clienteId: string, lat: number, lng: number): Promise<string | null> {
     const rows = await this.prisma.client.$queryRaw<{ id: string }[]>(
       Prisma.sql`
-        SELECT id FROM regioes
+        SELECT id FROM bairros
         WHERE cliente_id = ${clienteId}::uuid
           AND deleted_at IS NULL
           AND area IS NOT NULL

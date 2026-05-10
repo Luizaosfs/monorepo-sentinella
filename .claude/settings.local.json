@@ -341,7 +341,10 @@
       "PowerShell(cmd /c \"cd D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\frontend && node node_modules\\\\.bin\\\\tsc --noEmit 2>&1 | head -50\")",
       "PowerShell(cmd /c \"cd D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend && pnpm test --testPathPattern=desenhar-quarteirao 2>&1\")",
       "PowerShell(cmd /c \"cd D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend && pnpm test --testPathPattern=quarteirao 2>&1\")",
-      "PowerShell(cmd /c \"cd D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend && node_modules\\\\.bin\\\\tsc.CMD --noEmit 2>&1\")"
+      "PowerShell(cmd /c \"cd D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend && node_modules\\\\.bin\\\\tsc.CMD --noEmit 2>&1\")",
+      "Bash(git restore *)",
+      "Bash(git clean *)",
+      "Bash(\"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" \"postgresql://luizAntonio:Sentinella147852369@177.7.37.14:5432/sentinella\" -c \"\\\\dt public.*\")"
     ]
   }
 }

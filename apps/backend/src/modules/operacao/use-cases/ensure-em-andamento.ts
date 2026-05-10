@@ -76,7 +76,7 @@ export class EnsureEmAndamento {
           tipoVinculo: updated.tipo_vinculo ?? undefined,
           itemLevantamentoId: updated.item_levantamento_id ?? undefined,
           focoRiscoId: updated.foco_risco_id ?? undefined,
-          regiaoId: updated.regiao_id ?? undefined,
+          regiaoId: updated.bairro_id ?? undefined,
         },
         { id: updated.id },
       ),

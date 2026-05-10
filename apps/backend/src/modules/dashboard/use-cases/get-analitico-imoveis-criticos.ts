@@ -19,7 +19,7 @@ export class GetAnaliticoImoveisCriticos {
         im.numero,
         im.complemento,
         COALESCE(im.bairro, '(sem bairro)') AS bairro,
-        im.regiao_id,
+        im.bairro_id,
         v.id AS vistoria_id,
         v.data_visita,
         v.prioridade_final,

@@ -186,7 +186,7 @@ export class PrismaSlaWriteRepository implements SlaWriteRepository {
     config: JsonObject,
   ): Promise<void> {
     const existing = await this.prisma.client.sla_config_regiao.findFirst({
-      where: { cliente_id: clienteId, regiao_id: regiaoId },
+      where: { cliente_id: clienteId, bairro_id: regiaoId },
     });
     const now = new Date();
     if (existing) {
@@ -201,7 +201,7 @@ export class PrismaSlaWriteRepository implements SlaWriteRepository {
       await this.prisma.client.sla_config_regiao.create({
         data: {
           cliente_id: clienteId,
-          regiao_id: regiaoId,
+          bairro_id: regiaoId,
           config: config as Prisma.InputJsonValue,
           created_at: now,
           updated_at: now,

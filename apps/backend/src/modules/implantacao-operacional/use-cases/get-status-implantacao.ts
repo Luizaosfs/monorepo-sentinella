@@ -19,7 +19,7 @@ export class GetStatusImplantacao {
     });
 
     // 2. Total de quarteirões cadastrados (não deletados)
-    const totalQuarteiroes = await this.prisma.client.quarteiroes.count({
+    const totalQuarteiroes = await this.prisma.client.bairros_quadras.count({
       where: { cliente_id: clienteId, deleted_at: null },
     });
 
@@ -27,7 +27,7 @@ export class GetStatusImplantacao {
     let quarteiroesComAgente = 0;
     let codigosQuarteiroes: string[] = [];
     if (cicloAtivo) {
-      const distribuicoes = await this.prisma.client.distribuicao_quarteirao.findMany({
+      const distribuicoes = await this.prisma.client.bairros_distribuicao.findMany({
         where: { cliente_id: clienteId, ciclo: cicloAtivo.numero },
         select: { quarteirao: true },
         distinct: ['quarteirao'],
@@ -55,7 +55,7 @@ export class GetStatusImplantacao {
       const agentesDistRows = await this.prisma.client.$queryRaw<{ total: number }[]>(
         Prisma.sql`
           SELECT COUNT(DISTINCT agente_id)::int AS total
-          FROM distribuicao_quarteirao
+          FROM bairros_distribuicao
           WHERE cliente_id = ${clienteId}::uuid
             AND ciclo = ${cicloAtivo.numero}
         `,

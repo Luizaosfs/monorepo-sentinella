@@ -21,7 +21,7 @@ export class GerarLoteQuarteiroes {
     const { regiaoId, numeroInicial, numeroFinal } = input;
 
     // Tenant isolation: region must belong to the authenticated client
-    const regiao = await this.prisma.client.regioes.findFirst({
+    const regiao = await this.prisma.client.bairros.findFirst({
       where: { id: regiaoId, cliente_id: clienteId, deleted_at: null },
       select: { id: true },
     });
@@ -39,7 +39,7 @@ export class GerarLoteQuarteiroes {
     const { criados, ignorados, totalCriado } =
       await this.prisma.client.$transaction(async (tx) => {
         // Detect codes that already exist for this tenant (any region)
-        const existing = await tx.quarteiroes.findMany({
+        const existing = await tx.bairros_quadras.findMany({
           where: { cliente_id: clienteId, codigo: { in: codigos } },
           select: { codigo: true },
         });
@@ -55,10 +55,10 @@ export class GerarLoteQuarteiroes {
         }
 
         try {
-          const { count } = await tx.quarteiroes.createMany({
+          const { count } = await tx.bairros_quadras.createMany({
             data: toCreate.map((codigo) => ({
               cliente_id: clienteId,
-              regiao_id: regiaoId,
+              bairro_id: regiaoId,
               codigo,
               ativo: true,
             })),
@@ -71,7 +71,7 @@ export class GerarLoteQuarteiroes {
           }
 
           // Race condition: skipDuplicates silently skipped some rows — identify which
-          const confirmed = await tx.quarteiroes.findMany({
+          const confirmed = await tx.bairros_quadras.findMany({
             where: { cliente_id: clienteId, codigo: { in: toCreate } },
             select: { codigo: true },
           });

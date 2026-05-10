@@ -306,7 +306,7 @@ describe('GetDashboardTerritorial', () => {
       .mockResolvedValueOnce([
         { bairro: '(sem bairro)', total_focos: BigInt(3), focos_ativos: BigInt(1), vistorias_realizadas: BigInt(0), sla_vencidos: BigInt(0) },
       ])
-      .mockResolvedValueOnce([]) // sem regioes — focos sem regiao_id excluídos
+      .mockResolvedValueOnce([]) // sem regioes — focos sem bairro_id excluídos
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([emptyRisco])

@@ -46,7 +46,7 @@ export class GetFocosAgrupados {
           END AS agrupador_valor
         FROM focos_risco fr
         LEFT JOIN imoveis i ON i.id = fr.imovel_id AND i.deleted_at IS NULL
-        LEFT JOIN regioes r ON r.id = fr.regiao_id
+        LEFT JOIN bairros r ON r.id = fr.bairro_id
         WHERE fr.cliente_id = ${clienteId}::uuid
           AND fr.status NOT IN ('resolvido', 'descartado')
           AND fr.deleted_at IS NULL

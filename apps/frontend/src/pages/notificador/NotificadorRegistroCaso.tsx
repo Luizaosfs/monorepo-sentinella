@@ -29,7 +29,7 @@ const today = () => new Date().toISOString().split('T')[0];
 interface FormState {
   doenca: string;
   unidade_saude_id: string;
-  regiao_id: string;
+  bairro_id: string;
   data_notificacao: string;
   data_inicio_sintomas: string;
   logradouro_bairro: string;
@@ -42,7 +42,7 @@ interface FormState {
 const INITIAL_FORM: FormState = {
   doenca: 'suspeito',
   unidade_saude_id: '',
-  regiao_id: '',
+  bairro_id: '',
   data_notificacao: today(),
   data_inicio_sintomas: '',
   logradouro_bairro: '',
@@ -122,7 +122,7 @@ export default function NotificadorRegistroCaso() {
         doenca: form.doenca,
         status: 'suspeito',
         unidade_saude_id: form.unidade_saude_id,
-        regiao_id: form.regiao_id || undefined,
+        bairro_id: form.bairro_id || undefined,
         data_notificacao: form.data_notificacao,
         data_inicio_sintomas: form.data_inicio_sintomas || undefined,
         logradouro_bairro: form.logradouro_bairro || undefined,
@@ -275,16 +275,16 @@ export default function NotificadorRegistroCaso() {
           <div className="space-y-2">
             <Label className="text-sm font-semibold">Bairro / Região</Label>
             <Select
-              value={form.regiao_id || '_nenhuma'}
+              value={form.bairro_id || '_nenhuma'}
               onValueChange={(v) => {
                 if (v === '_nenhuma') {
-                  setForm((prev) => ({ ...prev, regiao_id: '', bairro: '' }));
+                  setForm((prev) => ({ ...prev, bairro_id: '', bairro: '' }));
                 } else {
                   const regiao = regioes.find((r) => r.id === v);
                   setForm((prev) => ({
                     ...prev,
-                    regiao_id: v,
-                    bairro: regiao?.regiao ?? prev.bairro,
+                    bairro_id: v,
+                    bairro: regiao?.bairro ?? regiao?.nome ?? prev.bairro,
                   }));
                 }
               }}

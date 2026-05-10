@@ -69,7 +69,7 @@ export class GetFocoDetalhes {
         id: foco.id,
         clienteId: foco.cliente_id,
         imovelId: foco.imovel_id,
-        regiaoId: foco.regiao_id,
+        regiaoId: foco.bairro_id,
         codigoFoco: foco.codigo_foco,
         status: foco.status,
         prioridade: foco.prioridade,

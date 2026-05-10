@@ -11,7 +11,7 @@ export class UpsertDistribuicoes {
     if (input.rows.length === 0) return;
     const ops = input.rows.map(row =>
       this.prisma.client.$executeRaw(Prisma.sql`
-        INSERT INTO distribuicao_quarteirao (cliente_id, ciclo, quarteirao, agente_id, regiao_id)
+        INSERT INTO bairros_distribuicao (cliente_id, ciclo, quarteirao, agente_id, bairro_id)
         VALUES (
           ${clienteId}::uuid,
           ${row.ciclo},
@@ -22,7 +22,7 @@ export class UpsertDistribuicoes {
         ON CONFLICT (cliente_id, ciclo, quarteirao)
         DO UPDATE SET
           agente_id = EXCLUDED.agente_id,
-          regiao_id = EXCLUDED.regiao_id,
+          bairro_id = EXCLUDED.bairro_id,
           updated_at = now()
       `),
     );

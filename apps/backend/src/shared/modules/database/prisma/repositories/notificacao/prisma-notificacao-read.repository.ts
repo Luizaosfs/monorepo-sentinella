@@ -46,7 +46,7 @@ export class PrismaNotificacaoReadRepository implements NotificacaoReadRepositor
         cliente_id: clienteId,
         deleted_at: null,
         ...(filters?.status ? { status: filters.status } : {}),
-        ...(filters?.regiaoId ? { regiao_id: filters.regiaoId } : {}),
+        ...(filters?.regiaoId ? { bairro_id: filters.regiaoId } : {}),
       },
       orderBy: { created_at: 'desc' },
     });

@@ -10,13 +10,13 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { useSalvarQuadra } from '@/hooks/queries/useGestaoQuadras';
-import type { Quarteirao } from '@/types/database';
+import type { BairroQuadra } from '@/types/database';
 import DrawPolygonMap from '@/components/map/DrawPolygonMap';
 
 type GeoJSONPolygon = { type: 'Polygon'; coordinates: number[][][] };
 
 interface Props {
-  quarteirao: Quarteirao;
+  quarteirao: BairroQuadra;
   onClose: () => void;
 }
 

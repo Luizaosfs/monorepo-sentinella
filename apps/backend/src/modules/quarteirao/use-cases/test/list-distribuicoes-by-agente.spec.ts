@@ -6,7 +6,7 @@ describe('ListDistribuicoesByAgente', () => {
 
   beforeEach(() => {
     findMany = jest.fn();
-    uc = new ListDistribuicoesByAgente({ client: { distribuicao_quarteirao: { findMany } } } as never);
+    uc = new ListDistribuicoesByAgente({ client: { bairros_distribuicao: { findMany } } } as never);
   });
 
   it('returns quarteirao codes for given agente and ciclo', async () => {

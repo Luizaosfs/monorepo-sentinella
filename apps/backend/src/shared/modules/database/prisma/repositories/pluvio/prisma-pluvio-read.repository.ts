@@ -70,7 +70,7 @@ export class PrismaPluvioReadRepository implements PluvioReadRepository {
     const rows = await this.prisma.client.$queryRaw<unknown[]>(Prisma.sql`
       SELECT
         pr.id,
-        pr.regiao_id,
+        pr.bairro_id,
         pr.cliente_id,
         pr.dt_ref::text                                                   AS dt_ref,
         pr.chuva_24h,
@@ -97,17 +97,17 @@ export class PrismaPluvioReadRepository implements PluvioReadRepository {
         pr.prev_d3_mm,
         pr.created_at,
         pr.updated_at,
-        json_build_object('id', r.id, 'regiao', r.regiao, 'nome', r.nome) AS regiao
+        json_build_object('id', r.id, 'regiao', r.bairro, 'nome', r.nome) AS regiao
       FROM pluvio_risco pr
-      LEFT JOIN regioes r ON r.id = pr.regiao_id AND r.deleted_at IS NULL
-      WHERE pr.regiao_id = ANY(${regiaoIds}::uuid[])
-      ORDER BY pr.dt_ref DESC, r.regiao ASC
+      LEFT JOIN bairros r ON r.id = pr.bairro_id AND r.deleted_at IS NULL
+      WHERE pr.bairro_id = ANY(${regiaoIds}::uuid[])
+      ORDER BY pr.dt_ref DESC, r.bairro ASC
     `);
     return rows;
   }
 
   async findClienteIdByRegiaoId(regiaoId: string): Promise<string | null> {
-    const row = await this.prisma.client.regioes.findUnique({
+    const row = await this.prisma.client.bairros.findUnique({
       where: { id: regiaoId },
       select: { cliente_id: true },
     });
@@ -116,7 +116,7 @@ export class PrismaPluvioReadRepository implements PluvioReadRepository {
 
   async findRiscoByClienteEData(clienteId: string, data: Date): Promise<PluvioCondicaoVoo[]> {
     type Row = {
-      regiao_id: string;
+      bairro_id: string;
       chuva_24h: number | null;
       vento_kmh: number | null;
       temp_c: number | null;
@@ -125,21 +125,21 @@ export class PrismaPluvioReadRepository implements PluvioReadRepository {
     };
     const rows = await this.prisma.client.$queryRaw<Row[]>(
       Prisma.sql`
-        SELECT pr.regiao_id,
+        SELECT pr.bairro_id,
                COALESCE(pr.chuva_24h, 0)::float   AS chuva_24h,
                COALESCE(pr.vento_kmh, 0)::float   AS vento_kmh,
                COALESCE(pr.temp_c, 0)::float      AS temp_c,
                pr.classificacao_final,
                pr.prev_d1_mm::float               AS prev_d1_mm
         FROM pluvio_risco pr
-        JOIN regioes r ON r.id = pr.regiao_id
+        JOIN bairros r ON r.id = pr.bairro_id
         WHERE r.cliente_id = ${clienteId}::uuid
           AND pr.dt_ref = ${data}::date
           AND r.deleted_at IS NULL
       `,
     );
     return rows.map((r) => ({
-      regiaoId: r.regiao_id,
+      regiaoId: r.bairro_id,
       chuva24h: r.chuva_24h ?? 0,
       ventoKmh: r.vento_kmh ?? 0,
       tempC: r.temp_c ?? 0,

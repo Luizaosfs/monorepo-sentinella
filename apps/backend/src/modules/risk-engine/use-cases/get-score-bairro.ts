@@ -11,7 +11,7 @@ export class GetScoreBairro {
       SELECT
         ts.cliente_id,
         im.bairro,
-        im.regiao_id,
+        im.bairro_id,
         COUNT(*) AS imoveis_com_score,
         ROUND(AVG(ts.score), 1) AS score_medio,
         MAX(ts.score) AS score_maximo,
@@ -22,7 +22,7 @@ export class GetScoreBairro {
       FROM territorio_score ts
       JOIN imoveis im ON im.id = ts.imovel_id AND im.deleted_at IS NULL
       WHERE ts.cliente_id = ${clienteId}::uuid
-      GROUP BY ts.cliente_id, im.bairro, im.regiao_id
+      GROUP BY ts.cliente_id, im.bairro, im.bairro_id
       ORDER BY score_medio DESC
     `)
   }

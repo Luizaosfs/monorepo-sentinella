@@ -28,7 +28,7 @@ export class BatchCreateImoveis {
     for (let i = 0; i < data.registros.length; i += CHUNK_SIZE) {
       const chunk = data.registros.slice(i, i + CHUNK_SIZE).map((r) => ({
         cliente_id:          clienteId,
-        regiao_id:           r.regiaoId ?? null,
+        bairro_id:           r.regiaoId ?? null,
         tipo_imovel:         r.tipoImovel ?? 'residencial',
         logradouro:          r.logradouro ?? null,
         numero:              r.numero ?? null,

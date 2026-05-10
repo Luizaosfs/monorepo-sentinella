@@ -47,7 +47,7 @@ export function ScoreSurtoWidget() {
           <p className="text-xs text-muted-foreground text-center py-3">Sem regiões cadastradas</p>
         ) : (
           top3.map((r) => (
-            <div key={r.regiao_id} className="flex items-center justify-between gap-2 rounded-xl border bg-muted/30 px-3 py-2">
+            <div key={r.bairro_id} className="flex items-center justify-between gap-2 rounded-xl border bg-muted/30 px-3 py-2">
               <span className="text-xs font-medium truncate">{r.regiao_nome}</span>
               <div className="flex items-center gap-2 shrink-0">
                 <span className="text-xs font-bold tabular-nums">{r.score_total}</span>

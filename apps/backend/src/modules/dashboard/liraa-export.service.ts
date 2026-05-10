@@ -20,7 +20,7 @@ export class LiraaExportService {
 
     const rows = regioes.map((r: any) =>
       [
-        r.regiaoNome ?? r.regiao_id,
+        r.regiaoNome ?? r.bairro_id,
         r.totalImoveis,
         r.imoveisTrabalhados,
         r.imoveisPositivos,

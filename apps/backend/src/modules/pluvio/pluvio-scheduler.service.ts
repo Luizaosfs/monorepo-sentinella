@@ -33,7 +33,7 @@ export class PluvioSchedulerService {
     this.logger.log(`[riscoDaily] iniciando — clientes=${clientes.length} dt_ref=${hoje}`);
 
     for (const cliente of clientes) {
-      const regioes = await this.prisma.client.regioes.findMany({
+      const regioes = await this.prisma.client.bairros.findMany({
         where: { cliente_id: cliente.id, deleted_at: null },
         select: { id: true, latitude: true, longitude: true },
       });
@@ -88,9 +88,9 @@ export class PluvioSchedulerService {
             : 'normal';
 
           await this.prisma.client.pluvio_risco.upsert({
-            where: { regiao_id_dt_ref: { regiao_id: regiao.id, dt_ref: hoje } },
+            where: { bairro_id_dt_ref: { bairro_id: regiao.id, dt_ref: hoje } },
             create: {
-              regiao_id: regiao.id,
+              bairro_id: regiao.id,
               cliente_id: cliente.id,
               dt_ref: hoje,
               chuva_24h: chuva24h,

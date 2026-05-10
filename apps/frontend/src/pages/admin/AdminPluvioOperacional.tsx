@@ -49,7 +49,7 @@ const classificacaoColor: Record<string, string> = {
 
 const emptyItemForm = {
   bairro_nome: '',
-  regiao_id: '',
+  bairro_id: '',
   classificacao_risco: '',
   situacao_ambiental: '',
   chuva_24h_mm: '',
@@ -163,7 +163,7 @@ const AdminPluvioOperacional = () => {
       const payload = {
         run_id: selectedRun.id,
         bairro_nome: itemData.bairro_nome,
-        regiao_id: itemData.regiao_id || null,
+        bairro_id: itemData.bairro_id || null,
         classificacao_risco: itemData.classificacao_risco,
         situacao_ambiental: itemData.situacao_ambiental || null,
         chuva_24h_mm: numOrNull(itemData.chuva_24h_mm),
@@ -296,7 +296,7 @@ const AdminPluvioOperacional = () => {
 
         return {
           bairro_nome: bairro,
-          regiao_id: matchedRegiao?.id || null,
+          bairro_id: matchedRegiao?.id || null,
           classificacao_risco: classificacao,
           situacao_ambiental: getStr('Situação Ambiental', 'situacao_ambiental'),
           chuva_24h_mm: getNum('Chuva 24h (mm)', 'chuva_24h_mm', 'chuva_24h'),
@@ -377,7 +377,7 @@ const AdminPluvioOperacional = () => {
     if (pendingParsedItems && pendingDtRef) {
       const updatedData = pendingParsedItems.map(v => ({
         ...v,
-        regiao_id: v.regiao_id || fallbackRegiaoId
+        bairro_id: v.bairro_id || fallbackRegiaoId
       }));
       executeImport(pendingDtRef, updatedData);
     }
@@ -467,7 +467,7 @@ const AdminPluvioOperacional = () => {
     setEditingItem(item);
     setItemForm({
       bairro_nome: item.bairro_nome,
-      regiao_id: item.regiao_id ?? '',
+      bairro_id: item.bairro_id ?? '',
       classificacao_risco: item.classificacao_risco,
       situacao_ambiental: item.situacao_ambiental ?? '',
       chuva_24h_mm: item.chuva_24h_mm?.toString() ?? '',
@@ -533,7 +533,7 @@ const AdminPluvioOperacional = () => {
                 </div>
                 <div className="space-y-2">
                   <Label>Região</Label>
-                  <Select value={itemForm.regiao_id} onValueChange={(v) => setField('regiao_id', v)}>
+                  <Select value={itemForm.bairro_id} onValueChange={(v) => setField('bairro_id', v)}>
                     <SelectTrigger><SelectValue placeholder="Opcional" /></SelectTrigger>
                     <SelectContent>
                       {regioes.map((r) => (

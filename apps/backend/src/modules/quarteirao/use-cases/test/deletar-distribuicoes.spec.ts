@@ -6,7 +6,7 @@ describe('DeletarDistribuicoes', () => {
 
   beforeEach(() => {
     deleteMany = jest.fn().mockResolvedValue({ count: 2 });
-    uc = new DeletarDistribuicoes({ client: { distribuicao_quarteirao: { deleteMany } } } as never);
+    uc = new DeletarDistribuicoes({ client: { bairros_distribuicao: { deleteMany } } } as never);
   });
 
   it('returns deleted count', async () => {

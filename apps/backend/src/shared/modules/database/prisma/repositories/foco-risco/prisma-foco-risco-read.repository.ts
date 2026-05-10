@@ -297,8 +297,8 @@ export class PrismaFocoRiscoReadRepository implements FocoRiscoReadRepository {
       return { total: 0, suspeita: 0, em_triagem: 0, aguarda_inspecao: 0, em_inspecao: 0, p1p2: 0, sem_responsavel: 0 };
     }
 
-    const regiaoFilter = filters.regiao_id
-      ? Prisma.sql`AND regiao_id = ${filters.regiao_id}::uuid`
+    const regiaoFilter = filters.bairro_id
+      ? Prisma.sql`AND bairro_id = ${filters.bairro_id}::uuid`
       : Prisma.empty;
     const responsavelFilter = filters.responsavel_id
       ? Prisma.sql`AND responsavel_id = ${filters.responsavel_id}::uuid`
@@ -482,7 +482,7 @@ export class PrismaFocoRiscoReadRepository implements FocoRiscoReadRepository {
           ? filters.prioridade[0]
           : { in: filters.prioridade },
       }),
-      ...(filters.regiao_id && { regiao_id: filters.regiao_id }),
+      ...(filters.bairro_id && { bairro_id: filters.bairro_id }),
       ...(filters.responsavel_id && { responsavel_id: filters.responsavel_id }),
       ...(filters.semResponsavel && { responsavel_id: null }),
       ...(filters.origem_tipo && { origem_tipo: filters.origem_tipo }),
@@ -518,8 +518,8 @@ export class PrismaFocoRiscoReadRepository implements FocoRiscoReadRepository {
           : Prisma.sql`f.prioridade = ANY(${filters.prioridade}::text[])`,
       );
     }
-    if (filters.regiao_id) {
-      clauses.push(Prisma.sql`f.regiao_id = ${filters.regiao_id}::uuid`);
+    if (filters.bairro_id) {
+      clauses.push(Prisma.sql`f.bairro_id = ${filters.bairro_id}::uuid`);
     }
     if (filters.responsavel_id) {
       clauses.push(Prisma.sql`f.responsavel_id = ${filters.responsavel_id}::uuid`);

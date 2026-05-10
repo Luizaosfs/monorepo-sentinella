@@ -1,7 +1,7 @@
 model imoveis {
   id                     String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   cliente_id             String    @db.Uuid
-  regiao_id              String?   @db.Uuid
+  bairro_id              String?   @db.Uuid
   tipo_imovel            String    @default("residencial")
   logradouro             String?
   numero                 String?
@@ -26,13 +26,12 @@ model imoveis {
   deleted_by             String?   @db.Uuid
 
   cliente      clientes      @relation(fields: [cliente_id], references: [id])
-  regiao       regioes?      @relation(fields: [regiao_id], references: [id])
   focos_risco  focos_risco[]
   vistorias    vistorias[]
 
   @@index([cliente_id])
   @@index([cliente_id, created_at])
-  @@index([regiao_id])
+  @@index([bairro_id])
   @@map("imoveis")
   @@schema("public")
 }

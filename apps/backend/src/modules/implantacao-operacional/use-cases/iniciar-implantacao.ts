@@ -31,13 +31,13 @@ export class IniciarImplantacao {
     if (agentes === 0) throw ImplantacaoException.semAgentes();
 
     // Validação 3: ao menos um quarteirão
-    const totalQuarteiroes = await this.prisma.client.quarteiroes.count({
+    const totalQuarteiroes = await this.prisma.client.bairros_quadras.count({
       where: { cliente_id: clienteId, deleted_at: null },
     });
     if (totalQuarteiroes === 0) throw ImplantacaoException.semQuarteiroes();
 
     // Validação 4: ao menos um quarteirão distribuído
-    const distribuicoes = await this.prisma.client.distribuicao_quarteirao.count({
+    const distribuicoes = await this.prisma.client.bairros_distribuicao.count({
       where: { cliente_id: clienteId, ciclo: cicloAtivo.numero },
     });
     if (distribuicoes === 0) throw ImplantacaoException.semDistribuicao();

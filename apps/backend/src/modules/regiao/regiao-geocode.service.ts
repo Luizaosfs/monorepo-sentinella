@@ -12,7 +12,7 @@ export class RegiaoGeocodeService {
   private readonly logger = new Logger(RegiaoGeocodeService.name);
 
   async geocodeRegioes(clienteId: string): Promise<{ total: number; geocodificadas: number }> {
-    const regioes = await this.prisma.client.regioes.findMany({
+    const regioes = await this.prisma.client.bairros.findMany({
       where: {
         cliente_id: clienteId,
         deleted_at: null,
@@ -40,7 +40,7 @@ export class RegiaoGeocodeService {
 
         const { lat, lon } = results[0];
 
-        await this.prisma.client.regioes.update({
+        await this.prisma.client.bairros.update({
           where: { id: regiao.id },
           data: {
             latitude: parseFloat(lat),

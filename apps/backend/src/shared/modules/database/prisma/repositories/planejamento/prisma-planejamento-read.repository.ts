@@ -57,7 +57,7 @@ export class PrismaPlanejamentoReadRepository implements PlanejamentoReadReposit
       ...(filters.tipoLevantamento && {
         tipo_levantamento: filters.tipoLevantamento,
       }),
-      ...(filters.regiaoId && { regiao_id: filters.regiaoId }),
+      ...(filters.regiaoId && { bairro_id: filters.regiaoId }),
     };
   }
 }

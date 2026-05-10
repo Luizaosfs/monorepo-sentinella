@@ -16,17 +16,17 @@ export class PrismaQuarteiraoWriteRepository implements QuarteiraoWriteRepositor
   async createQuarteirao(entity: Quarteirao): Promise<Quarteirao> {
     const data = {
       cliente_id: entity.clienteId,
-      regiao_id: entity.regiaoId || null,
+      bairro_id: entity.regiaoId || null,
       codigo: entity.codigo,
       bairro: entity.bairro || null,
       ativo: entity.ativo,
     };
-    const created = await this.prisma.client.quarteiroes.create({ data });
+    const created = await this.prisma.client.bairros_quadras.create({ data });
     return PrismaQuarteiraoMapper.quarteiraoToDomain(created as any);
   }
 
   async softDeleteQuarteirao(id: string, deletedBy?: string): Promise<void> {
-    await this.prisma.client.quarteiroes.update({
+    await this.prisma.client.bairros_quadras.update({
       where: { id },
       data: {
         deleted_at: new Date(),
@@ -44,16 +44,16 @@ export class PrismaQuarteiraoWriteRepository implements QuarteiraoWriteRepositor
       ciclo: entity.ciclo,
       quarteirao: entity.quarteirao,
       agente_id: entity.agenteId,
-      regiao_id: entity.regiaoId || null,
+      bairro_id: entity.regiaoId || null,
     };
-    const created = await this.prisma.client.distribuicao_quarteirao.create({
+    const created = await this.prisma.client.bairros_distribuicao.create({
       data,
     });
     return PrismaQuarteiraoMapper.distribuicaoToDomain(created as any);
   }
 
   async deleteDistribuicao(id: string): Promise<void> {
-    await this.prisma.client.distribuicao_quarteirao.delete({ where: { id } });
+    await this.prisma.client.bairros_distribuicao.delete({ where: { id } });
   }
 
   async copiarDistribuicoesCiclo(input: {
@@ -61,7 +61,7 @@ export class PrismaQuarteiraoWriteRepository implements QuarteiraoWriteRepositor
     cicloOrigem: number;
     cicloDestino: number;
   }): Promise<{ copiadas: number }> {
-    const origens = await this.prisma.client.distribuicao_quarteirao.findMany({
+    const origens = await this.prisma.client.bairros_distribuicao.findMany({
       where: {
         cliente_id: input.clienteId,
         ciclo: input.cicloOrigem,
@@ -71,7 +71,7 @@ export class PrismaQuarteiraoWriteRepository implements QuarteiraoWriteRepositor
     let copiadas = 0;
     await this.prisma.client.$transaction(async (tx) => {
       for (const row of origens) {
-        await tx.distribuicao_quarteirao.upsert({
+        await tx.bairros_distribuicao.upsert({
           where: {
             cliente_id_ciclo_quarteirao: {
               cliente_id: input.clienteId,
@@ -84,11 +84,11 @@ export class PrismaQuarteiraoWriteRepository implements QuarteiraoWriteRepositor
             ciclo: input.cicloDestino,
             quarteirao: row.quarteirao,
             agente_id: row.agente_id,
-            regiao_id: row.regiao_id,
+            bairro_id: row.bairro_id,
           },
           update: {
             agente_id: row.agente_id,
-            regiao_id: row.regiao_id,
+            bairro_id: row.bairro_id,
             updated_at: new Date(),
           },
         });
@@ -104,12 +104,12 @@ export class PrismaQuarteiraoWriteRepository implements QuarteiraoWriteRepositor
     bairro: string | null | undefined,
     codigo: string,
   ): Promise<void> {
-    const exists = await this.prisma.client.quarteiroes.findFirst({
+    const exists = await this.prisma.client.bairros_quadras.findFirst({
       where: { cliente_id: clienteId, codigo, deleted_at: null },
       select: { id: true },
     });
     if (!exists) {
-      await this.prisma.client.quarteiroes.create({
+      await this.prisma.client.bairros_quadras.create({
         data: { cliente_id: clienteId, codigo, bairro: bairro ?? null, ativo: true },
       });
     }
@@ -117,11 +117,11 @@ export class PrismaQuarteiraoWriteRepository implements QuarteiraoWriteRepositor
 
   async saveQuarteirao(entity: Quarteirao): Promise<Quarteirao> {
     const geojsonIsNull = entity.geojson == null;
-    await this.prisma.client.quarteiroes.updateMany({
+    await this.prisma.client.bairros_quadras.updateMany({
       where: { id: entity.id, cliente_id: entity.clienteId, deleted_at: null },
       data: {
         codigo:     entity.codigo,
-        regiao_id:  entity.regiaoId ?? null,
+        bairro_id:  entity.regiaoId ?? null,
         ativo:      entity.ativo,
         geojson:    geojsonIsNull
           ? Prisma.JsonNull
@@ -132,14 +132,14 @@ export class PrismaQuarteiraoWriteRepository implements QuarteiraoWriteRepositor
     if (geojsonIsNull) {
       // Limpa campos PostGIS quando geojson é removido
       await this.prisma.client.$executeRaw(Prisma.sql`
-        UPDATE quarteiroes
+        UPDATE bairros_quadras
            SET area = NULL, latitude = NULL, longitude = NULL
          WHERE id = ${entity.id!}::uuid
       `);
     } else {
       await this.syncArea(entity.id!);
     }
-    const fresh = await this.prisma.client.quarteiroes.findUnique({
+    const fresh = await this.prisma.client.bairros_quadras.findUnique({
       where: { id: entity.id! },
     });
     return PrismaQuarteiraoMapper.quarteiraoToDomain(fresh as any);
@@ -147,7 +147,7 @@ export class PrismaQuarteiraoWriteRepository implements QuarteiraoWriteRepositor
 
   private async syncArea(id: string): Promise<void> {
     await this.prisma.client.$executeRaw(Prisma.sql`
-      UPDATE quarteiroes
+      UPDATE bairros_quadras
          SET area      = ST_GeomFromGeoJSON(geojson::text),
              latitude  = ST_Y(ST_Centroid(ST_GeomFromGeoJSON(geojson::text))),
              longitude = ST_X(ST_Centroid(ST_GeomFromGeoJSON(geojson::text)))

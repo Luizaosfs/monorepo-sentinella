@@ -54,7 +54,7 @@ export interface ResumoRegionalRow {
 }
 
 export interface ScoreSurtoRow {
-  regiao_id: string;
+  bairro_id: string;
   regiao_nome: string;
   score_total: number;
   contrib_pluvio: number;

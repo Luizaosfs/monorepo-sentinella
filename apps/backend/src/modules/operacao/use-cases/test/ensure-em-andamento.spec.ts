@@ -60,7 +60,7 @@ describe('EnsureEmAndamento', () => {
 
   it('deve atualizar status para em_andamento quando operação existe com outro status', async () => {
     const rawExisting = { id: 'op-1', status: 'pendente', cliente_id: 'test-cliente-id', iniciado_em: null };
-    const rawUpdated = { ...rawExisting, status: 'em_andamento', iniciado_em: new Date(), responsavel_id: null, prioridade: null, observacao: null, concluido_em: null, tipo_vinculo: 'levantamento', item_levantamento_id: itemId, foco_risco_id: null, regiao_id: null };
+    const rawUpdated = { ...rawExisting, status: 'em_andamento', iniciado_em: new Date(), responsavel_id: null, prioridade: null, observacao: null, concluido_em: null, tipo_vinculo: 'levantamento', item_levantamento_id: itemId, foco_risco_id: null, bairro_id: null };
     mockPrismaOperacoes.findFirst.mockResolvedValue(rawExisting);
     mockPrismaOperacoes.update.mockResolvedValue(rawUpdated);
     mockPrismaOperacoes.findUniqueOrThrow.mockResolvedValue(rawUpdated);

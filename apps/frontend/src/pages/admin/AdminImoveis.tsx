@@ -254,7 +254,7 @@ export default function AdminImoveis() {
         await updateImovel.mutateAsync({ id: editando.id, payload });
         toast.success('Imóvel atualizado.');
       } else {
-        await createImovel.mutateAsync({ cliente_id: clienteId, regiao_id: null, ...payload });
+        await createImovel.mutateAsync({ cliente_id: clienteId, bairro_id: null, ...payload });
         toast.success('Imóvel cadastrado.');
       }
       setDialogOpen(false);

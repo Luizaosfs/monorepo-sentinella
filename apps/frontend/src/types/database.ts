@@ -432,8 +432,8 @@ export interface Planejamento {
   /** Coluna no banco; usar este valor ao ler/escrever. */
   tipo_levantamento?: PlanejamentoTipoLevantamento | null;
   ativo?: boolean;
-  /** FK para regioes — usada para resolver sla_config_regiao. */
-  regiao_id?: string | null;
+  /** FK para bairros — usada para resolver sla_config_regiao. */
+  bairro_id?: string | null;
   created_at: string;
   updated_at: string;
   // joined
@@ -550,7 +550,7 @@ export interface SlaIminente {
 export interface SlaConfigRegiao {
   id: string;
   cliente_id: string;
-  regiao_id: string;
+  bairro_id: string;
   config: Record<string, unknown>;
   created_at: string;
   updated_at: string;
@@ -841,7 +841,7 @@ export interface Regiao {
 
 export interface PluvioRisco {
   id: string;
-  regiao_id: string;
+  bairro_id: string;
   dt_ref: string;
   chuva_24h: number | null;
   chuva_72h: number | null;
@@ -1063,7 +1063,7 @@ export interface PluvioOperacionalRun {
 export interface PluvioOperacionalItem {
   id: string;
   run_id: string;
-  regiao_id: string | null;
+  bairro_id: string | null;
   bairro_nome: string;
   classificacao_risco: string;
   situacao_ambiental: string | null;
@@ -1175,7 +1175,7 @@ export interface CasoNotificado {
   bairro: string | null;
   latitude: number | null;
   longitude: number | null;
-  regiao_id: string | null;
+  bairro_id: string | null;
   observacao: string | null;
   payload: Record<string, unknown> | null;
   created_at: string;
@@ -1221,7 +1221,7 @@ export const DEPOSITO_LABELS: Record<TipoDeposito, string> = {
 export interface Imovel {
   id: string;
   cliente_id: string;
-  regiao_id: string | null;
+  bairro_id: string | null;
   tipo_imovel: TipoImovel;
   logradouro: string | null;
   numero: string | null;
@@ -1253,7 +1253,7 @@ export interface ImovelResumo {
   complemento: string | null;
   bairro: string | null;
   quarteirao: string | null;
-  regiao_id: string | null;
+  bairro_id: string | null;
   tipo_imovel: string;
   latitude: number | null;
   longitude: number | null;
@@ -1604,7 +1604,7 @@ export interface AgenteProdutividade {
 // ── MÓDULO 4 — Score Preditivo de Surto ──────────────────────────────────────
 
 export interface ScoreSurtoRegiao {
-  regiao_id: string;
+  bairro_id: string;
   regiao_nome: string;
   score_total: number;
   contrib_pluvio: number;
@@ -1656,10 +1656,10 @@ export interface AlertaRetornoImovel {
   imovel?: { numero: string | null; logradouro: string | null; bairro: string | null } | null;
 }
 
-export interface Quarteirao {
+export interface BairroQuadra {
   id: string;
   cliente_id: string;
-  regiao_id: string | null;
+  bairro_id: string | null;
   codigo: string;
   bairro: string | null;
   ativo: boolean;
@@ -1671,13 +1671,13 @@ export interface Quarteirao {
   updated_at: string;
 }
 
-export interface DistribuicaoQuarteirao {
+export interface BairrosDistribuicao {
   id: string;
   cliente_id: string;
   ciclo: number;
   quarteirao: string;
   agente_id: string;
-  regiao_id: string | null;
+  bairro_id: string | null;
   created_at: string;
   updated_at: string;
   /** Populado via join — presente ao usar listByCiclo com join de agentes */
@@ -1725,7 +1725,7 @@ export interface FocoRisco {
   id: string;
   cliente_id: string;
   imovel_id: string | null;
-  regiao_id: string | null;
+  bairro_id: string | null;
   origem_tipo: FocoRiscoOrigem;
   origem_levantamento_item_id: string | null;
   origem_vistoria_id: string | null;
@@ -1860,7 +1860,7 @@ export interface FocoRiscoAgrupado {
 /** Filtros para useFocosRisco. */
 export interface FocoRiscoFiltros {
   status?: FocoRiscoStatus[];
-  regiao_id?: string;
+  bairro_id?: string;
   ciclo?: number;
   prioridade?: FocoRiscoPrioridade[];
   origem_tipo?: FocoRiscoOrigem;
@@ -2000,7 +2000,7 @@ export interface FocoRiscoAnalytics extends FocoRisco {
 
 /** Item do resultado de rpc_resumo_regional. */
 export interface ResumoRegional {
-  regiao_id: string | null;
+  bairro_id: string | null;
   regiao_nome: string | null;
   total_focos: number;
   focos_resolvidos: number;

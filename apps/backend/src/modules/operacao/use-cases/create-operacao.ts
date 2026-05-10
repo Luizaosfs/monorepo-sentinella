@@ -32,7 +32,7 @@ export class CreateOperacao {
       if (count === 0) throw new ForbiddenException('itemLevantamentoId inválido para este cliente');
     }
     if (data.regiaoId) {
-      const count = await this.prisma.client.regioes.count({
+      const count = await this.prisma.client.bairros.count({
         where: { id: data.regiaoId, cliente_id: clienteId },
       });
       if (count === 0) throw new ForbiddenException('regiaoId inválido para este cliente');

@@ -14,7 +14,7 @@ type RawPluvioRun = {
 type RawPluvioItem = {
   id: string;
   run_id: string;
-  regiao_id: string | null;
+  bairro_id: string | null;
   bairro_nome: string;
   classificacao_risco: string;
   chuva_24h_mm: { toNumber(): number } | number | null;
@@ -24,7 +24,7 @@ type RawPluvioItem = {
 
 type RawPluvioRisco = {
   id: string;
-  regiao_id: string;
+  bairro_id: string;
   dt_ref: Date;
   tendencia: string | null;
   chuva_24h: { toNumber(): number } | number | null;
@@ -75,7 +75,7 @@ export class PrismaPluvioItemMapper {
     return new PluvioItem(
       {
         runId: raw.run_id,
-        regiaoId: raw.regiao_id ?? undefined,
+        regiaoId: raw.bairro_id ?? undefined,
         imovelId: undefined,
         precipitacao: chuva,
         nivelRisco: raw.classificacao_risco,
@@ -91,7 +91,7 @@ export class PrismaPluvioItemMapper {
   static toPrisma(entity: PluvioItem) {
     return {
       run_id: entity.runId,
-      regiao_id: entity.regiaoId ?? null,
+      bairro_id: entity.regiaoId ?? null,
       bairro_nome: entity.nivelRisco || '-',
       classificacao_risco: entity.nivelRisco,
       chuva_24h_mm: entity.precipitacao,
@@ -113,7 +113,7 @@ export class PrismaPluvioRiscoMapper {
           : raw.chuva_24h.toNumber();
     return new PluvioRisco(
       {
-        regiaoId: raw.regiao_id,
+        regiaoId: raw.bairro_id,
         nivel: raw.tendencia ?? '',
         precipitacaoAcumulada: chuva,
         dataReferencia: raw.dt_ref,
@@ -129,7 +129,7 @@ export class PrismaPluvioRiscoMapper {
 
   static toPrisma(entity: PluvioRisco) {
     return {
-      regiao_id: entity.regiaoId,
+      bairro_id: entity.regiaoId,
       dt_ref: entity.dataReferencia,
       tendencia: entity.nivel,
       chuva_24h: entity.precipitacaoAcumulada,

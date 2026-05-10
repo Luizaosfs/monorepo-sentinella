@@ -11,7 +11,7 @@ export class GetReincidenciaSazonalidade {
       SELECT
         fr.cliente_id,
         im.bairro,
-        im.regiao_id,
+        im.bairro_id,
         fr.ciclo,
         COUNT(fr.id)::int AS focos_total,
         COUNT(fr.id) FILTER (WHERE fr.foco_anterior_id IS NOT NULL)::int AS focos_reincidentes,
@@ -21,7 +21,7 @@ export class GetReincidenciaSazonalidade {
       JOIN imoveis im ON im.id = fr.imovel_id AND im.deleted_at IS NULL
       WHERE fr.cliente_id = ${clienteId}::uuid AND fr.imovel_id IS NOT NULL
         AND fr.ciclo IS NOT NULL AND fr.deleted_at IS NULL AND im.deleted_at IS NULL
-      GROUP BY fr.cliente_id, im.bairro, im.regiao_id, fr.ciclo
+      GROUP BY fr.cliente_id, im.bairro, im.bairro_id, fr.ciclo
       HAVING COUNT(fr.id) >= 2
       ORDER BY focos_reincidentes DESC
     `)

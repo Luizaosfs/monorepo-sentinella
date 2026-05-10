@@ -20,7 +20,7 @@ describe('GetStormForecast', () => {
   const mockFindMany = jest.fn();
 
   const prismaMock = {
-    client: { regioes: { findMany: mockFindMany } },
+    client: { bairros: { findMany: mockFindMany } },
   } as any;
 
   const openMeteoMock = { fetchStormForecast: mockFetch } as any;

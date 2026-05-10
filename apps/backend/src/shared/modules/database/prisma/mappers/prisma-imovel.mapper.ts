@@ -3,7 +3,7 @@ import { Imovel } from 'src/modules/imovel/entities/imovel';
 type RawImovel = {
   id: string;
   cliente_id: string;
-  regiao_id: string | null;
+  bairro_id: string | null;
   tipo_imovel: string;
   logradouro: string | null;
   numero: string | null;
@@ -33,7 +33,7 @@ export class PrismaImovelMapper {
     return new Imovel(
       {
         clienteId: raw.cliente_id,
-        regiaoId: raw.regiao_id || undefined,
+        regiaoId: raw.bairro_id || undefined,
         tipoImovel: raw.tipo_imovel,
         logradouro: raw.logradouro || undefined,
         numero: raw.numero || undefined,
@@ -65,7 +65,7 @@ export class PrismaImovelMapper {
   static toPrisma(entity: Imovel) {
     return {
       cliente_id: entity.clienteId,
-      regiao_id: entity.regiaoId || null,
+      bairro_id: entity.regiaoId || null,
       tipo_imovel: entity.tipoImovel,
       logradouro: entity.logradouro || null,
       numero: entity.numero || null,

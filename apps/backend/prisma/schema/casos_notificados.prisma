@@ -11,7 +11,7 @@ model casos_notificados {
   bairro               String?
   latitude             Float?
   longitude            Float?
-  regiao_id            String?   @db.Uuid
+  bairro_id            String?   @db.Uuid
   observacao           String?
   payload              Json?
   created_at           DateTime  @default(now()) @db.Timestamptz
@@ -31,12 +31,10 @@ model casos_notificados {
   cliente       clientes       @relation(fields: [cliente_id], references: [id])
   unidade_saude unidades_saude @relation(fields: [unidade_saude_id], references: [id])
   notificador   usuarios?      @relation("caso_notificador", fields: [notificador_id], references: [id])
-  regiao        regioes?       @relation(fields: [regiao_id], references: [id])
-
   @@index([cliente_id])
   @@index([cliente_id, status])
   @@index([cliente_id, created_at])
-  @@index([regiao_id])
+  @@index([bairro_id])
   @@index([foco_risco_id])
   @@map("casos_notificados")
   @@schema("public")

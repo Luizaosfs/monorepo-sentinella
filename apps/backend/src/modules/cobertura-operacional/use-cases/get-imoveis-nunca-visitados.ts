@@ -42,7 +42,7 @@ export class GetImoveisNuncaVisitadosUc {
       FROM imoveis i
       LEFT JOIN LATERAL (
         SELECT dq2.agente_id
-        FROM distribuicao_quarteirao dq2
+        FROM bairros_distribuicao dq2
         WHERE dq2.quarteirao = i.quarteirao
           AND dq2.cliente_id = i.cliente_id
           AND dq2.ciclo = ${cicloNum ?? 0}

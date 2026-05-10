@@ -26,7 +26,7 @@ type RawOperacao = {
   tipo_vinculo: string | null;
   item_operacional_id: string | null;
   item_levantamento_id: string | null;
-  regiao_id: string | null;
+  bairro_id: string | null;
   foco_risco_id: string | null;
   updated_at: Date;
   deleted_at: Date | null;
@@ -60,7 +60,7 @@ export class PrismaOperacaoMapper {
         tipoVinculo: raw.tipo_vinculo ?? undefined,
         itemOperacionalId: raw.item_operacional_id ?? undefined,
         itemLevantamentoId: raw.item_levantamento_id ?? undefined,
-        regiaoId: raw.regiao_id ?? undefined,
+        regiaoId: raw.bairro_id ?? undefined,
         focoRiscoId: raw.foco_risco_id ?? undefined,
         deletedAt: raw.deleted_at ?? undefined,
         deletedBy: raw.deleted_by ?? undefined,
@@ -86,7 +86,7 @@ export class PrismaOperacaoMapper {
       tipo_vinculo: entity.tipoVinculo ?? null,
       item_operacional_id: entity.itemOperacionalId ?? null,
       item_levantamento_id: entity.itemLevantamentoId ?? null,
-      regiao_id: entity.regiaoId ?? null,
+      bairro_id: entity.regiaoId ?? null,
       foco_risco_id: entity.focoRiscoId ?? null,
       deleted_at: entity.deletedAt ?? null,
       deleted_by: entity.deletedBy ?? null,

@@ -60,7 +60,7 @@ export function filterFocosForGestorMapa(
   f: GestorMapaFocoFilterState,
 ): FocoRiscoAtivo[] {
   return focos.filter((x) => {
-    if (f.regiaoId !== 'all' && x.regiao_id !== f.regiaoId) return false;
+    if (f.regiaoId !== 'all' && x.bairro_id !== f.regiaoId) return false;
     if (!isWithinSuspeitaPeriod(x.suspeita_em, f.periodo)) return false;
     if (f.status.length > 0 && !f.status.includes(x.status)) return false;
     if (f.prioridade.length > 0) {
@@ -85,7 +85,7 @@ export interface GestorMapaFocoStats {
 export function computeGestorMapaFocoStats(focos: FocoRiscoAtivo[]): GestorMapaFocoStats {
   const total = focos.length;
   const urgentesP1P2 = focos.filter((x) => x.prioridade === 'P1' || x.prioridade === 'P2').length;
-  const regioes = new Set(focos.map((x) => x.regiao_id).filter(Boolean));
+  const regioes = new Set(focos.map((x) => x.bairro_id).filter(Boolean));
   const slaEmRisco = focos.filter((x) =>
     ['atencao', 'critico', 'vencido'].includes(x.sla_status ?? ''),
   ).length;

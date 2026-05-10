@@ -168,13 +168,13 @@ export class PrismaImovelReadRepository implements ImovelReadRepository {
     // no schema atual — usando por.cliente_id (pluvio_operacional_run) que existe.
     let chuvaAlta = false;
     let tempAlta = false;
-    if (imovelRaw?.bairro != null || imovelRaw?.regiao_id != null) {
+    if (imovelRaw?.bairro != null || imovelRaw?.bairro_id != null) {
       type PluvioRow = { chuva_7d_mm: number | null; temp_media_c: number | null };
       const bairroCond = imovelRaw?.bairro
         ? Prisma.sql`poi.bairro_nome = ${imovelRaw.bairro}`
         : Prisma.sql`false`;
-      const regiaoCond = imovelRaw?.regiao_id
-        ? Prisma.sql`poi.regiao_id = ${imovelRaw.regiao_id}::uuid`
+      const regiaoCond = imovelRaw?.bairro_id
+        ? Prisma.sql`poi.bairro_id = ${imovelRaw.bairro_id}::uuid`
         : Prisma.sql`false`;
       const pluvioRows = await this.prisma.client.$queryRaw<PluvioRow[]>`
         SELECT poi.chuva_7d_mm::float8, poi.temp_media_c::float8
@@ -273,7 +273,7 @@ export class PrismaImovelReadRepository implements ImovelReadRepository {
       complemento: string | null;
       bairro: string | null;
       quarteirao: string | null;
-      regiao_id: string | null;
+      bairro_id: string | null;
       tipo_imovel: string;
       latitude: number | null;
       longitude: number | null;
@@ -299,7 +299,7 @@ export class PrismaImovelReadRepository implements ImovelReadRepository {
     };
 
     const regiaoFilter = regiaoId
-      ? Prisma.sql`AND i.regiao_id = ${regiaoId}::uuid`
+      ? Prisma.sql`AND i.bairro_id = ${regiaoId}::uuid`
       : Prisma.empty;
 
     const rows = await this.prisma.client.$queryRaw<Row[]>`
@@ -311,7 +311,7 @@ export class PrismaImovelReadRepository implements ImovelReadRepository {
         i.complemento,
         i.bairro,
         i.quarteirao,
-        i.regiao_id::text,
+        i.bairro_id::text,
         i.tipo_imovel,
         i.latitude::float8,
         i.longitude::float8,
@@ -377,7 +377,7 @@ export class PrismaImovelReadRepository implements ImovelReadRepository {
       complemento: r.complemento,
       bairro: r.bairro,
       quarteirao: r.quarteirao,
-      regiaoId: r.regiao_id,
+      regiaoId: r.bairro_id,
       tipoImovel: r.tipo_imovel,
       latitude: r.latitude,
       longitude: r.longitude,
@@ -412,7 +412,7 @@ export class PrismaImovelReadRepository implements ImovelReadRepository {
       complemento: string | null;
       bairro: string | null;
       quarteirao: string | null;
-      regiao_id: string | null;
+      bairro_id: string | null;
       tipo_imovel: string;
       latitude: number | null;
       longitude: number | null;
@@ -451,7 +451,7 @@ export class PrismaImovelReadRepository implements ImovelReadRepository {
         i.complemento,
         i.bairro,
         i.quarteirao,
-        i.regiao_id::text,
+        i.bairro_id::text,
         i.tipo_imovel,
         i.latitude::float8,
         i.longitude::float8,
@@ -517,7 +517,7 @@ export class PrismaImovelReadRepository implements ImovelReadRepository {
       complemento: r.complemento,
       bairro: r.bairro,
       quarteirao: r.quarteirao,
-      regiaoId: r.regiao_id,
+      regiaoId: r.bairro_id,
       tipoImovel: r.tipo_imovel,
       latitude: r.latitude,
       longitude: r.longitude,
@@ -648,7 +648,7 @@ export class PrismaImovelReadRepository implements ImovelReadRepository {
       deleted_at: null,
       // MT-09: != null distingue null intencional (admin global) de UUID (tenant filter)
       ...(filters.clienteId != null && { cliente_id: filters.clienteId }),
-      ...(filters.regiaoId && { regiao_id: filters.regiaoId }),
+      ...(filters.regiaoId && { bairro_id: filters.regiaoId }),
       ...(filters.bairro && {
         bairro: { contains: filters.bairro, mode: 'insensitive' as const },
       }),

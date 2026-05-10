@@ -23,7 +23,7 @@ interface BairroRow {
 }
 
 interface RegiaoRow {
-  regiao_id: string;
+  bairro_id: string;
   regiao_nome: string;
   total_focos: bigint;
   focos_ativos: bigint;
@@ -88,7 +88,7 @@ export class GetDashboardTerritorial {
       : Prisma.empty;
 
     const fRegiaoId = params.regiaoId
-      ? Prisma.sql`AND f.regiao_id = ${params.regiaoId}::uuid`
+      ? Prisma.sql`AND f.bairro_id = ${params.regiaoId}::uuid`
       : Prisma.empty;
 
     const fPrioridade = params.prioridade
@@ -176,18 +176,18 @@ export class GetDashboardTerritorial {
         // 3. Ranking por região (top 20)
         this.prisma.client.$queryRaw<RegiaoRow[]>(Prisma.sql`
           SELECT
-            r.id AS regiao_id,
+            r.id AS bairro_id,
             r.nome AS regiao_nome,
             COUNT(DISTINCT f.id) AS total_focos,
             COUNT(DISTINCT f.id) FILTER (WHERE f.status NOT IN ('suspeita', 'descartado', 'resolvido', 'encaminhado_administrativo', 'acionado_juridico')) AS focos_ativos,
             COUNT(DISTINCT v.id) AS vistorias_realizadas
           FROM focos_risco f
-          JOIN regioes r ON r.id = f.regiao_id
+          JOIN bairros r ON r.id = f.bairro_id
           LEFT JOIN imoveis im ON im.id = f.imovel_id AND im.deleted_at IS NULL
           LEFT JOIN vistorias v ON v.foco_risco_id = f.id AND v.deleted_at IS NULL
           WHERE f.cliente_id = ${clienteId}::uuid
             AND f.deleted_at IS NULL
-            AND f.regiao_id IS NOT NULL
+            AND f.bairro_id IS NOT NULL
             ${fDataInicio}
             ${fDataFim}
             ${fBairro}
@@ -331,7 +331,7 @@ export class GetDashboardTerritorial {
         slaVencidos: Number(r.sla_vencidos),
       })),
       rankingRegiao: regioesRaw.map((r) => ({
-        regiaoId: r.regiao_id,
+        regiaoId: r.bairro_id,
         regiaoNome: r.regiao_nome,
         totalFocos: Number(r.total_focos),
         focosAtivos: Number(r.focos_ativos),

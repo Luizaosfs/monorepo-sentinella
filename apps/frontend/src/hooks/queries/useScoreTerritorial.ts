@@ -32,7 +32,7 @@ export interface TerritorioScore {
 export interface ScoreBairro {
   cliente_id: string;
   bairro: string | null;
-  regiao_id: string | null;
+  bairro_id: string | null;
   imoveis_com_score: number;
   score_medio: number;
   score_maximo: number;

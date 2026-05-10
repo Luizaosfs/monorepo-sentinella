@@ -14,7 +14,7 @@ export class GetAnaliticoRiscoTerritorial {
       SELECT
         v.cliente_id,
         COALESCE(im.bairro, r.nome, '(sem bairro)')                                                    AS bairro,
-        im.regiao_id,
+        im.bairro_id,
         COUNT(*)::int                                                                                   AS total_vistorias,
         COUNT(*) FILTER (WHERE v.prioridade_final = ANY(ARRAY['P1','P2']))::int                        AS criticos_count,
         COUNT(*) FILTER (WHERE v.risco_vetorial IN ('alto','critico'))::int                            AS risco_vetorial_alto,
@@ -29,10 +29,10 @@ export class GetAnaliticoRiscoTerritorial {
         )::float                                                                                        AS pct_criticos
       FROM vistorias v
       JOIN imoveis im ON im.id = v.imovel_id AND im.deleted_at IS NULL
-      LEFT JOIN regioes r ON r.id = im.regiao_id AND r.deleted_at IS NULL
+      LEFT JOIN bairros r ON r.id = im.bairro_id AND r.deleted_at IS NULL
       WHERE v.cliente_id = ${clienteId}::uuid AND v.deleted_at IS NULL
       ${bairroClause}
-      GROUP BY v.cliente_id, im.bairro, r.nome, im.regiao_id
+      GROUP BY v.cliente_id, im.bairro, r.nome, im.bairro_id
       ORDER BY total_vistorias DESC
     `)
   }

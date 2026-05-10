@@ -7,7 +7,7 @@ import { FindByEndereco } from '../find-by-endereco';
 const mockImovelRaw = {
   id: 'imovel-uuid-1',
   cliente_id: 'test-cliente-id',
-  regiao_id: null,
+  bairro_id: null,
   tipo_imovel: 'residencial',
   logradouro: 'Rua das Flores',
   numero: '123',

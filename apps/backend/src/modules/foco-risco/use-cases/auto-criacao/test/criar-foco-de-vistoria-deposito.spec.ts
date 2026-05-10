@@ -87,7 +87,7 @@ describe('CriarFocoDeVistoriaDeposito', () => {
       data: expect.objectContaining({
         cliente_id: 'cli-1',
         imovel_id: null,
-        regiao_id: null,
+        bairro_id: null,
         origem_tipo: 'agente',
         origem_vistoria_id: 'v-1',
         status: 'em_triagem',
@@ -108,7 +108,7 @@ describe('CriarFocoDeVistoriaDeposito', () => {
       foco_risco_id: null,
     });
     p.imoveisFind.mockResolvedValue({
-      regiao_id: 'reg-1',
+      bairro_id: 'reg-1',
       latitude: -23.5,
       longitude: -46.6,
       logradouro: 'Rua A',
@@ -118,7 +118,7 @@ describe('CriarFocoDeVistoriaDeposito', () => {
     expect(p.focoCreate).toHaveBeenCalledWith({
       data: expect.objectContaining({
         imovel_id: 'imo-1',
-        regiao_id: 'reg-1',
+        bairro_id: 'reg-1',
         origem_tipo: 'agente',
         origem_vistoria_id: 'v-1',
         status: 'em_triagem',
@@ -138,7 +138,7 @@ describe('CriarFocoDeVistoriaDeposito', () => {
       foco_risco_id: null,
     });
     p.imoveisFind.mockResolvedValue({
-      regiao_id: null,
+      bairro_id: null,
       latitude: null,
       longitude: null,
       logradouro: 'Rua A',
@@ -158,7 +158,7 @@ describe('CriarFocoDeVistoriaDeposito', () => {
       foco_risco_id: null,
     });
     p.imoveisFind.mockResolvedValue({
-      regiao_id: null,
+      bairro_id: null,
       latitude: null,
       longitude: null,
       logradouro: null,

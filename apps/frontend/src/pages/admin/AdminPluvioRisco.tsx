@@ -27,7 +27,7 @@ import {
 } from '@/components/ui/select';
 
 const emptyForm = {
-  regiao_id: '',
+  bairro_id: '',
   dt_ref: '',
   chuva_24h: '',
   chuva_72h: '',
@@ -100,7 +100,7 @@ const AdminPluvioRisco = () => {
     mutationFn: async (payload: typeof emptyForm & { id?: string }) => {
       const { id, ...data } = payload;
       const record = {
-        regiao_id: data.regiao_id,
+        bairro_id: data.bairro_id,
         dt_ref: data.dt_ref,
         chuva_24h: numOrNull(data.chuva_24h),
         chuva_72h: numOrNull(data.chuva_72h),
@@ -153,7 +153,7 @@ const AdminPluvioRisco = () => {
   const openEdit = (r: PluvioRisco) => {
     setEditing(r);
     setForm({
-      regiao_id: r.regiao_id,
+      bairro_id: r.bairro_id,
       dt_ref: r.dt_ref,
       chuva_24h: r.chuva_24h?.toString() ?? '',
       chuva_72h: r.chuva_72h?.toString() ?? '',
@@ -184,7 +184,7 @@ const AdminPluvioRisco = () => {
   const intOrNull = (v: string) => (v === '' ? null : parseInt(v, 10));
 
   const handleSave = () => {
-    if (!form.regiao_id) { toast.error('Selecione uma região'); return; }
+    if (!form.bairro_id) { toast.error('Selecione uma região'); return; }
     if (!form.dt_ref) { toast.error('Data de referência é obrigatória'); return; }
     saveMutation.mutate({ ...form, ...(editing ? { id: editing.id } : {}) });
   };
@@ -232,7 +232,7 @@ const AdminPluvioRisco = () => {
       const mapped = [];
       for (const item of items) {
         // Match regiao by name or id
-        let regiaoId = str(item, 'regiao_id');
+        let regiaoId = str(item, 'bairro_id');
         if (!regiaoId) {
           const nome = str(item, 'regiao') || str(item, 'regiao_nome') || str(item, 'bairro') || str(item, 'bairro_nome');
           if (nome) {
@@ -265,7 +265,7 @@ const AdminPluvioRisco = () => {
         if (!dtRef) throw new Error(`Campo "dt_ref" ausente em: ${JSON.stringify(item).slice(0, 100)}`);
 
         mapped.push({
-          regiao_id: regiaoId,
+          bairro_id: regiaoId,
           dt_ref: dtRef,
           chuva_24h: num(item, 'chuva_24h') ?? num(item, 'chuva_24h_mm'),
           chuva_72h: num(item, 'chuva_72h') ?? num(item, 'chuva_72h_mm'),
@@ -424,7 +424,7 @@ const AdminPluvioRisco = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Região *</Label>
-                  <Select value={form.regiao_id} onValueChange={(v) => setField('regiao_id', v)}>
+                  <Select value={form.bairro_id} onValueChange={(v) => setField('bairro_id', v)}>
                     <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
                     <SelectContent>
                       {regioes.map((r) => (

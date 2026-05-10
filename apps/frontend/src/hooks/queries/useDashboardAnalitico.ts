@@ -24,7 +24,7 @@ export interface DashboardAnaliticoResumo {
 export interface DashboardRiscoTerritorial {
   cliente_id: string;
   bairro: string;
-  regiao_id: string | null;
+  bairro_id: string | null;
   total_vistorias: number;
   criticos_count: number;
   risco_vetorial_alto: number;
@@ -64,7 +64,7 @@ export interface DashboardImovelCritico {
   numero: string | null;
   complemento: string | null;
   bairro: string;
-  regiao_id: string | null;
+  bairro_id: string | null;
   vistoria_id: string;
   data_visita: string;
   prioridade_final: string | null;

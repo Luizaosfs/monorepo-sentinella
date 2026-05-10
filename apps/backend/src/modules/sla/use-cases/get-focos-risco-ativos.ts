@@ -21,7 +21,7 @@ const BASE_SQL = Prisma.sql`
     li.item AS origem_item
   FROM focos_risco fr
   LEFT JOIN imoveis i ON i.id = fr.imovel_id
-  LEFT JOIN regioes r ON r.id = fr.regiao_id
+  LEFT JOIN bairros r ON r.id = fr.bairro_id
   LEFT JOIN usuarios u ON u.id = fr.responsavel_id
   LEFT JOIN sla_operacional sla ON sla.foco_risco_id = fr.id AND sla.status NOT IN ('concluido','vencido')
   LEFT JOIN levantamento_itens li ON li.id = fr.origem_levantamento_item_id
@@ -60,7 +60,7 @@ export class GetFocosRiscoAtivos {
           li.item AS origem_item
         FROM focos_risco fr
         LEFT JOIN imoveis i ON i.id = fr.imovel_id
-        LEFT JOIN regioes r ON r.id = fr.regiao_id
+        LEFT JOIN bairros r ON r.id = fr.bairro_id
         LEFT JOIN usuarios u ON u.id = fr.responsavel_id
         LEFT JOIN sla_operacional sla ON sla.foco_risco_id = fr.id AND sla.status NOT IN ('concluido','vencido')
         LEFT JOIN levantamento_itens li ON li.id = fr.origem_levantamento_item_id
@@ -78,7 +78,7 @@ export class GetFocosRiscoAtivos {
       SELECT
         fr.*,
         i.logradouro, i.numero, i.bairro, i.quarteirao, i.tipo_imovel,
-        r.regiao AS regiao_nome,
+        r.bairro AS regiao_nome,
         u.nome AS responsavel_nome,
         sla.prazo_final AS sla_prazo_em,
         sla.violado AS sla_violado,
@@ -93,7 +93,7 @@ export class GetFocosRiscoAtivos {
         li.item AS origem_item
       FROM focos_risco fr
       LEFT JOIN imoveis i ON i.id = fr.imovel_id
-      LEFT JOIN regioes r ON r.id = fr.regiao_id
+      LEFT JOIN bairros r ON r.id = fr.bairro_id
       LEFT JOIN usuarios u ON u.id = fr.responsavel_id
       LEFT JOIN sla_operacional sla ON sla.foco_risco_id = fr.id AND sla.status NOT IN ('concluido','vencido')
       LEFT JOIN levantamento_itens li ON li.id = fr.origem_levantamento_item_id

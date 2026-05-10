@@ -13,7 +13,7 @@ type RawPlanejamento = {
   ativo: boolean;
   tipo_entrada: string | null;
   tipo_levantamento: string;
-  regiao_id: string | null;
+  bairro_id: string | null;
   deleted_at: Date | null;
   deleted_by: string | null;
 };
@@ -31,7 +31,7 @@ export class PrismaPlanejamentoMapper {
         ativo: raw.ativo,
         tipoEntrada: raw.tipo_entrada ?? undefined,
         tipoLevantamento: raw.tipo_levantamento,
-        regiaoId: raw.regiao_id ?? undefined,
+        regiaoId: raw.bairro_id ?? undefined,
         deletedAt: raw.deleted_at ?? undefined,
         deletedBy: raw.deleted_by ?? undefined,
       },
@@ -54,7 +54,7 @@ export class PrismaPlanejamentoMapper {
       ativo: entity.ativo,
       tipo_entrada: entity.tipoEntrada ?? null,
       tipo_levantamento: entity.tipoLevantamento,
-      regiao_id: entity.regiaoId ?? null,
+      bairro_id: entity.regiaoId ?? null,
       deleted_at: entity.deletedAt ?? null,
       deleted_by: entity.deletedBy ?? null,
       updated_at: new Date(),

@@ -104,7 +104,7 @@ export class PrismaSlaReadRepository implements SlaReadRepository {
     regiaoId: string,
   ): Promise<SlaConfig | null> {
     const raw = await this.prisma.client.sla_config_regiao.findFirst({
-      where: { cliente_id: clienteId, regiao_id: regiaoId },
+      where: { cliente_id: clienteId, bairro_id: regiaoId },
     });
     if (!raw) return null;
     // Adapta `sla_config_regiao` ao shape de `SlaConfig` (mesmo `config` JSON).
@@ -139,7 +139,7 @@ export class PrismaSlaReadRepository implements SlaReadRepository {
     });
     return rows.map((r) => ({
       id: r.id,
-      regiaoId: r.regiao_id,
+      regiaoId: r.bairro_id,
       config: r.config as JsonObject,
     }));
   }

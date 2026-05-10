@@ -27,9 +27,9 @@ describe('FullMapData', () => {
     expect(result).toHaveProperty('pluvioRiscoMap');
   });
 
-  it('builds pluvioRiscoMap indexed by regiao_id', async () => {
+  it('builds pluvioRiscoMap indexed by bairro_id', async () => {
     const regiao = { id: 'reg-1', regiao: 'Norte', area: null };
-    const pluvio = { regiao_id: 'reg-1', nivel_risco: 'alto' };
+    const pluvio = { bairro_id: 'reg-1', nivel_risco: 'alto' };
     queryRaw
       .mockResolvedValueOnce([])         // itens
       .mockResolvedValueOnce([])         // planejamentos

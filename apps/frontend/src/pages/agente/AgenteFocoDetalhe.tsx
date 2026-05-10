@@ -74,7 +74,7 @@ export default function AgenteFocoDetalhe() {
     quarteirao: '',
     tipo_imovel: 'residencial' as TipoImovel,
     bairro: '',
-    regiao_id: '',
+    bairro_id: '',
   });
   const [cadastrandoImovel, setCadastrandoImovel] = useState(false);
 
@@ -113,7 +113,7 @@ export default function AgenteFocoDetalhe() {
     }
 
     // Tenta fazer match do bairro contra a lista de regiões (case-insensitive + parcial)
-    let regiaoId = foco.regiao_id ?? '';
+    let regiaoId = foco.bairro_id ?? '';
     if (!regiaoId && bairroParsed && regioes.length > 0) {
       const bNome = bairroParsed.toLowerCase();
       const match = regioes.find((r: { id: string; nome: string }) => {
@@ -127,7 +127,7 @@ export default function AgenteFocoDetalhe() {
       ...prev,
       logradouro: prev.logradouro || logradouro,
       bairro: prev.bairro || bairroParsed,
-      regiao_id: prev.regiao_id || regiaoId,
+      bairro_id: prev.bairro_id || regiaoId,
     }));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [foco, regioes]); // regioes incluído para match funcionar mesmo quando carregam depois do foco
@@ -289,7 +289,7 @@ export default function AgenteFocoDetalhe() {
         toast.info('Imóvel já cadastrado neste endereço — vinculado ao foco.');
       } else {
         imovel = await api.imoveis.create({
-          regiao_id: imovelForm.regiao_id || foco.regiao_id || undefined,
+          bairro_id: imovelForm.bairro_id || foco.bairro_id || undefined,
           tipo_imovel: imovelForm.tipo_imovel,
           logradouro: logradouro || undefined,
           numero,
@@ -494,10 +494,10 @@ export default function AgenteFocoDetalhe() {
                     <Label className="text-xs font-semibold">Bairro / Região</Label>
                     {regioes.length > 0 ? (
                       <Select
-                        value={imovelForm.regiao_id}
+                        value={imovelForm.bairro_id}
                         onValueChange={(v) => {
                           const reg = regioes.find((r: { id: string; nome: string }) => r.id === v);
-                          setImovelForm((p) => ({ ...p, regiao_id: v, bairro: reg?.nome ?? p.bairro }));
+                          setImovelForm((p) => ({ ...p, bairro_id: v, bairro: reg?.nome ?? p.bairro }));
                         }}
                       >
                         <SelectTrigger className="h-9 text-sm">

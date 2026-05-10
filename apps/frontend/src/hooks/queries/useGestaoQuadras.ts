@@ -1,12 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/services/api';
 import { STALE } from '@/lib/queryConfig';
-import type { Quarteirao } from '@/types/database';
+import type { BairroQuadra } from '@/types/database';
 
 export function useQuadrasList(clienteId: string | null | undefined) {
   return useQuery({
     queryKey: ['quadras', clienteId],
-    queryFn: () => api.quarteiroes.listByCliente(clienteId!) as Promise<Quarteirao[]>,
+    queryFn: () => api.quarteiroes.listByCliente(clienteId!) as Promise<BairroQuadra[]>,
     enabled: !!clienteId,
     staleTime: STALE.MEDIUM,
   });

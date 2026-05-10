@@ -75,7 +75,7 @@ export class ListVistoriasConsolidadas {
             'logradouro', i.logradouro,
             'numero',    i.numero,
             'bairro',    i.bairro,
-            'regiao_id', i.regiao_id
+            'bairro_id', i.bairro_id
           ) AS imovel,
           jsonb_build_object(
             'id',   u.id,

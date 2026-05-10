@@ -53,7 +53,7 @@ export class GetResumoCoberturaUc {
             dq.quarteirao,
             COUNT(DISTINCT i.id)::float AS total_imoveis,
             COUNT(DISTINCT v.imovel_id)::float AS visitados
-          FROM distribuicao_quarteirao dq
+          FROM bairros_distribuicao dq
           LEFT JOIN imoveis i
             ON i.quarteirao = dq.quarteirao AND i.cliente_id = dq.cliente_id AND i.deleted_at IS NULL
           LEFT JOIN vistorias v
@@ -79,7 +79,7 @@ export class GetResumoCoberturaUc {
         SELECT
           COUNT(DISTINCT dq.agente_id)::int AS total,
           COUNT(DISTINCT v.agente_id)::int AS com_cobertura
-        FROM distribuicao_quarteirao dq
+        FROM bairros_distribuicao dq
         LEFT JOIN vistorias v
           ON v.agente_id = dq.agente_id
           AND v.cliente_id = dq.cliente_id
@@ -100,7 +100,7 @@ export class GetResumoCoberturaUc {
 
       this.prisma.client.$queryRaw<RawCount[]>(Prisma.sql`
         SELECT COUNT(DISTINCT dq.quarteirao)::int AS total
-        FROM distribuicao_quarteirao dq
+        FROM bairros_distribuicao dq
         WHERE dq.cliente_id = ${clienteId}::uuid AND dq.ciclo = ${cicloNum}
           AND NOT EXISTS (
             SELECT 1

@@ -38,7 +38,7 @@ export class GetStormForecast {
     }
     this.logger.debug(`[storm-forecast] cache miss clienteId=${clienteId}`);
 
-    const regioes = await this.prisma.client.regioes.findMany({
+    const regioes = await this.prisma.client.bairros.findMany({
       where: { cliente_id: clienteId, deleted_at: null },
       select: { id: true, nome: true, latitude: true, longitude: true },
     });

@@ -18,7 +18,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { STALE } from '@/lib/queryConfig';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import type { DistribuicaoQuarteirao } from '@/types/database';
+import type { BairrosDistribuicao } from '@/types/database';
 
 import { DistribuicaoKpiCards } from '@/components/distribuicao/DistribuicaoKpiCards';
 import { PainelRegioesQuadras } from '@/components/distribuicao/PainelRegioesQuadras';
@@ -146,7 +146,7 @@ export default function AdminDistribuicaoQuarteirao() {
   const qRegiaoMap = useMemo(() => {
     const m: Record<string, string | null> = {};
     for (const q of quarteiroesMestre as Array<Record<string, unknown>>) {
-      m[String(q.codigo)] = q.regiao_id ? String(q.regiao_id) : null;
+      m[String(q.codigo)] = q.bairro_id ? String(q.bairro_id) : null;
     }
     return m;
   }, [quarteiroesMestre]);
@@ -173,7 +173,7 @@ export default function AdminDistribuicaoQuarteirao() {
       .map((q) => ({
         id: String(q.id),
         codigo: String(q.codigo),
-        regiaoId: q.regiao_id ? String(q.regiao_id) : null,
+        regiaoId: q.bairro_id ? String(q.bairro_id) : null,
         geojson: q.geojson as Record<string, unknown>,
       }));
   }, [quarteiroesMestre]);
@@ -188,7 +188,7 @@ export default function AdminDistribuicaoQuarteirao() {
     for (const q of quarteiroesMestre as Array<Record<string, unknown>>) {
       if (q.ativo === false) continue;
       const codigo = String(q.codigo);
-      const regiaoId = q.regiao_id ? String(q.regiao_id) : SEM_REGIAO;
+      const regiaoId = q.bairro_id ? String(q.bairro_id) : SEM_REGIAO;
       if (!map.has(regiaoId)) {
         map.set(regiaoId, {
           nome: regiaoId === SEM_REGIAO ? 'Sem região' : (regiaoNomeMap[regiaoId] ?? 'Sem região'),
@@ -305,7 +305,7 @@ export default function AdminDistribuicaoQuarteirao() {
     setAtribuicoes((prev) => {
       const next: Record<string, AtribuicaoState> = {};
       for (const q of quarteiroes) {
-        const savedEntry = (distribuicaoSalva as DistribuicaoQuarteirao[]).find(
+        const savedEntry = (distribuicaoSalva as BairrosDistribuicao[]).find(
           (d) => d.quarteirao === q,
         );
         const salvo = savedEntry?.agente_id ?? '';

@@ -179,7 +179,7 @@ export class IaService {
     const regiaoFilter = clienteIds
       ? { cliente_id: { in: clienteIds }, deleted_at: null as null }
       : { deleted_at: null as null };
-    const regioes = await this.prisma.client.regioes.findMany({
+    const regioes = await this.prisma.client.bairros.findMany({
       where: regiaoFilter,
       select: { id: true, nome: true },
       take: 10,
@@ -187,7 +187,7 @@ export class IaService {
 
     if (regioes.length > 0) {
       const regiaoCounts = await Promise.all(
-        regioes.map((r) => this.prisma.client.focos_risco.count({ where: { ...focoFilter, regiao_id: r.id } })),
+        regioes.map((r) => this.prisma.client.focos_risco.count({ where: { ...focoFilter, bairro_id: r.id } })),
       );
       const dadosRegiao = regioes
         .map((r, i) => ({ nome: r.nome, valor: regiaoCounts[i] }))

@@ -12,7 +12,7 @@ import {
 } from '../view-model/alerta-territorial.vm';
 
 type RawRow = {
-  regiao_id: string;
+  bairro_id: string;
   regiao_nome: string;
   nivel_risco: string;
   chuva_24h: number;
@@ -30,10 +30,10 @@ export class GetAlertaTerritorial {
   constructor(private readonly prisma: PrismaService) {}
 
   async execute(clienteId: string): Promise<AlertaTerritorialResponse> {
-    // DISTINCT ON (regiao_id) + ORDER BY dt_ref DESC = último registro por região
+    // DISTINCT ON (bairro_id) + ORDER BY dt_ref DESC = último registro por região
     const rows = await this.prisma.client.$queryRaw<RawRow[]>(Prisma.sql`
-      SELECT DISTINCT ON (pr.regiao_id)
-        pr.regiao_id,
+      SELECT DISTINCT ON (pr.bairro_id)
+        pr.bairro_id,
         r.nome              AS regiao_nome,
         pr.nivel_risco,
         pr.chuva_24h::float AS chuva_24h,
@@ -43,11 +43,11 @@ export class GetAlertaTerritorial {
         pr.situacao_ambiental,
         pr.dt_ref::text
       FROM pluvio_risco pr
-      JOIN regioes r
-        ON r.id = pr.regiao_id AND r.deleted_at IS NULL
+      JOIN bairros r
+        ON r.id = pr.bairro_id AND r.deleted_at IS NULL
       WHERE pr.cliente_id = ${clienteId}::uuid
         AND r.cliente_id  = ${clienteId}::uuid
-      ORDER BY pr.regiao_id, pr.dt_ref DESC
+      ORDER BY pr.bairro_id, pr.dt_ref DESC
     `);
 
     const SEV: Record<NivelRisco, number> = { critico: 3, alto: 2, medio: 1, baixo: 0 };
@@ -60,7 +60,7 @@ export class GetAlertaTerritorial {
         const c7d = Number(r.chuva_7d);
         const nivel = r.nivel_risco as NivelRisco;
         return {
-          regiaoId: r.regiao_id,
+          regiaoId: r.bairro_id,
           regiaoNome: r.regiao_nome,
           nivelRiscoPluvio: nivel,
           chuva24hMm: c24,

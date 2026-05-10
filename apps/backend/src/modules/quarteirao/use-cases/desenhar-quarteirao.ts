@@ -17,7 +17,7 @@ export class DesenharQuarteirao {
     >(Prisma.sql`
       SELECT id::text,
              (area IS NOT NULL) AS has_area
-        FROM regioes
+        FROM bairros
        WHERE id          = ${input.regiaoId}::uuid
          AND cliente_id  = ${clienteId}::uuid
          AND deleted_at IS NULL
@@ -35,7 +35,7 @@ export class DesenharQuarteirao {
     if (regiao.has_area) {
       const [containsRow] = await this.prisma.client.$queryRaw<Array<{ within: boolean }>>(Prisma.sql`
         SELECT ST_Covers(r.area, ST_GeomFromGeoJSON(${geojsonStr})) AS within
-          FROM regioes r
+          FROM bairros r
          WHERE r.id = ${input.regiaoId}::uuid
       `);
       if (!containsRow.within) throw QuarteiraoException.geomOutsideRegiao();
@@ -44,7 +44,7 @@ export class DesenharQuarteirao {
     // 4. Sem sobreposição com quarteirões existentes do mesmo cliente
     const [overlapRow] = await this.prisma.client.$queryRaw<Array<{ overlap: boolean }>>(Prisma.sql`
       SELECT EXISTS (
-        SELECT 1 FROM quarteiroes q
+        SELECT 1 FROM bairros_quadras q
          WHERE q.cliente_id  = ${clienteId}::uuid
            AND q.deleted_at IS NULL
            AND q.area IS NOT NULL
@@ -54,7 +54,7 @@ export class DesenharQuarteirao {
     if (overlapRow.overlap) throw QuarteiraoException.geomOverlap();
 
     // 5. Código único no cliente (belt-and-suspenders — @@unique também enforça)
-    const dup = await this.prisma.client.quarteiroes.findFirst({
+    const dup = await this.prisma.client.bairros_quadras.findFirst({
       where: { cliente_id: clienteId, codigo: input.codigo, deleted_at: null },
       select: { id: true },
     });
@@ -62,10 +62,10 @@ export class DesenharQuarteirao {
 
     // 6. Cria registro + sincroniza geometria PostGIS em uma transação
     const result = await this.prisma.client.$transaction(async (tx) => {
-      const row = await tx.quarteiroes.create({
+      const row = await tx.bairros_quadras.create({
         data: {
           cliente_id: clienteId,
-          regiao_id:  input.regiaoId,
+          bairro_id:  input.regiaoId,
           codigo:     input.codigo,
           geojson:    input.geojson as unknown as Prisma.InputJsonValue,
           ativo:      true,
@@ -74,13 +74,13 @@ export class DesenharQuarteirao {
       });
       // Sincroniza area (PostGIS) + centróide na mesma transação
       await tx.$executeRaw(Prisma.sql`
-        UPDATE quarteiroes
+        UPDATE bairros_quadras
            SET area      = ST_GeomFromGeoJSON(geojson::text),
                latitude  = ST_Y(ST_Centroid(ST_GeomFromGeoJSON(geojson::text))),
                longitude = ST_X(ST_Centroid(ST_GeomFromGeoJSON(geojson::text)))
          WHERE id = ${row.id}::uuid
       `);
-      return tx.quarteiroes.findUnique({ where: { id: row.id } });
+      return tx.bairros_quadras.findUnique({ where: { id: row.id } });
     });
 
     return result;

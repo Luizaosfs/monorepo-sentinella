@@ -41,7 +41,7 @@ export class GerarQuadrasOSM {
   async execute(clienteId: string, input: GerarQuadrasOSMInput) {
     // 1. Valida que a região pertence ao cliente
     const regioes = await this.prisma.client.$queryRaw<Array<{ id: string }>>(Prisma.sql`
-      SELECT id::text FROM regioes
+      SELECT id::text FROM bairros
       WHERE id         = ${input.regiaoId}::uuid
         AND cliente_id = ${clienteId}::uuid
         AND deleted_at IS NULL

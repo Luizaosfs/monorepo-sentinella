@@ -20,7 +20,7 @@ export class PrismaQuarteiraoReadRepository implements QuarteiraoReadRepository 
   constructor(private prisma: PrismaService) {}
 
   async findQuarteiraoById(id: string): Promise<Quarteirao | null> {
-    const raw = await this.prisma.client.quarteiroes.findFirst({
+    const raw = await this.prisma.client.bairros_quadras.findFirst({
       where: { id, deleted_at: null },
     });
     return raw
@@ -32,7 +32,7 @@ export class PrismaQuarteiraoReadRepository implements QuarteiraoReadRepository 
     filters: FilterQuarteiraoInput,
   ): Promise<Quarteirao[]> {
     const where = this.buildWhereQuarteiroes(filters);
-    const rows = await this.prisma.client.quarteiroes.findMany({
+    const rows = await this.prisma.client.bairros_quadras.findMany({
       where,
       orderBy: { codigo: 'asc' },
     });
@@ -44,7 +44,7 @@ export class PrismaQuarteiraoReadRepository implements QuarteiraoReadRepository 
   async findAllDistribuicoes(
     filters: FilterDistribuicaoInput,
   ): Promise<DistribuicaoQuarteirao[]> {
-    const rows = await this.prisma.client.distribuicao_quarteirao.findMany({
+    const rows = await this.prisma.client.bairros_distribuicao.findMany({
       where: {
         ...(filters.clienteId != null && { cliente_id: filters.clienteId }),
         ciclo: filters.ciclo,
@@ -57,7 +57,7 @@ export class PrismaQuarteiraoReadRepository implements QuarteiraoReadRepository 
   }
 
   async findDistribuicaoById(id: string): Promise<DistribuicaoQuarteirao | null> {
-    const raw = await this.prisma.client.distribuicao_quarteirao.findUnique({
+    const raw = await this.prisma.client.bairros_distribuicao.findUnique({
       where: { id },
     });
     return raw
@@ -100,7 +100,7 @@ export class PrismaQuarteiraoReadRepository implements QuarteiraoReadRepository 
       ...(filters.codigo && {
         codigo: { contains: filters.codigo, mode: 'insensitive' as const },
       }),
-      ...(filters.regiaoId && { regiao_id: filters.regiaoId }),
+      ...(filters.regiaoId && { bairro_id: filters.regiaoId }),
       ...(filters.ativo !== undefined && { ativo: filters.ativo }),
     };
   }

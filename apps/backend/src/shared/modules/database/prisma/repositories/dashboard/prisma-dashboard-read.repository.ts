@@ -245,7 +245,7 @@ export class PrismaDashboardReadRepository implements DashboardReadRepository {
       : Prisma.sql``;
 
     type Row = {
-      regiao_id: string;
+      bairro_id: string;
       regiao_nome: string;
       total_vistorias: bigint;
       vistorias_com_acesso: bigint;
@@ -256,19 +256,19 @@ export class PrismaDashboardReadRepository implements DashboardReadRepository {
 
     const rows = await this.prisma.client.$queryRaw<Row[]>`
       SELECT
-        r.id                                                                         AS regiao_id,
+        r.id                                                                         AS bairro_id,
         r.nome                                                                       AS regiao_nome,
         COUNT(DISTINCT v.id)                                                         AS total_vistorias,
         COUNT(DISTINCT v.id) FILTER (WHERE v.acesso_realizado = true)               AS vistorias_com_acesso,
         COUNT(vd.id)                                                                 AS total_depositos,
         COUNT(vd.id) FILTER (WHERE vd.qtd_com_focos > 0)                             AS depositos_positivos,
         COUNT(DISTINCT fr.id)                                                        AS focos_ativos
-      FROM regioes r
-      LEFT JOIN imoveis im   ON im.regiao_id = r.id AND im.deleted_at IS NULL
+      FROM bairros r
+      LEFT JOIN imoveis im   ON im.bairro_id = r.id AND im.deleted_at IS NULL
       LEFT JOIN vistorias v  ON v.imovel_id = im.id AND v.deleted_at IS NULL
         ${cicloFilter} ${deFilter} ${ateFilter}
       LEFT JOIN vistoria_depositos vd ON vd.vistoria_id = v.id
-      LEFT JOIN focos_risco fr ON fr.regiao_id = r.id
+      LEFT JOIN focos_risco fr ON fr.bairro_id = r.id
         AND fr.status IN ('confirmado', 'em_tratamento')
         AND fr.deleted_at IS NULL
       WHERE r.cliente_id = ${clienteId}::uuid
@@ -277,7 +277,7 @@ export class PrismaDashboardReadRepository implements DashboardReadRepository {
     `;
 
     return rows.map((r) => ({
-      regiaoId: r.regiao_id,
+      regiaoId: r.bairro_id,
       regiaoNome: r.regiao_nome,
       totalVistorias: Number(r.total_vistorias),
       vistoriasComAcesso: Number(r.vistorias_com_acesso),
@@ -289,7 +289,7 @@ export class PrismaDashboardReadRepository implements DashboardReadRepository {
 
   async scoreSurtoRegioes(clienteId: string): Promise<ScoreSurtoRow[]> {
     type Row = {
-      regiao_id: string;
+      bairro_id: string;
       regiao_nome: string;
       contrib_pluvio: number;
       contrib_recorrencia: number;
@@ -299,40 +299,40 @@ export class PrismaDashboardReadRepository implements DashboardReadRepository {
 
     const rows = await this.prisma.client.$queryRaw<Row[]>(Prisma.sql`
       SELECT
-        r.id   AS regiao_id,
+        r.id   AS bairro_id,
         r.nome AS regiao_nome,
         LEAST(COALESCE(pr.chuva_7d, 0) / 50.0, 1) * 30  AS contrib_pluvio,
         LEAST(COALESCE(rec.total, 0)   / 10.0, 1) * 30  AS contrib_recorrencia,
         LEAST(COALESCE(cas.total, 0)   / 10.0, 1) * 25  AS contrib_casos_14d,
         LEAST(COALESCE(sla.total, 0)   / 5.0,  1) * 15  AS contrib_sla_vencido
-      FROM regioes r
+      FROM bairros r
       LEFT JOIN (
-        SELECT DISTINCT ON (regiao_id) regiao_id, chuva_7d
+        SELECT DISTINCT ON (bairro_id) bairro_id, chuva_7d
         FROM pluvio_risco
-        ORDER BY regiao_id, dt_ref DESC
-      ) pr ON pr.regiao_id = r.id
+        ORDER BY bairro_id, dt_ref DESC
+      ) pr ON pr.bairro_id = r.id
       LEFT JOIN (
-        SELECT regiao_id, COUNT(*) AS total
+        SELECT bairro_id, COUNT(*) AS total
         FROM focos_risco
         WHERE foco_anterior_id IS NOT NULL AND deleted_at IS NULL
-        GROUP BY regiao_id
-      ) rec ON rec.regiao_id = r.id
+        GROUP BY bairro_id
+      ) rec ON rec.bairro_id = r.id
       LEFT JOIN (
-        SELECT regiao_id, COUNT(*) AS total
+        SELECT bairro_id, COUNT(*) AS total
         FROM casos_notificados
         WHERE created_at >= NOW() - INTERVAL '14 days'
           AND deleted_at IS NULL
-        GROUP BY regiao_id
-      ) cas ON cas.regiao_id = r.id
+        GROUP BY bairro_id
+      ) cas ON cas.bairro_id = r.id
       LEFT JOIN (
-        SELECT fr.regiao_id, COUNT(so.id) AS total
+        SELECT fr.bairro_id, COUNT(so.id) AS total
         FROM sla_operacional so
         JOIN focos_risco fr ON fr.id = so.foco_risco_id
         WHERE so.prazo_final < NOW()
           AND fr.status NOT IN ('resolvido', 'descartado')
           AND fr.deleted_at IS NULL
-        GROUP BY fr.regiao_id
-      ) sla ON sla.regiao_id = r.id
+        GROUP BY fr.bairro_id
+      ) sla ON sla.bairro_id = r.id
       WHERE r.cliente_id = ${clienteId}::uuid
         AND r.deleted_at IS NULL
       ORDER BY (
@@ -350,7 +350,7 @@ export class PrismaDashboardReadRepository implements DashboardReadRepository {
       const c = round1(Number(r.contrib_casos_14d));
       const s = round1(Number(r.contrib_sla_vencido));
       return {
-        regiao_id: r.regiao_id,
+        bairro_id: r.bairro_id,
         regiao_nome: r.regiao_nome,
         contrib_pluvio: p,
         contrib_recorrencia: rc,
@@ -622,18 +622,18 @@ export class PrismaDashboardReadRepository implements DashboardReadRepository {
     type Row = { id: string; regiao: string };
     const rows = await this.prisma.client.$queryRaw<Row[]>`
       SELECT r.id, r.nome AS regiao
-      FROM regioes r
+      FROM bairros r
       WHERE r.cliente_id = ${clienteId}::uuid
         AND r.deleted_at IS NULL
         AND r.ativo = true
         AND r.id NOT IN (
-          SELECT DISTINCT i.regiao_id
+          SELECT DISTINCT i.bairro_id
           FROM vistorias v
           JOIN imoveis i ON i.id = v.imovel_id
           WHERE v.cliente_id = ${clienteId}::uuid
             AND v.deleted_at IS NULL
             AND v.created_at >= CURRENT_DATE
-            AND i.regiao_id IS NOT NULL
+            AND i.bairro_id IS NOT NULL
             AND i.deleted_at IS NULL
         )
       ORDER BY r.nome ASC
@@ -721,12 +721,12 @@ export class PrismaDashboardReadRepository implements DashboardReadRepository {
           AS larvicida_total_g
       FROM vistorias v
       JOIN imoveis i ON i.id = v.imovel_id
-      LEFT JOIN regioes r ON r.deleted_at IS NULL AND r.cliente_id = v.cliente_id
-        AND (r.id = i.regiao_id
-             OR (i.regiao_id IS NULL AND r.area IS NOT NULL
+      LEFT JOIN bairros r ON r.deleted_at IS NULL AND r.cliente_id = v.cliente_id
+        AND (r.id = i.bairro_id
+             OR (i.bairro_id IS NULL AND r.area IS NOT NULL
                  AND i.latitude IS NOT NULL AND i.longitude IS NOT NULL
                  AND ST_Contains(r.area, ST_SetSRID(ST_MakePoint(i.longitude, i.latitude), 4326))))
-      LEFT JOIN quarteiroes q ON q.deleted_at IS NULL
+      LEFT JOIN bairros_quadras q ON q.deleted_at IS NULL
         AND q.cliente_id = v.cliente_id
         AND q.codigo = i.quarteirao
       LEFT JOIN vistoria_depositos vd ON vd.vistoria_id = v.id

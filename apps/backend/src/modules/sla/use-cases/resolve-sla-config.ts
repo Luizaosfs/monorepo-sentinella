@@ -29,7 +29,7 @@ export interface ResolveSlaConfigResult {
 }
 
 /**
- * Porte de `public.sla_resolve_config(cliente_id, regiao_id, prioridade)`.
+ * Porte de `public.sla_resolve_config(cliente_id, bairro_id, prioridade)`.
  *
  * Ordem de resolução (primeiro que casar vence):
  *   1. `sla_config_regiao` (se `regiaoId` informado) → `config[prioridade]`

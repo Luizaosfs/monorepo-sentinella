@@ -65,7 +65,7 @@ export class CriarFocoDeVistoriaDeposito {
       const imovel = await this.prisma.client.imoveis.findFirst({
         where: { id: vistoria.imovel_id, cliente_id: input.clienteId },
         select: {
-          regiao_id: true,
+          bairro_id: true,
           latitude: true,
           longitude: true,
           logradouro: true,
@@ -74,7 +74,7 @@ export class CriarFocoDeVistoriaDeposito {
       });
 
       if (imovel) {
-        regiaoId = imovel.regiao_id;
+        regiaoId = imovel.bairro_id;
         latitude = imovel.latitude;
         longitude = imovel.longitude;
         const logradouro = imovel.logradouro ?? '';
@@ -94,7 +94,7 @@ export class CriarFocoDeVistoriaDeposito {
       data: {
         cliente_id: vistoria.cliente_id,
         imovel_id: vistoria.imovel_id,
-        regiao_id: regiaoId,
+        bairro_id: regiaoId,
         origem_tipo: 'agente',
         origem_vistoria_id: input.vistoriaId,
         status: 'em_triagem',

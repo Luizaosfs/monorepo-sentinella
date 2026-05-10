@@ -13,7 +13,7 @@ function foco(over: Partial<FocoRiscoAtivo> = {}): FocoRiscoAtivo {
     id: 'f1',
     cliente_id: 'c1',
     imovel_id: 'i1',
-    regiao_id: 'r1',
+    bairro_id: 'r1',
     origem_tipo: 'drone',
     origem_levantamento_item_id: null,
     origem_vistoria_id: null,
@@ -84,7 +84,7 @@ describe('filterFocosForGestorMapa', () => {
   });
 
   it('filtra por regiaoId', () => {
-    const list = [foco({ id: 'a', regiao_id: 'r1' }), foco({ id: 'b', regiao_id: 'r2' })];
+    const list = [foco({ id: 'a', bairro_id: 'r1' }), foco({ id: 'b', bairro_id: 'r2' })];
     const out = filterFocosForGestorMapa(list, {
       ...DEFAULT_GESTOR_MAPA_FILTERS,
       regiaoId: 'r1',
@@ -137,9 +137,9 @@ describe('filterFocosForGestorMapa', () => {
 describe('computeGestorMapaFocoStats', () => {
   it('agrega totais e SLA em risco', () => {
     const list = [
-      foco({ prioridade: 'P1', regiao_id: 'a', sla_status: 'critico' }),
-      foco({ prioridade: 'P2', regiao_id: 'b', sla_status: 'ok' }),
-      foco({ prioridade: 'P3', regiao_id: 'a', sla_status: 'vencido' }),
+      foco({ prioridade: 'P1', bairro_id: 'a', sla_status: 'critico' }),
+      foco({ prioridade: 'P2', bairro_id: 'b', sla_status: 'ok' }),
+      foco({ prioridade: 'P3', bairro_id: 'a', sla_status: 'vencido' }),
     ];
     const s = computeGestorMapaFocoStats(list);
     expect(s.total).toBe(3);

@@ -35,7 +35,7 @@ export class PrismaFocoRiscoMapper {
       {
         clienteId: raw.cliente_id,
         imovelId: raw.imovel_id || undefined,
-        regiaoId: raw.regiao_id || undefined,
+        regiaoId: raw.bairro_id || undefined,
         origemTipo: raw.origem_tipo,
         origemLevantamentoItemId: raw.origem_levantamento_item_id || undefined,
         origemVistoriaId: raw.origem_vistoria_id || undefined,
@@ -80,7 +80,7 @@ export class PrismaFocoRiscoMapper {
     return {
       cliente_id: entity.clienteId,
       imovel_id: entity.imovelId || null,
-      regiao_id: entity.regiaoId || null,
+      bairro_id: entity.regiaoId || null,
       origem_tipo: entity.origemTipo,
       origem_levantamento_item_id: entity.origemLevantamentoItemId || null,
       origem_vistoria_id: entity.origemVistoriaId || null,

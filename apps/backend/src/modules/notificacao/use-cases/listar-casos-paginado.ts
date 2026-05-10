@@ -14,7 +14,7 @@ export class ListarCasosPaginado {
       ? await this.prisma.client.$queryRaw<Record<string, unknown>[]>(Prisma.sql`
           SELECT id, doenca, status, data_notificacao,
                  logradouro_bairro, bairro, latitude, longitude,
-                 regiao_id, observacao, created_at
+                 bairro_id, observacao, created_at
           FROM casos_notificados
           WHERE cliente_id = ${clienteId}::uuid
             AND deleted_at IS NULL
@@ -25,7 +25,7 @@ export class ListarCasosPaginado {
       : await this.prisma.client.$queryRaw<Record<string, unknown>[]>(Prisma.sql`
           SELECT id, doenca, status, data_notificacao,
                  logradouro_bairro, bairro, latitude, longitude,
-                 regiao_id, observacao, created_at
+                 bairro_id, observacao, created_at
           FROM casos_notificados
           WHERE cliente_id = ${clienteId}::uuid
             AND deleted_at IS NULL

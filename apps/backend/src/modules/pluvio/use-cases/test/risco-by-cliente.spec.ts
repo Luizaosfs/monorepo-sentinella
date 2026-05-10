@@ -24,8 +24,8 @@ describe('RiscoByCliente', () => {
 
   it('retorna riscos pluviométricos das regiões do cliente', async () => {
     const rows = [
-      { regiao_id: 'r1', regiao_nome: 'Centro', nivel_risco: 'alto', chuva_24h: 45 },
-      { regiao_id: 'r2', regiao_nome: 'Norte', nivel_risco: null, chuva_24h: null },
+      { bairro_id: 'r1', regiao_nome: 'Centro', nivel_risco: 'alto', chuva_24h: 45 },
+      { bairro_id: 'r2', regiao_nome: 'Norte', nivel_risco: null, chuva_24h: null },
     ];
     mockQueryRaw.mockResolvedValue(rows);
 

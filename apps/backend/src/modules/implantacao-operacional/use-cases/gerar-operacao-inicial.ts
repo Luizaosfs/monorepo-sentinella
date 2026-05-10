@@ -36,7 +36,7 @@ export class GerarOperacaoInicial {
     if (totalAgentes === 0) throw ImplantacaoException.semAgentes();
 
     // 3. Ao menos um quarteirão distribuído no ciclo ativo
-    const distribuicoes = await this.prisma.client.distribuicao_quarteirao.findMany({
+    const distribuicoes = await this.prisma.client.bairros_distribuicao.findMany({
       where: { cliente_id: clienteId, ciclo: cicloAtivo.numero },
       select: { quarteirao: true, agente_id: true },
     });

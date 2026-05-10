@@ -68,7 +68,7 @@ export const regioes = {
   listByCliente: async (clienteId: string): Promise<Ret<typeof _sb.regioes.listByCliente>> => {
     const raw = await http.get(`/regioes${qs({ clienteId })}`);
     const arr = (Array.isArray(raw) ? raw : [raw]) as Record<string, unknown>[];
-    return deepToSnake(arr.map((r) => ({ ...r, regiao: r.nome ?? r.regiao }))) as Ret<typeof _sb.regioes.listByCliente>;
+    return deepToSnake(arr.map((r) => ({ ...r, bairro: r.bairro ?? r.nome }))) as Ret<typeof _sb.regioes.listByCliente>;
   },
   listAll: async (): Promise<Ret<typeof _sb.regioes.listAll>> => {
     const raw = await http.get('/regioes');

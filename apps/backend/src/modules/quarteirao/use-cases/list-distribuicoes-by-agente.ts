@@ -6,7 +6,7 @@ export class ListDistribuicoesByAgente {
   constructor(private prisma: PrismaService) {}
 
   async execute(clienteId: string, agenteId: string, ciclo: number): Promise<string[]> {
-    const rows = await this.prisma.client.distribuicao_quarteirao.findMany({
+    const rows = await this.prisma.client.bairros_distribuicao.findMany({
       where: { cliente_id: clienteId, agente_id: agenteId, ciclo },
       select: { quarteirao: true },
     });

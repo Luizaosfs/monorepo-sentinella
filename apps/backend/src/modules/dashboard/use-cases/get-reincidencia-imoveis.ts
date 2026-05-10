@@ -65,7 +65,7 @@ export class GetReincidenciaImoveis {
         im.numero,
         im.bairro,
         im.quarteirao,
-        im.regiao_id,
+        im.bairro_id,
         im.latitude,
         im.longitude,
         im.historico_recusa,

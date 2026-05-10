@@ -12,7 +12,7 @@ import { GetAlertaTerritorial } from '../get-alerta-territorial';
 // ── helpers ──────────────────────────────────────────────────────────────────
 
 function makeRow(overrides: Partial<{
-  regiao_id: string;
+  bairro_id: string;
   regiao_nome: string;
   nivel_risco: string;
   chuva_24h: number;
@@ -22,7 +22,7 @@ function makeRow(overrides: Partial<{
   situacao_ambiental: string | null;
 }> = {}) {
   return {
-    regiao_id: 'r1',
+    bairro_id: 'r1',
     regiao_nome: 'Norte',
     nivel_risco: 'medio',
     chuva_24h: 10,
@@ -61,7 +61,7 @@ describe('GetAlertaTerritorial', () => {
     await useCase.execute('tenant-abc');
     const sql: string = mockQueryRaw.mock.calls[0][0].strings.join('');
     expect(sql).toContain('cliente_id');
-    expect(sql).toContain('regiao_id');
+    expect(sql).toContain('bairro_id');
   });
 
   it('retorna totalRegioesMonitoradas=0 e alertas=[] quando não há dados', async () => {
@@ -76,7 +76,7 @@ describe('GetAlertaTerritorial', () => {
   it('exclui regiões com nivel_risco=baixo dos alertas', async () => {
     mockQueryRaw.mockResolvedValue([
       makeRow({ nivel_risco: 'baixo' }),
-      makeRow({ regiao_id: 'r2', regiao_nome: 'Sul', nivel_risco: 'medio' }),
+      makeRow({ bairro_id: 'r2', regiao_nome: 'Sul', nivel_risco: 'medio' }),
     ]);
     const result = await useCase.execute('c1');
     expect(result.totalRegioesMonitoradas).toBe(2);
@@ -86,9 +86,9 @@ describe('GetAlertaTerritorial', () => {
 
   it('inclui medio, alto e critico nos alertas', async () => {
     mockQueryRaw.mockResolvedValue([
-      makeRow({ regiao_id: 'r1', nivel_risco: 'medio' }),
-      makeRow({ regiao_id: 'r2', nivel_risco: 'alto' }),
-      makeRow({ regiao_id: 'r3', nivel_risco: 'critico' }),
+      makeRow({ bairro_id: 'r1', nivel_risco: 'medio' }),
+      makeRow({ bairro_id: 'r2', nivel_risco: 'alto' }),
+      makeRow({ bairro_id: 'r3', nivel_risco: 'critico' }),
     ]);
     const result = await useCase.execute('c1');
     expect(result.totalRegioesEmAlerta).toBe(3);
@@ -96,9 +96,9 @@ describe('GetAlertaTerritorial', () => {
 
   it('ordena alertas por severidade desc (critico > alto > medio)', async () => {
     mockQueryRaw.mockResolvedValue([
-      makeRow({ regiao_id: 'r1', nivel_risco: 'medio' }),
-      makeRow({ regiao_id: 'r2', nivel_risco: 'critico' }),
-      makeRow({ regiao_id: 'r3', nivel_risco: 'alto' }),
+      makeRow({ bairro_id: 'r1', nivel_risco: 'medio' }),
+      makeRow({ bairro_id: 'r2', nivel_risco: 'critico' }),
+      makeRow({ bairro_id: 'r3', nivel_risco: 'alto' }),
     ]);
     const { alertas } = await useCase.execute('c1');
     expect(alertas[0].nivelRiscoPluvio).toBe('critico');
@@ -109,7 +109,7 @@ describe('GetAlertaTerritorial', () => {
   it('severidadeGeral = maior nível entre alertas', async () => {
     mockQueryRaw.mockResolvedValue([
       makeRow({ nivel_risco: 'medio' }),
-      makeRow({ regiao_id: 'r2', nivel_risco: 'alto' }),
+      makeRow({ bairro_id: 'r2', nivel_risco: 'alto' }),
     ]);
     const result = await useCase.execute('c1');
     expect(result.severidadeGeral).toBe('alto');

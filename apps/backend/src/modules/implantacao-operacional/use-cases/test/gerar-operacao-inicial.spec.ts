@@ -29,7 +29,7 @@ describe('GerarOperacaoInicial', () => {
     (prismaMock.client as any) = {
       ciclos: { findFirst: jest.fn().mockResolvedValue(CICLO_ATIVO) },
       usuarios: { count: jest.fn().mockResolvedValue(2) },
-      distribuicao_quarteirao: {
+      bairros_distribuicao: {
         findMany: jest.fn().mockResolvedValue([
           { quarteirao: 'Q01', agente_id: 'ag-001' },
           { quarteirao: 'Q02', agente_id: 'ag-002' },
@@ -55,7 +55,7 @@ describe('GerarOperacaoInicial', () => {
   });
 
   it('deve lançar semDistribuicao quando nenhum quarteirão distribuído', async () => {
-    (prismaMock.client as any).distribuicao_quarteirao.findMany.mockResolvedValue([]);
+    (prismaMock.client as any).bairros_distribuicao.findMany.mockResolvedValue([]);
     await expect(useCase.execute(CLIENT_ID)).rejects.toMatchObject({ message: expect.stringContaining('quarteirão') });
   });
 

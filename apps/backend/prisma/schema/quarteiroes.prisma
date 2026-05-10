@@ -1,7 +1,7 @@
-model quarteiroes {
+model bairros_quadras {
   id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   cliente_id String    @db.Uuid
-  regiao_id  String?   @db.Uuid
+  bairro_id  String?   @db.Uuid
   codigo     String
   bairro     String?
   ativo      Boolean   @default(true)
@@ -15,9 +15,9 @@ model quarteiroes {
   deleted_at DateTime? @db.Timestamptz
   deleted_by String?   @db.Uuid
 
-  distribuicoes distribuicao_quarteirao[]
+  distribuicoes bairros_distribuicao[]
   @@unique([cliente_id, codigo])
-  @@index([regiao_id])
-  @@map("quarteiroes")
+  @@index([bairro_id])
+  @@map("bairros_quadras")
   @@schema("public")
 }

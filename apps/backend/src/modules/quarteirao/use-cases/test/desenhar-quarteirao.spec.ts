@@ -49,7 +49,7 @@ function makeUc(overrides: {
 
   const createdRow = { id: QUAD_ID };
   const fullRow = {
-    id: QUAD_ID, cliente_id: CLIENTE_ID, regiao_id: REGIAO_ID,
+    id: QUAD_ID, cliente_id: CLIENTE_ID, bairro_id: REGIAO_ID,
     codigo: 'A1', geojson: VALID_POLYGON, ativo: true,
     latitude: -15.775, longitude: -47.925,
     created_at: new Date(), updated_at: new Date(), deleted_at: null, deleted_by: null, bairro: null,
@@ -60,7 +60,7 @@ function makeUc(overrides: {
   const txFindUnique = overrides.txFindUnique ?? jest.fn().mockResolvedValue(fullRow);
 
   const txClient = {
-    quarteiroes: { create: txCreate, findUnique: txFindUnique },
+    bairros_quadras: { create: txCreate, findUnique: txFindUnique },
     $executeRaw: txExecuteRaw,
   };
 
@@ -72,7 +72,7 @@ function makeUc(overrides: {
       $transaction: jest.fn().mockImplementation(
         (fn: (tx: typeof txClient) => unknown) => fn(txClient),
       ),
-      quarteiroes: { findFirst },
+      bairros_quadras: { findFirst },
     },
   };
 
@@ -162,7 +162,7 @@ describe('DesenharQuarteirao', () => {
       expect.objectContaining({
         data: expect.objectContaining({
           cliente_id: CLIENTE_ID,
-          regiao_id: REGIAO_ID,
+          bairro_id: REGIAO_ID,
           codigo: 'A1',
           ativo: true,
         }),

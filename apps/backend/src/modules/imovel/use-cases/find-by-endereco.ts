@@ -32,7 +32,7 @@ export class FindByEndereco {
     const imovel = new Imovel(
       {
         clienteId: raw.cliente_id,
-        regiaoId: raw.regiao_id ?? undefined,
+        regiaoId: raw.bairro_id ?? undefined,
         tipoImovel: raw.tipo_imovel,
         logradouro: raw.logradouro ?? undefined,
         numero: raw.numero ?? undefined,

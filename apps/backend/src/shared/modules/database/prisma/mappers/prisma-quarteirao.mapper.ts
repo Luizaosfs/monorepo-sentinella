@@ -8,7 +8,7 @@ import {
 type RawQuarteirao = {
   id: string;
   cliente_id: string;
-  regiao_id: string | null;
+  bairro_id: string | null;
   codigo: string;
   bairro: string | null;
   ativo: boolean;
@@ -27,7 +27,7 @@ type RawDistribuicao = {
   ciclo: number;
   quarteirao: string;
   agente_id: string;
-  regiao_id: string | null;
+  bairro_id: string | null;
   created_at: Date;
   updated_at: Date;
 };
@@ -37,7 +37,7 @@ export class PrismaQuarteiraoMapper {
     return new Quarteirao(
       {
         clienteId: raw.cliente_id,
-        regiaoId: raw.regiao_id || undefined,
+        regiaoId: raw.bairro_id || undefined,
         codigo: raw.codigo,
         bairro: raw.bairro || undefined,
         ativo: raw.ativo,
@@ -62,7 +62,7 @@ export class PrismaQuarteiraoMapper {
         ciclo: raw.ciclo,
         quarteirao: raw.quarteirao,
         agenteId: raw.agente_id,
-        regiaoId: raw.regiao_id || undefined,
+        regiaoId: raw.bairro_id || undefined,
       },
       {
         id: raw.id,

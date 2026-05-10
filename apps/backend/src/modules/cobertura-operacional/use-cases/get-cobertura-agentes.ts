@@ -26,7 +26,7 @@ export class GetCoberturaAgentesUc {
         u.nome,
         COUNT(DISTINCT i.id)::int AS total_imoveis,
         COUNT(DISTINCT v.imovel_id)::int AS visitados
-      FROM distribuicao_quarteirao dq
+      FROM bairros_distribuicao dq
       INNER JOIN usuarios u ON u.id = dq.agente_id
       LEFT JOIN imoveis i
         ON i.quarteirao = dq.quarteirao AND i.cliente_id = dq.cliente_id AND i.deleted_at IS NULL

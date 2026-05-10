@@ -316,7 +316,7 @@ export class SlaController {
   async deleteConfigRegiaoRoute(@Param('regiaoId') regiaoId: string) {
     const clienteId = requireTenantId(getAccessScope(this.req));
     await this.prisma.client.$executeRaw(
-      Prisma.sql`DELETE FROM sla_config_regiao WHERE regiao_id = ${regiaoId}::uuid AND cliente_id = ${clienteId}::uuid`,
+      Prisma.sql`DELETE FROM sla_config_regiao WHERE bairro_id = ${regiaoId}::uuid AND cliente_id = ${clienteId}::uuid`,
     );
     return { ok: true };
   }

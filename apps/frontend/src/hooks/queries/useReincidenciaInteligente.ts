@@ -12,7 +12,7 @@ export interface ImovelReincidente {
   numero: string | null;
   bairro: string | null;
   quarteirao: string | null;
-  regiao_id: string | null;
+  bairro_id: string | null;
   latitude: number | null;
   longitude: number | null;
   historico_recusa: boolean;
@@ -37,7 +37,7 @@ export interface ImovelReincidente {
 export interface ReincidenciaPorDeposito {
   cliente_id: string;
   bairro: string | null;
-  regiao_id: string | null;
+  bairro_id: string | null;
   tipo_deposito: string;
   imoveis_afetados: number;
   total_focos_deposito: number;
@@ -52,7 +52,7 @@ export interface ReincidenciaPorDeposito {
 export interface ReincidenciaSazonalidade {
   cliente_id: string;
   bairro: string | null;
-  regiao_id: string | null;
+  bairro_id: string | null;
   ciclo: number;
   focos_total: number;
   focos_reincidentes: number;

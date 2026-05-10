@@ -61,7 +61,7 @@ describe('EnsureAndConcluir', () => {
   it('deve concluir operação existente e preservar iniciado_em original', async () => {
     const originalDate = new Date('2026-01-01');
     const rawExisting = { id: 'op-1', status: 'em_andamento', cliente_id: 'test-cliente-id', iniciado_em: originalDate, concluido_em: null };
-    const rawUpdated = { ...rawExisting, status: 'concluido', concluido_em: new Date(), responsavel_id: null, prioridade: null, observacao: null, tipo_vinculo: 'levantamento', item_levantamento_id: itemId, foco_risco_id: null, regiao_id: null };
+    const rawUpdated = { ...rawExisting, status: 'concluido', concluido_em: new Date(), responsavel_id: null, prioridade: null, observacao: null, tipo_vinculo: 'levantamento', item_levantamento_id: itemId, foco_risco_id: null, bairro_id: null };
     mockPrismaOperacoes.findFirst.mockResolvedValue(rawExisting);
     mockPrismaOperacoes.update.mockResolvedValue(rawUpdated);
     mockPrismaOperacoes.findUniqueOrThrow.mockResolvedValue(rawUpdated);

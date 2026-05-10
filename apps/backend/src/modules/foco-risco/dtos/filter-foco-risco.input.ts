@@ -29,7 +29,7 @@ export const filterFocoRiscoSchema = z.object({
       z.array(z.enum(['P1', 'P2', 'P3', 'P4', 'P5'])).optional(),
     )
     .describe('Filtrar por prioridade (múltiplos permitidos)'),
-  regiao_id: z.string().uuid().describe('Filtrar por região').optional(),
+  bairro_id: z.string().uuid().describe('Filtrar por região').optional(),
   responsavel_id: z
     .string()
     .uuid()

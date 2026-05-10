@@ -16,7 +16,7 @@ export function useFocosRisco(
       'focos_risco', clienteId,
       f.status?.join(',') ?? null,
       f.prioridade?.join(',') ?? null,
-      f.regiao_id ?? null,
+      f.bairro_id ?? null,
       f.responsavel_id ?? null,
       f.semResponsavel ?? null,
       f.imovel_id ?? null,
@@ -207,7 +207,7 @@ export function useCriarFocoManual() {
     mutationFn: (payload: {
       cliente_id: string;
       imovel_id?: string;
-      regiao_id?: string;
+      bairro_id?: string;
       latitude?: number;
       longitude?: number;
       prioridade?: FocoRiscoPrioridade;

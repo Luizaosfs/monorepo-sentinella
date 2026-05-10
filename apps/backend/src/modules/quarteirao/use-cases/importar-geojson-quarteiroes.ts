@@ -19,7 +19,7 @@ export class ImportarGeoJSONQuarteiroes {
       Array<{ id: string; nome: string }>
     >(Prisma.sql`
       SELECT id::text, nome
-        FROM regioes
+        FROM bairros
        WHERE cliente_id = ${clienteId}::uuid
          AND deleted_at IS NULL
     `);
@@ -90,16 +90,16 @@ export class ImportarGeoJSONQuarteiroes {
 
     // 3. PostGIS ST_Contains — detecta automaticamente qual região contém o polígono
     const geojsonStr = JSON.stringify(feature.geojson);
-    const rows = await this.prisma.client.$queryRaw<Array<{ regiao_id: string }>>(Prisma.sql`
-      SELECT r.id::text AS regiao_id
-        FROM regioes r
+    const rows = await this.prisma.client.$queryRaw<Array<{ bairro_id: string }>>(Prisma.sql`
+      SELECT r.id::text AS bairro_id
+        FROM bairros r
        WHERE r.cliente_id = ${clienteId}::uuid
          AND r.deleted_at IS NULL
          AND r.area IS NOT NULL
          AND ST_Contains(r.area, ST_GeomFromGeoJSON(${geojsonStr}))
        LIMIT 1
     `);
-    return rows[0]?.regiao_id ?? null;
+    return rows[0]?.bairro_id ?? null;
   }
 
   private async criarSemRegiao(
@@ -115,7 +115,7 @@ export class ImportarGeoJSONQuarteiroes {
 
     const [overlapRow] = await this.prisma.client.$queryRaw<Array<{ overlap: boolean }>>(Prisma.sql`
       SELECT EXISTS (
-        SELECT 1 FROM quarteiroes q
+        SELECT 1 FROM bairros_quadras q
          WHERE q.cliente_id = ${clienteId}::uuid
            AND q.deleted_at IS NULL
            AND q.area IS NOT NULL
@@ -124,17 +124,17 @@ export class ImportarGeoJSONQuarteiroes {
     `);
     if (overlapRow.overlap) throw new Error('Sobreposição com quarteirão existente');
 
-    const dup = await this.prisma.client.quarteiroes.findFirst({
+    const dup = await this.prisma.client.bairros_quadras.findFirst({
       where: { cliente_id: clienteId, codigo: feature.codigo, deleted_at: null },
       select: { id: true },
     });
     if (dup) throw new Error(`Código ${feature.codigo} já existe`);
 
     await this.prisma.client.$transaction(async (tx) => {
-      const row = await tx.quarteiroes.create({
+      const row = await tx.bairros_quadras.create({
         data: {
           cliente_id: clienteId,
-          regiao_id:  null,
+          bairro_id:  null,
           codigo:     feature.codigo,
           geojson:    feature.geojson as unknown as Prisma.InputJsonValue,
           ativo:      true,
@@ -142,7 +142,7 @@ export class ImportarGeoJSONQuarteiroes {
         },
       });
       await tx.$executeRaw(Prisma.sql`
-        UPDATE quarteiroes
+        UPDATE bairros_quadras
            SET area      = ST_GeomFromGeoJSON(geojson::text),
                latitude  = ST_Y(ST_Centroid(ST_GeomFromGeoJSON(geojson::text))),
                longitude = ST_X(ST_Centroid(ST_GeomFromGeoJSON(geojson::text)))

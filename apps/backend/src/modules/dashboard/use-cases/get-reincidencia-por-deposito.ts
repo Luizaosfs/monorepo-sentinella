@@ -12,7 +12,7 @@ export class GetReincidenciaPorDeposito {
         SELECT
           v.cliente_id,
           im.bairro,
-          im.regiao_id,
+          im.bairro_id,
           vd.tipo AS tipo_deposito,
           COUNT(DISTINCT v.imovel_id)::int AS imoveis_afetados,
           SUM(vd.qtd_com_focos)::int AS total_focos_deposito,
@@ -28,7 +28,7 @@ export class GetReincidenciaPorDeposito {
         JOIN imoveis im ON im.id = v.imovel_id AND im.deleted_at IS NULL
         JOIN vistoria_depositos vd ON vd.vistoria_id = v.id AND vd.qtd_com_focos > 0
         WHERE v.cliente_id = ${clienteId}::uuid AND v.deleted_at IS NULL
-        GROUP BY v.cliente_id, im.bairro, im.regiao_id, vd.tipo
+        GROUP BY v.cliente_id, im.bairro, im.bairro_id, vd.tipo
       )
       SELECT
         *,

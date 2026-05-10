@@ -22,7 +22,7 @@ const mockRow = {
   consolidacao_incompleta: false,
   consolidacao_resumo: 'Visita consolidada sem pendências.',
   consolidado_em: new Date().toISOString(),
-  imovel: { id: 'i1', logradouro: 'Rua A', numero: '10', bairro: 'Centro', regiao_id: 'r1' },
+  imovel: { id: 'i1', logradouro: 'Rua A', numero: '10', bairro: 'Centro', bairro_id: 'r1' },
   agente: { id: 'a1', nome: 'João Silva' },
 };
 

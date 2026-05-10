@@ -15,7 +15,7 @@ function buildPrismaMock(
       clientes: {
         findMany: jest.fn().mockResolvedValue(clientes),
       },
-      regioes: {
+      bairros: {
         findMany: jest.fn().mockImplementation(({ where }: any) =>
           Promise.resolve(regioesPorCliente[where.cliente_id] ?? []),
         ),

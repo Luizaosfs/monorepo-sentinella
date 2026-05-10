@@ -23,7 +23,7 @@ function makePrisma({
       clientes: {
         findFirst: jest.fn().mockResolvedValue(clienteResult),
       },
-      regioes: {
+      bairros: {
         findFirst: jest.fn().mockResolvedValue(null),
       },
       focos_risco: {

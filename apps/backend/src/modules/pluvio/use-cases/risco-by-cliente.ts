@@ -9,17 +9,17 @@ export class RiscoByCliente {
   execute(clienteId: string) {
     return this.prisma.client.$queryRaw(Prisma.sql`
       SELECT
-        r.id           AS regiao_id,
+        r.id           AS bairro_id,
         r.nome         AS regiao_nome,
         pr.nivel_risco,
         pr.chuva_24h,
         pr.dt_ref,
         pr.updated_at
-      FROM regioes r
+      FROM bairros r
       LEFT JOIN LATERAL (
         SELECT nivel_risco, chuva_24h, dt_ref, updated_at
         FROM pluvio_risco
-        WHERE regiao_id = r.id
+        WHERE bairro_id = r.id
         ORDER BY updated_at DESC
         LIMIT 1
       ) pr ON TRUE

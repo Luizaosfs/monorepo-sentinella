@@ -40,7 +40,7 @@ interface Operacao {
   tipo_vinculo: TipoVinculo;
   item_operacional_id: string | null;
   item_levantamento_id: string | null;
-  regiao_id: string | null;
+  bairro_id: string | null;
   status: string;
   prioridade: string | null;
   responsavel_id: string | null;

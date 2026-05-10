@@ -2,7 +2,7 @@ model focos_risco {
   id                              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   cliente_id                      String    @db.Uuid
   imovel_id                       String?   @db.Uuid
-  regiao_id                       String?   @db.Uuid
+  bairro_id                       String?   @db.Uuid
   origem_tipo                     String
   origem_levantamento_item_id     String?   @db.Uuid
   origem_vistoria_id              String?   @db.Uuid
@@ -38,7 +38,7 @@ model focos_risco {
 
   cliente       clientes   @relation(fields: [cliente_id], references: [id])
   imovel        imoveis?   @relation(fields: [imovel_id], references: [id])
-  regiao        regioes?   @relation(fields: [regiao_id], references: [id])
+  bairro        bairros?   @relation(fields: [bairro_id], references: [id])
   responsavel   usuarios?  @relation("foco_responsavel", fields: [responsavel_id], references: [id])
 
   historico     foco_risco_historico[]
@@ -49,7 +49,7 @@ model focos_risco {
   @@index([cliente_id, responsavel_id, status])
   @@index([cliente_id, created_at])
   @@index([imovel_id])
-  @@index([regiao_id])
+  @@index([bairro_id])
   @@index([responsavel_id])
   @@index([status])
   @@map("focos_risco")

@@ -49,7 +49,7 @@ import {
   useSalvarQuadra,
 } from '@/hooks/queries/useGestaoQuadras';
 import { ModalGerarLoteQuarteiroes } from '@/components/distribuicao/ModalGerarLoteQuarteiroes';
-import type { Quarteirao } from '@/types/database';
+import type { BairroQuadra } from '@/types/database';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -104,7 +104,7 @@ function ModalNovaQuadra({
   onClose,
 }: {
   open: boolean;
-  editando: Quarteirao | null;
+  editando: BairroQuadra | null;
   regioes: RegiaoSimples[];
   onClose: () => void;
 }) {
@@ -113,7 +113,7 @@ function ModalNovaQuadra({
   const isEdit = !!editando;
 
   const [codigo, setCodigo] = useState(editando?.codigo ?? '');
-  const [regiaoId, setRegiaoId] = useState(editando?.regiao_id ?? '__none__');
+  const [regiaoId, setRegiaoId] = useState(editando?.bairro_id ?? '__none__');
   const [ativo, setAtivo] = useState(editando?.ativo ?? true);
 
   function handleSubmit() {
@@ -209,11 +209,11 @@ function GrupoRegiao({
   onRemover,
 }: {
   nome: string;
-  quadras: Quarteirao[];
-  onEdit: (q: Quarteirao) => void;
-  onEditMapa: (q: Quarteirao) => void;
-  onToggleAtivo: (q: Quarteirao) => void;
-  onRemover: (q: Quarteirao) => void;
+  quadras: BairroQuadra[];
+  onEdit: (q: BairroQuadra) => void;
+  onEditMapa: (q: BairroQuadra) => void;
+  onToggleAtivo: (q: BairroQuadra) => void;
+  onRemover: (q: BairroQuadra) => void;
 }) {
   const [aberto, setAberto] = useState(true);
   const comPoligono = quadras.filter((q) => q.geojson).length;
@@ -321,7 +321,7 @@ export default function GestaoQuadras() {
 
   const { data: quadrasRaw = [], isLoading } = useQuadrasList(clienteId);
   const { data: regioesRaw = [] } = useRegioes(clienteId);
-  const quadras = quadrasRaw as Quarteirao[];
+  const quadras = quadrasRaw as BairroQuadra[];
   const regioes = (regioesRaw as RegiaoSimples[]).filter((r) => r?.id);
 
   const salvar  = useSalvarQuadra();
@@ -334,8 +334,8 @@ export default function GestaoQuadras() {
   const [modalNova, setModalNova]           = useState(false);
   const [modalLote, setModalLote]           = useState(false);
   const [modalDesenhar, setModalDesenhar]   = useState(false);
-  const [editando, setEditando]             = useState<Quarteirao | null>(null);
-  const [editandoMapa, setEditandoMapa]     = useState<Quarteirao | null>(null);
+  const [editando, setEditando]             = useState<BairroQuadra | null>(null);
+  const [editandoMapa, setEditandoMapa]     = useState<BairroQuadra | null>(null);
 
   // KPIs — da lista completa
   const total      = quadras.length;
@@ -348,8 +348,8 @@ export default function GestaoQuadras() {
     return quadras.filter((q) => {
       if (busca && !q.codigo.toLowerCase().includes(busca.toLowerCase())) return false;
       if (filtroRegiao !== '__all__') {
-        if (filtroRegiao === '__sem__')       { if (q.regiao_id) return false; }
-        else if (q.regiao_id !== filtroRegiao) return false;
+        if (filtroRegiao === '__sem__')       { if (q.bairro_id) return false; }
+        else if (q.bairro_id !== filtroRegiao) return false;
       }
       if (filtroAtivo === 'ativo'   && !q.ativo) return false;
       if (filtroAtivo === 'inativo' &&  q.ativo) return false;
@@ -361,9 +361,9 @@ export default function GestaoQuadras() {
 
   // Agrupamento por região
   const porRegiao = useMemo(() => {
-    const mapa = new Map<string | null, Quarteirao[]>();
+    const mapa = new Map<string | null, BairroQuadra[]>();
     for (const q of filtradas) {
-      const key = q.regiao_id ?? null;
+      const key = q.bairro_id ?? null;
       mapa.set(key, [...(mapa.get(key) ?? []), q]);
     }
     return Array.from(mapa.entries()).sort(([a], [b]) => {
@@ -382,14 +382,14 @@ export default function GestaoQuadras() {
     return r ? nomeRegiao(r) : regiaoId;
   }
 
-  function handleToggleAtivo(q: Quarteirao) {
+  function handleToggleAtivo(q: BairroQuadra) {
     salvar.mutate(
       { id: q.id, ativo: !q.ativo },
       { onSuccess: () => toast.success(q.ativo ? 'Quadra desativada' : 'Quadra ativada') },
     );
   }
 
-  function handleRemover(q: Quarteirao) {
+  function handleRemover(q: BairroQuadra) {
     if (!confirm(`Remover a quadra "${q.codigo}"? Esta ação não pode ser desfeita.`)) return;
     remover.mutate(q.id, {
       onSuccess: () => toast.success(`Quadra "${q.codigo}" removida`),

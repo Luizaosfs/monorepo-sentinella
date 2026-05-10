@@ -40,7 +40,7 @@ export class FullMapData {
 
       this.prisma.client.$queryRaw<Record<string, unknown>[]>(Prisma.sql`
         SELECT id, nome AS regiao, ST_AsGeoJSON(area)::json AS area
-        FROM regioes
+        FROM bairros
         WHERE cliente_id = ${clienteId}::uuid
           AND area IS NOT NULL
           AND deleted_at IS NULL
@@ -52,13 +52,13 @@ export class FullMapData {
 
     if (regIds.length > 0) {
       const pluvioRows = await this.prisma.client.$queryRaw<Record<string, unknown>[]>(Prisma.sql`
-        SELECT DISTINCT ON (regiao_id) *
+        SELECT DISTINCT ON (bairro_id) *
         FROM pluvio_risco
-        WHERE regiao_id = ANY(${regIds}::uuid[])
-        ORDER BY regiao_id, dt_ref DESC
+        WHERE bairro_id = ANY(${regIds}::uuid[])
+        ORDER BY bairro_id, dt_ref DESC
       `);
       for (const p of pluvioRows) {
-        const rid = p.regiao_id as string;
+        const rid = p.bairro_id as string;
         if (!pluvioRiscoMap[rid]) pluvioRiscoMap[rid] = p;
       }
     }

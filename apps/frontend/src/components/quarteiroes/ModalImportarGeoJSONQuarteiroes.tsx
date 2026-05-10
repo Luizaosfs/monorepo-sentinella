@@ -131,7 +131,7 @@ function parseGeoJSONFile(
       const bairro = String(
         props.bairro ?? props.regiao ?? props.neighborhood ?? props.district ?? '',
       ).trim() || undefined;
-      const regiaoIdProp = String(props.regiao_id ?? props.regiaoId ?? '').trim() || undefined;
+      const regiaoIdProp = String(props.bairro_id ?? props.regiaoId ?? '').trim() || undefined;
 
       // Local name match for display
       const regiaoNomeDetectada = bairro

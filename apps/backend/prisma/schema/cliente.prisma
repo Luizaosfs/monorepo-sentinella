@@ -27,7 +27,7 @@ model clientes {
   // Relações
   usuarios      usuarios[]
   imoveis       imoveis[]
-  regioes       regioes[]
+  bairros       bairros[]
   focos_risco           focos_risco[]
   foco_risco_historico  foco_risco_historico[]
   levantamentos levantamentos[]

@@ -20,14 +20,14 @@ function makeUc(overrides: {
   const quarteiroFindMany  = overrides.quarteiroFindMany  ?? jest.fn().mockResolvedValue([]);
   const quarteiroCreateMany = overrides.quarteiroCreateMany ?? jest.fn().mockResolvedValue({ count: 0 });
 
-  // tx client passed to the $transaction callback — has quarteiroes methods
+  // tx client passed to the $transaction callback — has bairros_quadras methods
   const txClient = {
-    quarteiroes: { findMany: quarteiroFindMany, createMany: quarteiroCreateMany },
+    bairros_quadras: { findMany: quarteiroFindMany, createMany: quarteiroCreateMany },
   };
 
   const prisma = {
     client: {
-      regioes:      { findFirst: regiaoFindFirst },
+      bairros:      { findFirst: regiaoFindFirst },
       $transaction: jest.fn().mockImplementation((fn: (tx: typeof txClient) => unknown) => fn(txClient)),
     },
   };
@@ -154,7 +154,7 @@ describe('GerarLoteQuarteiroes', () => {
     expect(quarteiroCreateMany).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.arrayContaining([
-          expect.objectContaining({ codigo: 'A1', cliente_id: CLIENTE_ID, regiao_id: REGIAO_ID, ativo: true }),
+          expect.objectContaining({ codigo: 'A1', cliente_id: CLIENTE_ID, bairro_id: REGIAO_ID, ativo: true }),
           expect.objectContaining({ codigo: 'A30' }),
         ]),
         skipDuplicates: true,

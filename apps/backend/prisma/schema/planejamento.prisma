@@ -12,17 +12,17 @@ model planejamento {
   ativo               Boolean   @default(false)
   tipo_entrada        String?
   tipo_levantamento   String    @default("MANUAL")
-  regiao_id           String?   @db.Uuid
+  bairro_id           String?   @db.Uuid
   deleted_at          DateTime? @db.Timestamptz
   deleted_by          String?   @db.Uuid
 
   cliente   clientes? @relation(fields: [cliente_id], references: [id])
-  regiao    regioes?  @relation(fields: [regiao_id], references: [id])
+  bairro    bairros?  @relation(fields: [bairro_id], references: [id])
   vistorias vistorias[]
   voos      voos[]
 
   @@index([cliente_id])
-  @@index([regiao_id])
+  @@index([bairro_id])
   @@map("planejamento")
   @@schema("public")
 }

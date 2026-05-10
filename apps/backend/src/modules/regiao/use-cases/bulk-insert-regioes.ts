@@ -12,7 +12,7 @@ export class BulkInsertRegioes {
 
     const nomes = input.rows.map(r => r.nome);
 
-    const existing = await this.prisma.client.regioes.findMany({
+    const existing = await this.prisma.client.bairros.findMany({
       where: { cliente_id: clienteId, nome: { in: nomes }, deleted_at: null },
       select: { id: true, nome: true },
     });
@@ -27,7 +27,7 @@ export class BulkInsertRegioes {
 
     // Atualiza regiões existentes
     for (const r of toUpdate) {
-      await this.prisma.client.regioes.update({
+      await this.prisma.client.bairros.update({
         where: { id: existingMap.get(r.nome)! },
         data: {
           latitude:  r.latitude  ?? null,
@@ -44,7 +44,7 @@ export class BulkInsertRegioes {
     // Insere novas sem geojson via createMany
     const novasNoGeo = toInsert.filter(r => !r.geojson);
     if (novasNoGeo.length > 0) {
-      const result = await this.prisma.client.regioes.createMany({
+      const result = await this.prisma.client.bairros.createMany({
         data: novasNoGeo.map(r => ({
           cliente_id: clienteId,
           nome:       r.nome,
@@ -64,7 +64,7 @@ export class BulkInsertRegioes {
     for (const r of toInsert.filter(r => r.geojson)) {
       const geojsonStr = JSON.stringify(r.geojson);
       await this.prisma.client.$executeRaw(Prisma.sql`
-        INSERT INTO regioes (cliente_id, nome, tipo, cor, geojson, area, latitude, longitude, municipio, uf, ativo)
+        INSERT INTO bairros (cliente_id, nome, tipo, cor, geojson, area, latitude, longitude, municipio, uf, ativo)
         VALUES (
           ${clienteId}::uuid, ${r.nome},
           ${r.tipo      ?? null}::text, ${r.cor  ?? null}::text,

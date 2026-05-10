@@ -151,7 +151,7 @@ export class DenunciarCidadaoV2 {
     // 4. Resolver região pelo bairroId (opcional)
     let regiaoId: string | null = null;
     if (input.bairroId) {
-      const regiao = await this.prisma.client.regioes.findFirst({
+      const regiao = await this.prisma.client.bairros.findFirst({
         where: { id: input.bairroId, cliente_id: clienteId },
         select: { id: true },
       });
@@ -169,7 +169,7 @@ export class DenunciarCidadaoV2 {
     const foco = await this.prisma.client.focos_risco.create({
       data: {
         cliente_id: clienteId,
-        regiao_id: regiaoId,
+        bairro_id: regiaoId,
         origem_tipo: 'cidadao',
         status: 'suspeita',
         classificacao_inicial: classificacaoInicial,
