@@ -17,7 +17,7 @@ const HIGHWAY_WIDTH: Record<string, number> = {
   service: 6, pedestrian: 5, road: 10,
 };
 const DEFAULT_WIDTH = 8;
-const MIN_AREA_DEFAULT = 200;
+const MIN_AREA_DEFAULT = 2000;
 const OVERPASS_TIMEOUT_MS = 55_000;
 
 type Coord = [number, number];
@@ -116,7 +116,9 @@ export class GerarQuadrasOSM {
     ways: OsmWay[],
     areaMinima: number,
   ): AnyFeature[] {
-    // Buffer de cada via com largura proporcional ao tipo de via
+    const totalArea = turf.area(areaPoly as Parameters<typeof turf.area>[0]);
+
+    // 1. Buffer de cada via — +1 m extra para fechar gaps em cruzamentos
     const buffers: AnyFeature[] = [];
     for (const way of ways) {
       if (!way.geometry || way.geometry.length < 2) continue;
@@ -124,41 +126,55 @@ export class GerarQuadrasOSM {
         const coords = way.geometry.map(g => [g.lon, g.lat] as Coord);
         const line = turf.lineString(coords);
         const width = HIGHWAY_WIDTH[way.tags?.highway ?? ''] ?? DEFAULT_WIDTH;
-        const buf = turf.buffer(line, width / 2, { units: 'meters' });
+        const buf = turf.buffer(line, width / 2 + 1, { units: 'meters' });
         if (buf) buffers.push(buf as unknown as AnyFeature);
-      } catch {
-        // ignora via com geometria inválida
-      }
+      } catch { /* ignora via com geometria inválida */ }
     }
 
     if (buffers.length === 0) {
-      return turf.area(areaPoly as Parameters<typeof turf.area>[0]) >= areaMinima ? [areaPoly] : [];
+      return totalArea >= areaMinima ? [areaPoly] : [];
     }
 
-    // União iterativa dos buffers
-    let roadUnion: AnyFeature = buffers[0];
-    for (let i = 1; i < buffers.length; i++) {
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const u = turf.union(turf.featureCollection([roadUnion, buffers[i]] as any));
-        if (u) roadUnion = u as unknown as AnyFeature;
-      } catch {
-        // pula buffer problemático
+    // 2. União em lote (mais estável numericamente que iteração)
+    let roadUnion: AnyFeature | null = null;
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      roadUnion = turf.union(turf.featureCollection(buffers as any)) as unknown as AnyFeature;
+    } catch {
+      // Fallback iterativo se o lote falhar
+      roadUnion = buffers[0];
+      for (let i = 1; i < buffers.length; i++) {
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const u = turf.union(turf.featureCollection([roadUnion, buffers[i]] as any));
+          if (u) roadUnion = u as unknown as AnyFeature;
+        } catch { /* pula buffer problemático */ }
       }
     }
+    if (!roadUnion) return [];
 
-    // Diferença: área_bairro - ruas = miolos candidatos
+    // 3. Fechamento morfológico: dilatar +0.5 m depois erodir -0.5 m fecha
+    //    pequenas lacunas entre vias não-conectadas que criam blocos fantasma
+    try {
+      const dilated = turf.buffer(roadUnion, 0.5, { units: 'meters' });
+      if (dilated) {
+        const closed = turf.buffer(dilated, -0.5, { units: 'meters' });
+        if (closed) roadUnion = closed as unknown as AnyFeature;
+      }
+    } catch { /* mantém roadUnion original se falhar */ }
+
+    // 4. Diferença: área_bairro - ruas = miolos candidatos
     let diff: AnyFeature | null = null;
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       diff = turf.difference(turf.featureCollection([areaPoly, roadUnion] as any)) as unknown as AnyFeature | null;
     } catch (e) {
       this.logger.warn(`turf.difference falhou: ${String(e)} — retornando área inteira`);
-      return turf.area(areaPoly as Parameters<typeof turf.area>[0]) >= areaMinima ? [areaPoly] : [];
+      return totalArea >= areaMinima ? [areaPoly] : [];
     }
     if (!diff) return [];
 
-    // Explodir MultiPolygon → Polygons individuais
+    // 5. Explodir MultiPolygon → Polygons individuais
     const candidatos: AnyFeature[] = [];
     const geom = diff.geometry;
     if (geom.type === 'Polygon') {
@@ -171,12 +187,31 @@ export class GerarQuadrasOSM {
       }
     }
 
-    // Filtrar por área mínima e simplificar levemente para reduzir payload
+    // 6. Filtrar por área mínima + compacidade (elimina slivers e linhas)
+    //    Índice de compacidade: 4π × A / P²  (círculo=1, sliver→0)
     return candidatos
-      .filter(p => turf.area(p as Parameters<typeof turf.area>[0]) >= areaMinima)
+      .filter(p => {
+        const area = turf.area(p as Parameters<typeof turf.area>[0]);
+        if (area < areaMinima) return false;
+        // Nenhum bloco pode ser maior que 80 % da área total (artefato de falha)
+        if (area > totalArea * 0.8) return false;
+        // Filtro de compacidade: elimina geometrias lineares/wedge
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const perimKm = turf.length(turf.polygonToLine(p as any), { units: 'kilometers' });
+          const perimM = perimKm * 1000;
+          if (perimM < 1) return false;
+          const compactness = (4 * Math.PI * area) / (perimM * perimM);
+          if (compactness < 0.04) return false; // muito estreito/linear
+        } catch { /* aceita se não conseguir calcular */ }
+        return true;
+      })
       .map(p => {
         try {
-          return turf.simplify(p as Parameters<typeof turf.simplify>[0], { tolerance: 0.000005, highQuality: false }) as unknown as AnyFeature;
+          return turf.simplify(
+            p as Parameters<typeof turf.simplify>[0],
+            { tolerance: 0.000002, highQuality: true },
+          ) as unknown as AnyFeature;
         } catch { return p; }
       });
   }
