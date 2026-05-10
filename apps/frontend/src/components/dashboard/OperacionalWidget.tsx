@@ -96,7 +96,7 @@ export const OperacionalWidget = ({ clienteId }: Props) => {
                     <TableCell className="font-medium text-sm">
                       <span
                         className="cursor-pointer hover:text-primary transition-colors hover:underline decoration-primary/30 underline-offset-4"
-                        onClick={() => navigate(`/admin/regioes?search=${encodeURIComponent(item.bairro_nome)}`)}
+                        onClick={() => navigate(`/gestor/bairros?search=${encodeURIComponent(item.bairro_nome)}`)}
                       >
                         {item.bairro_nome}
                       </span>
@@ -133,7 +133,7 @@ export const OperacionalWidget = ({ clienteId }: Props) => {
                           <DropdownMenuLabel className="text-xs uppercase tracking-wider text-muted-foreground">Ações do bairro</DropdownMenuLabel>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
-                            onClick={() => navigate(`/admin/regioes?search=${encodeURIComponent(item.bairro_nome)}`)}
+                            onClick={() => navigate(`/gestor/bairros?search=${encodeURIComponent(item.bairro_nome)}`)}
                             className="text-xs font-medium cursor-pointer"
                           >
                             <MapIcon className="mr-2 h-3.5 w-3.5" />

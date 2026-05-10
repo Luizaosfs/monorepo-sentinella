@@ -49,11 +49,11 @@ export function PluvioAlertaWidget({ clienteId }: { clienteId: string }) {
         <div className="grid grid-cols-3 gap-3">
           <div className="rounded-xl bg-muted/40 p-3 text-center">
             <p className="text-xl font-bold text-foreground">{totalRegioesEmAlerta}</p>
-            <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">Regiões<br/>em alerta</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">Bairros<br/>em alerta</p>
           </div>
           <div className="rounded-xl bg-muted/40 p-3 text-center">
             <p className="text-xl font-bold text-foreground">{totalRegioesMonitoradas}</p>
-            <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">Regiões<br/>monitoradas</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">Bairros<br/>monitorados</p>
           </div>
           <div className="rounded-xl bg-muted/40 p-3 text-center">
             <p className="text-xl font-bold text-foreground">{maxChuva72h.toFixed(0)}<span className="text-xs font-normal">mm</span></p>

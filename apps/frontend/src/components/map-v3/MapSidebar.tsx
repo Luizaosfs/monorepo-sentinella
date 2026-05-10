@@ -96,7 +96,7 @@ export function MapSidebar({
       className: 'text-red-500',
     },
     {
-      label: 'Regiões Afetadas',
+      label: 'Bairros Afetados',
       value: kpis.regioes,
       icon: Target,
       className: 'text-orange-500',
@@ -174,7 +174,7 @@ export function MapSidebar({
         <div className="space-y-2">
           <h3 className="text-[11px] font-black uppercase text-muted-foreground tracking-widest flex items-center gap-1.5">
             <Target className="w-3.5 h-3.5" />
-            Região
+            Bairro
           </h3>
           <Select
           value={regionFilter === 'all' ? 'all' : regionFilter}
@@ -184,7 +184,7 @@ export function MapSidebar({
             <SelectValue placeholder="Todas" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todas as regiões</SelectItem>
+            <SelectItem value="all">Todos os bairros</SelectItem>
               {regions.map((r) => (
                 <SelectItem key={r} value={r}>
                   {r}

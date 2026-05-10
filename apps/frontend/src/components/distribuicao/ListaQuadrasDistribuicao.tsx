@@ -39,7 +39,7 @@ export function ListaQuadrasDistribuicao({
       <div className="hidden shrink-0 border-b bg-muted/40 px-3 py-2 text-[10px] font-semibold text-muted-foreground lg:grid lg:grid-cols-[28px_90px_1fr_64px_180px_88px] lg:gap-2">
         <span />
         <span>Quadra</span>
-        <span>Região</span>
+        <span>Bairro</span>
         <span>Imóveis</span>
         <span>Agente</span>
         <span className="text-right">Status</span>

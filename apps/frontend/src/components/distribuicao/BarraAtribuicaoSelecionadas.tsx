@@ -85,7 +85,7 @@ export function BarraAtribuicaoSelecionadas({
             <tr className="text-[10px] text-muted-foreground font-semibold">
               <th className="w-8 px-3 py-1.5 text-left" />
               <th className="px-3 py-1.5 text-left">Quadra</th>
-              <th className="px-3 py-1.5 text-left hidden sm:table-cell">Região</th>
+              <th className="px-3 py-1.5 text-left hidden sm:table-cell">Bairro</th>
               <th className="px-3 py-1.5 text-right hidden md:table-cell">Imóveis</th>
               <th className="px-3 py-1.5 text-left">Responsável</th>
               <th className="px-3 py-1.5 text-right">Status</th>

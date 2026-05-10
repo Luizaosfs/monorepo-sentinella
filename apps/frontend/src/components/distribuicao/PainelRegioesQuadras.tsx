@@ -156,7 +156,7 @@ export function PainelRegioesQuadras({
       <div className="flex-1 overflow-y-auto divide-y divide-border/40">
         {regiaoIdsFiltrados.length === 0 ? (
           <p className="text-xs text-muted-foreground p-4 text-center">
-            {!term && filtro === 'todas' ? 'Nenhuma região cadastrada.' : 'Nenhuma quadra encontrada.'}
+            {!term && filtro === 'todas' ? 'Nenhum bairro cadastrado.' : 'Nenhuma quadra encontrada.'}
           </p>
         ) : (
           regiaoIdsFiltrados.map((regiaoId) => {

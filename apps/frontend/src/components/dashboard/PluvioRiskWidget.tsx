@@ -123,7 +123,7 @@ export const PluvioRiskWidget = ({ clienteId }: PluvioRiskWidgetProps) => {
               <div
                 key={r.id}
                 className="flex items-center justify-between p-4 border-b border-border/40 hover:bg-muted/60 transition-colors cursor-pointer"
-                onClick={() => navigate(`/admin/regioes?search=${encodeURIComponent(r.regiao)}`)}
+                onClick={() => navigate(`/gestor/bairros?search=${encodeURIComponent(r.regiao)}`)}
               >
                 <div className="flex items-center gap-4">
                   <div className={`w-10 h-10 rounded-xl ${cfg.bg} flex items-center justify-center shrink-0 border ${cfg.border}`}>
