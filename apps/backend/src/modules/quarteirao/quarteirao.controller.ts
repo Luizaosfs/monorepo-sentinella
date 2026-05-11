@@ -350,6 +350,13 @@ export class QuarteiraoController {
     return QuarteiraoViewModel.toHttp(quarteirao);
   }
 
+  @Delete('bairro/:bairroId')
+  @Roles('admin', 'supervisor')
+  @ApiOperation({ summary: 'Apagar todas as quadras de um bairro — bloqueado se já houver distribuições registradas' })
+  async deletarQuadrasBairro(@Param('bairroId') bairroId: string) {
+    return this.deletarQuadrasBairroUc.execute(bairroId);
+  }
+
   @Delete(':id')
   @Roles('admin', 'supervisor')
   @ApiOperation({ summary: 'Excluir quarteirão (soft delete)' })

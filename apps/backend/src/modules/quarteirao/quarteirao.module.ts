@@ -26,6 +26,7 @@ import { ListarDistribuicaoTerritorial } from './use-cases/listar-distribuicao-t
 import { ListarTerritorioAgente } from './use-cases/listar-territorio-agente';
 import { AtribuirQuadraTerritorial } from './use-cases/atribuir-quadra-territorial';
 import { DesatribuirQuadraTerritorial } from './use-cases/desatribuir-quadra-territorial';
+import { DeletarQuadrasBairro } from './use-cases/deletar-quadras-bairro';
 
 @Module({
   providers: [
@@ -51,6 +52,7 @@ import { DesatribuirQuadraTerritorial } from './use-cases/desatribuir-quadra-ter
     ListarTerritorioAgente,
     AtribuirQuadraTerritorial,
     DesatribuirQuadraTerritorial,
+    DeletarQuadrasBairro,
     JwtService,
     PrismaService,
   ],

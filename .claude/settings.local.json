@@ -390,7 +390,10 @@
       "Bash(pnpm --filter backend test --no-coverage --testPathPattern=\"bulk-create-voos|bulk-insert-regioes|tenant\\\\.guard\")",
       "Bash(pnpm --filter backend test --no-coverage --testPathPattern=\"bulk-create-voos|bulk-insert-regioes|tenant\\\\.guard|voos-by-planejamento|seed-cliente-novo|bulk-insert-operacoes|criar-para-item\")",
       "Bash(pnpm --filter backend test --no-coverage --testPathPattern=\"seed-cliente-novo|bulk-insert-operacoes\")",
-      "Bash(pnpm --filter backend test -- --testPathPattern=\"list-focos-territorio|list-reinspecoes-territorio|filter-foco-risco\" --passWithNoTests)"
+      "Bash(pnpm --filter backend test -- --testPathPattern=\"list-focos-territorio|list-reinspecoes-territorio|filter-foco-risco\" --passWithNoTests)",
+      "Bash(pnpm --filter backend test -- --testPathPattern=\"modules/foco-risco\" --passWithNoTests)",
+      "Bash(pnpm --filter backend test -- --testPathPattern=\"src/modules/foco-risco\")",
+      "Bash(pnpm --filter backend test -- --testPathPattern=\"foco-risco\" --passWithNoTests)"
     ]
   }
 }
