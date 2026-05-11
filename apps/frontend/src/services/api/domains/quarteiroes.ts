@@ -57,7 +57,25 @@ export const quarteiroes = {
   }> => http.post('/quarteiroes/gerar-quadras-osm', payload),
 };
 
+export type DistribuicaoTerritorialItem = {
+  quadraId: string;
+  codigo: string;
+  bairroId: string | null;
+  bairroNome: string | null;
+  agenteId: string;
+  agenteNome: string;
+  cicloIdOrigem: string;
+  updatedAt: string;
+};
+
 export const distribuicaoQuarteirao = {
+  listTerritorial: (
+    clienteId: string,
+    agenteId?: string,
+    bairroId?: string,
+  ): Promise<DistribuicaoTerritorialItem[]> =>
+    http.get(`/quarteiroes/distribuicoes/territorial${qs({ agenteId, bairroId })}`),
+
   listByCiclo: async (clienteId: string, cicloId: string) => {
     const raw = await http.get(`/quarteiroes/distribuicoes${qs({ clienteId, cicloId })}`);
     return deepToSnake(raw) as Ret<typeof _sb.distribuicaoQuarteirao.listByCiclo>;

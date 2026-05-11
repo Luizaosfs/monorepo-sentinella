@@ -22,6 +22,7 @@ import { DesenharQuarteirao } from './use-cases/desenhar-quarteirao';
 import { ImportarGeoJSONQuarteiroes } from './use-cases/importar-geojson-quarteiroes';
 import { GerarQuadrasOSM } from './use-cases/gerar-quadras-osm';
 import { EnsureCicloEditavel } from './use-cases/ensure-ciclo-editavel';
+import { ListarDistribuicaoTerritorial } from './use-cases/listar-distribuicao-territorial';
 
 @Module({
   providers: [
@@ -43,6 +44,7 @@ import { EnsureCicloEditavel } from './use-cases/ensure-ciclo-editavel';
     ImportarGeoJSONQuarteiroes,
     GerarQuadrasOSM,
     EnsureCicloEditavel,
+    ListarDistribuicaoTerritorial,
     JwtService,
     PrismaService,
   ],

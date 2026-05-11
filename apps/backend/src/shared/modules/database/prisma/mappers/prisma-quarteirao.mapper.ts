@@ -24,7 +24,7 @@ type RawQuarteirao = {
 type RawDistribuicao = {
   id: string;
   cliente_id: string;
-  ciclo_id: string;
+  ciclo_id: string | null;
   quadra_id: string;
   agente_id: string;
   bairro_id: string | null;

@@ -6,7 +6,10 @@ import { mockRequest } from '@test/utils/user-helpers';
 
 import { QuarteiraoException } from '../../errors/quarteirao.exception';
 import { QuarteiraoWriteRepository } from '../../repositories/quarteirao-write.repository';
+import { EnsureCicloEditavel } from '../ensure-ciclo-editavel';
 import { CopiarDistribuicao } from '../copiar-distribuicao';
+
+const ensureMock = { execute: jest.fn().mockResolvedValue(undefined) };
 
 describe('CopiarDistribuicao', () => {
   let useCase: CopiarDistribuicao;
@@ -14,10 +17,12 @@ describe('CopiarDistribuicao', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    ensureMock.execute.mockResolvedValue(undefined);
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CopiarDistribuicao,
         { provide: QuarteiraoWriteRepository, useValue: writeRepo },
+        { provide: EnsureCicloEditavel, useValue: ensureMock },
         { provide: 'REQUEST', useValue: mockRequest({ tenantId: 'test-cliente-id' }) },
       ],
     }).compile();
@@ -60,6 +65,7 @@ describe('CopiarDistribuicao', () => {
       providers: [
         CopiarDistribuicao,
         { provide: QuarteiraoWriteRepository, useValue: writeRepo },
+        { provide: EnsureCicloEditavel, useValue: ensureMock },
         { provide: 'REQUEST', useValue: mockRequest({ tenantId: '' }) },
       ],
     }).compile();

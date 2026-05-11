@@ -14,6 +14,17 @@ export type CoberturaQuarteiraoItem = {
 
 export type CoberturaCicloResult = CoberturaQuarteiraoItem[];
 
+export type DistribuicaoTerritorialItem = {
+  quadraId: string;
+  codigo: string;
+  bairroId: string | null;
+  bairroNome: string | null;
+  agenteId: string;
+  agenteNome: string;
+  cicloIdOrigem: string;
+  updatedAt: Date;
+};
+
 @Injectable()
 export abstract class QuarteiraoReadRepository {
   abstract findQuarteiraoById(id: string): Promise<Quarteirao | null>;
@@ -32,4 +43,10 @@ export abstract class QuarteiraoReadRepository {
     clienteId: string;
     cicloId: string;
   }): Promise<CoberturaCicloResult>;
+
+  abstract findDistribuicaoTerritorialAtual(
+    clienteId: string,
+    agenteId?: string,
+    bairroId?: string,
+  ): Promise<DistribuicaoTerritorialItem[]>;
 }

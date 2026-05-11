@@ -84,7 +84,7 @@ export class Quarteirao extends BaseEntity<QuarteiraoProps> {
 
 interface DistribuicaoQuarteiraoProps {
   clienteId: string;
-  cicloId: string;
+  cicloId: string | null;
   quadraId: string;
   agenteId: string;
   bairroId?: string;
@@ -105,7 +105,7 @@ export class DistribuicaoQuarteirao extends BaseEntity<DistribuicaoQuarteiraoPro
   get cicloId() {
     return this.props.cicloId;
   }
-  set cicloId(v: string) {
+  set cicloId(v: string | null) {
     this.props.cicloId = v;
   }
 

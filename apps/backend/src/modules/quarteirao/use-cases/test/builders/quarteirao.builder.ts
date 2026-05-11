@@ -67,6 +67,10 @@ export class DistribuicaoBuilder {
     this.cicloId = id;
     return this;
   }
+  withCicloIdNull() {
+    this.cicloId = null as unknown as string;
+    return this;
+  }
   withQuadraId(id: string) {
     this.quadraId = id;
     return this;

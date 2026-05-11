@@ -5,10 +5,18 @@ import { mock } from 'jest-mock-extended';
 import { expectHttpException } from '@test/utils/expect-http-exception';
 import { mockRequest } from '@test/utils/user-helpers';
 
+import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 import { QuarteiraoException } from '../../errors/quarteirao.exception';
 import { QuarteiraoWriteRepository } from '../../repositories/quarteirao-write.repository';
+import { EnsureCicloEditavel } from '../ensure-ciclo-editavel';
 import { CreateDistribuicao } from '../create-distribuicao';
 import { DistribuicaoBuilder } from './builders/quarteirao.builder';
+
+const prismaMock = {
+  client: { $executeRaw: jest.fn().mockResolvedValue(1) },
+} as any;
+
+const ensureMock = { execute: jest.fn().mockResolvedValue(undefined) };
 
 describe('CreateDistribuicao', () => {
   let useCase: CreateDistribuicao;
@@ -16,10 +24,14 @@ describe('CreateDistribuicao', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    prismaMock.client.$executeRaw.mockResolvedValue(1);
+    ensureMock.execute.mockResolvedValue(undefined);
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CreateDistribuicao,
         { provide: QuarteiraoWriteRepository, useValue: writeRepo },
+        { provide: EnsureCicloEditavel, useValue: ensureMock },
+        { provide: PrismaService, useValue: prismaMock },
         { provide: 'REQUEST', useValue: mockRequest({ tenantId: 'test-cliente-id' }) },
       ],
     }).compile();
@@ -67,6 +79,8 @@ describe('CreateDistribuicao', () => {
       providers: [
         CreateDistribuicao,
         { provide: QuarteiraoWriteRepository, useValue: writeRepo },
+        { provide: EnsureCicloEditavel, useValue: ensureMock },
+        { provide: PrismaService, useValue: prismaMock },
         {
           provide: 'REQUEST',
           useValue: mockRequest({
@@ -102,6 +116,8 @@ describe('CreateDistribuicao', () => {
       providers: [
         CreateDistribuicao,
         { provide: QuarteiraoWriteRepository, useValue: writeRepo },
+        { provide: EnsureCicloEditavel, useValue: ensureMock },
+        { provide: PrismaService, useValue: prismaMock },
         { provide: 'REQUEST', useValue: mockRequest({ tenantId: '' }) },
       ],
     }).compile();

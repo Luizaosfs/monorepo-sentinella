@@ -66,6 +66,12 @@ import {
   DistribuicaoQuarteiraoViewModel,
   QuarteiraoViewModel,
 } from './view-model/quarteirao';
+import { DistribuicaoTerritorialViewModel } from './view-model/distribuicao-territorial.vm';
+import {
+  FilterDistribuicaoTerritorialInput,
+  filterDistribuicaoTerritorialSchema,
+} from './dtos/filter-distribuicao-territorial.input';
+import { ListarDistribuicaoTerritorial } from './use-cases/listar-distribuicao-territorial';
 import {
   BulkInsertQuarteiraoBody,
 } from './dtos/bulk-insert-quarteiroes.body';
@@ -115,6 +121,7 @@ export class QuarteiraoController {
     private coberturaCiclo: CoberturaCiclo,
     private deleteDistribuicao: DeleteDistribuicao,
     private listByAgenteUc: ListDistribuicoesByAgente,
+    private listarDistribuicaoTerritorialUc: ListarDistribuicaoTerritorial,
     private upsertDistribuicoesUc: UpsertDistribuicoes,
     private deletarDistribuicoesUc: DeletarDistribuicoes,
     private bulkInsertQuarteiraoesUc: BulkInsertQuarteiroes,
@@ -125,6 +132,22 @@ export class QuarteiraoController {
     private gerarQuadrasOSMUc: GerarQuadrasOSM,
     @Inject(REQUEST) private req: Request,
   ) {}
+
+  @Get('distribuicoes/territorial')
+  @Roles('admin', 'supervisor', 'agente')
+  @ApiOperation({ summary: 'Distribuição territorial atual — registro mais recente por quadra, sem dependência de ciclo' })
+  async listDistribuicaoTerritorial(
+    @Query() query: FilterDistribuicaoTerritorialInput,
+  ) {
+    const clienteId = requireTenantId(getAccessScope(this.req));
+    const parsed = filterDistribuicaoTerritorialSchema.parse(query);
+    const items = await this.listarDistribuicaoTerritorialUc.execute(
+      clienteId,
+      parsed.agenteId,
+      parsed.bairroId,
+    );
+    return items.map(DistribuicaoTerritorialViewModel.toHttp);
+  }
 
   @Get('distribuicoes/por-agente')
   @Roles('admin', 'supervisor', 'agente')

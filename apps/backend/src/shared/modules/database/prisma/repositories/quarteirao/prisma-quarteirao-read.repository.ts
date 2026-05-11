@@ -3,6 +3,7 @@ import { FilterQuarteiraoInput } from '@modules/quarteirao/dtos/filter-quarteira
 import {
   CoberturaCicloResult,
   CoberturaQuarteiraoItem,
+  DistribuicaoTerritorialItem,
   QuarteiraoReadRepository,
 } from '@modules/quarteirao/repositories/quarteirao-read.repository';
 import { Prisma } from '@prisma/client';
@@ -93,6 +94,73 @@ export class PrismaQuarteiraoReadRepository implements QuarteiraoReadRepository 
       GROUP BY bq.id, bq.codigo
       ORDER BY bq.codigo
     `);
+  }
+
+  async findDistribuicaoTerritorialAtual(
+    clienteId: string,
+    agenteId?: string,
+    bairroId?: string,
+  ): Promise<DistribuicaoTerritorialItem[]> {
+    const agenteFilter = agenteId
+      ? Prisma.sql`AND t.agente_id = ${agenteId}::uuid`
+      : Prisma.sql``;
+    const bairroFilter = bairroId
+      ? Prisma.sql`AND t.bairro_id = ${bairroId}::uuid`
+      : Prisma.sql``;
+
+    type RawRow = {
+      quadra_id: string;
+      codigo: string;
+      bairro_id: string | null;
+      bairro_nome: string | null;
+      agente_id: string;
+      agente_nome: string;
+      ciclo_id_origem: string;
+      updated_at: Date;
+    };
+
+    const rows = await this.prisma.client.$queryRaw<RawRow[]>(Prisma.sql`
+      WITH territorial AS (
+        SELECT DISTINCT ON (bd.quadra_id)
+          bd.quadra_id,
+          bq.codigo,
+          bq.bairro_id,
+          bd.agente_id,
+          bd.ciclo_id   AS ciclo_id_origem,
+          bd.updated_at
+        FROM bairros_distribuicao bd
+        JOIN bairros_quadras bq ON bq.id = bd.quadra_id AND bq.deleted_at IS NULL
+        WHERE bd.cliente_id = ${clienteId}::uuid
+        ORDER BY bd.quadra_id, bd.updated_at DESC
+      )
+      SELECT
+        t.quadra_id,
+        t.codigo,
+        t.bairro_id,
+        b.nome     AS bairro_nome,
+        t.agente_id,
+        u.nome     AS agente_nome,
+        t.ciclo_id_origem,
+        t.updated_at
+      FROM territorial t
+      LEFT JOIN bairros b ON b.id = t.bairro_id
+      JOIN usuarios u ON u.id = t.agente_id
+      WHERE 1=1
+      ${agenteFilter}
+      ${bairroFilter}
+      ORDER BY t.codigo
+    `);
+
+    return rows.map(r => ({
+      quadraId: r.quadra_id,
+      codigo: r.codigo,
+      bairroId: r.bairro_id,
+      bairroNome: r.bairro_nome,
+      agenteId: r.agente_id,
+      agenteNome: r.agente_nome,
+      cicloIdOrigem: r.ciclo_id_origem,
+      updatedAt: r.updated_at,
+    }));
   }
 
   private buildWhereQuarteiroes(filters: FilterQuarteiraoInput) {
