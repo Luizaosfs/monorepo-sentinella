@@ -16,7 +16,14 @@ const mockPrismaOperacoes = {
   update: jest.fn(),
   findUniqueOrThrow: jest.fn(),
 };
-const mockPrisma = { client: { operacoes: mockPrismaOperacoes } };
+const mockPrisma = {
+  client: {
+    operacoes: mockPrismaOperacoes,
+    levantamento_itens: { count: jest.fn().mockResolvedValue(1) },
+    focos_risco: { count: jest.fn().mockResolvedValue(1) },
+    usuarios: { count: jest.fn().mockResolvedValue(1) },
+  },
+};
 
 describe('EnsureAndConcluir', () => {
   let useCase: EnsureAndConcluir;
