@@ -17,16 +17,18 @@ export function useDistribuicaoQuarteiraoByCiclo(
   });
 }
 
+export type DistribuicaoAgenteItem = { quadraId: string; codigo: string; bairroId: string | null };
+
 /**
  * Quarteirões atribuídos a um agente específico num ciclo (visão agente).
- * Retorna array de strings com os códigos dos quarteirões.
+ * Retorna itens com quadraId (UUID), codigo e bairroId.
  */
 export function useQuarteiroesByAgente(
   clienteId: string | null | undefined,
   agenteId: string | null | undefined,
   cicloId: string | null | undefined,
 ) {
-  return useQuery<string[]>({
+  return useQuery<DistribuicaoAgenteItem[]>({
     queryKey: ['distribuicao_quarteirao_agente', clienteId, agenteId, cicloId],
     queryFn: () => api.distribuicaoQuarteirao.listByAgente(clienteId!, agenteId!, cicloId!),
     enabled: !!clienteId && !!agenteId && !!cicloId,

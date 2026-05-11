@@ -24,7 +24,8 @@ export abstract class QuarteiraoWriteRepository {
     clienteId: string,
     bairro: string | null | undefined,
     codigo: string,
-  ): Promise<void>;
+    bairroId?: string | null,
+  ): Promise<string>;
 
   abstract saveQuarteirao(entity: Quarteirao): Promise<Quarteirao>;
 }

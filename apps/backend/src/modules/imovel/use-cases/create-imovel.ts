@@ -56,22 +56,31 @@ export class CreateImovel {
       { createdBy: this.req['user']?.id },
     );
 
-    const created = await this.writeRepository.create(imovel);
-
-    // K.5 — fn_sync_quarteirao_mestre: garante entrada na tabela mestre (best-effort)
+    // Resolve quadra_id antes de criar — best-effort, não bloqueia cadastro
     const quarteirao = normalizarQuarteirao(input.quarteirao);
+    let quadraId: string | null = null;
     if (quarteirao) {
       try {
-        await this.quarteiraoWriteRepository.upsertMestreIfMissing(
+        quadraId = await this.quarteiraoWriteRepository.upsertMestreIfMissing(
           clienteId,
           input.bairro,
           quarteirao,
+          input.regiaoId ?? null,
         );
       } catch (err) {
         this.logger.error(
           `[CreateImovel] Falha ao sincronizar quarteirao mestre "${quarteirao}": ${(err as Error).message}`,
         );
       }
+    }
+
+    const created = await this.writeRepository.create(imovel);
+
+    if (quadraId && created.id) {
+      await this.prisma.client.imoveis.update({
+        where: { id: created.id },
+        data: { quadra_id: quadraId },
+      });
     }
 
     return { imovel: created };

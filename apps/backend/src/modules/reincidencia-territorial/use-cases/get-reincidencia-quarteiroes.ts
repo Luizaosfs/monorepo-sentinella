@@ -14,6 +14,7 @@ type RawRow = {
   total_ocorrencias: number;
   imoveis_reincidentes: number;
   ultimo_foco_em: Date;
+  quadra_id: string | null;
 };
 
 @Injectable()
@@ -33,6 +34,7 @@ export class GetReincidenciaQuarteiroesuUc {
           fr.imovel_id,
           i.quarteirao,
           i.bairro,
+          i.quadra_id,
           COUNT(fr.id)::int   AS total_ocorrencias,
           MAX(fr.suspeita_em) AS ultimo_foco_em
         FROM focos_risco fr
@@ -43,18 +45,19 @@ export class GetReincidenciaQuarteiroesuUc {
           AND fr.deleted_at IS NULL
           AND fr.suspeita_em >= ${inicio}
           AND fr.suspeita_em <= ${fim}
-        GROUP BY fr.imovel_id, i.quarteirao, i.bairro
+        GROUP BY fr.imovel_id, i.quarteirao, i.bairro, i.quadra_id
         HAVING COUNT(fr.id) >= 2
       )
       SELECT
         quarteirao,
         bairro,
+        quadra_id,
         SUM(total_ocorrencias)::int   AS total_ocorrencias,
         COUNT(imovel_id)::int         AS imoveis_reincidentes,
         MAX(ultimo_foco_em)           AS ultimo_foco_em
       FROM imovel_stats
       WHERE quarteirao IS NOT NULL
-      GROUP BY quarteirao, bairro
+      GROUP BY quarteirao, bairro, COALESCE(quadra_id::text, '')
       ORDER BY total_ocorrencias DESC, imoveis_reincidentes DESC
     `);
 

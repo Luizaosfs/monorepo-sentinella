@@ -30,7 +30,8 @@ export class GetCoberturaAgentesUc {
       JOIN bairros_quadras q ON q.id = dq.quadra_id
       INNER JOIN usuarios u ON u.id = dq.agente_id
       LEFT JOIN imoveis i
-        ON i.quarteirao = q.codigo AND i.cliente_id = dq.cliente_id AND i.deleted_at IS NULL
+        ON (i.quadra_id = q.id OR (i.quadra_id IS NULL AND i.quarteirao = q.codigo))
+        AND i.cliente_id = dq.cliente_id AND i.deleted_at IS NULL
       LEFT JOIN vistorias v
         ON v.imovel_id = i.id
         AND v.ciclo = ${cicloAtivo.numero}

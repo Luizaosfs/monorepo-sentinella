@@ -63,15 +63,17 @@ export class SaveImovel {
 
     await this.writeRepository.save(imovel);
 
-    // K.5 — fn_sync_quarteirao_mestre: garante entrada na tabela mestre (best-effort)
-    if (input.quarteirao !== undefined) {
-      const quarteirao = normalizarQuarteirao(input.quarteirao);
+    // Recalcula quadra_id sempre que quarteirao ou bairro mudam — best-effort
+    if (input.quarteirao !== undefined || input.regiaoId !== undefined) {
+      const quarteirao = normalizarQuarteirao(imovel.quarteirao);
+      let newQuadraId: string | null = null;
       if (quarteirao) {
         try {
-          await this.quarteiraoWriteRepository.upsertMestreIfMissing(
+          newQuadraId = await this.quarteiraoWriteRepository.upsertMestreIfMissing(
             imovel.clienteId,
-            input.bairro,
+            imovel.bairro,
             quarteirao,
+            imovel.regiaoId ?? null,
           );
         } catch (err) {
           this.logger.error(
@@ -79,6 +81,10 @@ export class SaveImovel {
           );
         }
       }
+      await this.prisma.client.imoveis.update({
+        where: { id: imovel.id! },
+        data: { quadra_id: newQuadraId },
+      });
     }
 
     return { imovel };

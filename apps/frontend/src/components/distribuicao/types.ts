@@ -8,6 +8,7 @@ export type Filtro = 'todas' | 'atribuidas' | 'sem_atribuicao' | 'sem_geometria'
 export type RegiaoEntry = { nome: string; qs: string[] };
 
 export interface CoberturaItem {
+  quadra_id: string;
   quarteirao: string;
   total_imoveis: number;
   visitados: number;

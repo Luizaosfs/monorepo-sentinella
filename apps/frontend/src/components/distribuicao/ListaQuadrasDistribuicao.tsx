@@ -207,7 +207,7 @@ export function ListaQuadrasDistribuicao({
           const sel = selecionadas.has(q);
           const bairroId = qBairroMap[q] ?? null;
           const regiaoNome = bairroId ? (regiaoNomeMap[bairroId] ?? '—') : '—';
-          const cobQ = cobertura.find((c) => c.quarteirao === (uuidToCode[q] ?? q));
+          const cobQ = cobertura.find((c) => c.quadra_id === q);
           const nImoveis = contagemPorQ[q] ?? 0;
           const agColor = st.pendente ? (agentColorMap[st.pendente] ?? '#9ca3af') : 'transparent';
 

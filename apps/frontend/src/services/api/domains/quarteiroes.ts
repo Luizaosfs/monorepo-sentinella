@@ -62,7 +62,7 @@ export const distribuicaoQuarteirao = {
     const raw = await http.get(`/quarteiroes/distribuicoes${qs({ clienteId, cicloId })}`);
     return deepToSnake(raw) as Ret<typeof _sb.distribuicaoQuarteirao.listByCiclo>;
   },
-  listByAgente: (clienteId: string, agenteId: string, cicloId: string): Promise<string[]> =>
+  listByAgente: (clienteId: string, agenteId: string, cicloId: string): Promise<{ quadraId: string; codigo: string; bairroId: string | null }[]> =>
     http.get(`/quarteiroes/distribuicoes/por-agente${qs({ agenteId, cicloId })}`),
   upsert: (rows: { cicloId: string; quadraId: string; agenteId: string; bairroId?: string | null }[]): Promise<{ ok: boolean }> =>
     http.post('/quarteiroes/distribuicoes/upsert', { rows }),

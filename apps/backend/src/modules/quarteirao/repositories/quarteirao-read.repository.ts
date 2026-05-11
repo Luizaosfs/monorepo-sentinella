@@ -5,6 +5,7 @@ import { FilterQuarteiraoInput } from '../dtos/filter-quarteirao.input';
 import { DistribuicaoQuarteirao, Quarteirao } from '../entities/quarteirao';
 
 export type CoberturaQuarteiraoItem = {
+  quadra_id: string;
   quarteirao: string;
   total_imoveis: number;
   visitados: number;

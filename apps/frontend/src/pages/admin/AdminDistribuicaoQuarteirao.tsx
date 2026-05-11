@@ -143,33 +143,22 @@ export default function AdminDistribuicaoQuarteirao() {
     [regioesList],
   );
 
-  /** codigo → UUID — necessário para converter dados de cobertura (que usam codigo) para UUID. */
-  const codigoToUuid = useMemo(() => {
-    const m: Record<string, string> = {};
-    for (const q of quarteiroesMestre as Array<Record<string, unknown>>) {
-      m[String(q.codigo)] = String(q.id);
-    }
-    return m;
-  }, [quarteiroesMestre]);
-
-  /** Keyed by UUID (não codigo) para evitar colisão entre bairros com mesmo código. */
+  /** Keyed by UUID (quadra_id) — sem colisão entre bairros com mesmo código. */
   const contagemPorQ = useMemo(() => {
     const c: Record<string, number> = {};
     for (const row of cobertura as CoberturaItem[]) {
-      const uuid = codigoToUuid[row.quarteirao];
-      if (uuid) c[uuid] = Number(row.total_imoveis);
+      if (row.quadra_id) c[row.quadra_id] = Number(row.total_imoveis);
     }
     return c;
-  }, [cobertura, codigoToUuid]);
+  }, [cobertura]);
 
   const coberturaMap = useMemo(() => {
     const c: Record<string, number> = {};
     for (const row of cobertura as CoberturaItem[]) {
-      const uuid = codigoToUuid[row.quarteirao];
-      if (uuid) c[uuid] = Math.round(Number(row.pct_cobertura));
+      if (row.quadra_id) c[row.quadra_id] = Math.round(Number(row.pct_cobertura));
     }
     return c;
-  }, [cobertura, codigoToUuid]);
+  }, [cobertura]);
 
   const regiaoNomeMap = useMemo(() => {
     const m: Record<string, string> = {};

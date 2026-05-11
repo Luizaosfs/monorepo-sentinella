@@ -728,13 +728,13 @@ export class PrismaDashboardReadRepository implements DashboardReadRepository {
                  AND ST_Contains(r.area, ST_SetSRID(ST_MakePoint(i.longitude, i.latitude), 4326))))
       LEFT JOIN bairros_quadras q ON q.deleted_at IS NULL
         AND q.cliente_id = v.cliente_id
-        AND q.codigo = i.quarteirao
+        AND (q.id = i.quadra_id OR (i.quadra_id IS NULL AND q.codigo = i.quarteirao))
       LEFT JOIN vistoria_depositos vd ON vd.vistoria_id = v.id
       WHERE v.cliente_id = ${clienteId}::uuid
         AND v.deleted_at IS NULL
         AND i.quarteirao IS NOT NULL
         ${cicloFilter}
-      GROUP BY v.ciclo, COALESCE(i.bairro, r.nome, q.bairro, '(sem bairro)'), i.quarteirao
+      GROUP BY v.ciclo, COALESCE(i.bairro, r.nome, q.bairro, '(sem bairro)'), i.quarteirao, COALESCE(i.quadra_id::text, '')
       ORDER BY COALESCE(i.bairro, r.nome, q.bairro, '(sem bairro)') ASC, i.quarteirao ASC
     `;
 

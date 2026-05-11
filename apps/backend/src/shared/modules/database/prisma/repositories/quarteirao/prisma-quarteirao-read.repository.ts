@@ -71,24 +71,27 @@ export class PrismaQuarteiraoReadRepository implements QuarteiraoReadRepository 
     const { clienteId, cicloId } = input;
     return this.prisma.client.$queryRaw<CoberturaQuarteiraoItem[]>(Prisma.sql`
       SELECT
-        i.quarteirao,
-        COUNT(DISTINCT i.id)::int          AS total_imoveis,
-        COUNT(DISTINCT v.imovel_id)::int   AS visitados,
+        bq.id                                                                 AS quadra_id,
+        bq.codigo                                                             AS quarteirao,
+        COUNT(DISTINCT i.id)::int                                             AS total_imoveis,
+        COUNT(DISTINCT v.imovel_id)::int                                      AS visitados,
         ROUND(
           COUNT(DISTINCT v.imovel_id) * 100.0
           / NULLIF(COUNT(DISTINCT i.id), 0), 1
-        )::float                           AS pct_cobertura
-      FROM imoveis i
+        )::float                                                              AS pct_cobertura
+      FROM bairros_quadras bq
+      LEFT JOIN imoveis i
+        ON (i.quadra_id = bq.id
+            OR (i.quadra_id IS NULL AND i.quarteirao = bq.codigo AND i.cliente_id = ${clienteId}::uuid))
+        AND i.deleted_at IS NULL
       LEFT JOIN vistorias v
         ON v.imovel_id = i.id
-       AND v.ciclo      = (SELECT numero FROM ciclos WHERE id = ${cicloId}::uuid)
+       AND v.ciclo     = (SELECT numero FROM ciclos WHERE id = ${cicloId}::uuid)
        AND v.deleted_at IS NULL
-      WHERE i.cliente_id = ${clienteId}::uuid
-        AND i.deleted_at  IS NULL
-        AND i.quarteirao  IS NOT NULL
-        AND i.quarteirao  <> ''
-      GROUP BY i.quarteirao
-      ORDER BY i.quarteirao
+      WHERE bq.cliente_id = ${clienteId}::uuid
+        AND bq.deleted_at IS NULL
+      GROUP BY bq.id, bq.codigo
+      ORDER BY bq.codigo
     `);
   }
 

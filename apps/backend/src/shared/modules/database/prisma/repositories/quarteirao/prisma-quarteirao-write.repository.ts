@@ -103,16 +103,29 @@ export class PrismaQuarteiraoWriteRepository implements QuarteiraoWriteRepositor
     clienteId: string,
     bairro: string | null | undefined,
     codigo: string,
-  ): Promise<void> {
+    bairroId?: string | null,
+  ): Promise<string> {
     const exists = await this.prisma.client.bairros_quadras.findFirst({
-      where: { cliente_id: clienteId, codigo, deleted_at: null },
+      where: {
+        cliente_id: clienteId,
+        codigo,
+        bairro_id: bairroId ?? null,
+        deleted_at: null,
+      },
       select: { id: true },
     });
-    if (!exists) {
-      await this.prisma.client.bairros_quadras.create({
-        data: { cliente_id: clienteId, codigo, bairro: bairro ?? null, ativo: true },
-      });
-    }
+    if (exists) return exists.id;
+    const created = await this.prisma.client.bairros_quadras.create({
+      data: {
+        cliente_id: clienteId,
+        codigo,
+        bairro: bairro ?? null,
+        bairro_id: bairroId ?? null,
+        ativo: true,
+      },
+      select: { id: true },
+    });
+    return created.id;
   }
 
   async saveQuarteirao(entity: Quarteirao): Promise<Quarteirao> {

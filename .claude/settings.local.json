@@ -362,7 +362,12 @@
       "Bash(\"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -U postgres -d sentinella -c \"SELECT indexname, indexdef FROM pg_indexes WHERE tablename = 'bairros_quadras' ORDER BY indexname;\")",
       "Bash(\"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -U postgres -d sentinella -c \"SELECT conname, contype FROM pg_constraint WHERE conrelid = 'bairros_quadras'::regclass ORDER BY conname;\")",
       "Bash(./psql.exe -U luizAntonio -h 177.7.37.14 -d sentinella -p 5432 -c \"\\\\d bairros_distribuicao\")",
-      "Bash(PGPASSWORD=Sentinella147852369 C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe *)"
+      "Bash(PGPASSWORD=Sentinella147852369 C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe *)",
+      "PowerShell(cd D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend; & \"C:\\\\Users\\\\luiz\\\\AppData\\\\Roaming\\\\npm\\\\pnpm.cmd\" tsc --noEmit 2>&1 | Where-Object { $_ -match \"quarteirao|cobertura|imovel/use-cases/batch|list-distribuicoes\" })",
+      "PowerShell(cd D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\frontend; & \"C:\\\\Users\\\\luiz\\\\AppData\\\\Roaming\\\\npm\\\\pnpm.cmd\" tsc --noEmit 2>&1 | Where-Object { $_ -match \"distribuicao|quarteirao|CoberturaItem|codigoToUuid\" } | Select-Object -First 20)",
+      "PowerShell(cd D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend; & \"C:\\\\Users\\\\luiz\\\\AppData\\\\Roaming\\\\npm\\\\pnpm.cmd\" tsc --noEmit 2>&1 | Where-Object { $_ -notmatch \"\\\\.spec\\\\.ts\" } | Where-Object { $_ -match \"error TS\" } | Select-Object -First 20)",
+      "PowerShell(cd D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend; & \"C:\\\\Users\\\\luiz\\\\AppData\\\\Roaming\\\\npm\\\\pnpm.cmd\" tsc --noEmit 2>&1 | Where-Object { $_ -match \"error TS\" -and $_ -notmatch \"\\\\.spec\\\\.ts\" })",
+      "PowerShell(cd D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend; & \"C:\\\\Users\\\\luiz\\\\AppData\\\\Roaming\\\\npm\\\\pnpm.cmd\" tsc --noEmit 2>&1 | Where-Object { $_ -match \"error TS\" })"
     ]
   }
 }

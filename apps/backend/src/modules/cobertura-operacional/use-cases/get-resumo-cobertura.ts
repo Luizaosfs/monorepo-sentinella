@@ -56,7 +56,8 @@ export class GetResumoCoberturaUc {
           FROM bairros_distribuicao dq
           JOIN bairros_quadras q ON q.id = dq.quadra_id
           LEFT JOIN imoveis i
-            ON i.quarteirao = q.codigo AND i.cliente_id = dq.cliente_id AND i.deleted_at IS NULL
+            ON (i.quadra_id = q.id OR (i.quadra_id IS NULL AND i.quarteirao = q.codigo))
+            AND i.cliente_id = dq.cliente_id AND i.deleted_at IS NULL
           LEFT JOIN vistorias v
             ON v.imovel_id = i.id AND v.ciclo = ${cicloNum} AND v.deleted_at IS NULL AND v.imovel_id IS NOT NULL
           WHERE dq.cliente_id = ${clienteId}::uuid AND dq.ciclo_id = ${cicloAtivo.id}::uuid
@@ -108,7 +109,8 @@ export class GetResumoCoberturaUc {
             SELECT 1
             FROM vistorias v
             INNER JOIN imoveis i ON i.id = v.imovel_id
-            WHERE i.quarteirao = q.codigo
+            WHERE (i.quadra_id = q.id OR (i.quadra_id IS NULL AND i.quarteirao = q.codigo))
+              AND i.cliente_id = ${clienteId}::uuid
               AND v.cliente_id = ${clienteId}::uuid
               AND v.deleted_at IS NULL
               AND i.deleted_at IS NULL

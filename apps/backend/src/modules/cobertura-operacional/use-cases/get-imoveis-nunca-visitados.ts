@@ -44,7 +44,7 @@ export class GetImoveisNuncaVisitadosUc {
         SELECT dq2.agente_id
         FROM bairros_distribuicao dq2
         JOIN bairros_quadras q2 ON q2.id = dq2.quadra_id
-        WHERE q2.codigo = i.quarteirao
+        WHERE (dq2.quadra_id = i.quadra_id OR (i.quadra_id IS NULL AND q2.codigo = i.quarteirao))
           AND dq2.cliente_id = i.cliente_id
           AND dq2.ciclo_id = ${cicloId}::uuid
         LIMIT 1

@@ -29,14 +29,15 @@ export class GetCoberturaQuarteiroesSUc {
       FROM bairros_distribuicao dq
       JOIN bairros_quadras q ON q.id = dq.quadra_id
       LEFT JOIN imoveis i
-        ON i.quarteirao = q.codigo AND i.cliente_id = dq.cliente_id AND i.deleted_at IS NULL
+        ON (i.quadra_id = q.id OR (i.quadra_id IS NULL AND i.quarteirao = q.codigo))
+        AND i.cliente_id = dq.cliente_id AND i.deleted_at IS NULL
       LEFT JOIN vistorias v
         ON v.imovel_id = i.id
         AND v.ciclo = ${cicloAtivo.numero}
         AND v.deleted_at IS NULL
         AND v.imovel_id IS NOT NULL
       WHERE dq.cliente_id = ${clienteId}::uuid AND dq.ciclo_id = ${cicloAtivo.id}::uuid
-      GROUP BY q.codigo
+      GROUP BY q.id, q.codigo
       ORDER BY q.codigo
     `);
 
