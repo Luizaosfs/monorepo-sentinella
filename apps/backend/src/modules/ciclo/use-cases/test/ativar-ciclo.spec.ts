@@ -1,4 +1,4 @@
-import { Test, TestingModule } from '@nestjs/testing';
+﻿import { Test, TestingModule } from '@nestjs/testing';
 import { mock } from 'jest-mock-extended';
 
 import { CicloException } from '../../errors/ciclo.exception';
@@ -25,7 +25,7 @@ describe('AtivarCiclo', () => {
         { provide: 'REQUEST', useValue: mockRequest({ tenantId: 'test-cliente-id' }) },
       ],
     }).compile();
-    useCase = module.get<AtivarCiclo>(AtivarCiclo);
+    useCase = await module.resolve<AtivarCiclo>(AtivarCiclo, undefined, { strict: false });
   });
 
   it('deve desativar todos os ciclos do cliente e ativar o ciclo encontrado (status=ativo)', async () => {

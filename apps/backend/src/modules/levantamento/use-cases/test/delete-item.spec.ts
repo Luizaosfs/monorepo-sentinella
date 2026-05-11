@@ -1,4 +1,4 @@
-import { REQUEST } from '@nestjs/core';
+﻿import { REQUEST } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import { mock } from 'jest-mock-extended';
 
@@ -38,7 +38,7 @@ describe('DeleteItem — K.6 registro de órfão Cloudinary', () => {
       ],
     }).compile();
 
-    useCase = module.get<DeleteItem>(DeleteItem);
+    useCase = await module.resolve<DeleteItem>(DeleteItem, undefined, { strict: false });
   });
 
   it('item não encontrado → lança erro sem deletar', async () => {

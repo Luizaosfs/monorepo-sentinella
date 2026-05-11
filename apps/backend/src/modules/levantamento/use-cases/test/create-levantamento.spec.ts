@@ -1,4 +1,4 @@
-import { Test, TestingModule } from '@nestjs/testing';
+﻿import { Test, TestingModule } from '@nestjs/testing';
 import { mock } from 'jest-mock-extended';
 import { ForbiddenException } from '@nestjs/common';
 
@@ -26,7 +26,7 @@ describe('CreateLevantamento', () => {
       ],
     }).compile();
 
-    useCase = module.get<CreateLevantamento>(CreateLevantamento);
+    useCase = await module.resolve<CreateLevantamento>(CreateLevantamento, undefined, { strict: false });
   });
 
   it('deve criar levantamento com clienteId do tenant e usuarioId do user', async () => {

@@ -1,4 +1,4 @@
-import { Test, TestingModule } from '@nestjs/testing';
+﻿import { Test, TestingModule } from '@nestjs/testing';
 import { mock } from 'jest-mock-extended';
 
 import { CreateCicloBody } from '../../dtos/create-ciclo.body';
@@ -21,7 +21,7 @@ describe('CreateCiclo', () => {
         { provide: 'REQUEST', useValue: mockRequest({ tenantId: 'test-cliente-id' }) },
       ],
     }).compile();
-    useCase = module.get<CreateCiclo>(CreateCiclo);
+    useCase = await module.resolve<CreateCiclo>(CreateCiclo, undefined, { strict: false });
   });
 
   it("deve criar ciclo com status padrão 'planejamento' se não informado", async () => {

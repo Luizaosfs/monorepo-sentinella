@@ -1,7 +1,8 @@
-import { REQUEST } from '@nestjs/core';
+﻿import { REQUEST } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import { mock } from 'jest-mock-extended';
 
+import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 import { FocoRiscoException } from '../../errors/foco-risco.exception';
 import { FocoRiscoReadRepository } from '../../repositories/foco-risco-read.repository';
 import { FocoRiscoWriteRepository } from '../../repositories/foco-risco-write.repository';
@@ -10,6 +11,8 @@ import { mockRequest } from '@test/utils/user-helpers';
 
 import { AtribuirAgente } from '../atribuir-agente';
 import { FocoRiscoBuilder } from './builders/foco-risco.builder';
+
+const mockPrisma = { client: { usuarios: { count: jest.fn().mockResolvedValue(1) } } };
 
 describe('AtribuirAgente', () => {
   let useCase: AtribuirAgente;
@@ -23,11 +26,12 @@ describe('AtribuirAgente', () => {
         AtribuirAgente,
         { provide: FocoRiscoReadRepository, useValue: readRepo },
         { provide: FocoRiscoWriteRepository, useValue: writeRepo },
+        { provide: PrismaService, useValue: mockPrisma },
         { provide: REQUEST, useValue: mockRequest({ tenantId: 'cliente-uuid-1' }) },
       ],
     }).compile();
 
-    useCase = module.get<AtribuirAgente>(AtribuirAgente);
+    useCase = await module.resolve<AtribuirAgente>(AtribuirAgente, undefined, { strict: false });
   });
 
   it('deve vincular agente ao foco e registrar histórico', async () => {

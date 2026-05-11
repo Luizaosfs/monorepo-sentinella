@@ -1,4 +1,4 @@
-import { FocoRiscoReadRepository } from '@modules/foco-risco/repositories/foco-risco-read.repository';
+﻿import { FocoRiscoReadRepository } from '@modules/foco-risco/repositories/foco-risco-read.repository';
 import { FocoRiscoWriteRepository } from '@modules/foco-risco/repositories/foco-risco-write.repository';
 import { Test, TestingModule } from '@nestjs/testing';
 import { mock } from 'jest-mock-extended';
@@ -47,7 +47,7 @@ describe('CriarManual', () => {
       ],
     }).compile();
 
-    useCase = module.get<CriarManual>(CriarManual);
+    useCase = await module.resolve<CriarManual>(CriarManual, undefined, { strict: false });
   });
 
   it('deve criar reinspeção manual vinculada a foco válido', async () => {
@@ -82,7 +82,7 @@ describe('CriarManual', () => {
         { provide: 'REQUEST', useValue: mockRequest({ tenantId: '' }) },
       ],
     }).compile();
-    const uc = module.get<CriarManual>(CriarManual);
+    const uc = await module.resolve<CriarManual>(CriarManual, undefined, { strict: false });
 
     await expectHttpException(
       () => uc.execute({ ...baseInput() }),
@@ -137,7 +137,7 @@ describe('CriarManual', () => {
         },
       ],
     }).compile();
-    const uc = module.get<CriarManual>(CriarManual);
+    const uc = await module.resolve<CriarManual>(CriarManual, undefined, { strict: false });
 
     await expectHttpException(
       () =>

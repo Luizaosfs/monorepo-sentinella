@@ -1,4 +1,4 @@
-import { Test, TestingModule } from '@nestjs/testing';
+﻿import { Test, TestingModule } from '@nestjs/testing';
 import { mock } from 'jest-mock-extended';
 import { ForbiddenException } from '@nestjs/common';
 
@@ -51,7 +51,7 @@ describe('CriarItemManual', () => {
       ],
     }).compile();
 
-    useCase = module.get<CriarItemManual>(CriarItemManual);
+    useCase = await module.resolve<CriarItemManual>(CriarItemManual, undefined, { strict: false });
   });
 
   it('deve validar planejamento existente e ativo', async () => {

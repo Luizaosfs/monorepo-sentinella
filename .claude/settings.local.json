@@ -377,7 +377,12 @@
       "Bash(\"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" \"postgresql://luizAntonio:Sentinella147852369@177.7.37.14:5432/sentinella\" -f \"apps/backend/prisma/migrations/backfill_imoveis_quadra_id.sql\")",
       "Bash(pnpm --filter backend test --no-coverage --testPathPattern=\"batch-create-imoveis\")",
       "Bash(pnpm --filter backend test --no-coverage --testPathPattern=\"batch-create-imoveis|gerar-operacao-inicial|get-status-implantacao\")",
-      "Bash(pnpm --filter backend test --no-coverage --testPathPattern=\"registrar-sem-acesso\")"
+      "Bash(pnpm --filter backend test --no-coverage --testPathPattern=\"registrar-sem-acesso\")",
+      "Bash(pnpm --filter backend test --no-coverage --testPathPattern=\"tenant.guard|list-distribuicoes-by-agente|upsert-distribuicoes|create-ciclo|atribuir-agente\\\\.spec\")",
+      "Bash(pnpm --filter backend test --no-coverage --testPathPattern=\"get-resumo-visual-vistoria-por-foco|add-deposito|seed-cliente-novo|bulk-insert-regioes|bulk-create-voos|voos-by-planejamento|create-vistoria-completa-evidencias|criar-foco-de-vistoria-deposito\")",
+      "Bash(pnpm --filter backend test --no-coverage --testPathPattern=\"create-ciclo|ativar-ciclo|abrir-ciclo|fechar-ciclo|create-operacao|upsert-operacao|bulk-insert-operacoes|criar-para-item|save-operacao|ensure-and-concluir|criar-item-manual|save-levantamento|create-levantamento|delete-item|update-item|get-levantamento|criar-manual\\\\.spec|atribuir-agente|create-vistoria-completa\\\\.spec\")",
+      "Bash(pnpm --filter backend test --no-coverage --testPathPattern=\"create-operacao\\\\.spec|upsert-operacao\\\\.spec|atribuir-agente\\\\.spec\")",
+      "Bash(pnpm --filter backend test --no-coverage --testPathPattern=\"create-operacao.spec\")"
     ]
   }
 }

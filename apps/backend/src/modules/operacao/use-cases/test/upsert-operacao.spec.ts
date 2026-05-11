@@ -1,7 +1,8 @@
-import { REQUEST } from '@nestjs/core';
+﻿import { REQUEST } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import { mock } from 'jest-mock-extended';
 
+import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 import { UpsertOperacaoInput } from '../../dtos/upsert-operacao.body';
 import { OperacaoException } from '../../errors/operacao.exception';
 import { OperacaoReadRepository } from '../../repositories/operacao-read.repository';
@@ -11,6 +12,8 @@ import { mockRequest } from '@test/utils/user-helpers';
 
 import { UpsertOperacao } from '../upsert-operacao';
 import { OperacaoBuilder } from './builders/operacao.builder';
+
+const mockPrisma = { client: { usuarios: { count: jest.fn().mockResolvedValue(1) }, focos_risco: { count: jest.fn().mockResolvedValue(1) }, levantamento_itens: { count: jest.fn().mockResolvedValue(1) }, bairros: { count: jest.fn().mockResolvedValue(1) } } };
 
 describe('UpsertOperacao', () => {
   let useCase: UpsertOperacao;
@@ -24,10 +27,11 @@ describe('UpsertOperacao', () => {
         UpsertOperacao,
         { provide: OperacaoReadRepository, useValue: readRepo },
         { provide: OperacaoWriteRepository, useValue: writeRepo },
+        { provide: PrismaService, useValue: mockPrisma },
         { provide: REQUEST, useValue: mockRequest({ tenantId: 'test-cliente-id' }) },
       ],
     }).compile();
-    useCase = module.get<UpsertOperacao>(UpsertOperacao);
+    useCase = await module.resolve<UpsertOperacao>(UpsertOperacao, undefined, { strict: false });
   });
 
   it('deve criar nova operação quando id não é fornecido', async () => {

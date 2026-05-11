@@ -1,13 +1,16 @@
-import { REQUEST } from '@nestjs/core';
+﻿import { REQUEST } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import { mock } from 'jest-mock-extended';
 
+import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 import { FocoRiscoReadRepository } from '../../repositories/foco-risco-read.repository';
 import { FocoRiscoWriteRepository } from '../../repositories/foco-risco-write.repository';
 import { mockRequest } from '@test/utils/user-helpers';
 
 import { AtribuirAgenteLote } from '../atribuir-agente-lote';
 import { FocoRiscoBuilder } from './builders/foco-risco.builder';
+
+const mockPrisma = { client: { usuarios: { count: jest.fn().mockResolvedValue(1) } } };
 
 describe('AtribuirAgenteLote', () => {
   let useCase: AtribuirAgenteLote;
@@ -21,11 +24,12 @@ describe('AtribuirAgenteLote', () => {
         AtribuirAgenteLote,
         { provide: FocoRiscoReadRepository, useValue: readRepo },
         { provide: FocoRiscoWriteRepository, useValue: writeRepo },
+        { provide: PrismaService, useValue: mockPrisma },
         { provide: REQUEST, useValue: mockRequest({ tenantId: 'cliente-uuid-1' }) },
       ],
     }).compile();
 
-    useCase = module.get<AtribuirAgenteLote>(AtribuirAgenteLote);
+    useCase = await module.resolve<AtribuirAgenteLote>(AtribuirAgenteLote, undefined, { strict: false });
   });
 
   it('deve atribuir agente a múltiplos focos com sucesso', async () => {

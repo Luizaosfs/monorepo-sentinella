@@ -1,4 +1,4 @@
-import { REQUEST } from '@nestjs/core';
+﻿import { REQUEST } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import { mock } from 'jest-mock-extended';
 
@@ -29,7 +29,7 @@ describe('CriarParaItem', () => {
         { provide: REQUEST, useValue: mockRequest({ tenantId: 'test-cliente-id' }) },
       ],
     }).compile();
-    useCase = module.get<CriarParaItem>(CriarParaItem);
+    useCase = await module.resolve<CriarParaItem>(CriarParaItem, undefined, { strict: false });
   });
 
   it("deve criar operação para item de levantamento com status='pendente' e tipoVinculo='levantamento'", async () => {

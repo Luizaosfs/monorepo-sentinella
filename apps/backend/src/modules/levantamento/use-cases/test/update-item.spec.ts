@@ -1,4 +1,4 @@
-import { ForbiddenException } from '@nestjs/common';
+﻿import { ForbiddenException } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import { mock } from 'jest-mock-extended';
@@ -31,7 +31,7 @@ describe('UpdateItem', () => {
       ],
     }).compile();
 
-    useCase = module.get<UpdateItem>(UpdateItem);
+    useCase = await module.resolve<UpdateItem>(UpdateItem, undefined, { strict: false });
   });
 
   // Base tests

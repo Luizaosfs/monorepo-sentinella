@@ -1,4 +1,4 @@
-import { REQUEST } from '@nestjs/core';
+﻿import { REQUEST } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import { mock } from 'jest-mock-extended';
 import { mockRequest } from '@test/utils/user-helpers';
@@ -41,7 +41,7 @@ describe('EnsureAndConcluir', () => {
           ),
       })
       .compile();
-    useCase = module.get<EnsureAndConcluir>(EnsureAndConcluir);
+    useCase = await module.resolve<EnsureAndConcluir>(EnsureAndConcluir, undefined, { strict: false });
   });
 
   it('deve criar operação concluída quando não existe', async () => {

@@ -1,4 +1,4 @@
-import { Test, TestingModule } from '@nestjs/testing';
+﻿import { Test, TestingModule } from '@nestjs/testing';
 import { mock } from 'jest-mock-extended';
 
 import { CicloException } from '../../errors/ciclo.exception';
@@ -33,7 +33,7 @@ describe('FecharCiclo', () => {
         { provide: 'REQUEST', useValue: mockRequest({ tenantId: 'test-cliente-id' }) },
       ],
     }).compile();
-    useCase = module.get<FecharCiclo>(FecharCiclo);
+    useCase = await module.resolve<FecharCiclo>(FecharCiclo, undefined, { strict: false });
   });
 
   afterEach(() => {

@@ -1,4 +1,4 @@
-import { REQUEST } from '@nestjs/core';
+﻿import { REQUEST } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import { mock } from 'jest-mock-extended';
 import { ForbiddenException } from '@nestjs/common';
@@ -57,7 +57,7 @@ describe('CreateVistoriaCompleta', () => {
       ],
     }).compile();
 
-    useCase = module.get<CreateVistoriaCompleta>(CreateVistoriaCompleta);
+    useCase = await module.resolve<CreateVistoriaCompleta>(CreateVistoriaCompleta, undefined, { strict: false });
   });
 
   const baseInput = (): CreateVistoriaCompletaBody =>

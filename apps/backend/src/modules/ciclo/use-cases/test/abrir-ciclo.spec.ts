@@ -1,4 +1,4 @@
-import { Test, TestingModule } from '@nestjs/testing';
+﻿import { Test, TestingModule } from '@nestjs/testing';
 import { mock } from 'jest-mock-extended';
 
 import { CicloException } from '../../errors/ciclo.exception';
@@ -33,7 +33,7 @@ describe('AbrirCiclo', () => {
         { provide: 'REQUEST', useValue: req() },
       ],
     }).compile();
-    useCase = module.get<AbrirCiclo>(AbrirCiclo);
+    useCase = await module.resolve<AbrirCiclo>(AbrirCiclo, undefined, { strict: false });
   });
 
   afterEach(() => {

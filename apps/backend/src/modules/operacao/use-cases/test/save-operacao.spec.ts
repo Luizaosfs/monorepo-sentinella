@@ -1,15 +1,18 @@
-import { REQUEST } from '@nestjs/core';
+﻿import { REQUEST } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import { mock } from 'jest-mock-extended';
 
 import { expectHttpException } from '@test/utils/expect-http-exception';
 import { mockRequest } from '@test/utils/user-helpers';
 
+import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 import { SaveOperacaoBody } from '../../dtos/save-operacao.body';
 import { OperacaoException } from '../../errors/operacao.exception';
 import { OperacaoReadRepository } from '../../repositories/operacao-read.repository';
 import { OperacaoWriteRepository } from '../../repositories/operacao-write.repository';
 import { SaveOperacao } from '../save-operacao';
+
+const mockPrisma = { client: { usuarios: { count: jest.fn().mockResolvedValue(1) }, focos_risco: { count: jest.fn().mockResolvedValue(1) }, levantamento_itens: { count: jest.fn().mockResolvedValue(1) }, bairros: { count: jest.fn().mockResolvedValue(1) } } };
 import { OperacaoBuilder } from './builders/operacao.builder';
 
 describe('SaveOperacao', () => {
@@ -25,10 +28,11 @@ describe('SaveOperacao', () => {
         SaveOperacao,
         { provide: OperacaoReadRepository, useValue: readRepo },
         { provide: OperacaoWriteRepository, useValue: writeRepo },
+        { provide: PrismaService, useValue: mockPrisma },
         { provide: REQUEST, useValue: mockRequest() },
       ],
     }).compile();
-    useCase = module.get<SaveOperacao>(SaveOperacao);
+    useCase = await module.resolve<SaveOperacao>(SaveOperacao, undefined, { strict: false });
   });
 
   afterEach(() => {

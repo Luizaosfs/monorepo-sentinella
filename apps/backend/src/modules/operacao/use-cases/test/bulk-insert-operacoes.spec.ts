@@ -1,4 +1,4 @@
-import { REQUEST } from '@nestjs/core';
+﻿import { REQUEST } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import { mock } from 'jest-mock-extended';
 
@@ -28,7 +28,7 @@ describe('BulkInsertOperacoes', () => {
         { provide: REQUEST, useValue: mockRequest({ tenantId: 'test-cliente-id' }) },
       ],
     }).compile();
-    useCase = module.get<BulkInsertOperacoes>(BulkInsertOperacoes);
+    useCase = await module.resolve<BulkInsertOperacoes>(BulkInsertOperacoes, undefined, { strict: false });
   });
 
   it('deve criar operações para itens sem duplicata', async () => {

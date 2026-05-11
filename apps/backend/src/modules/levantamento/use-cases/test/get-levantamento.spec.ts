@@ -1,4 +1,4 @@
-import { REQUEST } from '@nestjs/core';
+﻿import { REQUEST } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import { mock } from 'jest-mock-extended';
 
@@ -24,7 +24,7 @@ describe('GetLevantamento', () => {
       ],
     }).compile();
 
-    useCase = module.get<GetLevantamento>(GetLevantamento);
+    useCase = await module.resolve<GetLevantamento>(GetLevantamento, undefined, { strict: false });
   });
 
   it('deve retornar levantamento com itens (via findByIdComItens)', async () => {

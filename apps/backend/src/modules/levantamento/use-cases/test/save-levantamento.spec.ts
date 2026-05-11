@@ -1,4 +1,4 @@
-import { REQUEST } from '@nestjs/core';
+﻿import { REQUEST } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import { mock } from 'jest-mock-extended';
 
@@ -27,7 +27,7 @@ describe('SaveLevantamento', () => {
       ],
     }).compile();
 
-    useCase = module.get<SaveLevantamento>(SaveLevantamento);
+    useCase = await module.resolve<SaveLevantamento>(SaveLevantamento, undefined, { strict: false });
   });
 
   it('deve atualizar campos parciais (planejamentoId, cicloId, titulo, statusProcessamento, etc.)', async () => {

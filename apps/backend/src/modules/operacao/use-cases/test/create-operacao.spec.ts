@@ -1,12 +1,15 @@
-import { REQUEST } from '@nestjs/core';
+﻿import { REQUEST } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import { mock } from 'jest-mock-extended';
 
+import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 import { CreateOperacaoBody } from '../../dtos/create-operacao.body';
 import { OperacaoWriteRepository } from '../../repositories/operacao-write.repository';
 import { mockRequest } from '@test/utils/user-helpers';
 
 import { CreateOperacao } from '../create-operacao';
+
+const mockPrisma = { client: { focos_risco: { count: jest.fn().mockResolvedValue(1) }, levantamento_itens: { count: jest.fn().mockResolvedValue(1) }, bairros: { count: jest.fn().mockResolvedValue(1) }, usuarios: { count: jest.fn().mockResolvedValue(1) } } };
 
 describe('CreateOperacao', () => {
   let useCase: CreateOperacao;
@@ -19,10 +22,11 @@ describe('CreateOperacao', () => {
       providers: [
         CreateOperacao,
         { provide: OperacaoWriteRepository, useValue: writeRepo },
+        { provide: PrismaService, useValue: mockPrisma },
         { provide: REQUEST, useValue: mockRequest({ tenantId: 'test-cliente-id' }) },
       ],
     }).compile();
-    useCase = module.get<CreateOperacao>(CreateOperacao);
+    useCase = await module.resolve<CreateOperacao>(CreateOperacao, undefined, { strict: false });
   });
 
   afterEach(() => {
