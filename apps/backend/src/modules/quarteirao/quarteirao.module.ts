@@ -23,6 +23,7 @@ import { ImportarGeoJSONQuarteiroes } from './use-cases/importar-geojson-quartei
 import { GerarQuadrasOSM } from './use-cases/gerar-quadras-osm';
 import { EnsureCicloEditavel } from './use-cases/ensure-ciclo-editavel';
 import { ListarDistribuicaoTerritorial } from './use-cases/listar-distribuicao-territorial';
+import { ListarTerritorioAgente } from './use-cases/listar-territorio-agente';
 import { AtribuirQuadraTerritorial } from './use-cases/atribuir-quadra-territorial';
 import { DesatribuirQuadraTerritorial } from './use-cases/desatribuir-quadra-territorial';
 
@@ -47,6 +48,7 @@ import { DesatribuirQuadraTerritorial } from './use-cases/desatribuir-quadra-ter
     GerarQuadrasOSM,
     EnsureCicloEditavel,
     ListarDistribuicaoTerritorial,
+    ListarTerritorioAgente,
     AtribuirQuadraTerritorial,
     DesatribuirQuadraTerritorial,
     JwtService,

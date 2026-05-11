@@ -68,6 +68,24 @@ export type DistribuicaoTerritorialItem = {
   updatedAt: string;
 };
 
+export type TerritorioAgenteVM = {
+  agenteId: string;
+  quadras: {
+    quadraId: string;
+    codigo: string;
+    bairroId: string | null;
+    bairroNome: string | null;
+    imoveisCount: number;
+  }[];
+  cicloAtivo: {
+    id: string;
+    numero: number;
+    status: string;
+    dataInicio: string;
+    dataFimPrevista: string;
+  } | null;
+};
+
 export const distribuicaoQuarteirao = {
   listTerritorial: (
     clienteId: string,
@@ -86,6 +104,9 @@ export const distribuicaoQuarteirao = {
     http.post('/quarteiroes/distribuicoes/upsert', { rows }),
   deletar: (cicloId: string, quadraIds: string[]): Promise<{ deleted: number }> =>
     http.post('/quarteiroes/distribuicoes/deletar', { cicloId, quadraIds }),
+  getMeuTerritorio: (): Promise<TerritorioAgenteVM> =>
+    http.get('/quarteiroes/distribuicoes/meu-territorio'),
+
   atribuirTerritorial: (
     quadraId: string,
     agenteId: string,

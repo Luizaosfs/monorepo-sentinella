@@ -5,6 +5,7 @@ import {
   CoberturaQuarteiraoItem,
   DistribuicaoTerritorialItem,
   QuarteiraoReadRepository,
+  TerritorioAgenteQuadra,
 } from '@modules/quarteirao/repositories/quarteirao-read.repository';
 import { Prisma } from '@prisma/client';
 import { DistribuicaoQuarteirao, Quarteirao } from '@modules/quarteirao/entities/quarteirao';
@@ -160,6 +161,57 @@ export class PrismaQuarteiraoReadRepository implements QuarteiraoReadRepository 
       agenteNome: r.agente_nome,
       cicloIdOrigem: r.ciclo_id_origem,
       updatedAt: r.updated_at,
+    }));
+  }
+
+  async findTerritorioAgente(
+    clienteId: string,
+    agenteId: string,
+  ): Promise<TerritorioAgenteQuadra[]> {
+    type RawRow = {
+      quadra_id: string;
+      codigo: string;
+      bairro_id: string | null;
+      bairro_nome: string | null;
+      imoveis_count: number;
+    };
+
+    const rows = await this.prisma.client.$queryRaw<RawRow[]>(Prisma.sql`
+      WITH territorial AS (
+        SELECT DISTINCT ON (bd.quadra_id)
+          bd.quadra_id,
+          bq.codigo,
+          bq.bairro_id
+        FROM bairros_distribuicao bd
+        JOIN bairros_quadras bq ON bq.id = bd.quadra_id AND bq.deleted_at IS NULL
+        WHERE bd.cliente_id = ${clienteId}::uuid
+          AND bd.agente_id  = ${agenteId}::uuid
+          AND bd.ciclo_id   IS NULL
+        ORDER BY bd.quadra_id, bd.updated_at DESC
+      )
+      SELECT
+        t.quadra_id,
+        t.codigo,
+        t.bairro_id,
+        b.nome                              AS bairro_nome,
+        COALESCE(COUNT(i.id), 0)::int       AS imoveis_count
+      FROM territorial t
+      LEFT JOIN bairros b ON b.id = t.bairro_id
+      LEFT JOIN imoveis i
+             ON i.quadra_id   = t.quadra_id
+            AND i.cliente_id  = ${clienteId}::uuid
+            AND i.deleted_at  IS NULL
+            AND i.ativo       = true
+      GROUP BY t.quadra_id, t.codigo, t.bairro_id, b.nome
+      ORDER BY t.codigo
+    `);
+
+    return rows.map(r => ({
+      quadraId:    r.quadra_id,
+      codigo:      r.codigo,
+      bairroId:    r.bairro_id,
+      bairroNome:  r.bairro_nome,
+      imoveisCount: r.imoveis_count,
     }));
   }
 

@@ -72,8 +72,10 @@ import {
   filterDistribuicaoTerritorialSchema,
 } from './dtos/filter-distribuicao-territorial.input';
 import { ListarDistribuicaoTerritorial } from './use-cases/listar-distribuicao-territorial';
+import { ListarTerritorioAgente } from './use-cases/listar-territorio-agente';
 import { AtribuirQuadraTerritorial } from './use-cases/atribuir-quadra-territorial';
 import { DesatribuirQuadraTerritorial } from './use-cases/desatribuir-quadra-territorial';
+import { TerritorioAgenteViewModel } from './view-model/territorio-agente.vm';
 import {
   AtribuirQuadraTerritorialBody,
   atribuirQuadraTerritorialSchema,
@@ -128,6 +130,7 @@ export class QuarteiraoController {
     private deleteDistribuicao: DeleteDistribuicao,
     private listByAgenteUc: ListDistribuicoesByAgente,
     private listarDistribuicaoTerritorialUc: ListarDistribuicaoTerritorial,
+    private listarTerritorioAgenteUc: ListarTerritorioAgente,
     private atribuirQuadraTerritorialUc: AtribuirQuadraTerritorial,
     private desatribuirQuadraTerritorialUc: DesatribuirQuadraTerritorial,
     private upsertDistribuicoesUc: UpsertDistribuicoes,
@@ -140,6 +143,14 @@ export class QuarteiraoController {
     private gerarQuadrasOSMUc: GerarQuadrasOSM,
     @Inject(REQUEST) private req: Request,
   ) {}
+
+  @Get('distribuicoes/meu-territorio')
+  @Roles('admin', 'supervisor', 'agente')
+  @ApiOperation({ summary: 'Território do agente autenticado — quadras fixas + imoveisCount + cicloAtivo, sem dependência de cópia de ciclo' })
+  async getMeuTerritorio() {
+    const result = await this.listarTerritorioAgenteUc.execute();
+    return TerritorioAgenteViewModel.toHttp(result);
+  }
 
   @Get('distribuicoes/territorial')
   @Roles('admin', 'supervisor', 'agente')

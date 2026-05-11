@@ -5,6 +5,7 @@ import 'leaflet/dist/leaflet.css';
 import {
   CheckCircle2, Clock, ChevronRight, WifiOff, AlertCircle,
   List, Map as MapIcon, Navigation, RefreshCw, RotateCcw, UserCheck, Route,
+  MapPin, Info,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { CicloBadge } from '@/components/foco/CicloBadge';
@@ -16,6 +17,7 @@ import { FichaImovel } from '@/components/agente/FichaImovel';
 import { useClienteAtivo } from '@/hooks/useClienteAtivo';
 import { useAuth } from '@/hooks/useAuth';
 import { useImoveisResumo } from '@/hooks/queries/useImoveis';
+import { useTerritorioAgente } from '@/hooks/queries/useTerritorioAgente';
 import { useAlertasRetorno } from '@/hooks/queries/useAlertasRetorno';
 import { useFocosAtribuidos } from '@/hooks/queries/useFocosAtribuidos';
 import { useReinspecoesPendentesAgente } from '@/hooks/queries/useReinspecoes';
@@ -149,6 +151,7 @@ export default function AgenteHoje() {
   const markersRef = useRef<L.CircleMarker[]>([]);
 
   const agenteId = usuario?.id ?? null;
+  const { data: territorio, isStale: territorioStale } = useTerritorioAgente();
   const { data: imoveis = [], isLoading } = useImoveisResumo(clienteId);
   const { data: alertasRetorno = [] } = useAlertasRetorno(clienteId, agenteId);
   const { data: focosAtribuidos } = useFocosAtribuidos(clienteId, agenteId);
@@ -500,6 +503,38 @@ export default function AgenteHoje() {
                 <SyncStatusPanel onRefresh={refreshCount} />
               </div>
             )}
+          </div>
+        )}
+
+        {/* ── Banners territoriais ── */}
+
+        {/* Offline com dados do território em cache */}
+        {isOffline && territorioStale && territorio && (
+          <div className="flex items-start gap-2.5 rounded-xl border border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/30 px-3 py-2.5">
+            <WifiOff className="w-4 h-4 shrink-0 mt-0.5 text-amber-600" />
+            <p className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
+              Exibindo território sincronizado anteriormente.
+            </p>
+          </div>
+        )}
+
+        {/* Sem ciclo ativo */}
+        {territorio && !territorio.cicloAtivo && territorio.quadras.length > 0 && (
+          <div className="flex items-start gap-2.5 rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 px-3 py-2.5">
+            <Info className="w-4 h-4 shrink-0 mt-0.5 text-blue-500" />
+            <p className="text-xs text-blue-700 dark:text-blue-300 leading-relaxed">
+              Seu território está disponível, mas novas vistorias podem depender da abertura de um ciclo.
+            </p>
+          </div>
+        )}
+
+        {/* Sem quadras atribuídas */}
+        {territorio && territorio.quadras.length === 0 && (
+          <div className="flex items-start gap-2.5 rounded-xl border border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-900/20 px-3 py-2.5">
+            <MapPin className="w-4 h-4 shrink-0 mt-0.5 text-orange-500" />
+            <p className="text-xs text-orange-700 dark:text-orange-300 leading-relaxed">
+              Nenhuma quadra atribuída ao seu território. Procure o supervisor.
+            </p>
           </div>
         )}
 

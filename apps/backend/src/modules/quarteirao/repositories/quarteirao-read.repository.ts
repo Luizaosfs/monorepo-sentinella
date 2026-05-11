@@ -25,6 +25,14 @@ export type DistribuicaoTerritorialItem = {
   updatedAt: Date;
 };
 
+export type TerritorioAgenteQuadra = {
+  quadraId: string;
+  codigo: string;
+  bairroId: string | null;
+  bairroNome: string | null;
+  imoveisCount: number;
+};
+
 @Injectable()
 export abstract class QuarteiraoReadRepository {
   abstract findQuarteiraoById(id: string): Promise<Quarteirao | null>;
@@ -49,4 +57,9 @@ export abstract class QuarteiraoReadRepository {
     agenteId?: string,
     bairroId?: string,
   ): Promise<DistribuicaoTerritorialItem[]>;
+
+  abstract findTerritorioAgente(
+    clienteId: string,
+    agenteId: string,
+  ): Promise<TerritorioAgenteQuadra[]>;
 }
