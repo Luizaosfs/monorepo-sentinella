@@ -3,11 +3,19 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { mock } from 'jest-mock-extended';
 
 import { mockRequest } from '@test/utils/user-helpers';
+import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 import { QuarteiraoWriteRepository } from '../../../quarteirao/repositories/quarteirao-write.repository';
 import { ImovelWriteRepository } from '../../repositories/imovel-write.repository';
 import { CreateImovel } from '../create-imovel';
 
 const TENANT = 'cliente-uuid-1';
+
+const prismaServiceMock = {
+  client: {
+    bairros: { count: jest.fn().mockResolvedValue(1) },
+    imoveis: { update: jest.fn().mockResolvedValue({}) },
+  },
+} as any;
 
 describe('CreateImovel — K.5 sync quarteirao mestre', () => {
   let useCase: CreateImovel;
@@ -17,13 +25,14 @@ describe('CreateImovel — K.5 sync quarteirao mestre', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
     writeRepo.create.mockResolvedValue({ id: 'imovel-1', clienteId: TENANT } as any);
-    quarteiraoWriteRepo.upsertMestreIfMissing.mockResolvedValue(undefined);
+    quarteiraoWriteRepo.upsertMestreIfMissing.mockResolvedValue('quadra-mock-id');
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CreateImovel,
         { provide: ImovelWriteRepository, useValue: writeRepo },
         { provide: QuarteiraoWriteRepository, useValue: quarteiraoWriteRepo },
+        { provide: PrismaService, useValue: prismaServiceMock },
         { provide: REQUEST, useValue: mockRequest({ tenantId: TENANT }) },
       ],
     }).compile();
@@ -38,6 +47,7 @@ describe('CreateImovel — K.5 sync quarteirao mestre', () => {
       TENANT,
       'Centro',
       'Q01',
+      null,
     );
   });
 
