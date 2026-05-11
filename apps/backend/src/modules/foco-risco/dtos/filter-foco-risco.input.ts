@@ -63,6 +63,13 @@ export const filterFocoRiscoSchema = z.object({
     .optional(),
   /** Filtrar apenas focos aguardando decisão do supervisor (sem_previsao ou 3ª tentativa). */
   pendente_decisao_supervisor: z.coerce.boolean().optional(),
+  /** Filtro territorial interno: IDs de quadras do território do agente. Uso interno — não expor via query HTTP. */
+  quadraIds: z
+    .preprocess(
+      (val) => (Array.isArray(val) ? val : val != null ? [val] : undefined),
+      z.array(z.string().uuid()).optional(),
+    )
+    .describe('Filtrar por quadras do território (uso interno)'),
 });
 
 export class FilterFocoRiscoInput extends createZodDto(filterFocoRiscoSchema) {}

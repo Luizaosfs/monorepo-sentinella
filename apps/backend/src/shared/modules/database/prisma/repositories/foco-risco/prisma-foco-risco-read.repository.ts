@@ -494,6 +494,10 @@ export class PrismaFocoRiscoReadRepository implements FocoRiscoReadRepository {
         },
       }),
       ...(filters.pendente_decisao_supervisor && { pendente_decisao_supervisor: true }),
+      // Filtro territorial: apenas focos cujo imóvel pertence ao território do agente
+      ...(filters.quadraIds?.length && {
+        imovel: { quadra_id: { in: filters.quadraIds } },
+      }),
     };
   }
 
@@ -541,6 +545,13 @@ export class PrismaFocoRiscoReadRepository implements FocoRiscoReadRepository {
     }
     if (filters.pendente_decisao_supervisor) {
       clauses.push(Prisma.sql`f.pendente_decisao_supervisor = true`);
+    }
+    if (filters.quadraIds?.length) {
+      clauses.push(Prisma.sql`f.imovel_id IN (
+        SELECT i.id FROM imoveis i
+        WHERE i.quadra_id = ANY(${filters.quadraIds}::uuid[])
+          AND i.deleted_at IS NULL
+      )`);
     }
     return Prisma.join(clauses, ' AND ');
   }

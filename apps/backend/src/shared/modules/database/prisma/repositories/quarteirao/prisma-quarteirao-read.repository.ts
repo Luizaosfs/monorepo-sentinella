@@ -215,6 +215,17 @@ export class PrismaQuarteiraoReadRepository implements QuarteiraoReadRepository 
     }));
   }
 
+  async countDistribuicoesByBairroId(clienteId: string, bairroId: string): Promise<number> {
+    const [row] = await this.prisma.client.$queryRaw<[{ total: number }]>(Prisma.sql`
+      SELECT COUNT(*)::int AS total
+      FROM bairros_distribuicao bd
+      JOIN bairros_quadras bq ON bq.id = bd.quadra_id
+      WHERE bq.bairro_id  = ${bairroId}::uuid
+        AND bd.cliente_id = ${clienteId}::uuid
+    `);
+    return row.total;
+  }
+
   private buildWhereQuarteiroes(filters: FilterQuarteiraoInput) {
     return {
       deleted_at: null,

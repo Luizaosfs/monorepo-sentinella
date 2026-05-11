@@ -55,4 +55,8 @@ export const QuarteiraoException = createExceptionFactory({
     type: 'notFound',
     message: 'Distribuição territorial não encontrada para este quarteirão',
   },
+  bairroComDistribuicoes: {
+    type: 'conflict',
+    message: 'Este bairro já possui distribuições registradas e não pode ser resetado',
+  },
 });

@@ -15,6 +15,7 @@ import { GetReinspecao } from './use-cases/get-reinspecao';
 import { MarcarVencidas } from './use-cases/marcar-vencidas';
 import { ReagendarReinspecao } from './use-cases/reagendar';
 import { RegistrarResultadoReinspecao } from './use-cases/registrar-resultado';
+import { ListReinspecoesTerritorioUseCase } from './use-cases/list-reinspecoes-territorio';
 
 @Module({
   providers: [
@@ -28,6 +29,7 @@ import { RegistrarResultadoReinspecao } from './use-cases/registrar-resultado';
     MarcarVencidas,
     CriarReinspecaoPosTratamento,
     CancelarReinspecoesAoFecharFoco,
+    ListReinspecoesTerritorioUseCase,
     ReinspecaoScheduler,
     JwtService,
     PrismaService,

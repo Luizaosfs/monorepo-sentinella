@@ -33,6 +33,7 @@ import { GetFocosAgrupados } from './use-cases/get-focos-agrupados';
 import { GetResumoVisualVistoriaPorFoco } from './use-cases/get-resumo-visual-vistoria-por-foco';
 import { ReagendarVisita } from './use-cases/reagendar-visita';
 import { ManterAtiva } from './use-cases/manter-ativa';
+import { ListFocosTerritorioUseCase } from './use-cases/list-focos-territorio';
 
 @Module({
   providers: [
@@ -62,6 +63,7 @@ import { ManterAtiva } from './use-cases/manter-ativa';
     GetResumoVisualVistoriaPorFoco,
     ReagendarVisita,
     ManterAtiva,
+    ListFocosTerritorioUseCase,
     JwtService,
     PrismaService,
   ],

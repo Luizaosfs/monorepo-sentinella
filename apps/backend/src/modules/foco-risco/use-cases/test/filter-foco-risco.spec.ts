@@ -1,6 +1,7 @@
 import { REQUEST } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import { mock } from 'jest-mock-extended';
+import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 
 import { mockRequest } from '@test/utils/user-helpers';
 
@@ -15,13 +16,17 @@ import { FocoRiscoBuilder } from './builders/foco-risco.builder';
 
 describe('FilterFocoRisco', () => {
   let useCase: FilterFocoRisco;
+  let queryRawMock: jest.Mock;
   const readRepo = mock<FocoRiscoReadRepository>();
 
   async function buildWithRequest(req: ReturnType<typeof mockRequest>) {
+    queryRawMock = jest.fn().mockResolvedValue([]);
+    const prismaValue = { client: { $queryRaw: queryRawMock } };
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         FilterFocoRisco,
         { provide: FocoRiscoReadRepository, useValue: readRepo },
+        { provide: PrismaService, useValue: prismaValue },
         { provide: REQUEST, useValue: req },
       ],
     }).compile();
@@ -56,31 +61,34 @@ describe('FilterFocoRisco', () => {
     expect(result.focos).toHaveLength(0);
   });
 
-  describe('ownership — agente vê apenas focos atribuídos a si', () => {
-    it('agente: responsavelId do body é substituído pelo user.id', async () => {
+  describe('ownership — agente vê apenas focos do seu território', () => {
+    it('agente com território: quadraIds são passados ao repositório (responsavel_id ignorado)', async () => {
       const uc = await buildWithRequest(
         mockRequest({ user: { id: 'agente-uuid', email: 'agente@test.com', nome: 'Agente', clienteId: 'test-cliente-id', papeis: ['agente'] } }),
       );
+      queryRawMock.mockResolvedValue([{ quadra_id: 'q-uuid-1' }]);
       readRepo.findAll.mockResolvedValue([]);
 
       await uc.execute({ clienteId: 'cliente-uuid-1', responsavel_id: 'outro-uuid' });
 
       expect(readRepo.findAll).toHaveBeenCalledWith(
-        expect.objectContaining({ responsavel_id: 'agente-uuid' }),
+        expect.objectContaining({ quadraIds: ['q-uuid-1'] }),
+      );
+      expect(readRepo.findAll).toHaveBeenCalledWith(
+        expect.not.objectContaining({ responsavel_id: expect.anything() }),
       );
     });
 
-    it('agente sem responsavelId no input: injeta user.id automaticamente', async () => {
+    it('agente sem território: retorna lista vazia sem consultar repositório', async () => {
       const uc = await buildWithRequest(
         mockRequest({ user: { id: 'agente-uuid', email: 'agente@test.com', nome: 'Agente', clienteId: 'test-cliente-id', papeis: ['agente'] } }),
       );
-      readRepo.findAll.mockResolvedValue([]);
+      // queryRawMock retorna [] por padrão
 
-      await uc.execute({ clienteId: 'cliente-uuid-1' });
+      const result = await uc.execute({ clienteId: 'cliente-uuid-1' });
 
-      expect(readRepo.findAll).toHaveBeenCalledWith(
-        expect.objectContaining({ responsavel_id: 'agente-uuid' }),
-      );
+      expect(result.focos).toHaveLength(0);
+      expect(readRepo.findAll).not.toHaveBeenCalled();
     });
 
     it('supervisor repassa responsavelId do input sem alteração', async () => {

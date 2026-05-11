@@ -5,53 +5,37 @@ import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 import { Request } from 'express';
 import { AuthenticatedUser } from 'src/guards/auth.guard';
 
-import { FilterFocoRiscoInput } from '../dtos/filter-foco-risco.input';
+import { FocoRisco } from '../entities/foco-risco';
 import { FocoRiscoReadRepository } from '../repositories/foco-risco-read.repository';
 
 @Injectable()
-export class FilterFocoRisco {
+export class ListFocosTerritorioUseCase {
   constructor(
     private repository: FocoRiscoReadRepository,
     private prisma: PrismaService,
     @Inject(REQUEST) private req: Request,
   ) {}
 
-  async execute(filters: FilterFocoRiscoInput) {
+  async execute(clienteId: string): Promise<FocoRisco[]> {
     const user = this.req['user'] as AuthenticatedUser;
     const isPrivileged =
       user.isPlatformAdmin ||
       user.papeis.some((p) => p === 'supervisor' || p === 'admin');
 
     if (isPrivileged) {
-      const focos = await this.repository.findAll(filters);
-      return { focos };
+      return this.repository.findAll({ clienteId });
     }
 
-    // Agente: território prevale sobre responsavel_id legado
-    const clienteId = filters.clienteId ?? '';
     const quadraIds = await this.getTerritorioQuadraIds(clienteId, user.id);
+    if (quadraIds.length === 0) return [];
 
-    // Sem quadras no território → resultado vazio (não expor focos de outras quadras)
-    if (quadraIds.length === 0) {
-      return { focos: [] };
-    }
-
-    const effectiveFilters: FilterFocoRiscoInput = {
-      ...filters,
-      quadraIds,
-      responsavel_id: undefined,
-      semResponsavel: undefined,
-    };
-
-    const focos = await this.repository.findAll(effectiveFilters);
-    return { focos };
+    return this.repository.findAll({ clienteId, quadraIds });
   }
 
   private async getTerritorioQuadraIds(
     clienteId: string,
     agenteId: string,
   ): Promise<string[]> {
-    if (!clienteId) return [];
     const rows = await this.prisma.client.$queryRaw<{ quadra_id: string }[]>(
       Prisma.sql`
         SELECT DISTINCT bd.quadra_id::text AS quadra_id

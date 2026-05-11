@@ -45,4 +45,9 @@ export abstract class QuarteiraoWriteRepository {
     clienteId: string,
     quadraId: string,
   ): Promise<DistribuicaoQuarteirao | null>;
+
+  abstract deletarQuadrasBairro(
+    clienteId: string,
+    bairroId: string,
+  ): Promise<{ deletadas: number }>;
 }

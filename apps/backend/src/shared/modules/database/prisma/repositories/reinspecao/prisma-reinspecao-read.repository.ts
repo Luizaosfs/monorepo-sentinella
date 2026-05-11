@@ -2,6 +2,7 @@ import { FilterReinspecaoInput } from '@modules/reinspecao/dtos/filter-reinspeca
 import { Reinspecao } from '@modules/reinspecao/entities/reinspecao';
 import { ReinspecaoReadRepository } from '@modules/reinspecao/repositories/reinspecao-read.repository';
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 
 import { PrismaRepository } from '@/decorators/prisma-repository.decorator';
 
@@ -71,5 +72,33 @@ export class PrismaReinspecaoReadRepository implements ReinspecaoReadRepository 
         status: { in: ['pendente', 'vencida'] },
       },
     });
+  }
+
+  async findAllTerritorio(clienteId: string, quadraIds: string[]): Promise<Reinspecao[]> {
+    if (quadraIds.length === 0) return [];
+    const rows = await this.prisma.client.$queryRaw<any[]>(Prisma.sql`
+      SELECT rp.*
+      FROM reinspecoes_programadas rp
+      JOIN focos_risco f ON f.id = rp.foco_risco_id AND f.deleted_at IS NULL
+      JOIN imoveis i ON i.id = f.imovel_id AND i.deleted_at IS NULL
+      WHERE rp.cliente_id = ${clienteId}::uuid
+        AND i.quadra_id = ANY(${quadraIds}::uuid[])
+      ORDER BY rp.data_prevista ASC, rp.created_at DESC
+    `);
+    return rows.map((r) => PrismaReinspecaoMapper.toDomain(r));
+  }
+
+  async countPendentesTerritorio(clienteId: string, quadraIds: string[]): Promise<number> {
+    if (quadraIds.length === 0) return 0;
+    const rows = await this.prisma.client.$queryRaw<[{ count: bigint }]>(Prisma.sql`
+      SELECT COUNT(rp.id)::bigint AS count
+      FROM reinspecoes_programadas rp
+      JOIN focos_risco f ON f.id = rp.foco_risco_id AND f.deleted_at IS NULL
+      JOIN imoveis i ON i.id = f.imovel_id AND i.deleted_at IS NULL
+      WHERE rp.cliente_id = ${clienteId}::uuid
+        AND i.quadra_id = ANY(${quadraIds}::uuid[])
+        AND rp.status IN ('pendente', 'vencida')
+    `);
+    return Number(rows[0]?.count ?? 0);
   }
 }

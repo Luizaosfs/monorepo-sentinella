@@ -79,6 +79,7 @@ import { TransicionarFocoRisco } from './use-cases/transicionar-foco-risco';
 import { UpdateFocoRisco } from './use-cases/update-foco-risco';
 import { ReagendarVisita } from './use-cases/reagendar-visita';
 import { ManterAtiva } from './use-cases/manter-ativa';
+import { ListFocosTerritorioUseCase } from './use-cases/list-focos-territorio';
 import { FocoRiscoViewModel } from './view-model/foco-risco';
 
 @UseInterceptors(PrismaInterceptor)
@@ -108,6 +109,7 @@ export class FocoRiscoController {
     private getResumoVisualVistoriaPorFocoUc: GetResumoVisualVistoriaPorFoco,
     private reagendarVisitaUc: ReagendarVisita,
     private manterAtivaUc: ManterAtiva,
+    private listFocosTerritorioUc: ListFocosTerritorioUseCase,
     private prisma: PrismaService,
     @Inject(REQUEST) private req: Request,
   ) {}
@@ -297,6 +299,15 @@ export class FocoRiscoController {
         ORDER BY status, prioridade
       `,
     );
+  }
+
+  @Get('territorio')
+  @Roles('admin', 'supervisor', 'agente')
+  @ApiOperation({ summary: 'Focos do território do agente autenticado (por quadra permanente)' })
+  async territorio() {
+    const clienteId = requireTenantId(getAccessScope(this.req));
+    const focos = await this.listFocosTerritorioUc.execute(clienteId);
+    return focos.map((f) => FocoRiscoViewModel.toHttp(f));
   }
 
   @Get(':id')

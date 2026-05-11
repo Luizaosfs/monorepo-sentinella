@@ -46,6 +46,7 @@ import { GetReinspecao } from './use-cases/get-reinspecao';
 import { MarcarVencidas } from './use-cases/marcar-vencidas';
 import { ReagendarReinspecao } from './use-cases/reagendar';
 import { RegistrarResultadoReinspecao } from './use-cases/registrar-resultado';
+import { ListReinspecoesTerritorioUseCase } from './use-cases/list-reinspecoes-territorio';
 import { ReinspecaoViewModel } from './view-model/reinspecao';
 
 @UseInterceptors(PrismaInterceptor)
@@ -62,6 +63,7 @@ export class ReinspecaoController {
     private registrarResultadoReinspecao: RegistrarResultadoReinspecao,
     private marcarVencidas: MarcarVencidas,
     private getReinspecao: GetReinspecao,
+    private listReinspecoesTerritorioUc: ListReinspecoesTerritorioUseCase,
     @Inject(REQUEST) private req: Request,
   ) {}
 
@@ -106,6 +108,15 @@ export class ReinspecaoController {
     // Agente só pode consultar o próprio contador — supervisor/admin podem especificar qualquer agente.
     const resolvedAgenteId = isPrivileged ? agenteId : user.id;
     return this.countPendentes.execute(clienteId, resolvedAgenteId);
+  }
+
+  @Get('territorio')
+  @Roles('admin', 'supervisor', 'agente')
+  @ApiOperation({ summary: 'Reinspeções do território do agente autenticado (por quadra permanente)' })
+  async territorio() {
+    const clienteId = requireTenantId(getAccessScope(this.req));
+    const reinspecoes = await this.listReinspecoesTerritorioUc.execute(clienteId);
+    return reinspecoes.map(ReinspecaoViewModel.toHttp);
   }
 
   @Get(':id')

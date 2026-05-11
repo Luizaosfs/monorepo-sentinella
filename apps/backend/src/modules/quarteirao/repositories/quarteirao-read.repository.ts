@@ -62,4 +62,9 @@ export abstract class QuarteiraoReadRepository {
     clienteId: string,
     agenteId: string,
   ): Promise<TerritorioAgenteQuadra[]>;
+
+  abstract countDistribuicoesByBairroId(
+    clienteId: string,
+    bairroId: string,
+  ): Promise<number>;
 }
