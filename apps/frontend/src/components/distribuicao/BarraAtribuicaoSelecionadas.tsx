@@ -32,13 +32,26 @@ export function BarraAtribuicaoSelecionadas({
   if (selecionadas.size === 0) return null;
 
   const quadrasSel = [...selecionadas].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  const totalImoveis = quadrasSel.reduce((s, q) => s + (contagemPorQ[q] ?? 0), 0);
+  const bairrosEnvolvidos = new Set(quadrasSel.map((q) => qBairroMap[q]).filter(Boolean)).size;
+  const pendentes = quadrasSel.filter((q) => {
+    const st = atribuicoes[q] ?? { salvo: '', pendente: '' };
+    return st.pendente !== st.salvo;
+  }).length;
 
   return (
     <div className="fixed bottom-0 inset-x-0 z-[600] rounded-t-xl border-t border-x bg-card/95 backdrop-blur shadow-lg overflow-hidden">
+      {/* Stats summary */}
+      <div className="flex items-center gap-3 px-4 py-1 border-b bg-primary/5 text-[10px] text-muted-foreground flex-wrap">
+        <span className="font-semibold text-primary">{selecionadas.size} quadra{selecionadas.size !== 1 ? 's' : ''}</span>
+        {totalImoveis > 0 && <><span className="text-border">·</span><span>{totalImoveis} imóveis</span></>}
+        {bairrosEnvolvidos > 0 && <><span className="text-border">·</span><span>{bairrosEnvolvidos} bairro{bairrosEnvolvidos !== 1 ? 's' : ''}</span></>}
+        {pendentes > 0 && <><span className="text-border">·</span><span className="text-amber-600 font-medium">{pendentes} não salva{pendentes !== 1 ? 's' : ''}</span></>}
+      </div>
       {/* Controls */}
       <div className="flex items-center gap-3 px-4 py-2.5 border-b bg-muted/30 flex-wrap">
-        <span className="text-sm font-semibold text-primary shrink-0">
-          {selecionadas.size} quadra(s) selecionada(s)
+        <span className="text-sm font-semibold text-foreground shrink-0">
+          Atribuir seleção
         </span>
         <div className="flex items-center gap-2 flex-1 min-w-0">
           <Select value={agenteId} onValueChange={setAgenteId}>
@@ -79,7 +92,7 @@ export function BarraAtribuicaoSelecionadas({
       </div>
 
       {/* Table */}
-      <div className="max-h-52 overflow-y-auto">
+      <div className="max-h-[160px] overflow-y-auto">
         <table className="w-full text-xs">
           <thead className="sticky top-0 bg-muted/50">
             <tr className="text-[10px] text-muted-foreground font-semibold">

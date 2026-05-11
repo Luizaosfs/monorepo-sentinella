@@ -169,6 +169,7 @@ export function PainelRegioesQuadras({
             const semGeom = quarteiraoGeomMap
               ? vis.filter((q) => !quarteiraoGeomMap[q]).length
               : 0;
+            const totalImoveisRegiao = qs.reduce((s, q) => s + (contagemPorQ[q] ?? 0), 0);
 
             return (
               <div key={bairroId}>
@@ -200,11 +201,20 @@ export function PainelRegioesQuadras({
                       <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                     )}
                     <span className="text-xs font-semibold truncate">{nome}</span>
+                    {totalImoveisRegiao > 0 && (
+                      <span className="text-[9px] text-muted-foreground/60 tabular-nums shrink-0 ml-1">
+                        {totalImoveisRegiao}im
+                      </span>
+                    )}
                     <Badge
                       variant="outline"
                       className={cn(
                         'text-[9px] h-4 px-1 shrink-0 ml-auto',
-                        atribuidos === vis.length && vis.length > 0 && 'bg-emerald-50 border-emerald-300 text-emerald-700',
+                        atribuidos === vis.length && vis.length > 0
+                          ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
+                          : atribuidos > 0
+                            ? 'bg-amber-50 border-amber-200 text-amber-700'
+                            : '',
                       )}
                     >
                       {atribuidos}/{vis.length}

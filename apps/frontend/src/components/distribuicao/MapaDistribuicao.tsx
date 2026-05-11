@@ -33,6 +33,8 @@ interface Props {
   agentesMap: Record<string, string>;
   regiaoNomeMap: Record<string, string>;
   contagemPorQ: Record<string, number>;
+  /** pct_cobertura por código de quarteirão (0–100) */
+  cobertura?: Record<string, number>;
   /** Itens pré-computados da legenda de agentes */
   agenteLegenda?: AgenteLegendItem[];
   /** Clique simples ou Ctrl/Cmd+clique num polígono de quarteirão. */
@@ -50,6 +52,7 @@ function quarteiraoStyle(
   atribuicoes: Record<string, AtribuicaoState>,
   selecionadas: Set<string>,
   agentColorMap: Record<string, string>,
+  cobertura?: Record<string, number>,
 ): L.PathOptions {
   const sel = selecionadas.has(codigo);
   const agenteId = atribuicoes[codigo]?.pendente ?? '';
@@ -58,14 +61,12 @@ function quarteiraoStyle(
   if (sel) {
     return { color: '#1e40af', fillColor: '#3b82f6', weight: 3, fillOpacity: 0.72, opacity: 1, dashArray: undefined };
   }
-  return {
-    color: agenteId ? baseColor : '#64748b',
-    fillColor: agenteId ? baseColor : '#e2e8f0',
-    weight: 1.8,
-    fillOpacity: agenteId ? 0.48 : 0.12,
-    opacity: 0.85,
-    dashArray: undefined,
-  };
+  if (agenteId) {
+    const pct = cobertura?.[codigo];
+    const fillOpacity = pct === undefined ? 0.45 : pct >= 80 ? 0.68 : pct >= 30 ? 0.50 : 0.28;
+    return { color: baseColor, fillColor: baseColor, weight: 1.8, fillOpacity, opacity: 0.85, dashArray: undefined };
+  }
+  return { color: '#64748b', fillColor: '#e2e8f0', weight: 1.5, fillOpacity: 0.12, opacity: 0.70, dashArray: undefined };
 }
 
 const REGIAO_STYLE: L.PathOptions = {
@@ -82,7 +83,7 @@ const REGIAO_STYLE: L.PathOptions = {
 export function MapaDistribuicao({
   className,
   regiaoPolygons, quarteiraoPolygons, porRegiao,
-  atribuicoes, selecionadas, agentColorMap, agentesMap, regiaoNomeMap, contagemPorQ,
+  atribuicoes, selecionadas, agentColorMap, agentesMap, regiaoNomeMap, contagemPorQ, cobertura,
   agenteLegenda,
   onSelectQuarteirao, onSelectRegiao, onEditarGeometria,
 }: Props) {
@@ -105,6 +106,8 @@ export function MapaDistribuicao({
   regiaoNomeMapRef.current = regiaoNomeMap;
   const contagemRef = useRef(contagemPorQ);
   contagemRef.current = contagemPorQ;
+  const coberturaRef = useRef(cobertura);
+  coberturaRef.current = cobertura;
   const porRegiaoRef = useRef(porRegiao);
   porRegiaoRef.current = porRegiao;
   const onSelectQRef = useRef(onSelectQuarteirao);
@@ -216,15 +219,20 @@ export function MapaDistribuicao({
             const agenteId = atribuicoesRef.current[codigo]?.pendente ?? '';
             const nomeAgente = agenteId ? (agentesMapRef.current[agenteId] ?? '?') : 'Sem atribuição';
             const regiaoNome = bairroId ? (regiaoNomeMapRef.current[bairroId] ?? '—') : '—';
-            const color = agenteId ? '#16a34a' : '#9ca3af';
+            const atribColor = agenteId ? '#16a34a' : '#9ca3af';
             const status = agenteId ? 'Atribuído' : 'Sem atribuição';
             const imoveis = contagemRef.current[codigo] ?? 0;
+            const pct = coberturaRef.current?.[codigo];
+            const coberturaStr = pct !== undefined
+              ? `<br/><span style="font-size:11px;color:${pct >= 80 ? '#16a34a' : pct >= 30 ? '#d97706' : '#9ca3af'}">Cobertura: ${pct}%</span>`
+              : '';
             return `
               <b style="font-size:13px">${codigo}</b><br/>
-              <span style="font-size:11px;color:#6b7280">Região: ${regiaoNome}</span><br/>
+              <span style="font-size:11px;color:#6b7280">Bairro: ${regiaoNome}</span><br/>
               <span style="font-size:11px;color:#6b7280">Agente: ${nomeAgente}</span><br/>
-              <span style="font-size:11px;color:${color}">${status}</span>
+              <span style="font-size:11px;color:${atribColor}">${status}</span>
               ${imoveis > 0 ? `<br/><span style="font-size:11px;color:#6b7280">${imoveis} imóveis</span>` : ''}
+              ${coberturaStr}
             `;
           },
           { sticky: true },
@@ -236,7 +244,7 @@ export function MapaDistribuicao({
         });
         layer.on('mouseout', () => {
           (layer as L.Path).setStyle(
-            quarteiraoStyle(codigo, atribuicoesRef.current, selecionadasRef.current, agentColorMapRef.current),
+            quarteiraoStyle(codigo, atribuicoesRef.current, selecionadasRef.current, agentColorMapRef.current, coberturaRef.current),
           );
         });
 
@@ -297,9 +305,10 @@ export function MapaDistribuicao({
         atribuicoes,
         selecionadas,
         agentColorMap,
+        cobertura,
       ),
     );
-  }, [atribuicoes, selecionadas, agentColorMap]);
+  }, [atribuicoes, selecionadas, agentColorMap, cobertura]);
 
   // ── UI ────────────────────────────────────────────────────────────────────
 
@@ -316,19 +325,32 @@ export function MapaDistribuicao({
       <div ref={containerRef} style={{ height: '100%', width: '100%' }} />
 
       {/* Legend */}
-      <div className="absolute bottom-3 left-3 z-[500] flex flex-wrap gap-2 text-[10px] font-medium bg-background/90 backdrop-blur border rounded-lg px-2.5 py-1.5 shadow-sm">
-        <span className="flex items-center gap-1.5">
-          <span className="inline-block h-2.5 w-5 rounded" style={{ background: '#3b82f6', opacity: 0.85 }} />
-          Atribuído
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="inline-block h-2.5 w-5 rounded border border-slate-400" style={{ background: '#e2e8f0' }} />
-          Sem agente
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="inline-block h-2.5 w-5 rounded border-2 border-blue-800" />
-          Selecionado
-        </span>
+      <div className="absolute bottom-3 left-3 z-[500] flex flex-col gap-1 text-[10px] font-medium bg-background/90 backdrop-blur border rounded-lg px-2.5 py-1.5 shadow-sm">
+        <div className="flex flex-wrap gap-2">
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block h-2.5 w-5 rounded" style={{ background: '#3b82f6', opacity: 0.85 }} />
+            Atribuído
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block h-2.5 w-5 rounded border border-slate-400" style={{ background: '#e2e8f0' }} />
+            Sem agente
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block h-2.5 w-5 rounded border-2 border-blue-800" />
+            Selecionado
+          </span>
+        </div>
+        {cobertura && Object.keys(cobertura).length > 0 && (
+          <div className="flex items-center gap-1.5 border-t pt-1 text-muted-foreground">
+            <span className="shrink-0">Cobertura:</span>
+            <span className="flex items-center gap-0.5">
+              <span className="inline-block h-2 w-3 rounded-sm" style={{ background: '#94a3b8', opacity: 0.3 }} />
+              <span className="inline-block h-2 w-3 rounded-sm" style={{ background: '#94a3b8', opacity: 0.55 }} />
+              <span className="inline-block h-2 w-3 rounded-sm" style={{ background: '#94a3b8', opacity: 0.85 }} />
+            </span>
+            <span>0 → 100%</span>
+          </div>
+        )}
       </div>
 
       {/* Tip: multi-select */}

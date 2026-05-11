@@ -48,9 +48,6 @@ import type { RegiaoParaDesenho } from '@/components/quarteiroes/ModalDesenharQu
 
 const SEM_REGIAO = '__sem_regiao__';
 
-/** Mesma altura do mapa e dos painéis laterais (viewport menos cabeçalho + KPIs). */
-const DISTRIB_AREA_BOX = 'h-[calc(100vh-340px)] min-h-[480px]';
-
 export default function AdminDistribuicaoQuarteirao() {
   const { clienteId } = useClienteAtivo();
   const queryClient = useQueryClient();
@@ -150,6 +147,14 @@ export default function AdminDistribuicaoQuarteirao() {
     const c: Record<string, number> = {};
     for (const row of cobertura as CoberturaItem[]) {
       c[row.quarteirao] = Number(row.total_imoveis);
+    }
+    return c;
+  }, [cobertura]);
+
+  const coberturaMap = useMemo(() => {
+    const c: Record<string, number> = {};
+    for (const row of cobertura as CoberturaItem[]) {
+      c[row.quarteirao] = Math.round(Number(row.pct_cobertura));
     }
     return c;
   }, [cobertura]);
@@ -564,6 +569,11 @@ export default function AdminDistribuicaoQuarteirao() {
 
   const isLoading = loadingDist || loadingAgentes || loadingQ || loadingRegioes;
 
+  // Encurta os painéis quando a barra de atribuição está visível para caber na viewport sem scroll
+  const distribAreaBox = selecionadas.size > 0
+    ? 'h-[calc(100vh-440px)] min-h-[240px]'
+    : 'h-[calc(100vh-360px)] min-h-[440px]';
+
   // ── Stepper de fluxo operacional ──────────────────────────────────────────
   const passosConcluidos = useMemo<StepInfo[]>(() => {
     const temCiclo     = !!cicloId;
@@ -617,7 +627,7 @@ export default function AdminDistribuicaoQuarteirao() {
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className={cn('space-y-4 animate-fade-in', selecionadas.size > 0 && 'pb-80')}>
+    <div className="space-y-4 animate-fade-in -mt-4 lg:-mt-8">
       {/* Header */}
       <AdminPageHeader
         title="Distribuição de Quadras"
@@ -754,9 +764,9 @@ export default function AdminDistribuicaoQuarteirao() {
       {/* 3-panel layout */}
       {isLoading ? (
         <div className="grid grid-cols-1 items-stretch gap-3 lg:grid-cols-[minmax(0,26fr)_minmax(0,58fr)_minmax(0,16fr)]">
-          <Skeleton className={cn('rounded-xl', DISTRIB_AREA_BOX)} />
-          <Skeleton className={cn('rounded-xl', DISTRIB_AREA_BOX)} />
-          <Skeleton className={cn('rounded-xl', DISTRIB_AREA_BOX)} />
+          <Skeleton className={cn('rounded-xl', distribAreaBox)} />
+          <Skeleton className={cn('rounded-xl', distribAreaBox)} />
+          <Skeleton className={cn('rounded-xl', distribAreaBox)} />
         </div>
       ) : !cicloId ? (
         /* Estado vazio — sem ciclo selecionado */
@@ -829,7 +839,7 @@ export default function AdminDistribuicaoQuarteirao() {
       ) : (
         <div className="grid grid-cols-1 items-stretch gap-3 lg:grid-cols-[minmax(0,26fr)_minmax(0,58fr)_minmax(0,16fr)]">
           {/* Left panel */}
-          <div className={cn('lg:sticky lg:top-4', DISTRIB_AREA_BOX)}>
+          <div className={cn('lg:sticky lg:top-4', distribAreaBox)}>
             <PainelRegioesQuadras
               porRegiao={porRegiao}
               bairroIds={bairroIds}
@@ -857,7 +867,7 @@ export default function AdminDistribuicaoQuarteirao() {
           </div>
 
           {/* Center — tabs + mapa/lista (mesma altura dos painéis laterais) */}
-          <div className={cn('flex min-h-0 flex-col', DISTRIB_AREA_BOX)}>
+          <div className={cn('flex min-h-0 flex-col', distribAreaBox)}>
             <div className="mb-3 flex shrink-0 gap-1 border-b">
               {([
                 { key: 'mapa', label: 'Mapa', Icon: MapIcon },
@@ -892,6 +902,7 @@ export default function AdminDistribuicaoQuarteirao() {
                   agentesMap={agentesMap}
                   regiaoNomeMap={regiaoNomeMap}
                   contagemPorQ={contagemPorQ}
+                  cobertura={coberturaMap}
                   agenteLegenda={agenteLegenda}
                   onSelectQuarteirao={selectQuarteirao}
                   onSelectRegiao={selectQuadras}
@@ -918,7 +929,7 @@ export default function AdminDistribuicaoQuarteirao() {
           </div>
 
           {/* Right panel */}
-          <div className={cn('lg:sticky lg:top-4', DISTRIB_AREA_BOX)}>
+          <div className={cn('lg:sticky lg:top-4', distribAreaBox)}>
             <PainelAgentesDistribuicao
               agentes={agentes}
               cargaAgente={cargaAgente}

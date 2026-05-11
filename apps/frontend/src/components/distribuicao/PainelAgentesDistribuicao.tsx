@@ -13,6 +13,7 @@ interface Props {
 export function PainelAgentesDistribuicao({ agentes, cargaAgente, totalQuadras, agentColorMap }: Props) {
   const maxQuadras = Math.max(...agentes.map((a) => cargaAgente[a.id]?.quarteiroes ?? 0), 1);
   const mediaQuadras = agentes.length > 0 && totalQuadras > 0 ? totalQuadras / agentes.length : 0;
+  const totalImoveis = agentes.reduce((s, a) => s + (cargaAgente[a.id]?.imoveis ?? 0), 0);
 
   return (
     <div className="flex flex-col h-full border rounded-xl bg-card overflow-hidden">
@@ -83,7 +84,14 @@ export function PainelAgentesDistribuicao({ agentes, cargaAgente, totalQuadras, 
                   <Progress value={pctBar} className="h-1.5" />
                   <div className="flex items-center justify-between">
                     <span className="text-[9px] text-muted-foreground">{pctQ}% das quadras</span>
-                    <span className="text-[9px] text-muted-foreground">{carga.imoveis} im.</span>
+                    <span className="text-[9px] text-muted-foreground">
+                      {carga.imoveis} im.
+                      {totalImoveis > 0 && carga.imoveis > 0 && (
+                        <span className="text-muted-foreground/60 ml-0.5">
+                          ({Math.round((carga.imoveis / totalImoveis) * 100)}%)
+                        </span>
+                      )}
+                    </span>
                   </div>
                 </div>
               </div>
