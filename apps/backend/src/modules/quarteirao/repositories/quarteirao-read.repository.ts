@@ -21,7 +21,7 @@ export type DistribuicaoTerritorialItem = {
   bairroNome: string | null;
   agenteId: string;
   agenteNome: string;
-  cicloIdOrigem: string;
+  cicloIdOrigem: string | null;
   updatedAt: Date;
 };
 

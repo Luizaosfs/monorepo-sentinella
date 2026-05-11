@@ -128,6 +128,60 @@ export class PrismaQuarteiraoWriteRepository implements QuarteiraoWriteRepositor
     return created.id;
   }
 
+  async atribuirQuadraTerritorial(input: {
+    clienteId: string;
+    quadraId: string;
+    agenteId: string;
+    bairroId?: string;
+  }): Promise<DistribuicaoQuarteirao> {
+    const { clienteId, quadraId, agenteId, bairroId } = input;
+    const bairroSql = bairroId
+      ? Prisma.sql`${bairroId}::uuid`
+      : Prisma.sql`NULL`;
+
+    const [row] = await this.prisma.client.$queryRaw<any[]>(Prisma.sql`
+      INSERT INTO bairros_distribuicao (cliente_id, ciclo_id, quadra_id, agente_id, bairro_id)
+      VALUES (
+        ${clienteId}::uuid,
+        NULL,
+        ${quadraId}::uuid,
+        ${agenteId}::uuid,
+        ${bairroSql}
+      )
+      ON CONFLICT (cliente_id, quadra_id) WHERE ciclo_id IS NULL
+      DO UPDATE SET
+        agente_id  = EXCLUDED.agente_id,
+        bairro_id  = EXCLUDED.bairro_id,
+        updated_at = NOW()
+      RETURNING id, cliente_id, ciclo_id, quadra_id, agente_id, bairro_id, created_at, updated_at
+    `);
+
+    return PrismaQuarteiraoMapper.distribuicaoToDomain(row);
+  }
+
+  async desatribuirQuadraTerritorial(input: {
+    clienteId: string;
+    quadraId: string;
+  }): Promise<{ removida: boolean }> {
+    const count = await this.prisma.client.$executeRaw(Prisma.sql`
+      DELETE FROM bairros_distribuicao
+      WHERE cliente_id = ${input.clienteId}::uuid
+        AND quadra_id  = ${input.quadraId}::uuid
+        AND ciclo_id IS NULL
+    `);
+    return { removida: count > 0 };
+  }
+
+  async findDistribuicaoTerritorialAtualByQuadra(
+    clienteId: string,
+    quadraId: string,
+  ): Promise<DistribuicaoQuarteirao | null> {
+    const raw = await this.prisma.client.bairros_distribuicao.findFirst({
+      where: { cliente_id: clienteId, quadra_id: quadraId, ciclo_id: null },
+    });
+    return raw ? PrismaQuarteiraoMapper.distribuicaoToDomain(raw as any) : null;
+  }
+
   async saveQuarteirao(entity: Quarteirao): Promise<Quarteirao> {
     const geojsonIsNull = entity.geojson == null;
     await this.prisma.client.bairros_quadras.updateMany({

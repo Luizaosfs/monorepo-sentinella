@@ -10,6 +10,7 @@ import {
   useCoberturaQuarteirao,
   useQuarteiroesMestre,
 } from '@/hooks/queries/useDistribuicaoQuarteirao';
+import { useDistribuicaoTerritorial } from '@/hooks/queries/useDistribuicaoTerritorial';
 import AdminPageHeader from '@/components/AdminPageHeader';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -29,6 +30,7 @@ import { cn } from '@/lib/utils';
 import type { BairrosDistribuicao } from '@/types/database';
 
 import { DistribuicaoKpiCards } from '@/components/distribuicao/DistribuicaoKpiCards';
+import { TerritorialKpiCards } from '@/components/distribuicao/TerritorialKpiCards';
 import { FluxoOperacionalStepper } from '@/components/distribuicao/FluxoOperacionalStepper';
 import type { StepInfo } from '@/components/distribuicao/FluxoOperacionalStepper';
 import { PainelRegioesQuadras } from '@/components/distribuicao/PainelRegioesQuadras';
@@ -48,21 +50,25 @@ import type { RegiaoParaDesenho } from '@/components/quarteiroes/ModalDesenharQu
 
 const SEM_REGIAO = '__sem_regiao__';
 
+type Mode = 'territorial' | 'ciclo';
+
 export default function AdminDistribuicaoQuarteirao() {
   const { clienteId } = useClienteAtivo();
   const queryClient = useQueryClient();
-  const { data: cicloAtivo, cicloNumero } = useCicloAtivo();
+  const { data: cicloAtivo } = useCicloAtivo();
   const { data: todosCiclos = [] } = useHistoricoCiclos();
 
+  // ── Mode ─────────────────────────────────────────────────────────────────
+  const [mode, setMode] = useState<Mode>('territorial');
+
   const [cicloId, setCicloId] = useState<string>(() => cicloAtivo?.id ?? '');
-  /** UUID do ciclo aguardando confirmação (troca com pendentes não salvos). */
   const [pendingCicloId, setPendingCicloId] = useState<string | null>(null);
 
-  // Sincroniza cicloId inicial quando cicloAtivo carrega
   useEffect(() => {
     if (cicloAtivo?.id && !cicloId) setCicloId(cicloAtivo.id);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cicloAtivo?.id]);
+
   const [aba, setAba] = useState<'mapa' | 'lista'>('mapa');
   const [abertas, setAbertas] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState('');
@@ -75,13 +81,14 @@ export default function AdminDistribuicaoQuarteirao() {
   const [modalDesenharOpen, setModalDesenharOpen] = useState(false);
   const [modalDesenharRegiaoId, setModalDesenharRegiaoId] = useState<string | null>(null);
   const [modalImportarOpen, setModalImportarOpen] = useState(false);
-  /** Quarteirão clicado no mapa — objeto com tick para re-disparar mesmo código repetido */
   const [highlightEntry, setHighlightEntry] = useState<{ codigo: string; tick: number } | null>(null);
 
   // ── Data ──────────────────────────────────────────────────────────────────
   const { data: distribuicaoSalva = [], isLoading: loadingDist } =
-    useDistribuicaoQuarteiraoByCiclo(clienteId, cicloId);
-  const { data: cobertura = [] } = useCoberturaQuarteirao(clienteId, cicloId);
+    useDistribuicaoQuarteiraoByCiclo(clienteId, mode === 'ciclo' ? cicloId : '');
+  const { data: distribuicaoTerritorial = [], isLoading: loadingTerritorial } =
+    useDistribuicaoTerritorial(mode === 'territorial' ? clienteId : null);
+  const { data: cobertura = [] } = useCoberturaQuarteirao(clienteId, mode === 'ciclo' ? cicloId : '');
   const { data: quarteiroesMestre = [], isLoading: loadingQ } = useQuarteiroesMestre(clienteId);
   const { data: regioesList = [], isLoading: loadingRegioes } = useQuery({
     queryKey: ['regioes', clienteId],
@@ -104,7 +111,6 @@ export default function AdminDistribuicaoQuarteirao() {
   );
   const isCicloFechado = cicloSelecionado?.status === 'fechado';
 
-  /** Regiões para ModalGerarLote (sem geometria — não precisa). */
   const regioesMapped = useMemo<RegiaoOpcao[]>(
     () =>
       (regioesList as Array<Record<string, unknown>>)
@@ -117,7 +123,6 @@ export default function AdminDistribuicaoQuarteirao() {
     [regioesList],
   );
 
-  /** Regiões completas para ModalDesenhar/EditarGeometria (com geojson como background). */
   const regioesMappedFull = useMemo<RegiaoParaDesenho[]>(
     () =>
       (regioesList as Array<Record<string, unknown>>)
@@ -143,7 +148,6 @@ export default function AdminDistribuicaoQuarteirao() {
     [regioesList],
   );
 
-  /** Keyed by UUID (quadra_id) — sem colisão entre bairros com mesmo código. */
   const contagemPorQ = useMemo(() => {
     const c: Record<string, number> = {};
     for (const row of cobertura as CoberturaItem[]) {
@@ -174,7 +178,6 @@ export default function AdminDistribuicaoQuarteirao() {
     return m;
   }, [agentes]);
 
-  /** Array de UUIDs das quadras, ordenados pelo codigo para exibição. */
   const quarteiroes = useMemo(
     () =>
       (quarteiroesMestre as Array<Record<string, unknown>>)
@@ -184,7 +187,6 @@ export default function AdminDistribuicaoQuarteirao() {
     [quarteiroesMestre],
   );
 
-  /** UUID → bairroId. Keyed by UUID para ser consistente com selecionadas/atribuicoes. */
   const qBairroMap = useMemo(() => {
     const m: Record<string, string | null> = {};
     for (const q of quarteiroesMestre as Array<Record<string, unknown>>) {
@@ -193,7 +195,6 @@ export default function AdminDistribuicaoQuarteirao() {
     return m;
   }, [quarteiroesMestre]);
 
-  /** codigo → UUID (para lookup inverso; não usar como chave de estado — usar UUID diretamente). */
   const qIdMap = useMemo(() => {
     const m: Record<string, string> = {};
     for (const q of quarteiroesMestre as Array<Record<string, unknown>>) {
@@ -202,7 +203,6 @@ export default function AdminDistribuicaoQuarteirao() {
     return m;
   }, [quarteiroesMestre]);
 
-  /** UUID da quadra → codigo (para sync com distribuicaoSalva) */
   const quadraIdToCode = useMemo(() => {
     const m: Record<string, string> = {};
     for (const q of quarteiroesMestre as Array<Record<string, unknown>>) {
@@ -211,7 +211,6 @@ export default function AdminDistribuicaoQuarteirao() {
     return m;
   }, [quarteiroesMestre]);
 
-  /** UUID → tem geometria (keyed by UUID para consistência com selecionadas). */
   const quarteiraoGeomMap = useMemo<Record<string, boolean>>(() => {
     const m: Record<string, boolean> = {};
     for (const q of quarteiroesMestre as Array<Record<string, unknown>>) {
@@ -222,7 +221,6 @@ export default function AdminDistribuicaoQuarteirao() {
     return m;
   }, [quarteiroesMestre]);
 
-  /** Quarteirões com geometria — camada principal do mapa. */
   const quarteiraoPolygons = useMemo<QuarteiraoPolygon[]>(() => {
     return (quarteiroesMestre as Array<Record<string, unknown>>)
       .filter((q) => {
@@ -238,7 +236,6 @@ export default function AdminDistribuicaoQuarteirao() {
       }));
   }, [quarteiroesMestre]);
 
-  /** Mapa bairroId → { nome, qs: UUID[] }. qs armazena UUIDs (não codigos) para seleção única. */
   const porRegiao = useMemo(() => {
     const map = new Map<string, { nome: string; qs: string[] }>();
     for (const r of regioesList as Array<Record<string, unknown>>) {
@@ -291,7 +288,6 @@ export default function AdminDistribuicaoQuarteirao() {
     return c;
   }, [atribuicoes, contagemPorQ]);
 
-  /** Polígonos de regiões para camada de fundo do mapa. */
   const regiaoPolygons = useMemo<RegiaoPolygon[]>(() => {
     return (regioesList as Array<Record<string, unknown>>)
       .filter((r) => {
@@ -311,7 +307,6 @@ export default function AdminDistribuicaoQuarteirao() {
   );
   const semGeometria = quarteiroes.length - comGeometria;
 
-  /** Legenda de agentes para o mapa */
   const agenteLegenda = useMemo(() => {
     const map: Record<string, { quadras: number; comGeom: number }> = {};
     for (const [uuid, st] of Object.entries(atribuicoes)) {
@@ -350,6 +345,17 @@ export default function AdminDistribuicaoQuarteirao() {
     [cobertura],
   );
 
+  // ── Territorial KPIs ──────────────────────────────────────────────────────
+  const territorialAtribuidas = distribuicaoTerritorial.length;
+  const territorialSemResponsavel = Math.max(quarteiroes.length - territorialAtribuidas, 0);
+  const territorialAgentesAtivos = useMemo(
+    () => new Set(distribuicaoTerritorial.map(d => d.agenteId)).size,
+    [distribuicaoTerritorial],
+  );
+  const territorialMediaQuadras = territorialAgentesAtivos > 0
+    ? Math.round((territorialAtribuidas / territorialAgentesAtivos) * 10) / 10
+    : 0;
+
   const quadrasFiltradas = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
     return quarteiroes.filter((q) => {
@@ -365,9 +371,9 @@ export default function AdminDistribuicaoQuarteirao() {
     });
   }, [quarteiroes, searchTerm, filtro, atribuicoes, qBairroMap, regiaoNomeMap, quadraIdToCode]);
 
-  // ── Sync local state with server data ─────────────────────────────────────
+  // ── Sync local state — ciclo mode ─────────────────────────────────────────
   useEffect(() => {
-    if (loadingDist) return;
+    if (mode !== 'ciclo' || loadingDist) return;
     setAtribuicoes((prev) => {
       const next: Record<string, AtribuicaoState> = {};
       for (const q of quarteiroes) {
@@ -385,17 +391,44 @@ export default function AdminDistribuicaoQuarteirao() {
       return new Set(bairroIds);
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [distribuicaoSalva, loadingDist, quarteiroes.join(',')]);
+  }, [distribuicaoSalva, loadingDist, quarteiroes.join(','), mode]);
+
+  // ── Sync local state — territorial mode ───────────────────────────────────
+  useEffect(() => {
+    if (mode !== 'territorial' || loadingTerritorial || loadingQ) return;
+    setAtribuicoes(() => {
+      const next: Record<string, AtribuicaoState> = {};
+      for (const q of quarteiroes) {
+        const terr = distribuicaoTerritorial.find(d => d.quadraId === q);
+        const agente = terr?.agenteId ?? '';
+        next[q] = { salvo: agente, pendente: agente };
+      }
+      return next;
+    });
+    setAbertas((prev) => {
+      if (prev.size > 0) return prev;
+      return new Set(bairroIds);
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [distribuicaoTerritorial, loadingTerritorial, quarteiroes.join(','), mode]);
+
+  // ── Reset on mode switch ──────────────────────────────────────────────────
+  useEffect(() => {
+    setSelecionadas(new Set());
+    setAtribuicoes({});
+  }, [mode]);
 
   // ── Actions ───────────────────────────────────────────────────────────────
 
   const setAtribuicao = useCallback((quarteirao: string, agenteId: string) => {
+    // No inline edits in territorial mode (all changes are immediate via API)
+    if (mode === 'territorial') return;
     if (isCicloFechado) return;
     setAtribuicoes((prev) => ({
       ...prev,
       [quarteirao]: { salvo: prev[quarteirao]?.salvo ?? '', pendente: agenteId },
     }));
-  }, [isCicloFechado]);
+  }, [mode, isCicloFechado]);
 
   const toggleQuadra = useCallback((q: string) => {
     setSelecionadas((prev) => {
@@ -417,7 +450,6 @@ export default function AdminDistribuicaoQuarteirao() {
     });
   }, []);
 
-  /** Seleciona/deseleciona um quarteirão a partir do clique no mapa e rola painel. */
   const selectQuarteirao = useCallback((codigo: string, multi: boolean) => {
     setHighlightEntry({ codigo, tick: Date.now() });
     setSelecionadas((prev) => {
@@ -437,7 +469,6 @@ export default function AdminDistribuicaoQuarteirao() {
     });
   }, []);
 
-  /** Troca de ciclo: pede confirmação se houver pendentes não salvos. */
   const handleCicloChange = useCallback((newId: string) => {
     if (newId === cicloId) return;
     if (temPendentes) {
@@ -448,7 +479,6 @@ export default function AdminDistribuicaoQuarteirao() {
     }
   }, [cicloId, temPendentes]);
 
-  /** Confirma troca de ciclo — descarta pendentes e troca. */
   const confirmarTrocarCiclo = useCallback(() => {
     if (!pendingCicloId) return;
     setCicloId(pendingCicloId);
@@ -457,7 +487,6 @@ export default function AdminDistribuicaoQuarteirao() {
     setPendingCicloId(null);
   }, [pendingCicloId]);
 
-  /** Descarta todas as alterações locais, voltando ao estado salvo. */
   const descartarAlteracoes = useCallback(() => {
     setAtribuicoes((prev) => {
       const next: Record<string, AtribuicaoState> = {};
@@ -469,44 +498,64 @@ export default function AdminDistribuicaoQuarteirao() {
     setSelecionadas(new Set());
   }, []);
 
-  /** Abre modal de desenho de nova quadra (do header ou de uma região específica). */
   const handleDesenharNova = useCallback((bairroId?: string) => {
     setModalDesenharRegiaoId(bairroId ?? null);
     setModalDesenharOpen(true);
   }, []);
 
-
+  // ── Mutation: atribuir (mode-aware) ───────────────────────────────────────
   const atribuirMutation = useMutation({
     mutationFn: async (agenteId: string) => {
-      if (!clienteId || !cicloId || selecionadas.size === 0) return null;
+      if (!clienteId || selecionadas.size === 0) return null;
       const ids = [...selecionadas];
-      if (agenteId) {
-        const rows = ids.map(quadraId => ({
-          cicloId,
-          quadraId,
-          agenteId,
-          bairroId: qBairroMap[quadraId] ?? null,
-        }));
-        await api.distribuicaoQuarteirao.upsert(rows);
+
+      if (mode === 'territorial') {
+        if (agenteId) {
+          await Promise.all(ids.map(quadraId =>
+            api.distribuicaoQuarteirao.atribuirTerritorial(quadraId, agenteId),
+          ));
+        } else {
+          await Promise.all(ids.map(quadraId =>
+            api.distribuicaoQuarteirao.desatribuirTerritorial(quadraId),
+          ));
+        }
       } else {
-        await api.distribuicaoQuarteirao.deletar(cicloId, ids);
+        if (!cicloId) return null;
+        if (agenteId) {
+          const rows = ids.map(quadraId => ({
+            cicloId,
+            quadraId,
+            agenteId,
+            bairroId: qBairroMap[quadraId] ?? null,
+          }));
+          await api.distribuicaoQuarteirao.upsert(rows);
+        } else {
+          await api.distribuicaoQuarteirao.deletar(cicloId, ids);
+        }
       }
       return { agenteId, ids };
     },
     onSuccess: (result) => {
       if (!result) return;
       const { agenteId, ids } = result;
-      setAtribuicoes((prev) => {
-        const next = { ...prev };
-        for (const q of ids) {
-          next[q] = { salvo: agenteId, pendente: agenteId };
-        }
-        return next;
-      });
+
+      if (mode === 'territorial') {
+        queryClient.invalidateQueries({ queryKey: ['distribuicao_territorial', clienteId] });
+      } else {
+        setAtribuicoes((prev) => {
+          const next = { ...prev };
+          for (const q of ids) {
+            next[q] = { salvo: agenteId, pendente: agenteId };
+          }
+          return next;
+        });
+        queryClient.invalidateQueries({ queryKey: ['dist_quarteirao', clienteId, cicloId] });
+        queryClient.invalidateQueries({ queryKey: ['cobertura_quarteirao', clienteId, cicloId] });
+      }
       setSelecionadas(new Set());
-      queryClient.invalidateQueries({ queryKey: ['dist_quarteirao', clienteId, cicloId] });
-      queryClient.invalidateQueries({ queryKey: ['cobertura_quarteirao', clienteId, cicloId] });
-      toast.success(`${ids.length} quadra(s) atribuída(s) com sucesso.`);
+      toast.success(
+        `${ids.length} quadra(s) ${agenteId ? 'atribuída(s)' : 'desatribuída(s)'} com sucesso.`,
+      );
     },
     onError: () => toast.error('Erro ao atribuir quadras.'),
   });
@@ -533,7 +582,6 @@ export default function AdminDistribuicaoQuarteirao() {
     setModalGerarOpen(true);
   }, []);
 
-  /** Abre modal de edição/desenho de geometria a partir do painel lateral. Recebe UUID. */
   const handleDesenharFromPanel = useCallback((uuid: string, bairroId: string | null) => {
     const q = (quarteiroesMestre as Array<Record<string, unknown>>).find(
       (m) => String(m.id) === uuid,
@@ -547,13 +595,11 @@ export default function AdminDistribuicaoQuarteirao() {
     });
   }, [quarteiroesMestre]);
 
-  /** Abre modal de edição de geometria a partir do popup do mapa. */
   const handleEditarGeometria = useCallback((q: QuarteiraoParaEdicao) => {
     setModalEditarGeometria(q);
   }, []);
 
-  // ── Mutations ─────────────────────────────────────────────────────────────
-
+  // ── Salvar mutation (ciclo mode only) ─────────────────────────────────────
   const salvarMutation = useMutation({
     mutationFn: async () => {
       if (!clienteId || !cicloId) return;
@@ -567,7 +613,6 @@ export default function AdminDistribuicaoQuarteirao() {
           toDeleteIds.push(quadraId);
         }
       }
-      console.debug('[Salvar] toUpsert:', toUpsert, 'toDeleteIds:', toDeleteIds, 'clienteId:', clienteId, 'cicloId:', cicloId);
       if (toUpsert.length === 0 && toDeleteIds.length === 0) {
         toast.info('Nada a salvar — nenhuma alteração pendente detectada.');
         return;
@@ -577,7 +622,6 @@ export default function AdminDistribuicaoQuarteirao() {
     },
     onSuccess: () => {
       const count = pendentes.length;
-      // Sync local state immediately — don't wait for the background refetch
       setAtribuicoes((prev) => {
         const next: Record<string, AtribuicaoState> = {};
         for (const [q, st] of Object.entries(prev)) {
@@ -595,10 +639,10 @@ export default function AdminDistribuicaoQuarteirao() {
   const copiarMutation = useMutation({
     mutationFn: async () => {
       if (!clienteId || !cicloId) return 0;
-      const cicloSelecionado = todosCiclos.find(c => c.id === cicloId);
-      if (!cicloSelecionado) return 0;
-      const prevNumero = cicloSelecionado.numero === 1 ? 6 : cicloSelecionado.numero - 1;
-      const prevAno    = cicloSelecionado.numero === 1 ? cicloSelecionado.ano - 1 : cicloSelecionado.ano;
+      const cicloSel = todosCiclos.find(c => c.id === cicloId);
+      if (!cicloSel) return 0;
+      const prevNumero = cicloSel.numero === 1 ? 6 : cicloSel.numero - 1;
+      const prevAno    = cicloSel.numero === 1 ? cicloSel.ano - 1 : cicloSel.ano;
       const cicloPrev  = todosCiclos.find(c => c.numero === prevNumero && c.ano === prevAno);
       if (!cicloPrev) { toast.error('Ciclo anterior não encontrado'); return 0; }
       return api.distribuicaoQuarteirao.copiarDoCiclo(clienteId, cicloPrev.id, cicloId);
@@ -614,14 +658,14 @@ export default function AdminDistribuicaoQuarteirao() {
     onError: () => toast.error('Erro ao copiar distribuição.'),
   });
 
-  const isLoading = loadingDist || loadingAgentes || loadingQ || loadingRegioes;
+  const isLoading = (mode === 'territorial' ? loadingTerritorial : loadingDist)
+    || loadingAgentes || loadingQ || loadingRegioes;
 
-  // Encurta os painéis quando a barra de atribuição está visível para caber na viewport sem scroll
   const distribAreaBox = selecionadas.size > 0
     ? 'h-[calc(100vh-440px)] min-h-[240px]'
     : 'h-[calc(100vh-360px)] min-h-[440px]';
 
-  // ── Stepper de fluxo operacional ──────────────────────────────────────────
+  // ── Stepper (ciclo mode only) ─────────────────────────────────────────────
   const passosConcluidos = useMemo<StepInfo[]>(() => {
     const temCiclo     = !!cicloId;
     const temTerrit    = regioesList.length > 0;
@@ -673,43 +717,70 @@ export default function AdminDistribuicaoQuarteirao() {
   ]);
 
   // ── Render ────────────────────────────────────────────────────────────────
+  const quadrasMgmtDisabled = mode === 'ciclo' && isCicloFechado;
+
   return (
     <div className="space-y-4 animate-fade-in -mt-4 lg:-mt-8">
       {/* Header */}
       <AdminPageHeader
         title="Distribuição de Quadras"
-        description="Atribuição de quadras aos agentes por ciclo"
+        description={
+          mode === 'territorial'
+            ? 'Atribuição territorial permanente — independente de ciclo'
+            : 'Atribuição de quadras aos agentes por ciclo'
+        }
         icon={MapIcon}
         action={
           <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-1.5">
-              <Label className="text-xs shrink-0 hidden sm:block">Ciclo</Label>
-              <Select value={cicloId} onValueChange={handleCicloChange} disabled={todosCiclos.length === 0}>
-                <SelectTrigger className="w-48 h-8 text-sm">
-                  <SelectValue placeholder="Selecione um ciclo" />
-                </SelectTrigger>
-                <SelectContent>
-                  {todosCiclos.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {CICLO_LABELS[c.numero] ?? `Ciclo ${c.numero}`} {c.ano}
-                      {c.id === cicloAtivo?.id && (
-                        <span className="ml-1 text-[10px] text-emerald-600 font-semibold">atual</span>
-                      )}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {cicloSelecionado && (
-                <span className={cn(
-                  'text-[10px] font-semibold px-1.5 py-0.5 rounded border shrink-0',
-                  CICLO_STATUS_COR[cicloSelecionado.status],
-                )}>
-                  {CICLO_STATUS_LABEL[cicloSelecionado.status]}
-                </span>
-              )}
+            {/* Mode toggle */}
+            <div className="flex items-center rounded-lg border bg-muted/30 p-0.5 gap-0.5 shrink-0">
+              {(['territorial', 'ciclo'] as const).map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => setMode(m)}
+                  className={cn(
+                    'px-3 py-1 text-xs font-medium rounded-md transition-all',
+                    mode === m
+                      ? 'bg-background shadow-sm text-foreground'
+                      : 'text-muted-foreground hover:text-foreground',
+                  )}
+                >
+                  {m === 'territorial' ? 'Territorial' : 'Por Ciclo'}
+                </button>
+              ))}
             </div>
 
-            {/* Separator: ciclo | territorial ops */}
+            {/* Ciclo selector — ciclo mode only */}
+            {mode === 'ciclo' && (
+              <div className="flex items-center gap-1.5">
+                <Label className="text-xs shrink-0 hidden sm:block">Ciclo</Label>
+                <Select value={cicloId} onValueChange={handleCicloChange} disabled={todosCiclos.length === 0}>
+                  <SelectTrigger className="w-48 h-8 text-sm">
+                    <SelectValue placeholder="Selecione um ciclo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {todosCiclos.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {CICLO_LABELS[c.numero] ?? `Ciclo ${c.numero}`} {c.ano}
+                        {c.id === cicloAtivo?.id && (
+                          <span className="ml-1 text-[10px] text-emerald-600 font-semibold">atual</span>
+                        )}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {cicloSelecionado && (
+                  <span className={cn(
+                    'text-[10px] font-semibold px-1.5 py-0.5 rounded border shrink-0',
+                    CICLO_STATUS_COR[cicloSelecionado.status],
+                  )}>
+                    {CICLO_STATUS_LABEL[cicloSelecionado.status]}
+                  </span>
+                )}
+              </div>
+            )}
+
             <div className="h-6 w-px bg-border/60 hidden sm:block shrink-0" />
 
             {/* Territorial ops */}
@@ -717,7 +788,7 @@ export default function AdminDistribuicaoQuarteirao() {
               variant="outline"
               size="sm"
               onClick={() => handleDesenharNova()}
-              disabled={isCicloFechado}
+              disabled={quadrasMgmtDisabled}
               className="gap-1.5 h-8"
             >
               <PenLine className="h-3.5 w-3.5" />
@@ -727,7 +798,7 @@ export default function AdminDistribuicaoQuarteirao() {
               variant="outline"
               size="sm"
               onClick={() => setModalImportarOpen(true)}
-              disabled={isCicloFechado}
+              disabled={quadrasMgmtDisabled}
               className="gap-1.5 h-8"
             >
               <FileJson className="h-3.5 w-3.5" />
@@ -737,50 +808,64 @@ export default function AdminDistribuicaoQuarteirao() {
               variant="outline"
               size="sm"
               onClick={() => { setModalGerarRegiaoId(null); setModalGerarOpen(true); }}
-              disabled={isCicloFechado}
+              disabled={quadrasMgmtDisabled}
               className="gap-1.5 h-8"
             >
               <Plus className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Gerar</span>
             </Button>
 
-            {/* Separator: territorial | distribution ops */}
-            <div className="h-6 w-px bg-border/60 hidden sm:block shrink-0" />
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => copiarMutation.mutate()}
-              disabled={copiarMutation.isPending || isLoading || isCicloFechado}
-              className="gap-1.5 h-8"
-              title="Copiar distribuição do ciclo anterior"
-            >
-              {copiarMutation.isPending ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <Copy className="h-3.5 w-3.5" />
-              )}
-              <span className="hidden sm:inline">Copiar anterior</span>
-            </Button>
+            {/* Copiar — ciclo mode only */}
+            {mode === 'ciclo' && (
+              <>
+                <div className="h-6 w-px bg-border/60 hidden sm:block shrink-0" />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => copiarMutation.mutate()}
+                  disabled={copiarMutation.isPending || isLoading || isCicloFechado}
+                  className="gap-1.5 h-8"
+                  title="Copiar distribuição do ciclo anterior"
+                >
+                  {copiarMutation.isPending ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Copy className="h-3.5 w-3.5" />
+                  )}
+                  <span className="hidden sm:inline">Copiar anterior</span>
+                </Button>
+              </>
+            )}
           </div>
         }
       />
 
       {/* KPI Cards */}
-      <DistribuicaoKpiCards
-        totalRegioes={regioesList.length}
-        totalQuadras={quarteiroes.length}
-        comGeometria={comGeometria}
-        semGeometria={semGeometria}
-        atribuidos={totalDistribuidos}
-        semAtribuicao={totalSemAtribuicao}
-        pendentes={pendentes.length}
-        totalImoveis={totalImoveis}
-        totalVisitados={totalVisitados}
-      />
+      {mode === 'territorial' ? (
+        <TerritorialKpiCards
+          totalRegioes={regioesList.length}
+          totalQuadras={quarteiroes.length}
+          atribuidas={territorialAtribuidas}
+          semResponsavel={territorialSemResponsavel}
+          agentesAtivos={territorialAgentesAtivos}
+          mediaQuadrasAgente={territorialMediaQuadras}
+        />
+      ) : (
+        <DistribuicaoKpiCards
+          totalRegioes={regioesList.length}
+          totalQuadras={quarteiroes.length}
+          comGeometria={comGeometria}
+          semGeometria={semGeometria}
+          atribuidos={totalDistribuidos}
+          semAtribuicao={totalSemAtribuicao}
+          pendentes={pendentes.length}
+          totalImoveis={totalImoveis}
+          totalVisitados={totalVisitados}
+        />
+      )}
 
-      {/* Stepper de fluxo operacional */}
-      {!isLoading && <FluxoOperacionalStepper steps={passosConcluidos} />}
+      {/* Stepper — ciclo mode only */}
+      {!isLoading && mode === 'ciclo' && <FluxoOperacionalStepper steps={passosConcluidos} />}
 
       {/* 3-panel layout */}
       {isLoading ? (
@@ -789,8 +874,8 @@ export default function AdminDistribuicaoQuarteirao() {
           <Skeleton className={cn('rounded-xl', distribAreaBox)} />
           <Skeleton className={cn('rounded-xl', distribAreaBox)} />
         </div>
-      ) : !cicloId ? (
-        /* Estado vazio — sem ciclo selecionado */
+      ) : (mode === 'ciclo' && !cicloId) ? (
+        /* Estado vazio — sem ciclo selecionado (ciclo mode only) */
         <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed bg-muted/20 py-20 text-center">
           <div className="rounded-full bg-muted/60 p-4">
             <MapIcon className="h-8 w-8 text-muted-foreground/40" />
@@ -798,7 +883,7 @@ export default function AdminDistribuicaoQuarteirao() {
           <div className="space-y-1.5">
             <p className="text-sm font-semibold">Selecione um ciclo operacional</p>
             <p className="text-xs text-muted-foreground max-w-xs">
-              Escolha o ciclo no seletor acima para visualizar e gerenciar a distribuição territorial de quadras.
+              Escolha o ciclo no seletor acima para visualizar e gerenciar a distribuição de quadras.
             </p>
           </div>
         </div>
@@ -815,30 +900,18 @@ export default function AdminDistribuicaoQuarteirao() {
             </p>
           </div>
           <div className="flex gap-2 flex-wrap justify-center">
-            <Button
-              variant="outline"
-              size="sm"
+            <Button variant="outline" size="sm"
               onClick={() => { setModalGerarRegiaoId(null); setModalGerarOpen(true); }}
               className="gap-1.5"
             >
               <Plus className="h-3.5 w-3.5" />
               Gerar quadras
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleDesenharNova()}
-              className="gap-1.5"
-            >
+            <Button variant="outline" size="sm" onClick={() => handleDesenharNova()} className="gap-1.5">
               <PenLine className="h-3.5 w-3.5" />
               Desenhar quadra
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setModalImportarOpen(true)}
-              className="gap-1.5"
-            >
+            <Button variant="outline" size="sm" onClick={() => setModalImportarOpen(true)} className="gap-1.5">
               <FileJson className="h-3.5 w-3.5" />
               Importar GeoJSON
             </Button>
@@ -888,7 +961,7 @@ export default function AdminDistribuicaoQuarteirao() {
             />
           </div>
 
-          {/* Center — tabs + mapa/lista (mesma altura dos painéis laterais) */}
+          {/* Center */}
           <div className={cn('flex min-h-0 flex-col', distribAreaBox)}>
             <div className="mb-3 flex shrink-0 gap-1 border-b">
               {([
@@ -910,6 +983,14 @@ export default function AdminDistribuicaoQuarteirao() {
                   {label}
                 </button>
               ))}
+
+              {/* Indicador de quadras sem responsável (territorial mode) */}
+              {mode === 'territorial' && territorialSemResponsavel > 0 && (
+                <span className="ml-auto self-center inline-flex items-center gap-1 text-[10px] font-semibold text-red-600 bg-red-50 border border-red-200/70 px-2 py-0.5 rounded-full">
+                  <AlertTriangle className="h-3 w-3" />
+                  {territorialSemResponsavel} sem responsável
+                </span>
+              )}
             </div>
 
             <div className="flex min-h-0 flex-1 flex-col">
@@ -932,7 +1013,8 @@ export default function AdminDistribuicaoQuarteirao() {
                 />
               ) : (
                 <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-                  {temPendentes && (
+                  {/* Pendentes bar — ciclo mode only */}
+                  {temPendentes && mode === 'ciclo' && (
                     <div className="flex shrink-0 items-center justify-between gap-2 border-b border-amber-200/70 bg-amber-50/60 px-3 py-1.5 dark:bg-amber-950/20">
                       <span className="flex items-center gap-1.5 text-xs font-medium text-amber-700 dark:text-amber-400">
                         <AlertTriangle className="h-3.5 w-3.5" />

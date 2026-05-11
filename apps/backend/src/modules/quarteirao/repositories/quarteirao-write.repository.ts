@@ -28,4 +28,21 @@ export abstract class QuarteiraoWriteRepository {
   ): Promise<string>;
 
   abstract saveQuarteirao(entity: Quarteirao): Promise<Quarteirao>;
+
+  abstract atribuirQuadraTerritorial(input: {
+    clienteId: string;
+    quadraId: string;
+    agenteId: string;
+    bairroId?: string;
+  }): Promise<DistribuicaoQuarteirao>;
+
+  abstract desatribuirQuadraTerritorial(input: {
+    clienteId: string;
+    quadraId: string;
+  }): Promise<{ removida: boolean }>;
+
+  abstract findDistribuicaoTerritorialAtualByQuadra(
+    clienteId: string,
+    quadraId: string,
+  ): Promise<DistribuicaoQuarteirao | null>;
 }

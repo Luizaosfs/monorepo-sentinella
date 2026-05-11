@@ -115,7 +115,7 @@ export class PrismaQuarteiraoReadRepository implements QuarteiraoReadRepository 
       bairro_nome: string | null;
       agente_id: string;
       agente_nome: string;
-      ciclo_id_origem: string;
+      ciclo_id_origem: string | null;
       updated_at: Date;
     };
 

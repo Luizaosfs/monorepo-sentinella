@@ -72,6 +72,12 @@ import {
   filterDistribuicaoTerritorialSchema,
 } from './dtos/filter-distribuicao-territorial.input';
 import { ListarDistribuicaoTerritorial } from './use-cases/listar-distribuicao-territorial';
+import { AtribuirQuadraTerritorial } from './use-cases/atribuir-quadra-territorial';
+import { DesatribuirQuadraTerritorial } from './use-cases/desatribuir-quadra-territorial';
+import {
+  AtribuirQuadraTerritorialBody,
+  atribuirQuadraTerritorialSchema,
+} from './dtos/atribuir-quadra-territorial.body';
 import {
   BulkInsertQuarteiraoBody,
 } from './dtos/bulk-insert-quarteiroes.body';
@@ -122,6 +128,8 @@ export class QuarteiraoController {
     private deleteDistribuicao: DeleteDistribuicao,
     private listByAgenteUc: ListDistribuicoesByAgente,
     private listarDistribuicaoTerritorialUc: ListarDistribuicaoTerritorial,
+    private atribuirQuadraTerritorialUc: AtribuirQuadraTerritorial,
+    private desatribuirQuadraTerritorialUc: DesatribuirQuadraTerritorial,
     private upsertDistribuicoesUc: UpsertDistribuicoes,
     private deletarDistribuicoesUc: DeletarDistribuicoes,
     private bulkInsertQuarteiraoesUc: BulkInsertQuarteiroes,
@@ -147,6 +155,22 @@ export class QuarteiraoController {
       parsed.bairroId,
     );
     return items.map(DistribuicaoTerritorialViewModel.toHttp);
+  }
+
+  @Put('distribuicoes/territorial')
+  @Roles('admin', 'supervisor')
+  @ApiOperation({ summary: 'Atribuir/transferir quadra a agente — distribuição territorial permanente (ciclo_id = NULL)' })
+  async atribuirQuadraTerritorial(@Body() body: AtribuirQuadraTerritorialBody) {
+    const parsed = atribuirQuadraTerritorialSchema.parse(body);
+    const { distribuicao } = await this.atribuirQuadraTerritorialUc.execute(parsed);
+    return DistribuicaoQuarteiraoViewModel.toHttp(distribuicao);
+  }
+
+  @Delete('distribuicoes/territorial/:quadraId')
+  @Roles('admin', 'supervisor')
+  @ApiOperation({ summary: 'Remover distribuição territorial permanente — não afeta histórico por ciclo' })
+  async desatribuirQuadraTerritorial(@Param('quadraId') quadraId: string) {
+    return this.desatribuirQuadraTerritorialUc.execute(quadraId);
   }
 
   @Get('distribuicoes/por-agente')

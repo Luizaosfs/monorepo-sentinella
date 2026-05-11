@@ -47,4 +47,12 @@ export const QuarteiraoException = createExceptionFactory({
     type: 'unprocessableEntity',
     message: 'Falha ao gravar atribuições — verifique os dados e tente novamente',
   },
+  agenteNotFound: {
+    type: 'notFound',
+    message: 'Agente não encontrado ou sem vínculo ativo com este município',
+  },
+  distribuicaoTerritorialNotFound: {
+    type: 'notFound',
+    message: 'Distribuição territorial não encontrada para este quarteirão',
+  },
 });

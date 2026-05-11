@@ -64,7 +64,7 @@ export type DistribuicaoTerritorialItem = {
   bairroNome: string | null;
   agenteId: string;
   agenteNome: string;
-  cicloIdOrigem: string;
+  cicloIdOrigem: string | null;
   updatedAt: string;
 };
 
@@ -86,6 +86,15 @@ export const distribuicaoQuarteirao = {
     http.post('/quarteiroes/distribuicoes/upsert', { rows }),
   deletar: (cicloId: string, quadraIds: string[]): Promise<{ deleted: number }> =>
     http.post('/quarteiroes/distribuicoes/deletar', { cicloId, quadraIds }),
+  atribuirTerritorial: (
+    quadraId: string,
+    agenteId: string,
+  ): Promise<{ id: string; cicloId: null; quadraId: string; agenteId: string }> =>
+    http.put('/quarteiroes/distribuicoes/territorial', { quadraId, agenteId }),
+
+  desatribuirTerritorial: (quadraId: string): Promise<{ ok: boolean }> =>
+    http.delete(`/quarteiroes/distribuicoes/territorial/${quadraId}`),
+
   copiarDoCiclo: async (clienteId: string, cicloOrigemId: string, cicloDestinoId: string) => {
     const raw = await http.post('/quarteiroes/distribuicoes/copiar', deepToCamel({ clienteId, cicloOrigemId, cicloDestinoId }));
     return ((raw as Record<string, unknown>).count as number) ?? 0;
