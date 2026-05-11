@@ -538,9 +538,18 @@ export default function AdminDistribuicaoQuarteirao() {
       if (toDeleteIds.length > 0) await api.distribuicaoQuarteirao.deletar(cicloId, toDeleteIds);
     },
     onSuccess: () => {
+      const count = pendentes.length;
+      // Sync local state immediately — don't wait for the background refetch
+      setAtribuicoes((prev) => {
+        const next: Record<string, AtribuicaoState> = {};
+        for (const [q, st] of Object.entries(prev)) {
+          next[q] = { salvo: st.pendente, pendente: st.pendente };
+        }
+        return next;
+      });
       queryClient.invalidateQueries({ queryKey: ['dist_quarteirao', clienteId, cicloId] });
       queryClient.invalidateQueries({ queryKey: ['cobertura_quarteirao', clienteId, cicloId] });
-      toast.success(`Distribuição salva. ${pendentes.length} quarteirão(ões) atualizado(s).`);
+      toast.success(`Distribuição salva. ${count} quarteirão(ões) atualizado(s).`);
     },
     onError: () => toast.error('Erro ao salvar distribuição.'),
   });
