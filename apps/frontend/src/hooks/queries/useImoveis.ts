@@ -12,10 +12,14 @@ export function useImoveis(clienteId: string | null | undefined, regiaoId?: stri
   });
 }
 
-export function useImoveisResumo(clienteId: string | null | undefined, regiaoId?: string) {
+export function useImoveisResumo(
+  clienteId: string | null | undefined,
+  regiaoId?: string,
+  quadraIds?: string[],
+) {
   return useQuery({
-    queryKey: ['imoveis_resumo', clienteId, regiaoId ?? null],
-    queryFn: () => api.imoveis.listResumo(clienteId!, regiaoId),
+    queryKey: ['imoveis_resumo', clienteId, regiaoId ?? null, quadraIds ?? null],
+    queryFn: () => api.imoveis.listResumo(clienteId!, regiaoId, quadraIds),
     enabled: !!clienteId,
     staleTime: STALE.MEDIUM,
   });

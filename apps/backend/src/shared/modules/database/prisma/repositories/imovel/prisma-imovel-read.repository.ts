@@ -264,7 +264,7 @@ export class PrismaImovelReadRepository implements ImovelReadRepository {
     };
   }
 
-  async listResumo(clienteId: string, regiaoId?: string): Promise<ImovelResumo[]> {
+  async listResumo(clienteId: string, regiaoId?: string, quadraIds?: string[]): Promise<ImovelResumo[]> {
     type Row = {
       id: string;
       cliente_id: string;
@@ -273,6 +273,7 @@ export class PrismaImovelReadRepository implements ImovelReadRepository {
       complemento: string | null;
       bairro: string | null;
       quarteirao: string | null;
+      quadra_id: string | null;
       bairro_id: string | null;
       tipo_imovel: string;
       latitude: number | null;
@@ -302,6 +303,10 @@ export class PrismaImovelReadRepository implements ImovelReadRepository {
       ? Prisma.sql`AND i.bairro_id = ${regiaoId}::uuid`
       : Prisma.empty;
 
+    const quadraFilter = quadraIds && quadraIds.length > 0
+      ? Prisma.sql`AND i.quadra_id IN (${Prisma.join(quadraIds.map((id) => Prisma.sql`${id}::uuid`))})`
+      : Prisma.empty;
+
     const rows = await this.prisma.client.$queryRaw<Row[]>`
       SELECT
         i.id::text,
@@ -311,6 +316,7 @@ export class PrismaImovelReadRepository implements ImovelReadRepository {
         i.complemento,
         i.bairro,
         i.quarteirao,
+        i.quadra_id::text,
         i.bairro_id::text,
         i.tipo_imovel,
         i.latitude::float8,
@@ -366,6 +372,7 @@ export class PrismaImovelReadRepository implements ImovelReadRepository {
         AND i.deleted_at IS NULL
         AND i.ativo = true
         ${regiaoFilter}
+        ${quadraFilter}
       ORDER BY ts.score DESC NULLS LAST
     `;
 
@@ -377,6 +384,7 @@ export class PrismaImovelReadRepository implements ImovelReadRepository {
       complemento: r.complemento,
       bairro: r.bairro,
       quarteirao: r.quarteirao,
+      quadraId: r.quadra_id,
       regiaoId: r.bairro_id,
       tipoImovel: r.tipo_imovel,
       latitude: r.latitude,

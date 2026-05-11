@@ -48,6 +48,7 @@ export interface ImovelResumo {
   complemento: string | null;
   bairro: string | null;
   quarteirao: string | null;
+  quadraId: string | null;
   regiaoId: string | null;
   tipoImovel: string;
   latitude: number | null;
@@ -106,7 +107,7 @@ export abstract class ImovelReadRepository {
   ): Promise<ImovelPaginated>;
   abstract findScoreInputs(imovelId: string, clienteId: string): Promise<ScoreInputs>;
   abstract findScoreConfig(clienteId: string): Promise<ScoreConfig | null>;
-  abstract listResumo(clienteId: string, regiaoId?: string): Promise<ImovelResumo[]>;
+  abstract listResumo(clienteId: string, regiaoId?: string, quadraIds?: string[]): Promise<ImovelResumo[]>;
   abstract getResumoById(id: string, clienteId: string | null): Promise<ImovelResumo | null>;
   abstract listProblematicos(clienteId: string): Promise<ImovelHistoricoAcesso[]>;
 }

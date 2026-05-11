@@ -114,10 +114,14 @@ export class ImovelController {
 
   @Get('resumo')
   @Roles('admin', 'supervisor', 'agente')
-  @ApiOperation({ summary: 'Lista resumo agregado dos imóveis (substitui v_imovel_resumo)' })
-  async listResumo(@Query('regiaoId') regiaoId?: string) {
+  @ApiOperation({ summary: 'Lista resumo agregado dos imóveis (substitui v_imovel_resumo). quadraIds: lista de UUIDs separada por vírgula para filtro territorial.' })
+  async listResumo(
+    @Query('regiaoId') regiaoId?: string,
+    @Query('quadraIds') rawQuadraIds?: string,
+  ) {
     const clienteId = requireTenantId(getAccessScope(this.req));
-    const { items } = await this.listImovelResumoUc.execute(clienteId, regiaoId);
+    const quadraIds = rawQuadraIds?.split(',').filter(Boolean);
+    const { items } = await this.listImovelResumoUc.execute(clienteId, regiaoId, quadraIds);
     return items;
   }
 

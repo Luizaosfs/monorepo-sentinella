@@ -57,7 +57,7 @@ export class GetReincidenciaQuarteiroesuUc {
         MAX(ultimo_foco_em)           AS ultimo_foco_em
       FROM imovel_stats
       WHERE quarteirao IS NOT NULL
-      GROUP BY quarteirao, bairro, COALESCE(quadra_id::text, '')
+      GROUP BY quarteirao, bairro, quadra_id
       ORDER BY total_ocorrencias DESC, imoveis_reincidentes DESC
     `);
 

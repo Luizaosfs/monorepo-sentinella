@@ -369,7 +369,9 @@
       "PowerShell(cd D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend; & \"C:\\\\Users\\\\luiz\\\\AppData\\\\Roaming\\\\npm\\\\pnpm.cmd\" tsc --noEmit 2>&1 | Where-Object { $_ -match \"error TS\" -and $_ -notmatch \"\\\\.spec\\\\.ts\" })",
       "PowerShell(cd D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend; & \"C:\\\\Users\\\\luiz\\\\AppData\\\\Roaming\\\\npm\\\\pnpm.cmd\" tsc --noEmit 2>&1 | Where-Object { $_ -match \"error TS\" })",
       "PowerShell(cd D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\frontend; & \"C:\\\\Users\\\\luiz\\\\AppData\\\\Roaming\\\\npm\\\\pnpm.cmd\" tsc --noEmit 2>&1 | Where-Object { $_ -match \"error TS\" })",
-      "Bash(pnpm --filter backend test --testPathPattern=\"listar-territorio-agente\" --no-coverage)"
+      "Bash(pnpm --filter backend test --testPathPattern=\"listar-territorio-agente\" --no-coverage)",
+      "Bash(pnpm --filter backend test --testPathPattern=\"list-imovel-resumo-territorial\" --no-coverage)",
+      "Bash(pnpm --filter backend test --no-coverage)"
     ]
   }
 }

@@ -152,7 +152,8 @@ export default function AgenteHoje() {
 
   const agenteId = usuario?.id ?? null;
   const { data: territorio, isStale: territorioStale } = useTerritorioAgente();
-  const { data: imoveis = [], isLoading } = useImoveisResumo(clienteId);
+  const territorioQuadraIds = territorio?.quadras.map((q) => q.quadraId);
+  const { data: imoveis = [], isLoading } = useImoveisResumo(clienteId, undefined, territorioQuadraIds);
   const { data: alertasRetorno = [] } = useAlertasRetorno(clienteId, agenteId);
   const { data: focosAtribuidos } = useFocosAtribuidos(clienteId, agenteId);
   const { data: reinspecoesPendentes = [] } = useReinspecoesPendentesAgente(clienteId, agenteId);

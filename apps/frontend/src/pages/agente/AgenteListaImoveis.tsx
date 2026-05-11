@@ -2,10 +2,11 @@ import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useClienteAtivo } from '@/hooks/useClienteAtivo';
 import { useAuth } from '@/hooks/useAuth';
-import { useImoveis, useCreateImovelMutation } from '@/hooks/queries/useImoveis';
+import { useCreateImovelMutation } from '@/hooks/queries/useImoveis';
+import { useImoveisTerritorio } from '@/hooks/queries/useImoveisTerritorio';
+import { useTerritorioAgente } from '@/hooks/queries/useTerritorioAgente';
 import { getCurrentCiclo } from '@/lib/ciclo';
 import { useVistorias } from '@/hooks/queries/useVistorias';
-import { useQuarteiroesByAgente } from '@/hooks/queries/useDistribuicaoQuarteirao';
 import {
   Card,
   CardContent,
@@ -133,7 +134,6 @@ export default function AgenteListaImoveis() {
   const [viewMode, setViewMode] = useState<'lista' | 'mapa'>('lista');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState<NovoImovelForm>(EMPTY_FORM);
-  const [filtrarPorQuarteirao, setFiltrarPorQuarteirao] = useState(false);
 
   // C-05: captura GPS automaticamente ao abrir o dialog de cadastro
   useEffect(() => {
@@ -152,7 +152,8 @@ export default function AgenteListaImoveis() {
     );
   }, [dialogOpen]);
 
-  const { data: imoveis = [], isLoading: loadingImoveis } = useImoveis(clienteId);
+  const { data: territorio, isLoading: loadingTerritorio } = useTerritorioAgente();
+  const { data: imoveis = [], isLoading: loadingImoveis } = useImoveisTerritorio();
   const { data: vistorias = [], isLoading: loadingVistorias } = useVistorias(
     clienteId,
     usuarioId,
@@ -160,9 +161,6 @@ export default function AgenteListaImoveis() {
   );
 
   const createImovelMutation = useCreateImovelMutation();
-
-  // Quarteirões atribuídos ao agente neste ciclo
-  const { data: quarteiraoDoAgente = [] } = useQuarteiroesByAgente(clienteId, usuarioId, currentCiclo);
 
   // Map imovel_id → latest vistoria status
   const statusPorImovel = useMemo(() => {
@@ -220,13 +218,9 @@ export default function AgenteListaImoveis() {
         (im.bairro?.toLowerCase().includes(q) ?? false) ||
         (im.quarteirao?.toLowerCase().includes(q) ?? false);
       const matchBairro = filtroBairro === '__all__' || im.bairro === filtroBairro;
-      const matchQuarteirao =
-        !filtrarPorQuarteirao ||
-        quarteiraoDoAgente.length === 0 ||
-        (im.quarteirao != null && quarteiraoDoAgente.includes(im.quarteirao));
-      return matchSearch && matchBairro && matchQuarteirao;
+      return matchSearch && matchBairro;
     });
-  }, [imoveis, search, filtroBairro, filtrarPorQuarteirao, quarteiraoDoAgente]);
+  }, [imoveis, search, filtroBairro]);
 
   const imoveisComCoordenadas = useMemo(
     () =>
@@ -280,7 +274,7 @@ export default function AgenteListaImoveis() {
     }
   }
 
-  const isLoading = loadingImoveis || loadingVistorias;
+  const isLoading = loadingTerritorio || loadingImoveis || loadingVistorias;
 
   return (
     <div className="min-h-screen bg-muted/30 flex flex-col">
@@ -320,25 +314,16 @@ export default function AgenteListaImoveis() {
           />
         </div>
         <div className="flex gap-2 items-center">
-          {quarteiraoDoAgente.length === 0 && !loadingImoveis ? (
+          {!loadingTerritorio && (!territorio || territorio.quadras.length === 0) ? (
             <div className="flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-2 flex-1 min-w-0">
               <AlertTriangle className="w-3 h-3 shrink-0" />
-              <span className="truncate">Sem quarteirão atribuído</span>
+              <span className="truncate">Sem território atribuído</span>
             </div>
           ) : (
-            <button
-              type="button"
-              onClick={() => setFiltrarPorQuarteirao((v) => !v)}
-              className={cn(
-                'flex items-center gap-1.5 text-xs px-3 py-2 rounded-full border transition-colors shrink-0',
-                filtrarPorQuarteirao
-                  ? 'bg-primary text-primary-foreground border-primary'
-                  : 'bg-background text-muted-foreground border-border/60',
-              )}
-            >
-              <Layers className="w-3 h-3" />
-              Qt. ({quarteiraoDoAgente.length})
-            </button>
+            <div className="flex items-center gap-1.5 text-xs text-primary bg-primary/10 border border-primary/20 rounded-lg px-2.5 py-2 shrink-0">
+              <Layers className="w-3 h-3 shrink-0" />
+              <span>{territorio?.quadras.length ?? 0} quadras</span>
+            </div>
           )}
           <Select value={filtroBairro} onValueChange={setFiltroBairro}>
             <SelectTrigger className="h-9 text-xs flex-1">

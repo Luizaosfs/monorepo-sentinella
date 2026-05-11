@@ -37,8 +37,9 @@ export const imoveis = {
   listResumo: async (
     _clienteId: string,
     regiaoId?: string,
+    quadraIds?: string[],
   ): Promise<Ret<typeof _sb.imoveis.listResumo>> => {
-    const raw = await http.get(`/imoveis/resumo${qs({ regiaoId })}`);
+    const raw = await http.get(`/imoveis/resumo${qs({ regiaoId, quadraIds: quadraIds?.join(',') || undefined })}`);
     return deepToSnake(raw) as Ret<typeof _sb.imoveis.listResumo>;
   },
 
