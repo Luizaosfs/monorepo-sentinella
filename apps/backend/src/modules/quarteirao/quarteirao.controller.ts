@@ -113,6 +113,7 @@ import {
   gerarQuadrasOSMSchema,
 } from './dtos/gerar-quadras-osm.body';
 import { GerarQuadrasOSM } from './use-cases/gerar-quadras-osm';
+import { DeletarQuadrasBairro } from './use-cases/deletar-quadras-bairro';
 
 @UseInterceptors(PrismaInterceptor)
 @UsePipes(MyZodValidationPipe)
@@ -141,6 +142,7 @@ export class QuarteiraoController {
     private desenharQuarteiraoUc: DesenharQuarteirao,
     private importarGeoJSONUc: ImportarGeoJSONQuarteiroes,
     private gerarQuadrasOSMUc: GerarQuadrasOSM,
+    private deletarQuadrasBairroUc: DeletarQuadrasBairro,
     @Inject(REQUEST) private req: Request,
   ) {}
 

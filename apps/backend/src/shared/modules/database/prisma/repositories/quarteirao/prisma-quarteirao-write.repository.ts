@@ -211,6 +211,15 @@ export class PrismaQuarteiraoWriteRepository implements QuarteiraoWriteRepositor
     return PrismaQuarteiraoMapper.quarteiraoToDomain(fresh as any);
   }
 
+  async deletarQuadrasBairro(clienteId: string, bairroId: string): Promise<{ deletadas: number }> {
+    const deleted = await this.prisma.client.$executeRaw(Prisma.sql`
+      DELETE FROM bairros_quadras
+      WHERE bairro_id  = ${bairroId}::uuid
+        AND cliente_id = ${clienteId}::uuid
+    `);
+    return { deletadas: deleted };
+  }
+
   private async syncArea(id: string): Promise<void> {
     await this.prisma.client.$executeRaw(Prisma.sql`
       UPDATE bairros_quadras
