@@ -1,5 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { REQUEST } from '@nestjs/core';
+import { mockRequest } from '@test/utils/user-helpers';
 import { RegistrarSemAcessoVistoria } from '../registrar-sem-acesso';
 import { VistoriaReadRepository } from '../../repositories/vistoria-read.repository';
 import { VistoriaWriteRepository } from '../../repositories/vistoria-write.repository';
@@ -53,11 +54,7 @@ describe('RegistrarSemAcessoVistoria', () => {
       updateScorePrioridade: jest.fn(),
     };
     const recalcularScoreMock = { execute: jest.fn().mockResolvedValue({ score: 25 }) };
-    const requestMock = {
-      user: { id: 'user-1', papeis: ['agente'] },
-      headers: { 'x-tenant-id': 'cliente-1' },
-      tenantId: 'cliente-1',
-    };
+    const requestMock = mockRequest({ tenantId: 'cliente-1', user: { id: 'user-1', papeis: ['agente'] } as any });
 
     const module = await Test.createTestingModule({
       providers: [

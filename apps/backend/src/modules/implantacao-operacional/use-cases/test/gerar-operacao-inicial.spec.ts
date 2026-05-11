@@ -31,12 +31,12 @@ describe('GerarOperacaoInicial', () => {
       usuarios: { count: jest.fn().mockResolvedValue(2) },
       bairros_distribuicao: {
         findMany: jest.fn().mockResolvedValue([
-          { quarteirao: 'Q01', agente_id: 'ag-001' },
-          { quarteirao: 'Q02', agente_id: 'ag-002' },
+          { quadra_rel: { codigo: 'Q01' }, agente_id: 'ag-001' },
+          { quadra_rel: { codigo: 'Q02' }, agente_id: 'ag-002' },
         ]),
       },
       imoveis: { count: jest.fn().mockResolvedValue(30) },
-      planejamento: {
+      planejamentos: {
         findFirst: jest.fn().mockResolvedValue(PLANEJAMENTO_ATIVO),
         create: jest.fn(),
         update: jest.fn(),
@@ -80,29 +80,29 @@ describe('GerarOperacaoInicial', () => {
     await useCase.execute(CLIENT_ID);
     await useCase.execute(CLIENT_ID);
 
-    expect((prismaMock.client as any).planejamento.create).not.toHaveBeenCalled();
-    expect((prismaMock.client as any).planejamento.update).not.toHaveBeenCalled();
+    expect((prismaMock.client as any).planejamentos.create).not.toHaveBeenCalled();
+    expect((prismaMock.client as any).planejamentos.update).not.toHaveBeenCalled();
   });
 
   it('deve ativar planejamento inativo ao invés de criar novo', async () => {
-    (prismaMock.client as any).planejamento.findFirst.mockResolvedValue({ id: 'pp-inativo', ativo: false });
-    (prismaMock.client as any).planejamento.update.mockResolvedValue({});
+    (prismaMock.client as any).planejamentos.findFirst.mockResolvedValue({ id: 'pp-inativo', ativo: false });
+    (prismaMock.client as any).planejamentos.update.mockResolvedValue({});
 
     await useCase.execute(CLIENT_ID);
 
-    expect((prismaMock.client as any).planejamento.update).toHaveBeenCalledWith(
+    expect((prismaMock.client as any).planejamentos.update).toHaveBeenCalledWith(
       expect.objectContaining({ where: { id: 'pp-inativo' }, data: { ativo: true } }),
     );
-    expect((prismaMock.client as any).planejamento.create).not.toHaveBeenCalled();
+    expect((prismaMock.client as any).planejamentos.create).not.toHaveBeenCalled();
   });
 
   it('deve criar planejamento quando não existe nenhum', async () => {
-    (prismaMock.client as any).planejamento.findFirst.mockResolvedValue(null);
-    (prismaMock.client as any).planejamento.create.mockResolvedValue({ id: 'pp-novo', ativo: true });
+    (prismaMock.client as any).planejamentos.findFirst.mockResolvedValue(null);
+    (prismaMock.client as any).planejamentos.create.mockResolvedValue({ id: 'pp-novo', ativo: true });
 
     const result = await useCase.execute(CLIENT_ID);
 
-    expect((prismaMock.client as any).planejamento.create).toHaveBeenCalledTimes(1);
+    expect((prismaMock.client as any).planejamentos.create).toHaveBeenCalledTimes(1);
     expect(result.planejamentoId).toBe('pp-novo');
   });
 

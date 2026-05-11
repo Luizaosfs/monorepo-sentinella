@@ -78,8 +78,8 @@ describe('BatchCreateImoveis', () => {
     await useCase.execute(data);
 
     expect(mockQuarteiraoWriteRepo.upsertMestreIfMissing).toHaveBeenCalledTimes(2);
-    expect(mockQuarteiraoWriteRepo.upsertMestreIfMissing).toHaveBeenCalledWith('test-cliente-id', null, 'Q01');
-    expect(mockQuarteiraoWriteRepo.upsertMestreIfMissing).toHaveBeenCalledWith('test-cliente-id', null, 'Q02');
+    expect(mockQuarteiraoWriteRepo.upsertMestreIfMissing).toHaveBeenCalledWith('test-cliente-id', null, 'Q01', null);
+    expect(mockQuarteiraoWriteRepo.upsertMestreIfMissing).toHaveBeenCalledWith('test-cliente-id', null, 'Q02', null);
   });
 
   it('deve processar em chunks de 500', async () => {

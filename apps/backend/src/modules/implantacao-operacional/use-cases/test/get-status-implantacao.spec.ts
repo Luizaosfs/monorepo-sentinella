@@ -28,9 +28,9 @@ describe('GetStatusImplantacao', () => {
     // defaults: tudo vazio
     (prismaMock.client as any) = {
       ciclos: { findFirst: jest.fn().mockResolvedValue(null) },
-      quarteiroes: { count: jest.fn().mockResolvedValue(0) },
+      bairros_quadras: { count: jest.fn().mockResolvedValue(0) },
       bairros_distribuicao: { findMany: jest.fn().mockResolvedValue([]) },
-      planejamento: { findFirst: jest.fn().mockResolvedValue(null) },
+      planejamentos: { findFirst: jest.fn().mockResolvedValue(null) },
       imoveis: { count: jest.fn().mockResolvedValue(0) },
       $queryRaw: jest.fn().mockResolvedValue([{ total: 0 }]),
     };
@@ -46,7 +46,7 @@ describe('GetStatusImplantacao', () => {
 
   it('deve retornar podeIniciar=false quando não há agentes', async () => {
     (prismaMock.client as any).ciclos.findFirst.mockResolvedValue(CICLO_ATIVO);
-    (prismaMock.client as any).bairros_quadras.count.mockResolvedValue(5);
+    (prismaMock.client as any).bairros_quadras = { count: jest.fn().mockResolvedValue(5) };
     (prismaMock.client as any).$queryRaw
       .mockResolvedValueOnce([{ total: 0 }])  // agentes
       .mockResolvedValueOnce([{ total: 0 }]); // agentes com quarteirao
@@ -59,7 +59,7 @@ describe('GetStatusImplantacao', () => {
 
   it('deve retornar podeIniciar=false quando nenhum quarteirao foi distribuido', async () => {
     (prismaMock.client as any).ciclos.findFirst.mockResolvedValue(CICLO_ATIVO);
-    (prismaMock.client as any).bairros_quadras.count.mockResolvedValue(10);
+    (prismaMock.client as any).bairros_quadras = { count: jest.fn().mockResolvedValue(10) };
     (prismaMock.client as any).bairros_distribuicao.findMany.mockResolvedValue([]);
     (prismaMock.client as any).$queryRaw
       .mockResolvedValueOnce([{ total: 3 }])  // 3 agentes
@@ -73,15 +73,15 @@ describe('GetStatusImplantacao', () => {
 
   it('deve retornar podeIniciar=true com ciclo, agentes e distribuição mínima', async () => {
     (prismaMock.client as any).ciclos.findFirst.mockResolvedValue(CICLO_ATIVO);
-    (prismaMock.client as any).bairros_quadras.count.mockResolvedValue(10);
+    (prismaMock.client as any).bairros_quadras = { count: jest.fn().mockResolvedValue(10) };
     (prismaMock.client as any).bairros_distribuicao.findMany.mockResolvedValue([
-      { quarteirao: 'Q01' }, { quarteirao: 'Q02' },
+      { quadra_rel: { codigo: 'Q01' } }, { quadra_rel: { codigo: 'Q02' } },
     ]);
     (prismaMock.client as any).$queryRaw
       .mockResolvedValueOnce([{ total: 3 }])  // agentes
       .mockResolvedValueOnce([{ total: 2 }])  // agentes com quarteirao
       .mockResolvedValueOnce([{ total: 1 }]); // visitados no ciclo
-    (prismaMock.client as any).planejamento.findFirst.mockResolvedValue(PLANEJAMENTO);
+    (prismaMock.client as any).planejamentos.findFirst.mockResolvedValue(PLANEJAMENTO);
     (prismaMock.client as any).imoveis.count.mockResolvedValue(15);
 
     const result = await useCase.execute(CLIENT_ID);
@@ -102,9 +102,9 @@ describe('GetStatusImplantacao', () => {
 
   it('deve retornar operacaoInicial.podeGerar=false sem imóveis nos quarteirões', async () => {
     (prismaMock.client as any).ciclos.findFirst.mockResolvedValue(CICLO_ATIVO);
-    (prismaMock.client as any).bairros_quadras.count.mockResolvedValue(5);
+    (prismaMock.client as any).bairros_quadras = { count: jest.fn().mockResolvedValue(5) };
     (prismaMock.client as any).bairros_distribuicao.findMany.mockResolvedValue([
-      { quarteirao: 'Q01' },
+      { quadra_rel: { codigo: 'Q01' } },
     ]);
     (prismaMock.client as any).$queryRaw
       .mockResolvedValueOnce([{ total: 2 }])  // agentes

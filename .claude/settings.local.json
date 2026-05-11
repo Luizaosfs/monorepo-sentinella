@@ -374,7 +374,10 @@
       "Bash(pnpm --filter backend test --no-coverage)",
       "Bash(pnpm --filter backend test --testPathPattern=\"batch-create-imoveis\" --no-coverage)",
       "Bash(\"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" \"postgresql://luizAntonio:Sentinella147852369@177.7.37.14:5432/sentinella\" -f \"apps/backend/prisma/migrations/add_imoveis_quadra_id.sql\")",
-      "Bash(\"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" \"postgresql://luizAntonio:Sentinella147852369@177.7.37.14:5432/sentinella\" -f \"apps/backend/prisma/migrations/backfill_imoveis_quadra_id.sql\")"
+      "Bash(\"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" \"postgresql://luizAntonio:Sentinella147852369@177.7.37.14:5432/sentinella\" -f \"apps/backend/prisma/migrations/backfill_imoveis_quadra_id.sql\")",
+      "Bash(pnpm --filter backend test --no-coverage --testPathPattern=\"batch-create-imoveis\")",
+      "Bash(pnpm --filter backend test --no-coverage --testPathPattern=\"batch-create-imoveis|gerar-operacao-inicial|get-status-implantacao\")",
+      "Bash(pnpm --filter backend test --no-coverage --testPathPattern=\"registrar-sem-acesso\")"
     ]
   }
 }
