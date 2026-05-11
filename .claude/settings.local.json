@@ -393,7 +393,8 @@
       "Bash(pnpm --filter backend test -- --testPathPattern=\"list-focos-territorio|list-reinspecoes-territorio|filter-foco-risco\" --passWithNoTests)",
       "Bash(pnpm --filter backend test -- --testPathPattern=\"modules/foco-risco\" --passWithNoTests)",
       "Bash(pnpm --filter backend test -- --testPathPattern=\"src/modules/foco-risco\")",
-      "Bash(pnpm --filter backend test -- --testPathPattern=\"foco-risco\" --passWithNoTests)"
+      "Bash(pnpm --filter backend test -- --testPathPattern=\"foco-risco\" --passWithNoTests)",
+      "Bash(pnpm --filter backend test -- \"list-focos-territorio\")"
     ]
   }
 }
