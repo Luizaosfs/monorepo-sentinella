@@ -12,7 +12,7 @@ export const gerarQuadrasOSMSchema = z.object({
   bairroId: z.string().uuid(),
   geojson: polygonGeoJSONSchema,
   prefixo: z.string().min(1).max(10).default('Q'),
-  areaMinima: z.number().int().min(50).max(50000).default(200),
+  areaMinima: z.number().int().min(50).max(50000).default(2000),
 });
 
 export type GerarQuadrasOSMInput = z.infer<typeof gerarQuadrasOSMSchema>;

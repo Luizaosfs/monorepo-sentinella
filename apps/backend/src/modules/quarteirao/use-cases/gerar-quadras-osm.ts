@@ -61,9 +61,14 @@ export class GerarQuadrasOSM {
     const areaMinima = input.areaMinima ?? MIN_AREA_DEFAULT;
     const candidatos = this.bufferAndSubtract(areaPoly as AnyFeature, highways, areaMinima);
 
-    // 5. Gerar códigos sugeridos com prefixo
+    // 5. Re-filtra por área após simplificação (simplify pode reduzir área de polígonos irregulares)
+    const candidatosFiltrados = candidatos.filter(
+      poly => turf.area(poly as Parameters<typeof turf.area>[0]) >= areaMinima,
+    );
+
+    // 6. Gerar códigos sugeridos com prefixo
     const prefixo = (input.prefixo ?? 'Q').trim().toUpperCase();
-    const result = candidatos.map((poly, i) => ({
+    const result = candidatosFiltrados.map((poly, i) => ({
       codigo: `${prefixo}${String(i + 1).padStart(3, '0')}`,
       areaM2: Math.round(turf.area(poly as Parameters<typeof turf.area>[0])),
       geojson: (poly as AnyFeature).geometry as GeoPolygon,

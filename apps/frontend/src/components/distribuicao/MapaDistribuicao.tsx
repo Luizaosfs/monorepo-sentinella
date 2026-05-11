@@ -66,7 +66,8 @@ function quarteiraoStyle(
     const fillOpacity = pct === undefined ? 0.45 : pct >= 80 ? 0.68 : pct >= 30 ? 0.50 : 0.28;
     return { color: baseColor, fillColor: baseColor, weight: 1.8, fillOpacity, opacity: 0.85, dashArray: undefined };
   }
-  return { color: '#94a3b8', fillColor: 'transparent', weight: 1.2, fillOpacity: 0, opacity: 0.45, dashArray: '3 4' };
+  // Sem agente: laranja suave com tracejado — sinaliza "precisa de atenção"
+  return { color: '#f97316', fillColor: '#fff7ed', weight: 1.5, fillOpacity: 0.38, opacity: 0.85, dashArray: '5 4' };
 }
 
 const REGIAO_STYLE: L.PathOptions = {
@@ -92,6 +93,8 @@ export function MapaDistribuicao({
   const mapRef = useRef<L.Map | null>(null);
   const regionLayerRef = useRef<L.GeoJSON | null>(null);
   const quarteiraoLayerRef = useRef<L.GeoJSON | null>(null);
+  const labelLayerRef = useRef<L.LayerGroup | null>(null);
+  const zoomHandlerRef = useRef<(() => void) | null>(null);
 
   // Mutable refs so event handlers always see fresh state without triggering rebuilds
   const atribuicoesRef = useRef(atribuicoes);
@@ -195,6 +198,14 @@ export function MapaDistribuicao({
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
+    // Limpa label layer e zoom handler antes de reconstruir
+    if (zoomHandlerRef.current) {
+      map.off('zoomend', zoomHandlerRef.current);
+      zoomHandlerRef.current = null;
+    }
+    labelLayerRef.current?.remove();
+    labelLayerRef.current = null;
+
     quarteiraoLayerRef.current?.remove();
     quarteiraoLayerRef.current = null;
     if (!quarteiraoFeatures.features.length) return;
@@ -221,7 +232,7 @@ export function MapaDistribuicao({
             const agenteId = atribuicoesRef.current[codigo]?.pendente ?? '';
             const nomeAgente = agenteId ? (agentesMapRef.current[agenteId] ?? '?') : 'Sem atribuição';
             const regiaoNome = bairroId ? (regiaoNomeMapRef.current[bairroId] ?? '—') : '—';
-            const agentColor = agenteId ? (agentColorMapRef.current[agenteId] ?? '#16a34a') : '#94a3b8';
+            const agentColor = agenteId ? (agentColorMapRef.current[agenteId] ?? '#16a34a') : '#f97316';
             const imoveis = contagemRef.current[codigo] ?? 0;
             const pct = coberturaRef.current?.[codigo];
             return `<div style="font-family:system-ui,sans-serif;padding:1px 0;min-width:130px">
@@ -256,12 +267,22 @@ export function MapaDistribuicao({
 
           if (!multi && onEditarRef.current) {
             const container = document.createElement('div');
-            container.style.cssText = 'min-width:150px;font-family:system-ui,sans-serif;font-size:12px;line-height:1.5';
+            container.style.cssText = 'min-width:165px;font-family:system-ui,sans-serif;font-size:12px;line-height:1.5';
             const agenteId = atribuicoesRef.current[codigo]?.pendente ?? '';
             const nomeAgente = agenteId ? (agentesMapRef.current[agenteId] ?? '?') : 'Sem atribuição';
+            const agentColor = agenteId ? (agentColorMapRef.current[agenteId] ?? '#16a34a') : '#f97316';
+            const regiaoNome = bairroId ? (regiaoNomeMapRef.current[bairroId] ?? '—') : '—';
+            const imoveis = contagemRef.current[codigo] ?? 0;
+            const pct = coberturaRef.current?.[codigo];
             container.innerHTML = `
-              <b style="font-size:13px">${codigo}</b><br/>
-              <span style="color:#6b7280">${nomeAgente}</span>
+              <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:2px">${codigo}</div>
+              <div style="font-size:10px;color:#64748b;margin-bottom:6px">${regiaoNome}</div>
+              <div style="display:flex;align-items:center;gap:5px;margin-bottom:${imoveis > 0 || pct !== undefined ? '4px' : '0'}">
+                <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${agentColor};flex-shrink:0"></span>
+                <span style="font-size:11px;font-weight:600;color:${agentColor}">${nomeAgente}</span>
+              </div>
+              ${imoveis > 0 ? `<div style="font-size:10px;color:#94a3b8">${imoveis} imóveis</div>` : ''}
+              ${pct !== undefined ? `<div style="font-size:10px;color:${pct >= 80 ? '#16a34a' : pct >= 30 ? '#d97706' : '#94a3b8'};margin-top:2px">↗ ${pct}% cobertura</div>` : ''}
             `;
             const btn = document.createElement('button');
             btn.textContent = 'Editar geometria';
@@ -288,6 +309,36 @@ export function MapaDistribuicao({
         });
       },
     }).addTo(map);
+
+    // ── Layer: labels de código (permanentes, visíveis a partir de zoom 15) ──
+    const labelGroup = L.layerGroup();
+    labelLayerRef.current = labelGroup;
+    quarteiraoLayerRef.current.eachLayer((lyr: L.Layer) => {
+      const poly = lyr as L.Polygon;
+      if (typeof poly.getBounds !== 'function') return;
+      const center = poly.getBounds().getCenter();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const cod: string = (poly as any).feature?.properties?.codigo ?? '';
+      if (!cod) return;
+      L.marker(center, {
+        icon: L.divIcon({
+          className: '',
+          html: `<div style="font-family:system-ui,sans-serif;font-size:9px;font-weight:700;color:#1e293b;background:rgba(255,255,255,0.85);border-radius:3px;padding:1px 4px;white-space:nowrap;pointer-events:none;box-shadow:0 1px 3px rgba(0,0,0,0.18);transform:translate(-50%,-50%)">${cod}</div>`,
+          iconSize: [0, 0],
+          iconAnchor: [0, 0],
+        }),
+        interactive: false,
+        zIndexOffset: 200,
+      }).addTo(labelGroup);
+    });
+    const syncLabels = () => {
+      const z = map.getZoom();
+      if (z >= 15) { if (!map.hasLayer(labelGroup)) labelGroup.addTo(map); }
+      else { if (map.hasLayer(labelGroup)) labelGroup.remove(); }
+    };
+    zoomHandlerRef.current = syncLabels;
+    map.on('zoomend', syncLabels);
+    syncLabels();
 
     const bounds = quarteiraoLayerRef.current.getBounds();
     if (bounds.isValid()) map.fitBounds(bounds, { padding: [16, 16] });
@@ -335,7 +386,7 @@ export function MapaDistribuicao({
             <span className="text-foreground/75">Atribuído</span>
           </span>
           <span className="flex items-center gap-2">
-            <span className="inline-block h-3 w-4 rounded-sm border border-dashed border-slate-400 shrink-0" style={{ background: '#f1f5f9' }} />
+            <span className="inline-block h-3 w-4 rounded-sm border border-dashed border-orange-400 shrink-0" style={{ background: '#fff7ed' }} />
             <span className="text-foreground/75">Sem agente</span>
           </span>
           <span className="flex items-center gap-2">
@@ -353,27 +404,38 @@ export function MapaDistribuicao({
               <span>baixa → alta</span>
             </div>
           )}
+          <div className="border-t border-border/40 pt-1.5 text-[9px] text-muted-foreground/60 italic">
+            Códigos visíveis no zoom ≥ 15
+          </div>
         </div>
       </div>
 
       {/* Tip: multi-select + stats HUD */}
-      {quarteiraoPolygons.length > 0 && (
-        <div className="absolute top-3 left-3 z-[500] flex flex-col gap-1.5">
-          <div className="text-[10px] bg-background/92 backdrop-blur-sm border rounded-lg px-2.5 py-1 text-muted-foreground shadow-sm">
-            + clique para multi-seleção
-          </div>
-          <div className="flex gap-1.5">
-            <span className="text-[10px] bg-background/92 backdrop-blur-sm border rounded-md px-2 py-0.5 text-muted-foreground shadow-sm tabular-nums">
-              {quarteiraoPolygons.length} quadras
-            </span>
-            {selecionadas.size > 0 && (
-              <span className="text-[10px] bg-primary text-primary-foreground rounded-md px-2 py-0.5 shadow-sm font-semibold tabular-nums">
-                {selecionadas.size} sel.
+      {quarteiraoPolygons.length > 0 && (() => {
+        const semAgente = quarteiraoPolygons.filter(q => !atribuicoes[q.codigo]?.pendente).length;
+        return (
+          <div className="absolute top-3 left-3 z-[500] flex flex-col gap-1.5">
+            <div className="text-[10px] bg-background/92 backdrop-blur-sm border rounded-lg px-2.5 py-1 text-muted-foreground shadow-sm">
+              Ctrl+clique para multi-seleção
+            </div>
+            <div className="flex gap-1.5 flex-wrap">
+              <span className="text-[10px] bg-background/92 backdrop-blur-sm border rounded-md px-2 py-0.5 text-muted-foreground shadow-sm tabular-nums">
+                {quarteiraoPolygons.length} quadras
               </span>
-            )}
+              {semAgente > 0 && (
+                <span className="text-[10px] bg-orange-100 border border-orange-300 text-orange-700 rounded-md px-2 py-0.5 shadow-sm font-semibold tabular-nums">
+                  {semAgente} s/ agente
+                </span>
+              )}
+              {selecionadas.size > 0 && (
+                <span className="text-[10px] bg-primary text-primary-foreground rounded-md px-2 py-0.5 shadow-sm font-semibold tabular-nums">
+                  {selecionadas.size} sel.
+                </span>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Agent legend — collapsible, top-right */}
       {agenteLegenda && agenteLegenda.length > 0 && (
@@ -407,8 +469,8 @@ export function MapaDistribuicao({
                 </div>
               ))}
               <div className="flex items-center gap-1.5 px-2.5 py-1">
-                <span className="h-2.5 w-2.5 rounded border border-slate-400 shrink-0" style={{ background: '#e2e8f0' }} />
-                <span className="truncate flex-1 text-muted-foreground">Sem agente</span>
+                <span className="h-2.5 w-2.5 rounded border border-dashed border-orange-400 shrink-0" style={{ background: '#fff7ed' }} />
+                <span className="truncate flex-1 text-orange-600/80">Sem agente</span>
               </div>
             </div>
           )}

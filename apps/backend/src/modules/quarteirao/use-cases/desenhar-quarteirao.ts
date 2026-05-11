@@ -34,14 +34,17 @@ export class DesenharQuarteirao {
     // 3. Polígono contido na região (somente se a região tem geometria)
     if (regiao.has_area) {
       const [containsRow] = await this.prisma.client.$queryRaw<Array<{ within: boolean }>>(Prisma.sql`
-        SELECT ST_Covers(r.area, ST_GeomFromGeoJSON(${geojsonStr})) AS within
+        SELECT ST_Covers(
+          ST_Buffer(r.area::geography, 2)::geometry,
+          ST_GeomFromGeoJSON(${geojsonStr})
+        ) AS within
           FROM bairros r
          WHERE r.id = ${input.bairroId}::uuid
       `);
       if (!containsRow.within) throw QuarteiraoException.geomOutsideRegiao();
     }
 
-    // 4. Sem sobreposição com quarteirões existentes do mesmo cliente
+    // 4. Sem sobreposição real de área com quarteirões existentes (toque em borda é permitido)
     const [overlapRow] = await this.prisma.client.$queryRaw<Array<{ overlap: boolean }>>(Prisma.sql`
       SELECT EXISTS (
         SELECT 1 FROM bairros_quadras q
@@ -49,13 +52,14 @@ export class DesenharQuarteirao {
            AND q.deleted_at IS NULL
            AND q.area IS NOT NULL
            AND ST_Intersects(q.area, ST_GeomFromGeoJSON(${geojsonStr}))
+           AND NOT ST_Touches(q.area, ST_GeomFromGeoJSON(${geojsonStr}))
       ) AS overlap
     `);
     if (overlapRow.overlap) throw QuarteiraoException.geomOverlap();
 
-    // 5. Código único no cliente (belt-and-suspenders — @@unique também enforça)
+    // 5. Código único dentro do bairro (@@unique([cliente_id, bairro_id, codigo]))
     const dup = await this.prisma.client.bairros_quadras.findFirst({
-      where: { cliente_id: clienteId, codigo: input.codigo, deleted_at: null },
+      where: { cliente_id: clienteId, bairro_id: input.bairroId, codigo: input.codigo, deleted_at: null },
       select: { id: true },
     });
     if (dup) throw QuarteiraoException.conflict();

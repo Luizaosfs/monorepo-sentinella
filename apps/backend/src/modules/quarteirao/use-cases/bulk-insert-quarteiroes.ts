@@ -24,29 +24,41 @@ export class BulkInsertQuarteiroes {
     const resolveBairroId = (r: { bairroId?: string; bairro?: string }) =>
       r.bairroId ?? (r.bairro ? (regiaoByNome.get(r.bairro.toLowerCase().trim()) ?? null) : null);
 
-    // Verifica quais códigos já existem
+    // Resolve bairroId para cada row antes de checar duplicatas
+    const rowsWithBairro = input.rows.map(r => ({
+      ...r,
+      resolvedBairroId: resolveBairroId(r),
+    }));
+
+    // Verifica duplicatas pela chave composta correta: cliente + bairro + codigo
+    const bairroIds = [...new Set(
+      rowsWithBairro.map(r => r.resolvedBairroId).filter((id): id is string => id !== null),
+    )];
     const codigos = input.rows.map(r => r.codigo);
     const existing = await this.prisma.client.bairros_quadras.findMany({
-      where: { cliente_id: clienteId, codigo: { in: codigos } },
-      select: { id: true, codigo: true },
+      where: {
+        cliente_id: clienteId,
+        ...(bairroIds.length > 0 ? { bairro_id: { in: bairroIds } } : {}),
+        codigo: { in: codigos },
+      },
+      select: { id: true, codigo: true, bairro_id: true },
     });
-    const existingMap = new Map(existing.map(e => [e.codigo, e.id]));
+    const existingMap = new Map(existing.map(e => [`${e.bairro_id}:${e.codigo}`, e.id]));
 
-    const toInsert = input.rows.filter(r => !existingMap.has(r.codigo));
-    const toUpdate = input.rows.filter(r => existingMap.has(r.codigo));
+    const toInsert = rowsWithBairro.filter(r => !existingMap.has(`${r.resolvedBairroId}:${r.codigo}`));
+    const toUpdate = rowsWithBairro.filter(r =>  existingMap.has(`${r.resolvedBairroId}:${r.codigo}`));
 
     let inserted = 0;
     let updated = 0;
 
     // Atualiza existentes (bairro_id, bairro, ativo)
     for (const r of toUpdate) {
-      const bairroId = resolveBairroId(r);
       await this.prisma.client.bairros_quadras.update({
-        where: { id: existingMap.get(r.codigo)! },
+        where: { id: existingMap.get(`${r.resolvedBairroId}:${r.codigo}`)! },
         data: {
-          ...(bairroId              !== null      ? { bairro_id: bairroId }  : {}),
-          ...(r.bairro              !== undefined ? { bairro: r.bairro }     : {}),
-          ...(r.ativo               !== undefined ? { ativo: r.ativo }       : {}),
+          ...(r.resolvedBairroId !== null      ? { bairro_id: r.resolvedBairroId } : {}),
+          ...(r.bairro           !== undefined ? { bairro: r.bairro }              : {}),
+          ...(r.ativo            !== undefined ? { ativo: r.ativo }                : {}),
         },
       });
       updated++;
@@ -58,7 +70,7 @@ export class BulkInsertQuarteiroes {
         data: toInsert.map(r => ({
           cliente_id: clienteId,
           codigo:     r.codigo,
-          bairro_id:  resolveBairroId(r),
+          bairro_id:  r.resolvedBairroId,
           bairro:     r.bairro ?? null,
           ativo:      r.ativo ?? true,
         })),

@@ -66,11 +66,6 @@ export function ModalDesenharQuarteirao({ open, regioes, bairroIdInicial, onClos
   const queryClient = useQueryClient();
   const { data: quadrasExistentes } = useQuadrasList(clienteId);
 
-  const existingCodes = useMemo(
-    () => new Set((quadrasExistentes ?? []).map(q => q.codigo)),
-    [quadrasExistentes],
-  );
-
   type Etapa = 'desenho' | 'preview';
   const [etapa, setEtapa] = useState<Etapa>('desenho');
   const [bairroId, setBairroId] = useState(bairroIdInicial ?? '');
@@ -79,6 +74,15 @@ export function ModalDesenharQuarteirao({ open, regioes, bairroIdInicial, onClos
   const [candidatos, setCandidatos] = useState<QuadraCandidataOSM[]>([]);
   const [codigos, setCodigos] = useState<Record<string, string>>({});
   const [selecionadas, setSelecionadas] = useState<Set<string>>(new Set());
+
+  const existingCodes = useMemo(
+    () => new Set(
+      (quadrasExistentes ?? [])
+        .filter(q => q.bairro_id === bairroId)
+        .map(q => q.codigo),
+    ),
+    [quadrasExistentes, bairroId],
+  );
 
   const regiao = useMemo(() => regioes.find((r) => r.id === bairroId) ?? null, [regioes, bairroId]);
 

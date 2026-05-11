@@ -24,8 +24,9 @@ const PreviewQuadrasOSMMap = ({ candidatos, selecionadas, onToggle, center }: Pr
       maxZoom: 19,
     }).addTo(map);
     mapRef.current = map;
-    setTimeout(() => map.invalidateSize(), 100);
-    return () => { map.remove(); mapRef.current = null; };
+    let alive = true;
+    const t = setTimeout(() => { if (alive) map.invalidateSize(); }, 100);
+    return () => { alive = false; clearTimeout(t); map.remove(); mapRef.current = null; };
   }, []);
 
   // Renderiza polígonos quando candidatos mudam
@@ -53,7 +54,7 @@ const PreviewQuadrasOSMMap = ({ candidatos, selecionadas, onToggle, center }: Pr
     });
 
     if (bounds.length > 0) {
-      map.fitBounds(bounds.reduce((a, b) => a.extend(b)), { padding: [20, 20] });
+      map.fitBounds(bounds.reduce((a, b) => a.extend(b)), { padding: [20, 20], animate: false });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [candidatos]);

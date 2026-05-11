@@ -356,7 +356,11 @@
       "Bash(node_modules\\\\.bin\\\\tsc.CMD --noEmit --project tsconfig.json)",
       "Read(//c/Users/luiz/Downloads/**)",
       "Bash(unzip -l sentinella-territorial.zip)",
-      "PowerShell(cd \"D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\frontend\"; $f = & \".\\\\node_modules\\\\.bin\\\\tsc.CMD\" --noEmit 2>&1; cd \"D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend\"; $b = & \".\\\\node_modules\\\\.bin\\\\tsc.CMD\" --noEmit 2>&1; \"FRONTEND: $\\(if \\($f\\) { $f | Select-Object -First 3 } else { 'OK' }\\)\"; \"BACKEND:  $\\(if \\($b\\) { $b | Select-Object -First 3 } else { 'OK' }\\)\")"
+      "PowerShell(cd \"D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\frontend\"; $f = & \".\\\\node_modules\\\\.bin\\\\tsc.CMD\" --noEmit 2>&1; cd \"D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend\"; $b = & \".\\\\node_modules\\\\.bin\\\\tsc.CMD\" --noEmit 2>&1; \"FRONTEND: $\\(if \\($f\\) { $f | Select-Object -First 3 } else { 'OK' }\\)\"; \"BACKEND:  $\\(if \\($b\\) { $b | Select-Object -First 3 } else { 'OK' }\\)\")",
+      "Bash(powershell -Command \"Expand-Archive -Path 'identificador de quadras \\(1\\).zip' -DestinationPath 'identificador-quadras-extracted' -Force\")",
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\luiz\\\\Downloads\\\\identificador-quadras-extracted\\\\identificador de quadras\\\\sentinella-territorial\" -Recurse -File | Where-Object { $_.DirectoryName -notmatch \"node_modules\" } | Select-Object FullName)",
+      "Bash(\"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -U postgres -d sentinella -c \"SELECT indexname, indexdef FROM pg_indexes WHERE tablename = 'bairros_quadras' ORDER BY indexname;\")",
+      "Bash(\"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -U postgres -d sentinella -c \"SELECT conname, contype FROM pg_constraint WHERE conrelid = 'bairros_quadras'::regclass ORDER BY conname;\")"
     ]
   }
 }
