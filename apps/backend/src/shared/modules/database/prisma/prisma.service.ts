@@ -15,9 +15,13 @@ function buildPoolConfig(connectionString: string): PoolConfig {
   const config: PoolConfig = {
     connectionString,
     max: 10,
-    connectionTimeoutMillis: 10_000,
-    idleTimeoutMillis: 30_000,
+    connectionTimeoutMillis: 15_000,
+    idleTimeoutMillis: 20_000,
     query_timeout: 60_000,
+    // Keepalive TCP — previne que firewalls entre o backend e o banco
+    // derrubem conexões ociosas silenciosamente.
+    keepAlive: true,
+    keepAliveInitialDelayMillis: 10_000,
   };
 
   let url: URL;

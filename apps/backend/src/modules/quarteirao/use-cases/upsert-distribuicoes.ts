@@ -25,26 +25,24 @@ export class UpsertDistribuicoes {
 
     const usuarioId = (this.req['user'] as { id: string } | undefined)?.id ?? null;
 
-    const ops = input.rows.map(row =>
-      this.prisma.client.$executeRaw(Prisma.sql`
+    this.logger.debug(`UpsertDistribuicoes — recebido cliente=${clienteId} ciclo=${cicloId} rows=${input.rows.length}`);
+
+    // Bulk upsert em um único statement — evita N round-trips e timeout de transação
+    const upsertValues = input.rows.map(row =>
+      Prisma.sql`(${clienteId}::uuid, ${row.cicloId}::uuid, ${row.quadraId}::uuid, ${row.agenteId}::uuid, ${row.bairroId ?? null}::uuid)`
+    );
+
+    try {
+      const affected = await this.prisma.client.$executeRaw(Prisma.sql`
         INSERT INTO bairros_distribuicao (cliente_id, ciclo_id, quadra_id, agente_id, bairro_id)
-        VALUES (
-          ${clienteId}::uuid,
-          ${row.cicloId}::uuid,
-          ${row.quadraId}::uuid,
-          ${row.agenteId}::uuid,
-          ${row.bairroId ?? null}::uuid
-        )
+        VALUES ${Prisma.join(upsertValues)}
         ON CONFLICT (cliente_id, ciclo_id, quadra_id)
         DO UPDATE SET
           agente_id  = EXCLUDED.agente_id,
           bairro_id  = EXCLUDED.bairro_id,
           updated_at = now()
-      `),
-    );
-
-    try {
-      await this.prisma.client.$transaction(ops);
+      `);
+      this.logger.debug(`UpsertDistribuicoes — ok, rows afetadas: ${affected}`);
     } catch (err) {
       this.logger.error(
         `UpsertDistribuicoes falhou — cliente=${clienteId} ciclo=${cicloId} rows=${input.rows.length}: ${String(err)}`,
@@ -52,14 +50,15 @@ export class UpsertDistribuicoes {
       throw QuarteiraoException.upsertDistribuicaoFailed();
     }
 
-    // History — best-effort, non-blocking
-    void Promise.allSettled(
-      input.rows.map(row =>
-        this.prisma.client.$executeRaw(Prisma.sql`
-          INSERT INTO bairros_distribuicao_historico (cliente_id, ciclo_id, quadra_id, agente_id, acao, usuario_id)
-          VALUES (${clienteId}::uuid, ${row.cicloId}::uuid, ${row.quadraId}::uuid, ${row.agenteId}::uuid, 'atribuida', ${usuarioId}::uuid)
-        `)
-      )
+    // History — best-effort, non-blocking, também em bulk
+    const histValues = input.rows.map(row =>
+      Prisma.sql`(${clienteId}::uuid, ${row.cicloId}::uuid, ${row.quadraId}::uuid, ${row.agenteId}::uuid, 'atribuida', ${usuarioId}::uuid)`
+    );
+    void this.prisma.client.$executeRaw(Prisma.sql`
+      INSERT INTO bairros_distribuicao_historico (cliente_id, ciclo_id, quadra_id, agente_id, acao, usuario_id)
+      VALUES ${Prisma.join(histValues)}
+    `).catch(err =>
+      this.logger.error(`UpsertDistribuicoes history falhou: ${String(err)}`)
     );
   }
 }

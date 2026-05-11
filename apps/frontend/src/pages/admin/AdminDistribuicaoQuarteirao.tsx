@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { Map as MapIcon, List, Loader2, Save, Copy, Plus, PenLine, FileJson, Undo2, Users, Grid2X2 } from 'lucide-react';
+import { Map as MapIcon, List, Loader2, Save, Copy, Plus, PenLine, FileJson, Undo2, Users, Grid2X2, AlertTriangle } from 'lucide-react';
 import { useClienteAtivo } from '@/hooks/useClienteAtivo';
 import { api } from '@/services/api';
 import { useCicloAtivo, useHistoricoCiclos, CICLO_LABELS, CICLO_STATUS_COR, CICLO_STATUS_LABEL } from '@/hooks/queries/useCicloAtivo';
@@ -487,18 +487,44 @@ export default function AdminDistribuicaoQuarteirao() {
   }, []);
 
 
-  const atribuirSelecionadas = useCallback(
-    (agenteId: string) => {
+  const atribuirMutation = useMutation({
+    mutationFn: async (agenteId: string) => {
+      if (!clienteId || !cicloId || selecionadas.size === 0) return null;
+      const ids = [...selecionadas];
+      if (agenteId) {
+        const rows = ids.map(quadraId => ({
+          cicloId,
+          quadraId,
+          agenteId,
+          bairroId: qBairroMap[quadraId] ?? null,
+        }));
+        await api.distribuicaoQuarteirao.upsert(rows);
+      } else {
+        await api.distribuicaoQuarteirao.deletar(cicloId, ids);
+      }
+      return { agenteId, ids };
+    },
+    onSuccess: (result) => {
+      if (!result) return;
+      const { agenteId, ids } = result;
       setAtribuicoes((prev) => {
         const next = { ...prev };
-        for (const q of selecionadas) {
-          next[q] = { salvo: prev[q]?.salvo ?? '', pendente: agenteId };
+        for (const q of ids) {
+          next[q] = { salvo: agenteId, pendente: agenteId };
         }
         return next;
       });
       setSelecionadas(new Set());
+      queryClient.invalidateQueries({ queryKey: ['dist_quarteirao', clienteId, cicloId] });
+      queryClient.invalidateQueries({ queryKey: ['cobertura_quarteirao', clienteId, cicloId] });
+      toast.success(`${ids.length} quadra(s) atribuída(s) com sucesso.`);
     },
-    [selecionadas],
+    onError: () => toast.error('Erro ao atribuir quadras.'),
+  });
+
+  const atribuirSelecionadas = useCallback(
+    (agenteId: string) => atribuirMutation.mutate(agenteId),
+    [atribuirMutation],
   );
 
   const toggleAberta = useCallback((bairroId: string) => {
@@ -551,6 +577,11 @@ export default function AdminDistribuicaoQuarteirao() {
         } else {
           toDeleteIds.push(quadraId);
         }
+      }
+      console.debug('[Salvar] toUpsert:', toUpsert, 'toDeleteIds:', toDeleteIds, 'clienteId:', clienteId, 'cicloId:', cicloId);
+      if (toUpsert.length === 0 && toDeleteIds.length === 0) {
+        toast.info('Nada a salvar — nenhuma alteração pendente detectada.');
+        return;
       }
       if (toUpsert.length > 0) await api.distribuicaoQuarteirao.upsert(toUpsert);
       if (toDeleteIds.length > 0) await api.distribuicaoQuarteirao.deletar(cicloId, toDeleteIds);
@@ -742,32 +773,6 @@ export default function AdminDistribuicaoQuarteirao() {
               )}
               <span className="hidden sm:inline">Copiar anterior</span>
             </Button>
-            {temPendentes && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={descartarAlteracoes}
-                disabled={salvarMutation.isPending || isCicloFechado}
-                className="gap-1.5 h-8 text-muted-foreground"
-                title="Descartar todas as alterações não salvas"
-              >
-                <Undo2 className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Descartar</span>
-              </Button>
-            )}
-            <Button
-              size="sm"
-              onClick={() => salvarMutation.mutate()}
-              disabled={salvarMutation.isPending || !temPendentes || isCicloFechado}
-              className="gap-1.5 h-8"
-            >
-              {salvarMutation.isPending ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <Save className="h-3.5 w-3.5" />
-              )}
-              Salvar{temPendentes ? ` (${pendentes.length})` : ''}
-            </Button>
           </div>
         }
       />
@@ -938,6 +943,39 @@ export default function AdminDistribuicaoQuarteirao() {
                 />
               ) : (
                 <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+                  {temPendentes && (
+                    <div className="flex shrink-0 items-center justify-between gap-2 border-b border-amber-200/70 bg-amber-50/60 px-3 py-1.5 dark:bg-amber-950/20">
+                      <span className="flex items-center gap-1.5 text-xs font-medium text-amber-700 dark:text-amber-400">
+                        <AlertTriangle className="h-3.5 w-3.5" />
+                        {pendentes.length} alteração(ões) não salva(s)
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={descartarAlteracoes}
+                          disabled={salvarMutation.isPending || isCicloFechado}
+                          className="h-7 gap-1 text-xs text-muted-foreground"
+                        >
+                          <Undo2 className="h-3 w-3" />
+                          Descartar
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => salvarMutation.mutate()}
+                          disabled={salvarMutation.isPending || isCicloFechado}
+                          className="h-7 gap-1 text-xs"
+                        >
+                          {salvarMutation.isPending ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Save className="h-3 w-3" />
+                          )}
+                          Salvar ({pendentes.length})
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                   <ListaQuadrasDistribuicao
                     quadrasFiltradas={quadrasFiltradas}
                     qBairroMap={qBairroMap}
@@ -945,6 +983,7 @@ export default function AdminDistribuicaoQuarteirao() {
                     atribuicoes={atribuicoes}
                     agentes={agentes}
                     agentesMap={agentesMap}
+                    agentColorMap={agentColorMap}
                     cobertura={cobertura as CoberturaItem[]}
                     contagemPorQ={contagemPorQ}
                     selecionadas={selecionadas}
@@ -1013,7 +1052,7 @@ export default function AdminDistribuicaoQuarteirao() {
         contagemPorQ={contagemPorQ}
         agentColorMap={agentColorMap}
         uuidToCode={quadraIdToCode}
-        isPending={salvarMutation.isPending}
+        isPending={salvarMutation.isPending || atribuirMutation.isPending}
         onAtribuir={atribuirSelecionadas}
         onLimpar={() => { setSelecionadas(new Set()); setHighlightEntry(null); }}
         onToggleQuadra={toggleQuadra}
