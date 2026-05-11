@@ -39,4 +39,8 @@ export const QuarteiraoException = createExceptionFactory({
     type: 'forbidden',
     message: 'Não é possível alterar distribuições de um ciclo fechado',
   },
+  bulkInsertFailed: {
+    type: 'unprocessableEntity',
+    message: 'Falha ao gravar lote de quarteirões — nenhuma alteração foi salva',
+  },
 });

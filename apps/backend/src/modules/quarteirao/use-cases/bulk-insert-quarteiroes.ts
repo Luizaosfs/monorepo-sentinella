@@ -1,9 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 import { BulkInsertQuarteiraoInput } from '../dtos/bulk-insert-quarteiroes.body';
+import { QuarteiraoException } from '../errors/quarteirao.exception';
 
 @Injectable()
 export class BulkInsertQuarteiroes {
+  private readonly logger = new Logger(BulkInsertQuarteiroes.name);
+
   constructor(private prisma: PrismaService) {}
 
   async execute(
@@ -51,32 +54,41 @@ export class BulkInsertQuarteiroes {
     let inserted = 0;
     let updated = 0;
 
-    // Atualiza existentes (bairro_id, bairro, ativo)
-    for (const r of toUpdate) {
-      await this.prisma.client.bairros_quadras.update({
-        where: { id: existingMap.get(`${r.resolvedBairroId}:${r.codigo}`)! },
-        data: {
-          ...(r.resolvedBairroId !== null      ? { bairro_id: r.resolvedBairroId } : {}),
-          ...(r.bairro           !== undefined ? { bairro: r.bairro }              : {}),
-          ...(r.ativo            !== undefined ? { ativo: r.ativo }                : {}),
-        },
-      });
-      updated++;
-    }
+    try {
+      await this.prisma.client.$transaction(async (tx) => {
+        // Atualiza existentes (bairro_id, bairro, ativo)
+        for (const r of toUpdate) {
+          await tx.bairros_quadras.update({
+            where: { id: existingMap.get(`${r.resolvedBairroId}:${r.codigo}`)! },
+            data: {
+              ...(r.resolvedBairroId !== null      ? { bairro_id: r.resolvedBairroId } : {}),
+              ...(r.bairro           !== undefined ? { bairro: r.bairro }              : {}),
+              ...(r.ativo            !== undefined ? { ativo: r.ativo }                : {}),
+            },
+          });
+          updated++;
+        }
 
-    // Insere novos em lote
-    if (toInsert.length > 0) {
-      const result = await this.prisma.client.bairros_quadras.createMany({
-        data: toInsert.map(r => ({
-          cliente_id: clienteId,
-          codigo:     r.codigo,
-          bairro_id:  r.resolvedBairroId,
-          bairro:     r.bairro ?? null,
-          ativo:      r.ativo ?? true,
-        })),
-        skipDuplicates: true,
+        // Insere novos em lote
+        if (toInsert.length > 0) {
+          const result = await tx.bairros_quadras.createMany({
+            data: toInsert.map(r => ({
+              cliente_id: clienteId,
+              codigo:     r.codigo,
+              bairro_id:  r.resolvedBairroId,
+              bairro:     r.bairro ?? null,
+              ativo:      r.ativo ?? true,
+            })),
+            skipDuplicates: false,
+          });
+          inserted += result.count;
+        }
       });
-      inserted += result.count;
+    } catch (err) {
+      this.logger.error(
+        `BulkInsertQuarteiroes falhou — cliente=${clienteId} total=${input.rows.length}: ${String(err)}`,
+      );
+      throw QuarteiraoException.bulkInsertFailed();
     }
 
     return { inserted, updated };
