@@ -143,21 +143,33 @@ export default function AdminDistribuicaoQuarteirao() {
     [regioesList],
   );
 
+  /** codigo → UUID — necessário para converter dados de cobertura (que usam codigo) para UUID. */
+  const codigoToUuid = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const q of quarteiroesMestre as Array<Record<string, unknown>>) {
+      m[String(q.codigo)] = String(q.id);
+    }
+    return m;
+  }, [quarteiroesMestre]);
+
+  /** Keyed by UUID (não codigo) para evitar colisão entre bairros com mesmo código. */
   const contagemPorQ = useMemo(() => {
     const c: Record<string, number> = {};
     for (const row of cobertura as CoberturaItem[]) {
-      c[row.quarteirao] = Number(row.total_imoveis);
+      const uuid = codigoToUuid[row.quarteirao];
+      if (uuid) c[uuid] = Number(row.total_imoveis);
     }
     return c;
-  }, [cobertura]);
+  }, [cobertura, codigoToUuid]);
 
   const coberturaMap = useMemo(() => {
     const c: Record<string, number> = {};
     for (const row of cobertura as CoberturaItem[]) {
-      c[row.quarteirao] = Math.round(Number(row.pct_cobertura));
+      const uuid = codigoToUuid[row.quarteirao];
+      if (uuid) c[uuid] = Math.round(Number(row.pct_cobertura));
     }
     return c;
-  }, [cobertura]);
+  }, [cobertura, codigoToUuid]);
 
   const regiaoNomeMap = useMemo(() => {
     const m: Record<string, string> = {};
@@ -173,24 +185,26 @@ export default function AdminDistribuicaoQuarteirao() {
     return m;
   }, [agentes]);
 
+  /** Array de UUIDs das quadras, ordenados pelo codigo para exibição. */
   const quarteiroes = useMemo(
     () =>
       (quarteiroesMestre as Array<Record<string, unknown>>)
         .filter((q) => q.ativo !== false)
-        .map((q) => String(q.codigo))
-        .sort((a, b) => a.localeCompare(b, 'pt-BR')),
+        .sort((a, b) => String(a.codigo).localeCompare(String(b.codigo), 'pt-BR'))
+        .map((q) => String(q.id)),
     [quarteiroesMestre],
   );
 
+  /** UUID → bairroId. Keyed by UUID para ser consistente com selecionadas/atribuicoes. */
   const qBairroMap = useMemo(() => {
     const m: Record<string, string | null> = {};
     for (const q of quarteiroesMestre as Array<Record<string, unknown>>) {
-      m[String(q.codigo)] = q.bairro_id ? String(q.bairro_id) : null;
+      m[String(q.id)] = q.bairro_id ? String(q.bairro_id) : null;
     }
     return m;
   }, [quarteiroesMestre]);
 
-  /** codigo → UUID da quadra (para enviar nas mutations) */
+  /** codigo → UUID (para lookup inverso; não usar como chave de estado — usar UUID diretamente). */
   const qIdMap = useMemo(() => {
     const m: Record<string, string> = {};
     for (const q of quarteiroesMestre as Array<Record<string, unknown>>) {
@@ -208,13 +222,13 @@ export default function AdminDistribuicaoQuarteirao() {
     return m;
   }, [quarteiroesMestre]);
 
-  /** codigo → tem geometria */
+  /** UUID → tem geometria (keyed by UUID para consistência com selecionadas). */
   const quarteiraoGeomMap = useMemo<Record<string, boolean>>(() => {
     const m: Record<string, boolean> = {};
     for (const q of quarteiroesMestre as Array<Record<string, unknown>>) {
       if (q.ativo === false) continue;
       const gj = q.geojson as Record<string, unknown> | null | undefined;
-      m[String(q.codigo)] = !!(gj && (gj.type === 'Polygon' || gj.type === 'MultiPolygon'));
+      m[String(q.id)] = !!(gj && (gj.type === 'Polygon' || gj.type === 'MultiPolygon'));
     }
     return m;
   }, [quarteiroesMestre]);
@@ -235,6 +249,7 @@ export default function AdminDistribuicaoQuarteirao() {
       }));
   }, [quarteiroesMestre]);
 
+  /** Mapa bairroId → { nome, qs: UUID[] }. qs armazena UUIDs (não codigos) para seleção única. */
   const porRegiao = useMemo(() => {
     const map = new Map<string, { nome: string; qs: string[] }>();
     for (const r of regioesList as Array<Record<string, unknown>>) {
@@ -244,7 +259,7 @@ export default function AdminDistribuicaoQuarteirao() {
     }
     for (const q of quarteiroesMestre as Array<Record<string, unknown>>) {
       if (q.ativo === false) continue;
-      const codigo = String(q.codigo);
+      const uuid = String(q.id);
       const bairroId = q.bairro_id ? String(q.bairro_id) : SEM_REGIAO;
       if (!map.has(bairroId)) {
         map.set(bairroId, {
@@ -253,13 +268,17 @@ export default function AdminDistribuicaoQuarteirao() {
         });
       }
       const entry = map.get(bairroId)!;
-      if (!entry.qs.includes(codigo)) entry.qs.push(codigo);
+      if (!entry.qs.includes(uuid)) entry.qs.push(uuid);
     }
     for (const entry of map.values()) {
-      entry.qs.sort((a, b) => a.localeCompare(b, 'pt-BR'));
+      entry.qs.sort((a, b) => {
+        const cA = quadraIdToCode[a] ?? a;
+        const cB = quadraIdToCode[b] ?? b;
+        return cA.localeCompare(cB, 'pt-BR');
+      });
     }
     return map;
-  }, [regioesList, quarteiroesMestre, regiaoNomeMap]);
+  }, [regioesList, quarteiroesMestre, regiaoNomeMap, quadraIdToCode]);
 
   const bairroIds = useMemo(
     () =>
@@ -306,12 +325,12 @@ export default function AdminDistribuicaoQuarteirao() {
   /** Legenda de agentes para o mapa */
   const agenteLegenda = useMemo(() => {
     const map: Record<string, { quadras: number; comGeom: number }> = {};
-    for (const [codigo, st] of Object.entries(atribuicoes)) {
+    for (const [uuid, st] of Object.entries(atribuicoes)) {
       const agenteId = st.pendente;
       if (!agenteId) continue;
       if (!map[agenteId]) map[agenteId] = { quadras: 0, comGeom: 0 };
       map[agenteId].quadras++;
-      if (quarteiraoGeomMap[codigo]) map[agenteId].comGeom++;
+      if (quarteiraoGeomMap[uuid]) map[agenteId].comGeom++;
     }
     return agentes.map((a) => ({
       id: a.id,
@@ -346,15 +365,16 @@ export default function AdminDistribuicaoQuarteirao() {
     const term = searchTerm.trim().toLowerCase();
     return quarteiroes.filter((q) => {
       if (term) {
+        const codigo = quadraIdToCode[q] ?? '';
         const rId = qBairroMap[q];
         const rNome = rId ? (regiaoNomeMap[rId] ?? '') : '';
-        if (!q.toLowerCase().includes(term) && !rNome.toLowerCase().includes(term)) return false;
+        if (!codigo.toLowerCase().includes(term) && !rNome.toLowerCase().includes(term)) return false;
       }
       if (filtro === 'atribuidas') return !!atribuicoes[q]?.pendente;
       if (filtro === 'sem_atribuicao') return !atribuicoes[q]?.pendente;
       return true;
     });
-  }, [quarteiroes, searchTerm, filtro, atribuicoes, qBairroMap, regiaoNomeMap]);
+  }, [quarteiroes, searchTerm, filtro, atribuicoes, qBairroMap, regiaoNomeMap, quadraIdToCode]);
 
   // ── Sync local state with server data ─────────────────────────────────────
   useEffect(() => {
@@ -363,7 +383,7 @@ export default function AdminDistribuicaoQuarteirao() {
       const next: Record<string, AtribuicaoState> = {};
       for (const q of quarteiroes) {
         const savedEntry = (distribuicaoSalva as BairrosDistribuicao[]).find(
-          (d) => quadraIdToCode[d.quadra_id] === q,
+          (d) => d.quadra_id === q,
         );
         const salvo = savedEntry?.agente_id ?? '';
         const pendente = prev[q]?.pendente !== undefined ? prev[q].pendente : salvo;
@@ -498,10 +518,10 @@ export default function AdminDistribuicaoQuarteirao() {
     setModalGerarOpen(true);
   }, []);
 
-  /** Abre modal de edição/desenho de geometria a partir do painel lateral. */
-  const handleDesenharFromPanel = useCallback((codigo: string, bairroId: string | null) => {
+  /** Abre modal de edição/desenho de geometria a partir do painel lateral. Recebe UUID. */
+  const handleDesenharFromPanel = useCallback((uuid: string, bairroId: string | null) => {
     const q = (quarteiroesMestre as Array<Record<string, unknown>>).find(
-      (m) => String(m.codigo) === codigo,
+      (m) => String(m.id) === uuid,
     );
     if (!q) return;
     setModalEditarGeometria({
@@ -524,12 +544,10 @@ export default function AdminDistribuicaoQuarteirao() {
       if (!clienteId || !cicloId) return;
       const toUpsert: { cicloId: string; quadraId: string; agenteId: string; bairroId?: string | null }[] = [];
       const toDeleteIds: string[] = [];
-      for (const [codigo, st] of Object.entries(atribuicoes)) {
+      for (const [quadraId, st] of Object.entries(atribuicoes)) {
         if (st.pendente === st.salvo) continue;
-        const quadraId = qIdMap[codigo];
-        if (!quadraId) continue;
         if (st.pendente) {
-          toUpsert.push({ cicloId, quadraId, agenteId: st.pendente, bairroId: qBairroMap[codigo] ?? null });
+          toUpsert.push({ cicloId, quadraId, agenteId: st.pendente, bairroId: qBairroMap[quadraId] ?? null });
         } else {
           toDeleteIds.push(quadraId);
         }
@@ -861,6 +879,7 @@ export default function AdminDistribuicaoQuarteirao() {
               agentColorMap={agentColorMap}
               contagemPorQ={contagemPorQ}
               quarteiraoGeomMap={quarteiraoGeomMap}
+              uuidToCode={quadraIdToCode}
               onSearchChange={setSearchTerm}
               onFiltroChange={setFiltro}
               onToggleQuadra={toggleQuadra}
@@ -929,6 +948,7 @@ export default function AdminDistribuicaoQuarteirao() {
                     cobertura={cobertura as CoberturaItem[]}
                     contagemPorQ={contagemPorQ}
                     selecionadas={selecionadas}
+                    uuidToCode={quadraIdToCode}
                     onToggleQuadra={toggleQuadra}
                     onSetAtribuicao={setAtribuicao}
                   />
@@ -992,6 +1012,7 @@ export default function AdminDistribuicaoQuarteirao() {
         regiaoNomeMap={regiaoNomeMap}
         contagemPorQ={contagemPorQ}
         agentColorMap={agentColorMap}
+        uuidToCode={quadraIdToCode}
         isPending={salvarMutation.isPending}
         onAtribuir={atribuirSelecionadas}
         onLimpar={() => { setSelecionadas(new Set()); setHighlightEntry(null); }}

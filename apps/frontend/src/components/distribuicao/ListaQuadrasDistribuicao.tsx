@@ -16,6 +16,8 @@ interface Props {
   cobertura: CoberturaItem[];
   contagemPorQ: Record<string, number>;
   selecionadas: Set<string>;
+  /** UUID → codigo para exibição. */
+  uuidToCode: Record<string, string>;
   onToggleQuadra: (q: string) => void;
   onSetAtribuicao: (q: string, agenteId: string) => void;
 }
@@ -23,7 +25,7 @@ interface Props {
 export function ListaQuadrasDistribuicao({
   quadrasFiltradas, qBairroMap, regiaoNomeMap,
   atribuicoes, agentes, agentesMap, cobertura, contagemPorQ,
-  selecionadas, onToggleQuadra, onSetAtribuicao,
+  selecionadas, uuidToCode, onToggleQuadra, onSetAtribuicao,
 }: Props) {
   if (quadrasFiltradas.length === 0) {
     return (
@@ -52,7 +54,7 @@ export function ListaQuadrasDistribuicao({
           const sel = selecionadas.has(q);
           const bairroId = qBairroMap[q] ?? null;
           const regiaoNome = bairroId ? (regiaoNomeMap[bairroId] ?? '—') : '—';
-          const cobQ = cobertura.find((c) => c.quarteirao === q);
+          const cobQ = cobertura.find((c) => c.quarteirao === (uuidToCode[q] ?? q));
           const nImoveis = contagemPorQ[q] ?? 0;
 
           return (
@@ -78,7 +80,7 @@ export function ListaQuadrasDistribuicao({
               </button>
 
               {/* Quadra */}
-              <span className="text-sm font-mono font-semibold">{q}</span>
+              <span className="text-sm font-mono font-semibold">{uuidToCode[q] ?? q}</span>
 
               {/* Região */}
               <span className="text-xs text-muted-foreground truncate hidden lg:block">{regiaoNome}</span>

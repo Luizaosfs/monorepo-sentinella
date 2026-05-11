@@ -16,7 +16,9 @@ interface Props {
   agentesMap: Record<string, string>;
   agentColorMap: Record<string, string>;
   contagemPorQ: Record<string, number>;
-  /** codigo → tem geometria cadastrada */
+  /** UUID → codigo — para exibição, pois qs agora armazena UUIDs. */
+  uuidToCode: Record<string, string>;
+  /** UUID → tem geometria cadastrada */
   quarteiraoGeomMap?: Record<string, boolean>;
   /** Quarteirão destacado (ex: clicado no mapa) — objeto com tick para re-disparar no mesmo item */
   highlightQ?: { codigo: string; tick: number } | null;
@@ -63,6 +65,7 @@ function qsVisiveis(
 export function PainelRegioesQuadras({
   porRegiao, bairroIds, atribuicoes, selecionadas, abertas,
   searchTerm, filtro, agentesMap, agentColorMap, contagemPorQ, quarteiraoGeomMap,
+  uuidToCode,
   highlightQ,
   onSearchChange, onFiltroChange, onToggleQuadra, onSelectQuadras, onToggleAberta,
   onGerarQuarteiroes, onDesenharQuarteirao, onDesenharNova,
@@ -345,7 +348,7 @@ export function PainelRegioesQuadras({
                           )
                         )}
 
-                        <span className="text-xs font-mono font-medium">{q}</span>
+                        <span className="text-xs font-mono font-medium">{uuidToCode[q] ?? q}</span>
                         <span className="text-[10px] text-muted-foreground">
                           {contagemPorQ[q] ?? 0} im.
                         </span>

@@ -360,7 +360,9 @@
       "Bash(powershell -Command \"Expand-Archive -Path 'identificador de quadras \\(1\\).zip' -DestinationPath 'identificador-quadras-extracted' -Force\")",
       "PowerShell(Get-ChildItem \"C:\\\\Users\\\\luiz\\\\Downloads\\\\identificador-quadras-extracted\\\\identificador de quadras\\\\sentinella-territorial\" -Recurse -File | Where-Object { $_.DirectoryName -notmatch \"node_modules\" } | Select-Object FullName)",
       "Bash(\"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -U postgres -d sentinella -c \"SELECT indexname, indexdef FROM pg_indexes WHERE tablename = 'bairros_quadras' ORDER BY indexname;\")",
-      "Bash(\"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -U postgres -d sentinella -c \"SELECT conname, contype FROM pg_constraint WHERE conrelid = 'bairros_quadras'::regclass ORDER BY conname;\")"
+      "Bash(\"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -U postgres -d sentinella -c \"SELECT conname, contype FROM pg_constraint WHERE conrelid = 'bairros_quadras'::regclass ORDER BY conname;\")",
+      "Bash(./psql.exe -U luizAntonio -h 177.7.37.14 -d sentinella -p 5432 -c \"\\\\d bairros_distribuicao\")",
+      "Bash(PGPASSWORD=Sentinella147852369 C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe *)"
     ]
   }
 }

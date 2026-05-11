@@ -213,7 +213,7 @@ export function MapaDistribuicao({
     quarteiraoLayerRef.current = L.geoJSON(quarteiraoFeatures, {
       style: (f) =>
         quarteiraoStyle(
-          f?.properties?.codigo ?? '',
+          f?.properties?.id ?? '',
           atribuicoesRef.current,
           selecionadasRef.current,
           agentColorMapRef.current,
@@ -226,15 +226,15 @@ export function MapaDistribuicao({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const geomGeoJSON: Record<string, unknown> = (f as any).geometry ?? {};
 
-        // Hover tooltip
+        // Hover tooltip — lookups usam id (UUID), exibição usa codigo
         (layer as L.Path).bindTooltip(
           () => {
-            const agenteId = atribuicoesRef.current[codigo]?.pendente ?? '';
+            const agenteId = atribuicoesRef.current[id]?.pendente ?? '';
             const nomeAgente = agenteId ? (agentesMapRef.current[agenteId] ?? '?') : 'Sem atribuição';
             const regiaoNome = bairroId ? (regiaoNomeMapRef.current[bairroId] ?? '—') : '—';
             const agentColor = agenteId ? (agentColorMapRef.current[agenteId] ?? '#16a34a') : '#f97316';
-            const imoveis = contagemRef.current[codigo] ?? 0;
-            const pct = coberturaRef.current?.[codigo];
+            const imoveis = contagemRef.current[id] ?? 0;
+            const pct = coberturaRef.current?.[id];
             return `<div style="font-family:system-ui,sans-serif;padding:1px 0;min-width:130px">
               <div style="font-size:12px;font-weight:700;color:#0f172a;margin-bottom:3px">${codigo}</div>
               <div style="font-size:10px;color:#94a3b8;margin-bottom:5px">${regiaoNome}</div>
@@ -255,7 +255,7 @@ export function MapaDistribuicao({
         });
         layer.on('mouseout', () => {
           (layer as L.Path).setStyle(
-            quarteiraoStyle(codigo, atribuicoesRef.current, selecionadasRef.current, agentColorMapRef.current, coberturaRef.current),
+            quarteiraoStyle(id, atribuicoesRef.current, selecionadasRef.current, agentColorMapRef.current, coberturaRef.current),
           );
         });
 
@@ -263,17 +263,17 @@ export function MapaDistribuicao({
         layer.on('click', (e: L.LeafletMouseEvent) => {
           L.DomEvent.stopPropagation(e);
           const multi = e.originalEvent.ctrlKey || e.originalEvent.metaKey;
-          onSelectQRef.current(codigo, multi);
+          onSelectQRef.current(id, multi);
 
           if (!multi && onEditarRef.current) {
             const container = document.createElement('div');
             container.style.cssText = 'min-width:165px;font-family:system-ui,sans-serif;font-size:12px;line-height:1.5';
-            const agenteId = atribuicoesRef.current[codigo]?.pendente ?? '';
+            const agenteId = atribuicoesRef.current[id]?.pendente ?? '';
             const nomeAgente = agenteId ? (agentesMapRef.current[agenteId] ?? '?') : 'Sem atribuição';
             const agentColor = agenteId ? (agentColorMapRef.current[agenteId] ?? '#16a34a') : '#f97316';
             const regiaoNome = bairroId ? (regiaoNomeMapRef.current[bairroId] ?? '—') : '—';
-            const imoveis = contagemRef.current[codigo] ?? 0;
-            const pct = coberturaRef.current?.[codigo];
+            const imoveis = contagemRef.current[id] ?? 0;
+            const pct = coberturaRef.current?.[id];
             container.innerHTML = `
               <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:2px">${codigo}</div>
               <div style="font-size:10px;color:#64748b;margin-bottom:6px">${regiaoNome}</div>
@@ -352,7 +352,7 @@ export function MapaDistribuicao({
     if (!quarteiraoLayerRef.current) return;
     quarteiraoLayerRef.current.setStyle((f) =>
       quarteiraoStyle(
-        f?.properties?.codigo ?? '',
+        f?.properties?.id ?? '',
         atribuicoes,
         selecionadas,
         agentColorMap,
@@ -412,7 +412,7 @@ export function MapaDistribuicao({
 
       {/* Tip: multi-select + stats HUD */}
       {quarteiraoPolygons.length > 0 && (() => {
-        const semAgente = quarteiraoPolygons.filter(q => !atribuicoes[q.codigo]?.pendente).length;
+        const semAgente = quarteiraoPolygons.filter(q => !atribuicoes[q.id]?.pendente).length;
         return (
           <div className="absolute top-3 left-3 z-[500] flex flex-col gap-1.5">
             <div className="text-[10px] bg-background/92 backdrop-blur-sm border rounded-lg px-2.5 py-1 text-muted-foreground shadow-sm">

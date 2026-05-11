@@ -43,4 +43,8 @@ export const QuarteiraoException = createExceptionFactory({
     type: 'unprocessableEntity',
     message: 'Falha ao gravar lote de quarteirões — nenhuma alteração foi salva',
   },
+  upsertDistribuicaoFailed: {
+    type: 'unprocessableEntity',
+    message: 'Falha ao gravar atribuições — verifique os dados e tente novamente',
+  },
 });

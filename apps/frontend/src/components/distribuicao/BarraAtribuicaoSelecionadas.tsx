@@ -16,6 +16,8 @@ interface Props {
   regiaoNomeMap: Record<string, string>;
   contagemPorQ: Record<string, number>;
   agentColorMap: Record<string, string>;
+  /** UUID → codigo para exibição. */
+  uuidToCode: Record<string, string>;
   isPending: boolean;
   onAtribuir: (agenteId: string) => void;
   onLimpar: () => void;
@@ -25,6 +27,7 @@ interface Props {
 export function BarraAtribuicaoSelecionadas({
   selecionadas, agentes, atribuicoes, agentesMap,
   qBairroMap, regiaoNomeMap, contagemPorQ, agentColorMap,
+  uuidToCode,
   isPending, onAtribuir, onLimpar, onToggleQuadra,
 }: Props) {
   const [agenteId, setAgenteId] = useState('');
@@ -32,7 +35,9 @@ export function BarraAtribuicaoSelecionadas({
 
   if (selecionadas.size === 0) return null;
 
-  const quadrasSel = [...selecionadas].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  const quadrasSel = [...selecionadas].sort((a, b) =>
+    (uuidToCode[a] ?? a).localeCompare(uuidToCode[b] ?? b, 'pt-BR'),
+  );
   const totalImoveis = quadrasSel.reduce((s, q) => s + (contagemPorQ[q] ?? 0), 0);
   const bairrosEnvolvidos = new Set(quadrasSel.map((q) => qBairroMap[q]).filter(Boolean)).size;
   const pendentes = quadrasSel.filter((q) => {
@@ -162,7 +167,7 @@ export function BarraAtribuicaoSelecionadas({
                     <td className="px-2 py-1">
                       <CheckSquare className="h-3 w-3 text-primary" />
                     </td>
-                    <td className="px-2 py-1 font-mono font-semibold text-[11px]">{q}</td>
+                    <td className="px-2 py-1 font-mono font-semibold text-[11px]">{uuidToCode[q] ?? q}</td>
                     <td className="px-2 py-1 text-muted-foreground hidden sm:table-cell">
                       <span className="truncate max-w-[100px] block text-[11px]">{rNome}</span>
                     </td>

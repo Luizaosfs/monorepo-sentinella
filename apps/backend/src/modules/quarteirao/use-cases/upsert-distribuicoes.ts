@@ -1,13 +1,16 @@
-import { Inject, Injectable, Scope } from '@nestjs/common';
+import { Inject, Injectable, Logger, Scope } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Prisma } from '@prisma/client';
 import { Request } from 'express';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 import { UpsertDistribuicoesInput } from '../dtos/upsert-distribuicoes.body';
 import { EnsureCicloEditavel } from './ensure-ciclo-editavel';
+import { QuarteiraoException } from '../errors/quarteirao.exception';
 
 @Injectable({ scope: Scope.REQUEST })
 export class UpsertDistribuicoes {
+  private readonly logger = new Logger(UpsertDistribuicoes.name);
+
   constructor(
     private prisma: PrismaService,
     private ensureCicloEditavel: EnsureCicloEditavel,
@@ -39,7 +42,15 @@ export class UpsertDistribuicoes {
           updated_at = now()
       `),
     );
-    await this.prisma.client.$transaction(ops);
+
+    try {
+      await this.prisma.client.$transaction(ops);
+    } catch (err) {
+      this.logger.error(
+        `UpsertDistribuicoes falhou — cliente=${clienteId} ciclo=${cicloId} rows=${input.rows.length}: ${String(err)}`,
+      );
+      throw QuarteiraoException.upsertDistribuicaoFailed();
+    }
 
     // History — best-effort, non-blocking
     void Promise.allSettled(
