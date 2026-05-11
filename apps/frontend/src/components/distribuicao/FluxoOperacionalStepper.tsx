@@ -1,4 +1,4 @@
-import { CheckCircle2, AlertCircle, Circle } from 'lucide-react';
+import { CheckCircle2, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export interface StepInfo {
@@ -13,50 +13,58 @@ interface Props {
 
 export function FluxoOperacionalStepper({ steps }: Props) {
   return (
-    <div className="flex items-stretch overflow-x-auto rounded-xl border bg-card px-1 py-1 gap-0 shadow-sm">
+    <div className="flex items-center overflow-x-auto rounded-xl border bg-card shadow-sm px-2 py-1.5 gap-0 min-h-[52px]">
       {steps.map((step, i) => (
         <div key={step.label} className="flex items-center shrink-0">
-          <div
-            className={cn(
-              'flex flex-col items-center gap-0.5 px-3 py-2 min-w-[80px] rounded-lg transition-colors',
-              step.status === 'done' && 'bg-emerald-50 dark:bg-emerald-950/40',
-              step.status === 'attention' && 'bg-amber-50 dark:bg-amber-950/40',
-            )}
-          >
-            <div className="flex items-center gap-1">
+          <div className={cn(
+            'flex items-center gap-2 px-2.5 py-1.5 rounded-lg transition-colors',
+            step.status === 'done' && 'bg-emerald-50 dark:bg-emerald-950/30',
+            step.status === 'attention' && 'bg-amber-50 dark:bg-amber-950/30',
+          )}>
+            {/* Status circle */}
+            <div className={cn(
+              'flex h-5 w-5 items-center justify-center rounded-full shrink-0',
+              step.status === 'done'
+                ? 'bg-emerald-500'
+                : step.status === 'attention'
+                  ? 'bg-amber-400'
+                  : 'bg-muted border border-border',
+            )}>
               {step.status === 'done' ? (
-                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                <CheckCircle2 className="h-3 w-3 text-white" />
               ) : step.status === 'attention' ? (
-                <AlertCircle className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                <AlertCircle className="h-3 w-3 text-white" />
               ) : (
-                <Circle className="h-3.5 w-3.5 text-muted-foreground/30 shrink-0" />
+                <span className="text-[9px] font-bold text-muted-foreground">{i + 1}</span>
               )}
-              <span
-                className={cn(
-                  'text-[10px] font-semibold leading-tight',
-                  step.status === 'done'
-                    ? 'text-emerald-700 dark:text-emerald-400'
-                    : step.status === 'attention'
-                      ? 'text-amber-700 dark:text-amber-400'
-                      : 'text-muted-foreground/35',
-                )}
-              >
+            </div>
+            {/* Label + detail */}
+            <div className="flex flex-col">
+              <span className={cn(
+                'text-[10px] font-semibold leading-none',
+                step.status === 'done'
+                  ? 'text-emerald-700 dark:text-emerald-400'
+                  : step.status === 'attention'
+                    ? 'text-amber-700 dark:text-amber-400'
+                    : 'text-muted-foreground/40',
+              )}>
                 {step.label}
               </span>
-            </div>
-            {step.detail && (
-              <span className="text-[9px] text-muted-foreground/60 text-center leading-tight">
-                {step.detail}
-              </span>
-            )}
-          </div>
-          {i < steps.length - 1 && (
-            <div
-              className={cn(
-                'h-px w-4 shrink-0',
-                step.status === 'done' ? 'bg-emerald-300 dark:bg-emerald-700' : 'bg-border',
+              {step.detail && (
+                <span className="text-[9px] text-muted-foreground/55 leading-none mt-1 whitespace-nowrap">
+                  {step.detail}
+                </span>
               )}
-            />
+            </div>
+          </div>
+          {/* Connector */}
+          {i < steps.length - 1 && (
+            <div className={cn(
+              'h-px shrink-0 mx-1',
+              step.status === 'done'
+                ? 'w-5 bg-emerald-300/70 dark:bg-emerald-700'
+                : 'w-4 bg-border/50',
+            )} />
           )}
         </div>
       ))}

@@ -166,15 +166,28 @@ export function PainelRegioesQuadras({
             const todasSel = vis.length > 0 && vis.every((q) => selecionadas.has(q));
             const algumasSel = vis.some((q) => selecionadas.has(q));
             const atribuidos = vis.filter((q) => !!atribuicoes[q]?.pendente).length;
+            const atribuidosTotal = qs.filter((q) => !!atribuicoes[q]?.pendente).length;
             const semGeom = quarteiraoGeomMap
               ? vis.filter((q) => !quarteiraoGeomMap[q]).length
+              : 0;
+            const semGeomTotal = quarteiraoGeomMap
+              ? qs.filter((q) => !quarteiraoGeomMap![q]).length
               : 0;
             const totalImoveisRegiao = qs.reduce((s, q) => s + (contagemPorQ[q] ?? 0), 0);
 
             return (
               <div key={bairroId}>
                 {/* Cabeçalho da região */}
-                <div className="bg-muted/30 hover:bg-muted/50 transition-colors">
+                <div className={cn(
+                  'hover:bg-muted/40 transition-colors border-l-[3px]',
+                  atribuidosTotal === qs.length && qs.length > 0
+                    ? 'bg-emerald-50/40 dark:bg-emerald-950/10 border-l-emerald-400'
+                    : atribuidosTotal > 0
+                      ? 'bg-amber-50/30 dark:bg-amber-950/10 border-l-amber-400'
+                      : qs.length > 0
+                        ? 'bg-muted/30 border-l-slate-300/50'
+                        : 'bg-muted/30 border-l-border/30',
+                )}>
                 <div className="flex items-center gap-1.5 px-3 py-2">
                   <button
                     type="button"
@@ -248,19 +261,37 @@ export function PainelRegioesQuadras({
                     </button>
                   )}
                 </div>
+                {/* Stats sub-line */}
+                {qs.length > 0 && (
+                  <div className="flex items-center gap-1 px-3 pb-1.5 text-[9px] text-muted-foreground/55">
+                    <span className="tabular-nums">{qs.length}q</span>
+                    {semGeomTotal > 0 && (
+                      <><span className="text-muted-foreground/25">·</span><span className="text-amber-500/75">{semGeomTotal} sem mapa</span></>
+                    )}
+                    {totalImoveisRegiao > 0 && (
+                      <><span className="text-muted-foreground/25">·</span><span>{totalImoveisRegiao}im</span></>
+                    )}
+                    <span
+                      className="ml-auto tabular-nums font-semibold"
+                      style={{ color: atribuidosTotal === qs.length ? '#10b981' : atribuidosTotal > 0 ? '#f59e0b' : '#94a3b8' }}
+                    >
+                      {Math.round((atribuidosTotal / qs.length) * 100)}%
+                    </span>
+                  </div>
+                )}
                 {/* Attribution progress strip */}
-                {vis.length > 0 && (
-                  <div className="h-0.5 bg-border/30">
+                {qs.length > 0 && (
+                  <div className="h-1 bg-border/20">
                     <div
                       className={cn(
-                        'h-full transition-all duration-300',
-                        atribuidos === vis.length
+                        'h-full transition-all duration-500',
+                        atribuidosTotal === qs.length
                           ? 'bg-emerald-400/70'
-                          : atribuidos > 0
+                          : atribuidosTotal > 0
                             ? 'bg-amber-400/60'
                             : '',
                       )}
-                      style={{ width: `${Math.round((atribuidos / vis.length) * 100)}%` }}
+                      style={{ width: `${Math.round((atribuidosTotal / qs.length) * 100)}%` }}
                     />
                   </div>
                 )}

@@ -66,16 +66,16 @@ function quarteiraoStyle(
     const fillOpacity = pct === undefined ? 0.45 : pct >= 80 ? 0.68 : pct >= 30 ? 0.50 : 0.28;
     return { color: baseColor, fillColor: baseColor, weight: 1.8, fillOpacity, opacity: 0.85, dashArray: undefined };
   }
-  return { color: '#64748b', fillColor: '#e2e8f0', weight: 1.5, fillOpacity: 0.12, opacity: 0.70, dashArray: undefined };
+  return { color: '#94a3b8', fillColor: 'transparent', weight: 1.2, fillOpacity: 0, opacity: 0.45, dashArray: '3 4' };
 }
 
 const REGIAO_STYLE: L.PathOptions = {
-  color: '#94a3b8',
+  color: '#64748b',
   fillColor: '#94a3b8',
-  weight: 1,
-  fillOpacity: 0.04,
-  dashArray: '6 3',
-  opacity: 0.35,
+  weight: 1.5,
+  fillOpacity: 0.05,
+  dashArray: '5 4',
+  opacity: 0.55,
 };
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -87,7 +87,7 @@ export function MapaDistribuicao({
   agenteLegenda,
   onSelectQuarteirao, onSelectRegiao, onEditarGeometria,
 }: Props) {
-  const [legendaAberta, setLegendaAberta] = useState(false);
+  const [legendaAberta, setLegendaAberta] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const regionLayerRef = useRef<L.GeoJSON | null>(null);
@@ -144,8 +144,10 @@ export function MapaDistribuicao({
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
     mapRef.current = L.map(containerRef.current, { center: [-15.78, -47.93], zoom: 13 });
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© <a href="https://openstreetmap.org/copyright">OpenStreetMap</a>',
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      attribution: '© <a href="https://openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions">CARTO</a>',
+      subdomains: 'abcd',
+      maxZoom: 20,
     }).addTo(mapRef.current);
     return () => {
       mapRef.current?.remove();
@@ -219,21 +221,19 @@ export function MapaDistribuicao({
             const agenteId = atribuicoesRef.current[codigo]?.pendente ?? '';
             const nomeAgente = agenteId ? (agentesMapRef.current[agenteId] ?? '?') : 'Sem atribuição';
             const regiaoNome = bairroId ? (regiaoNomeMapRef.current[bairroId] ?? '—') : '—';
-            const atribColor = agenteId ? '#16a34a' : '#9ca3af';
-            const status = agenteId ? 'Atribuído' : 'Sem atribuição';
+            const agentColor = agenteId ? (agentColorMapRef.current[agenteId] ?? '#16a34a') : '#94a3b8';
             const imoveis = contagemRef.current[codigo] ?? 0;
             const pct = coberturaRef.current?.[codigo];
-            const coberturaStr = pct !== undefined
-              ? `<br/><span style="font-size:11px;color:${pct >= 80 ? '#16a34a' : pct >= 30 ? '#d97706' : '#9ca3af'}">Cobertura: ${pct}%</span>`
-              : '';
-            return `
-              <b style="font-size:13px">${codigo}</b><br/>
-              <span style="font-size:11px;color:#6b7280">Bairro: ${regiaoNome}</span><br/>
-              <span style="font-size:11px;color:#6b7280">Agente: ${nomeAgente}</span><br/>
-              <span style="font-size:11px;color:${atribColor}">${status}</span>
-              ${imoveis > 0 ? `<br/><span style="font-size:11px;color:#6b7280">${imoveis} imóveis</span>` : ''}
-              ${coberturaStr}
-            `;
+            return `<div style="font-family:system-ui,sans-serif;padding:1px 0;min-width:130px">
+              <div style="font-size:12px;font-weight:700;color:#0f172a;margin-bottom:3px">${codigo}</div>
+              <div style="font-size:10px;color:#94a3b8;margin-bottom:5px">${regiaoNome}</div>
+              <div style="display:flex;align-items:center;gap:5px">
+                <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${agentColor};flex-shrink:0"></span>
+                <span style="font-size:11px;font-weight:600;color:${agentColor}">${nomeAgente}</span>
+              </div>
+              ${imoveis > 0 ? `<div style="font-size:10px;color:#94a3b8;margin-top:3px">${imoveis} imóveis</div>` : ''}
+              ${pct !== undefined ? `<div style="font-size:10px;color:${pct >= 80 ? '#16a34a' : pct >= 30 ? '#d97706' : '#94a3b8'};margin-top:2px">↗ Cobertura: ${pct}%</div>` : ''}
+            </div>`;
           },
           { sticky: true },
         );
@@ -325,44 +325,59 @@ export function MapaDistribuicao({
       <div ref={containerRef} style={{ height: '100%', width: '100%' }} />
 
       {/* Legend */}
-      <div className="absolute bottom-3 left-3 z-[500] flex flex-col gap-1 text-[10px] font-medium bg-background/90 backdrop-blur border rounded-lg px-2.5 py-1.5 shadow-sm">
-        <div className="flex flex-wrap gap-2">
-          <span className="flex items-center gap-1.5">
-            <span className="inline-block h-2.5 w-5 rounded" style={{ background: '#3b82f6', opacity: 0.85 }} />
-            Atribuído
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="inline-block h-2.5 w-5 rounded border border-slate-400" style={{ background: '#e2e8f0' }} />
-            Sem agente
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="inline-block h-2.5 w-5 rounded border-2 border-blue-800" />
-            Selecionado
-          </span>
+      <div className="absolute bottom-3 left-3 z-[500] text-[10px] font-medium bg-background/96 backdrop-blur-sm border rounded-lg shadow-md overflow-hidden">
+        <div className="px-2.5 py-1 border-b bg-muted/40">
+          <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Legenda</span>
         </div>
-        {cobertura && Object.keys(cobertura).length > 0 && (
-          <div className="flex items-center gap-1.5 border-t pt-1 text-muted-foreground">
-            <span className="shrink-0">Cobertura:</span>
-            <span className="flex items-center gap-0.5">
-              <span className="inline-block h-2 w-3 rounded-sm" style={{ background: '#94a3b8', opacity: 0.3 }} />
-              <span className="inline-block h-2 w-3 rounded-sm" style={{ background: '#94a3b8', opacity: 0.55 }} />
-              <span className="inline-block h-2 w-3 rounded-sm" style={{ background: '#94a3b8', opacity: 0.85 }} />
-            </span>
-            <span>0 → 100%</span>
-          </div>
-        )}
+        <div className="px-2.5 py-1.5 flex flex-col gap-1.5">
+          <span className="flex items-center gap-2">
+            <span className="inline-block h-3 w-4 rounded-sm shrink-0" style={{ background: '#3b82f6', opacity: 0.85 }} />
+            <span className="text-foreground/75">Atribuído</span>
+          </span>
+          <span className="flex items-center gap-2">
+            <span className="inline-block h-3 w-4 rounded-sm border border-dashed border-slate-400 shrink-0" style={{ background: '#f1f5f9' }} />
+            <span className="text-foreground/75">Sem agente</span>
+          </span>
+          <span className="flex items-center gap-2">
+            <span className="inline-block h-3 w-4 rounded-sm border-2 border-blue-700 shrink-0" style={{ background: '#3b82f6', opacity: 0.75 }} />
+            <span className="text-foreground/75">Selecionado</span>
+          </span>
+          {cobertura && Object.keys(cobertura).length > 0 && (
+            <div className="flex items-center gap-1.5 border-t border-border/40 pt-1.5 text-muted-foreground">
+              <span className="shrink-0">Cobertura:</span>
+              <span className="flex items-center gap-0.5">
+                <span className="inline-block h-2.5 w-3 rounded-sm" style={{ background: '#94a3b8', opacity: 0.22 }} />
+                <span className="inline-block h-2.5 w-3 rounded-sm" style={{ background: '#94a3b8', opacity: 0.52 }} />
+                <span className="inline-block h-2.5 w-3 rounded-sm" style={{ background: '#94a3b8', opacity: 0.82 }} />
+              </span>
+              <span>baixa → alta</span>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Tip: multi-select */}
+      {/* Tip: multi-select + stats HUD */}
       {quarteiraoPolygons.length > 0 && (
-        <div className="absolute top-3 left-3 z-[500] text-[10px] bg-background/85 backdrop-blur border rounded-lg px-2 py-1 text-muted-foreground">
-          Ctrl/⌘ + clique para multi-seleção
+        <div className="absolute top-3 left-3 z-[500] flex flex-col gap-1.5">
+          <div className="text-[10px] bg-background/92 backdrop-blur-sm border rounded-lg px-2.5 py-1 text-muted-foreground shadow-sm">
+            + clique para multi-seleção
+          </div>
+          <div className="flex gap-1.5">
+            <span className="text-[10px] bg-background/92 backdrop-blur-sm border rounded-md px-2 py-0.5 text-muted-foreground shadow-sm tabular-nums">
+              {quarteiraoPolygons.length} quadras
+            </span>
+            {selecionadas.size > 0 && (
+              <span className="text-[10px] bg-primary text-primary-foreground rounded-md px-2 py-0.5 shadow-sm font-semibold tabular-nums">
+                {selecionadas.size} sel.
+              </span>
+            )}
+          </div>
         </div>
       )}
 
       {/* Agent legend — collapsible, top-right */}
       {agenteLegenda && agenteLegenda.length > 0 && (
-        <div className="absolute top-3 right-3 z-[500] bg-background/92 backdrop-blur border rounded-lg shadow-sm text-[10px] font-medium min-w-[140px] max-w-[200px]">
+        <div className="absolute top-3 right-3 z-[500] bg-background/96 backdrop-blur-sm border rounded-lg shadow-md text-[10px] font-medium min-w-[150px] max-w-[210px]">
           <button
             type="button"
             onClick={() => setLegendaAberta((v) => !v)}
@@ -409,6 +424,22 @@ export function MapaDistribuicao({
         <div className="absolute top-3 right-3 z-[500] text-[10px] bg-amber-50 border border-amber-200 text-amber-700 rounded-lg px-2.5 py-1.5 max-w-[200px] text-center">
           Nenhum quarteirão com geometria. Use o botão <b>PenLine</b> na lista lateral para desenhar.
         </div>
+      )}
+
+      {/* Re-center / fit button */}
+      {(quarteiraoPolygons.length > 0 || regiaoPolygons.length > 0) && (
+        <button
+          type="button"
+          onClick={() => {
+            const layer = quarteiraoLayerRef.current ?? regionLayerRef.current;
+            const bounds = layer?.getBounds();
+            if (bounds?.isValid()) mapRef.current?.fitBounds(bounds, { padding: [20, 20] });
+          }}
+          className="absolute bottom-8 right-3 z-[500] bg-background/95 backdrop-blur-sm border rounded-lg px-2.5 py-1.5 text-[10px] font-medium text-muted-foreground hover:text-primary hover:border-primary/40 shadow-sm transition-colors"
+          title="Centralizar no território"
+        >
+          ⊡ Centralizar
+        </button>
       )}
     </div>
   );
