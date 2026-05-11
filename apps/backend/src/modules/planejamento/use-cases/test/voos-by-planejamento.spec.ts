@@ -10,7 +10,7 @@ describe('VoosByPlanejamento', () => {
     findMany  = jest.fn().mockResolvedValue([]);
     uc = new VoosByPlanejamento({
       client: {
-        planejamento: { findFirst },
+        planejamentos: { findFirst },
         voos: { findMany },
       },
     } as never);

@@ -5,7 +5,7 @@ const PLANO_BASICO_ID = '00000000-0000-4000-8000-0000000000aa';
 
 function makeTx() {
   return {
-    planos: { findFirst: jest.fn() },
+    planos: { findFirst: jest.fn(), create: jest.fn() },
     cliente_plano: {
       findUnique: jest.fn(),
       create: jest.fn(),
@@ -20,6 +20,14 @@ function makeTx() {
     plano_acao_catalogo: {
       count: jest.fn(),
       createMany: jest.fn(),
+    },
+    sentinela_risk_policy: {
+      findFirst: jest.fn(),
+      create: jest.fn(),
+    },
+    sla_config: {
+      findFirst: jest.fn(),
+      create: jest.fn(),
     },
   };
 }
@@ -38,6 +46,10 @@ function setupHappyPath(tx: ReturnType<typeof makeTx>) {
   tx.sentinela_yolo_synonym.createMany.mockResolvedValue({ count: 5 });
   tx.plano_acao_catalogo.count.mockResolvedValue(0);
   tx.plano_acao_catalogo.createMany.mockResolvedValue({ count: 1 });
+  tx.sentinela_risk_policy.findFirst.mockResolvedValue(null);
+  tx.sentinela_risk_policy.create.mockResolvedValue({ id: 'rp-1' });
+  tx.sla_config.findFirst.mockResolvedValue(null);
+  tx.sla_config.create.mockResolvedValue({ id: 'sc-1' });
 }
 
 describe('SeedClienteNovo', () => {
@@ -50,7 +62,7 @@ describe('SeedClienteNovo', () => {
   });
 
   // ── Happy path ─────────────────────────────────────────────────────────────
-  it('deve semear todas as 9 áreas no happy path', async () => {
+  it('deve semear todas as 11 áreas no happy path', async () => {
     setupHappyPath(tx);
 
     const result = await useCase.execute(CLIENTE_ID, tx);
@@ -66,6 +78,8 @@ describe('SeedClienteNovo', () => {
     // 10 genéricos pulados em batch + 12 por tipo (cada um chamando createMany se count=0)
     expect(result.planoAcaoCatalogo.genericosCriados).toBe(1); // mock retorna 1 sempre — cobrir invocação
     expect(result.planoAcaoCatalogo.porTipoCriados).toBe(12);
+    expect(result.riskPolicy).toBe('criado');
+    expect(result.slaConfig).toBe('criado');
   });
 
   // ── 1) cliente_plano ───────────────────────────────────────────────────────
@@ -83,14 +97,16 @@ describe('SeedClienteNovo', () => {
       });
     });
 
-    it('retorna "pulado_sem_plano_basico" se plano "basico" não existir', async () => {
+    it('retorna "plano_criado_e_vinculado" se plano "basico" não existir (auto-cria)', async () => {
       setupHappyPath(tx);
       tx.planos.findFirst.mockResolvedValue(null);
+      tx.planos.create.mockResolvedValue({ id: 'auto-plano-id' });
 
       const result = await useCase.execute(CLIENTE_ID, tx);
 
-      expect(result.clientePlano).toBe('pulado_sem_plano_basico');
-      expect(tx.cliente_plano.create).not.toHaveBeenCalled();
+      expect(result.clientePlano).toBe('plano_criado_e_vinculado');
+      expect(tx.planos.create).toHaveBeenCalled();
+      expect(tx.cliente_plano.create).toHaveBeenCalled();
     });
 
     it('retorna "ja_existente" se cliente_plano já existir (idempotência)', async () => {

@@ -2,6 +2,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { mock } from 'jest-mock-extended';
 
+import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 import { BulkInsertOperacoesInput } from '../../dtos/bulk-insert-operacoes.body';
 import { OperacaoReadRepository } from '../../repositories/operacao-read.repository';
 import { OperacaoWriteRepository } from '../../repositories/operacao-write.repository';
@@ -9,6 +10,16 @@ import { mockRequest } from '@test/utils/user-helpers';
 
 import { BulkInsertOperacoes } from '../bulk-insert-operacoes';
 import { OperacaoBuilder } from './builders/operacao.builder';
+
+const mockPrisma = {
+  client: {
+    levantamento_itens: {
+      count: jest.fn().mockImplementation((args: any) =>
+        Promise.resolve(args?.where?.id?.in?.length ?? 0),
+      ),
+    },
+  },
+};
 
 describe('BulkInsertOperacoes', () => {
   let useCase: BulkInsertOperacoes;
@@ -25,6 +36,7 @@ describe('BulkInsertOperacoes', () => {
         BulkInsertOperacoes,
         { provide: OperacaoReadRepository, useValue: readRepo },
         { provide: OperacaoWriteRepository, useValue: writeRepo },
+        { provide: PrismaService, useValue: mockPrisma },
         { provide: REQUEST, useValue: mockRequest({ tenantId: 'test-cliente-id' }) },
       ],
     }).compile();

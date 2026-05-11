@@ -2,9 +2,12 @@ import { ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
+import { SecurityLoggerService } from '@modules/security-log/security-log.service';
 
 import { AuthenticatedUser } from '../auth.guard';
 import { TenantGuard } from '../tenant.guard';
+
+const mockSecurityLogger = { log: jest.fn() };
 
 const mockFindMany = jest.fn();
 
@@ -58,6 +61,7 @@ describe('TenantGuard', () => {
         TenantGuard,
         { provide: Reflector, useValue: { getAllAndOverride: jest.fn() } },
         { provide: PrismaService, useValue: mockPrisma },
+        { provide: SecurityLoggerService, useValue: mockSecurityLogger },
       ],
     }).compile();
 

@@ -2,6 +2,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { mock } from 'jest-mock-extended';
 
+import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 import { CriarParaItemBody } from '../../dtos/criar-para-item.body';
 import { OperacaoException } from '../../errors/operacao.exception';
 import { OperacaoReadRepository } from '../../repositories/operacao-read.repository';
@@ -11,6 +12,8 @@ import { mockRequest } from '@test/utils/user-helpers';
 
 import { CriarParaItem } from '../criar-para-item';
 import { OperacaoBuilder } from './builders/operacao.builder';
+
+const mockPrisma = { client: { levantamento_itens: { count: jest.fn().mockResolvedValue(1) }, usuarios: { count: jest.fn().mockResolvedValue(1) } } };
 
 describe('CriarParaItem', () => {
   let useCase: CriarParaItem;
@@ -26,6 +29,7 @@ describe('CriarParaItem', () => {
         CriarParaItem,
         { provide: OperacaoReadRepository, useValue: readRepo },
         { provide: OperacaoWriteRepository, useValue: writeRepo },
+        { provide: PrismaService, useValue: mockPrisma },
         { provide: REQUEST, useValue: mockRequest({ tenantId: 'test-cliente-id' }) },
       ],
     }).compile();

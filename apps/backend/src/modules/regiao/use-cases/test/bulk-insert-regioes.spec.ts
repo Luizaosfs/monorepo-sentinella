@@ -2,36 +2,43 @@ import { BulkInsertRegioes } from '../bulk-insert-regioes';
 
 describe('BulkInsertRegioes', () => {
   let uc: BulkInsertRegioes;
+  let findMany: jest.Mock;
+  let createMany: jest.Mock;
+  let bairrosUpdate: jest.Mock;
   let executeRaw: jest.Mock;
-  let transaction: jest.Mock;
 
   beforeEach(() => {
-    executeRaw = jest.fn().mockReturnValue(Promise.resolve(1));
-    transaction = jest.fn().mockImplementation((ops: Promise<number>[]) => Promise.all(ops));
+    findMany     = jest.fn().mockResolvedValue([]);
+    createMany   = jest.fn().mockResolvedValue({ count: 0 });
+    bairrosUpdate = jest.fn().mockResolvedValue({});
+    executeRaw   = jest.fn().mockResolvedValue(1);
     uc = new BulkInsertRegioes({
-      client: { $executeRaw: executeRaw, $transaction: transaction },
+      client: {
+        bairros: { findMany, createMany, update: bairrosUpdate },
+        $executeRaw: executeRaw,
+      },
     } as never);
   });
 
-  it('returns { count: 0 } for empty rows without touching the db', async () => {
+  it('returns { inserted: 0, updated: 0 } for empty rows without touching the db', async () => {
     const result = await uc.execute('cli-1', { rows: [] });
-    expect(result).toEqual({ count: 0 });
-    expect(transaction).not.toHaveBeenCalled();
+    expect(result).toEqual({ inserted: 0, updated: 0 });
+    expect(findMany).not.toHaveBeenCalled();
   });
 
-  it('calls $executeRaw once per row and returns total count', async () => {
+  it('calls createMany for rows without geojson and returns inserted count', async () => {
+    createMany.mockResolvedValue({ count: 2 });
     const result = await uc.execute('cli-1', {
       rows: [{ nome: 'Bairro A' }, { nome: 'Bairro B' }],
     });
-    expect(executeRaw).toHaveBeenCalledTimes(2);
-    expect(result).toEqual({ count: 2 });
+    expect(createMany).toHaveBeenCalledTimes(1);
+    expect(result).toEqual({ inserted: 2, updated: 0 });
   });
 
   it('SQL references ST_GeomFromGeoJSON when geojson is present', async () => {
     await uc.execute('cli-1', {
       rows: [{ nome: 'Norte', geojson: { type: 'Polygon', coordinates: [] } }],
     });
-    // Prisma.sql returns a Sql object; the literal template parts are in .strings
     const sqlObj = executeRaw.mock.calls[0][0] as { strings: string[] };
     const sqlText = sqlObj.strings.join('');
     expect(sqlText).toContain('ST_GeomFromGeoJSON');

@@ -383,7 +383,13 @@
       "Bash(pnpm --filter backend test --no-coverage --testPathPattern=\"create-ciclo|ativar-ciclo|abrir-ciclo|fechar-ciclo|create-operacao|upsert-operacao|bulk-insert-operacoes|criar-para-item|save-operacao|ensure-and-concluir|criar-item-manual|save-levantamento|create-levantamento|delete-item|update-item|get-levantamento|criar-manual\\\\.spec|atribuir-agente|create-vistoria-completa\\\\.spec\")",
       "Bash(pnpm --filter backend test --no-coverage --testPathPattern=\"create-operacao\\\\.spec|upsert-operacao\\\\.spec|atribuir-agente\\\\.spec\")",
       "Bash(pnpm --filter backend test --no-coverage --testPathPattern=\"create-operacao.spec\")",
-      "Bash(findstr /C:\"●\" /C:\"expect\" /C:\"Error\" /C:\"received\")"
+      "Bash(findstr /C:\"●\" /C:\"expect\" /C:\"Error\" /C:\"received\")",
+      "Bash(pnpm --filter backend test --no-coverage --testPathPattern=\"bulk-insert-operacoes|criar-para-item|criar-manual\\\\.spec|get-resumo-visual-vistoria|voos-by-planejamento\")",
+      "Bash(grep -v \"^--$\")",
+      "Bash(pnpm --filter backend test --no-coverage --testPathPattern=\"criar-manual\\\\.spec|seed-cliente-novo|bulk-create-voos|bulk-insert-regioes|tenant\\\\.guard\")",
+      "Bash(pnpm --filter backend test --no-coverage --testPathPattern=\"bulk-create-voos|bulk-insert-regioes|tenant\\\\.guard\")",
+      "Bash(pnpm --filter backend test --no-coverage --testPathPattern=\"bulk-create-voos|bulk-insert-regioes|tenant\\\\.guard|voos-by-planejamento|seed-cliente-novo|bulk-insert-operacoes|criar-para-item\")",
+      "Bash(pnpm --filter backend test --no-coverage --testPathPattern=\"seed-cliente-novo|bulk-insert-operacoes\")"
     ]
   }
 }

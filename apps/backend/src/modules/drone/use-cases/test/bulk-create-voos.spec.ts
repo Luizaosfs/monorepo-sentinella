@@ -11,7 +11,7 @@ describe('BulkCreateVoos', () => {
     uc = new BulkCreateVoos({
       client: {
         voos:         { createMany },
-        planejamento: { count: planCount },
+        planejamentos: { count: planCount },
       },
     } as never);
   });
