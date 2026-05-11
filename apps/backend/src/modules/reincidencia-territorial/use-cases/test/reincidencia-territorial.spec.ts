@@ -174,7 +174,8 @@ describe('GetReincidenciaImoveisUc', () => {
   it('não contar foco descartado — query usa status <> descartado', async () => {
     prismaMock.client.$queryRaw.mockResolvedValue([]);
     await uc.execute(CLIENT_ID);
-    const sqlStr = String(prismaMock.client.$queryRaw.mock.calls[0][0]);
+    const sqlObj = prismaMock.client.$queryRaw.mock.calls[0][0] as { strings: string[] };
+    const sqlStr = sqlObj.strings.join('');
     expect(sqlStr).toContain('descartado');
   });
 });

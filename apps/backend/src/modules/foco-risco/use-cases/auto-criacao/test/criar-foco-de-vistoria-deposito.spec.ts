@@ -6,18 +6,28 @@ const mkPrisma = () => {
   const vistoriasFind: Mock = jest.fn();
   const imoveisFind: Mock = jest.fn();
   const focoCreate: Mock = jest.fn();
+  const focosFindFirst: Mock = jest.fn().mockResolvedValue(null);
   const queryRaw: Mock = jest.fn().mockResolvedValue([{ ultimo: BigInt(1) }]);
+  const txFocosUpdate: Mock = jest.fn().mockResolvedValue({});
+  const txHistoricoCreateMany: Mock = jest.fn().mockResolvedValue({ count: 0 });
+  const transaction: Mock = jest.fn().mockImplementation((fn: any) =>
+    fn({ focos_risco: { update: txFocosUpdate }, foco_risco_historico: { createMany: txHistoricoCreateMany } }),
+  );
   return {
     vistoriasFind,
     imoveisFind,
     focoCreate,
+    focosFindFirst,
     queryRaw,
+    transaction,
     service: {
       client: {
         vistorias: { findFirst: vistoriasFind },
         imoveis: { findFirst: imoveisFind },
-        focos_risco: { create: focoCreate },
+        focos_risco: { create: focoCreate, findFirst: focosFindFirst },
+        foco_risco_historico: { createMany: txHistoricoCreateMany },
         $queryRaw: queryRaw,
+        $transaction: transaction,
       },
     } as any,
   };

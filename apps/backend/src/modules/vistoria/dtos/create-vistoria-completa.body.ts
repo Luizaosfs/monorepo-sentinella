@@ -7,7 +7,13 @@ export const depositoEvidenciaSchema = z.object({
     required_error: 'Tipo de imagem obrigatório',
     invalid_type_error: 'tipo_imagem deve ser "antes" ou "depois"',
   }),
-  urlOriginal: z.string().url('URL da imagem deve ser uma URL válida'),
+  urlOriginal: z
+    .string()
+    .url('URL da imagem deve ser uma URL válida')
+    .refine(
+      (url) => !url.startsWith('data:') && !url.startsWith('blob:'),
+      { message: 'URL não pode ser base64 ou blob — envie via Cloudinary', path: ['urlOriginal'] },
+    ),
   urlThumbnail: z.string().url().optional(),
   publicId: z.string().min(1, 'public_id obrigatório'),
   tamanhoBytes: z.number().int().positive().optional(),

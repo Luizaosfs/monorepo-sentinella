@@ -4,6 +4,7 @@ import { mock } from 'jest-mock-extended';
 import { ForbiddenException } from '@nestjs/common';
 
 import { CriarFocoDeVistoriaDeposito } from '@/modules/foco-risco/use-cases/auto-criacao/criar-foco-de-vistoria-deposito';
+import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 import { VerificarQuota } from '../../../billing/use-cases/verificar-quota';
 import { EnfileirarScoreImovel } from '../../../job/enfileirar-score-imovel';
 import { mockRequest } from '@test/utils/user-helpers';
@@ -19,6 +20,7 @@ import { ValidarCicloVistoria } from '../validar-ciclo-vistoria';
 describe('CreateVistoriaCompleta', () => {
   let useCase: CreateVistoriaCompleta;
   const writeRepo = mock<VistoriaWriteRepository>();
+  const mockPrisma = { client: { usuarios: { count: jest.fn().mockResolvedValue(1) } } };
   const criarFoco = { execute: jest.fn().mockResolvedValue({ criado: false }) };
   const mockConsolidar = { execute: jest.fn().mockResolvedValue(undefined) };
   const mockEnfileirar = { enfileirarPorImovel: jest.fn().mockResolvedValue(undefined) };
@@ -41,6 +43,7 @@ describe('CreateVistoriaCompleta', () => {
         { provide: VerificarQuota, useValue: mockVerificarQuota },
         { provide: ValidarCicloVistoria, useValue: mockValidarCiclo },
         { provide: AtualizarPerfilImovel, useValue: mockAtualizarPerfil },
+        { provide: PrismaService, useValue: mockPrisma },
         {
           provide: REQUEST,
           useValue: mockRequest({
@@ -122,8 +125,10 @@ describe('CreateVistoriaCompleta', () => {
 
     expect(criarFoco.execute).toHaveBeenCalledTimes(1);
     expect(criarFoco.execute).toHaveBeenCalledWith({
+      clienteId: '00000000-0000-4000-8000-000000000001',
       vistoriaId: id,
       qtdComFocos: 1,
+      tratado: false,
     });
   });
 
@@ -263,7 +268,7 @@ describe('CreateVistoriaCompleta', () => {
     expect(mockAtualizarPerfil.execute).toHaveBeenCalledWith({
       imovelId: 'imovel-k4-1',
       vistoriaId: id,
-      agenteId: 'agente-k4-1',
+      agenteId: '00000000-0000-4000-8000-000000000003', // user.id de agente; input.agenteId é ignorado para papel agente
       clienteId: '00000000-0000-4000-8000-000000000001',
     });
   });

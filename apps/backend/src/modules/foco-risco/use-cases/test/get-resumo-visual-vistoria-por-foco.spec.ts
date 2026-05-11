@@ -84,7 +84,7 @@ const vistoriaBase = {
       qtd_com_agua: 2,
       usou_larvicida: true,
       qtd_larvicida_g: 5,
-      eliminado: false,
+      eliminado: true,
       vedado: true,
     },
   ],

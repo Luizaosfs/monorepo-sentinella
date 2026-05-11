@@ -2,6 +2,7 @@
 import { FocoRiscoWriteRepository } from '@modules/foco-risco/repositories/foco-risco-write.repository';
 import { Test, TestingModule } from '@nestjs/testing';
 import { mock } from 'jest-mock-extended';
+import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 
 import { expectHttpException } from '@test/utils/expect-http-exception';
 import { mockRequest } from '@test/utils/user-helpers';
@@ -17,6 +18,7 @@ describe('CriarManual', () => {
   const writeRepo = mock<ReinspecaoWriteRepository>();
   const focoRead = mock<FocoRiscoReadRepository>();
   const focoWrite = mock<FocoRiscoWriteRepository>();
+  const mockPrisma = { client: { usuarios: { count: jest.fn().mockResolvedValue(1) } } };
 
   const baseInput = () => ({
     focoRiscoId: 'foco-uuid-1',
@@ -31,6 +33,7 @@ describe('CriarManual', () => {
         { provide: ReinspecaoWriteRepository, useValue: writeRepo },
         { provide: FocoRiscoReadRepository, useValue: focoRead },
         { provide: FocoRiscoWriteRepository, useValue: focoWrite },
+        { provide: PrismaService, useValue: mockPrisma },
         {
           provide: 'REQUEST',
           useValue: mockRequest({
@@ -79,6 +82,7 @@ describe('CriarManual', () => {
         { provide: ReinspecaoWriteRepository, useValue: writeRepo },
         { provide: FocoRiscoReadRepository, useValue: focoRead },
         { provide: FocoRiscoWriteRepository, useValue: focoWrite },
+        { provide: PrismaService, useValue: mockPrisma },
         { provide: 'REQUEST', useValue: mockRequest({ tenantId: '' }) },
       ],
     }).compile();
@@ -122,6 +126,7 @@ describe('CriarManual', () => {
         { provide: ReinspecaoWriteRepository, useValue: writeRepo },
         { provide: FocoRiscoReadRepository, useValue: focoRead },
         { provide: FocoRiscoWriteRepository, useValue: focoWrite },
+        { provide: PrismaService, useValue: mockPrisma },
         {
           provide: 'REQUEST',
           useValue: mockRequest({

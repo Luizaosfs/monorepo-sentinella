@@ -85,8 +85,10 @@ describe('AddDeposito', () => {
     await useCase.execute('v-1', 'c-1', baseInput);
 
     expect(mockCriarFoco.execute).toHaveBeenCalledWith({
+      clienteId: 'c-1',
       vistoriaId: 'v-1',
       qtdComFocos: 1,
+      tratado: false,
     });
   });
 

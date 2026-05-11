@@ -9,10 +9,16 @@ describe('ListDistribuicoesByAgente', () => {
     uc = new ListDistribuicoesByAgente({ client: { $queryRaw: queryRaw } } as never);
   });
 
-  it('returns quarteirao codes for given agente and ciclo', async () => {
-    queryRaw.mockResolvedValue([{ codigo: 'Q1' }, { codigo: 'Q2' }]);
+  it('returns distribuicao items for given agente and ciclo', async () => {
+    queryRaw.mockResolvedValue([
+      { quadra_id: 'qid-1', codigo: 'Q1', bairro_id: null },
+      { quadra_id: 'qid-2', codigo: 'Q2', bairro_id: 'b-1' },
+    ]);
     const result = await uc.execute('cli-1', 'ag-1', 'ciclo-uuid-3');
-    expect(result).toEqual(['Q1', 'Q2']);
+    expect(result).toEqual([
+      { quadraId: 'qid-1', codigo: 'Q1', bairroId: null },
+      { quadraId: 'qid-2', codigo: 'Q2', bairroId: 'b-1' },
+    ]);
   });
 
   it('returns empty array when agente has no distribuicoes', async () => {

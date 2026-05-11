@@ -75,15 +75,16 @@ describe('GetRegionalEvolucao', () => {
   it('intervalo default (12 meses) cobre o último ano', () => {
     const params = makeParams(12)
     const diffDays = (params.dataFim.getTime() - params.dataInicio.getTime()) / 86_400_000
+    // inicio é ajustado para o dia 1 do mês, então o intervalo pode ser até ~396 dias (365 + 30 dias extras)
     expect(diffDays).toBeGreaterThan(360)
-    expect(diffDays).toBeLessThan(370)
+    expect(diffDays).toBeLessThan(400)
   })
 
   it('intervalo de 24 meses está dentro do limite máximo', () => {
     const params = makeParams(24)
     const diffDays = (params.dataFim.getTime() - params.dataInicio.getTime()) / 86_400_000
-    // 24 meses calendário podem gerar 730-732 dias dependendo dos meses envolvidos
-    expect(diffDays).toBeLessThanOrEqual(732)
+    // inicio é ajustado para o dia 1 do mês; 24 meses + dia atual = até ~762 dias com ano bissexto
+    expect(diffDays).toBeLessThanOrEqual(766)
   })
 
   it('analista_regional: supervisor com único cliente vê somente seu cliente', async () => {
