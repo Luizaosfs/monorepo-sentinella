@@ -421,6 +421,7 @@ export class PrismaImovelReadRepository implements ImovelReadRepository {
       bairro: string | null;
       quarteirao: string | null;
       bairro_id: string | null;
+      quadra_id: string | null;
       tipo_imovel: string;
       latitude: number | null;
       longitude: number | null;
@@ -460,6 +461,7 @@ export class PrismaImovelReadRepository implements ImovelReadRepository {
         i.bairro,
         i.quarteirao,
         i.bairro_id::text,
+        i.quadra_id::text,
         i.tipo_imovel,
         i.latitude::float8,
         i.longitude::float8,
@@ -526,6 +528,7 @@ export class PrismaImovelReadRepository implements ImovelReadRepository {
       bairro: r.bairro,
       quarteirao: r.quarteirao,
       regiaoId: r.bairro_id,
+      quadraId: r.quadra_id,
       tipoImovel: r.tipo_imovel,
       latitude: r.latitude,
       longitude: r.longitude,

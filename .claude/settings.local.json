@@ -371,7 +371,10 @@
       "PowerShell(cd D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\frontend; & \"C:\\\\Users\\\\luiz\\\\AppData\\\\Roaming\\\\npm\\\\pnpm.cmd\" tsc --noEmit 2>&1 | Where-Object { $_ -match \"error TS\" })",
       "Bash(pnpm --filter backend test --testPathPattern=\"listar-territorio-agente\" --no-coverage)",
       "Bash(pnpm --filter backend test --testPathPattern=\"list-imovel-resumo-territorial\" --no-coverage)",
-      "Bash(pnpm --filter backend test --no-coverage)"
+      "Bash(pnpm --filter backend test --no-coverage)",
+      "Bash(pnpm --filter backend test --testPathPattern=\"batch-create-imoveis\" --no-coverage)",
+      "Bash(\"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" \"postgresql://luizAntonio:Sentinella147852369@177.7.37.14:5432/sentinella\" -f \"apps/backend/prisma/migrations/add_imoveis_quadra_id.sql\")",
+      "Bash(\"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" \"postgresql://luizAntonio:Sentinella147852369@177.7.37.14:5432/sentinella\" -f \"apps/backend/prisma/migrations/backfill_imoveis_quadra_id.sql\")"
     ]
   }
 }
