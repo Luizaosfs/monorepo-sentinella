@@ -6,6 +6,7 @@ import {
   InternalServerErrorException,
   NotFoundException,
   UnauthorizedException,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 
 type ExceptionType =
@@ -14,7 +15,8 @@ type ExceptionType =
   | 'forbidden'
   | 'unauthorized'
   | 'conflict'
-  | 'internalServerError';
+  | 'internalServerError'
+  | 'unprocessableEntity';
 
 type ExceptionMap = Record<string, { type: ExceptionType; message: string }>;
 
@@ -32,6 +34,7 @@ export function createExceptionFactory<T extends ExceptionMap>(
     unauthorized: (msg: string) => new UnauthorizedException(msg),
     conflict: (msg: string) => new ConflictException(msg),
     internalServerError: (msg: string) => new InternalServerErrorException(msg),
+    unprocessableEntity: (msg: string) => new UnprocessableEntityException(msg),
   };
 
   const result = {} as ExceptionMethods<T>;
