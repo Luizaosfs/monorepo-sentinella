@@ -283,6 +283,9 @@ export default function FichaImovel360() {
                       {FOCO_STATUS_LABEL[f.status] ?? f.status}
                     </span>
                     <div className="flex-1 min-w-0">
+                      {f.codigo_foco && (
+                        <p className="text-[10px] font-mono text-muted-foreground/70">{f.codigo_foco}</p>
+                      )}
                       <p className="text-xs text-muted-foreground truncate">
                         {f.descricao || 'Sem descrição'} · {formatDistanceToNow(new Date(f.created_at), { locale: ptBR, addSuffix: true })}
                       </p>

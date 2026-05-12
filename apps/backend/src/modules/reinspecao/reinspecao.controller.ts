@@ -123,8 +123,8 @@ export class ReinspecaoController {
   @Roles('admin', 'supervisor', 'agente')
   @ApiOperation({ summary: 'Buscar reinspeção por id' })
   async getById(@Param('id') id: string) {
-    const { reinspecao } = await this.getReinspecao.execute(id);
-    return ReinspecaoViewModel.toHttp(reinspecao);
+    const { reinspecao, codigoFoco, focoEndereco, focoBairro } = await this.getReinspecao.execute(id);
+    return { ...ReinspecaoViewModel.toHttp(reinspecao), codigoFoco, focoEndereco, focoBairro };
   }
 
   @Patch(':id/cancelar')
@@ -152,7 +152,7 @@ export class ReinspecaoController {
   }
 
   @Patch(':id/resultado')
-  @Roles('admin', 'supervisor')
+  @Roles('admin', 'supervisor', 'agente')
   @ApiOperation({ summary: 'Registrar resultado (conclui como realizada)' })
   async resultado(
     @Param('id') id: string,

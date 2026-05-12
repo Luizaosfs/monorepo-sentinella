@@ -14,7 +14,6 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
   DialogContent,
@@ -35,7 +34,6 @@ import {
   Search,
   MapPin,
   Home,
-  Building2,
   Layers,
   List,
   Map as MapIcon,
@@ -56,21 +54,6 @@ const ATIVIDADE_LABEL: Record<TipoAtividade, string> = {
   ponto_estrategico: 'Ponto Estratégico',
 };
 
-const STATUS_BORDER: Record<string, string> = {
-  pendente: 'border-l-4 border-red-500',
-  revisita: 'border-l-4 border-amber-500',
-  visitado: 'border-l-4 border-green-500',
-  fechado: 'border-l-4 border-gray-400',
-  none: 'border-l-4 border-red-500',
-};
-
-const STATUS_BADGE_VARIANT: Record<string, 'destructive' | 'secondary' | 'outline' | 'default'> = {
-  pendente: 'destructive',
-  revisita: 'default',
-  visitado: 'secondary',
-  fechado: 'outline',
-  none: 'destructive',
-};
 
 const STATUS_LABEL: Record<string, string> = {
   pendente: 'Pendente',
@@ -216,11 +199,8 @@ export default function AgenteListaImoveis() {
     for (const im of imoveis) {
       if (im.bairro) set.add(im.bairro);
     }
-    for (const q of territorio?.quadras ?? []) {
-      if (q.bairroNome) set.add(q.bairroNome);
-    }
     return Array.from(set).sort();
-  }, [imoveis, territorio]);
+  }, [imoveis]);
 
   // Bairros únicos do território atribuído ao agente (para o select do formulário)
   const bairrosDoTerritorio = useMemo(() => {
@@ -365,7 +345,7 @@ export default function AgenteListaImoveis() {
   return (
     <div className="min-h-screen bg-muted/30 flex flex-col">
       {/* Header */}
-      <div className="bg-white border-b px-4 py-3 flex items-center gap-3 sticky top-0 z-10">
+      <div className="bg-background border-b px-4 py-3 flex items-center gap-3 sticky top-0 z-10">
         <Button
           variant="ghost"
           size="icon"
@@ -630,7 +610,13 @@ export default function AgenteListaImoveis() {
       <Button
         size="icon"
         className="fixed right-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] lg:right-6 lg:bottom-6 h-14 w-14 rounded-full shadow-lg z-30"
-        onClick={() => setDialogOpen(true)}
+        onClick={() => {
+          if (bairrosDoTerritorio.length === 0) {
+            toast.error('Você não possui território atribuído para cadastrar imóveis.');
+            return;
+          }
+          setDialogOpen(true);
+        }}
         aria-label="Cadastrar novo imóvel"
       >
         <Plus className="h-6 w-6" />

@@ -82,11 +82,11 @@ export default function AgenteReinspecao() {
     staleTime: STALE.SHORT,
   });
 
-  const foco = reinspecao?.foco as Record<string, unknown> | null;
-  const imovel = foco?.imovel as Record<string, string> | null;
-  const endereco = imovel
-    ? [imovel.logradouro, imovel.numero, imovel.bairro].filter(Boolean).join(', ')
-    : (foco?.endereco_normalizado as string) ?? 'Endereço não informado';
+  const r = reinspecao as any;
+  const codigoFoco = r?.codigoFoco as string | null;
+  const focoEndereco = r?.focoEndereco as string | null;
+  const focoBairro = r?.focoBairro as string | null;
+  const endereco = focoEndereco ?? 'Endereço não informado';
 
   async function handleSubmit() {
     if (!resultado || !reinspecaoId || !reinspecao) return;
@@ -94,7 +94,7 @@ export default function AgenteReinspecao() {
     try {
       const res = await registrar.mutateAsync({
         reinspecaoId,
-        focoRiscoId: reinspecao.foco_risco_id as string,
+        focoRiscoId: (reinspecao as any).focoRiscoId as string,
         resultado,
         observacao: observacao.trim() || undefined,
       });
@@ -208,19 +208,25 @@ export default function AgenteReinspecao() {
       <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-1.5">
         <div className="flex items-start gap-2">
           <MapPin className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
-          <p className="text-sm font-medium">{endereco}</p>
+          <div className="min-w-0">
+            <p className="text-sm font-medium">{endereco}</p>
+            {focoBairro && <p className="text-xs text-muted-foreground">{focoBairro}</p>}
+          </div>
         </div>
+        {codigoFoco && (
+          <p className="text-[11px] font-mono text-muted-foreground/70 pl-6">{codigoFoco}</p>
+        )}
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <CalendarClock className="w-3.5 h-3.5 shrink-0" />
           <span>
             Prevista para:{' '}
-            {new Date(reinspecao.data_prevista as string).toLocaleString('pt-BR', {
+            {new Date(r.dataPrevista as string).toLocaleString('pt-BR', {
               day: '2-digit', month: '2-digit', year: 'numeric',
               hour: '2-digit', minute: '2-digit',
             })}
           </span>
         </div>
-        {reinspecao.status === 'vencida' && (
+        {r.status === 'vencida' && (
           <span className="inline-flex items-center gap-1 rounded-full bg-red-100 dark:bg-red-900/30 px-2 py-0.5 text-xs font-semibold text-red-700 dark:text-red-400">
             Reinspeção vencida
           </span>
