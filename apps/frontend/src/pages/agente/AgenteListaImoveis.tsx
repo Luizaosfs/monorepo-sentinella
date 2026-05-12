@@ -170,41 +170,43 @@ export default function AgenteListaImoveis() {
 
   const createImovelMutation = useCreateImovelMutation();
 
-  // Map imovel_id → latest vistoria status
+  // Map imovelId → latest vistoria status
   const statusPorImovel = useMemo(() => {
     const map = new Map<string, string>();
     const sorted = [...vistorias].sort(
-      (a, b) => new Date(b.data_visita).getTime() - new Date(a.data_visita).getTime(),
+      (a, b) => new Date((b as any).dataVisita ?? (b as any).data_visita).getTime()
+              - new Date((a as any).dataVisita ?? (a as any).data_visita).getTime(),
     );
     for (const v of sorted) {
-      if (!map.has(v.imovel_id)) {
-        map.set(v.imovel_id, v.status);
-      }
+      const id = (v as any).imovelId ?? (v as any).imovel_id;
+      if (id && !map.has(id)) map.set(id, v.status);
     }
     return map;
   }, [vistorias]);
 
-  // Map imovel_id → tem pendência de evidência (assinatura ou foto)
+  // Map imovelId → tem pendência de evidência (assinatura ou foto)
   const pendenciasPorImovel = useMemo(() => {
     const map = new Map<string, boolean>();
     for (const v of vistorias) {
-      if (v.pendente_assinatura || v.pendente_foto) {
-        map.set(v.imovel_id, true);
-      }
+      const id = (v as any).imovelId ?? (v as any).imovel_id;
+      const pend = (v as any).pendenteAssinatura ?? (v as any).pendente_assinatura;
+      const foto = (v as any).pendenteFoto ?? (v as any).pendente_foto;
+      if (id && (pend || foto)) map.set(id, true);
     }
     return map;
   }, [vistorias]);
 
-  // Map imovel_id → latest data_visita
+  // Map imovelId → latest dataVisita
   const ultimaVisitaPorImovel = useMemo(() => {
     const map = new Map<string, string>();
     const sorted = [...vistorias].sort(
-      (a, b) => new Date(b.data_visita).getTime() - new Date(a.data_visita).getTime(),
+      (a, b) => new Date((b as any).dataVisita ?? (b as any).data_visita).getTime()
+              - new Date((a as any).dataVisita ?? (a as any).data_visita).getTime(),
     );
     for (const v of sorted) {
-      if (!map.has(v.imovel_id)) {
-        map.set(v.imovel_id, v.data_visita);
-      }
+      const id = (v as any).imovelId ?? (v as any).imovel_id;
+      const data = (v as any).dataVisita ?? (v as any).data_visita;
+      if (id && data && !map.has(id)) map.set(id, data);
     }
     return map;
   }, [vistorias]);
