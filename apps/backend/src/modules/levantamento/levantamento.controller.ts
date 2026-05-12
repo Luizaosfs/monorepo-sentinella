@@ -109,6 +109,8 @@ export class LevantamentoController {
   @ApiOperation({ summary: 'Listar levantamentos com filtros' })
   async filter(@Query() filters: FilterLevantamentoInput) {
     const parsed = filterLevantamentoSchema.parse(filters);
+    const scope = getAccessScope(this.req);
+    if (scope.tenantId) parsed.clienteId = scope.tenantId;
     const { levantamentos } = await this.filterLevantamento.execute(parsed);
     return levantamentos.map(LevantamentoViewModel.toHttp);
   }
@@ -121,6 +123,8 @@ export class LevantamentoController {
     @Query() pagination: PaginationProps,
   ) {
     const parsedFilters = filterLevantamentoSchema.parse(filters);
+    const scope = getAccessScope(this.req);
+    if (scope.tenantId) parsedFilters.clienteId = scope.tenantId;
     const parsedPagination = paginationSchema.parse(pagination);
     const result = await this.paginationLevantamento.execute(
       parsedFilters,

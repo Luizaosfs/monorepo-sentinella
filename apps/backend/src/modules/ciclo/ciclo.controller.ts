@@ -76,6 +76,8 @@ export class CicloController {
   @ApiOperation({ summary: 'Listar ciclos' })
   async filter(@Query() filters: FilterCicloInput) {
     const parsed = filterCicloSchema.parse(filters);
+    const scope = getAccessScope(this.req);
+    if (scope.tenantId) parsed.clienteId = scope.tenantId;
     const { ciclos } = await this.filterCiclo.execute(parsed);
     return ciclos.map(CicloViewModel.toHttp);
   }

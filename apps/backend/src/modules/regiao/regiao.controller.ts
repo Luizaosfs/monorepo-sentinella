@@ -76,6 +76,8 @@ export class RegiaoController {
   @ApiOperation({ summary: 'Listar regiões com filtros' })
   async filter(@Query() filters: FilterRegiaoInput) {
     const parsed = filterRegiaoSchema.parse(filters);
+    const scope = getAccessScope(this.req);
+    if (scope.tenantId) parsed.clienteId = scope.tenantId;
     const { regioes } = await this.filterRegiao.execute(parsed);
     return regioes.map(RegiaoViewModel.toHttp);
   }
@@ -88,6 +90,8 @@ export class RegiaoController {
     @Query() pagination: PaginationProps,
   ) {
     const parsedFilters = filterRegiaoSchema.parse(filters);
+    const scope = getAccessScope(this.req);
+    if (scope.tenantId) parsedFilters.clienteId = scope.tenantId;
     const parsedPagination = paginationSchema.parse(pagination);
     const result = await this.paginationRegiao.execute(
       parsedFilters,
