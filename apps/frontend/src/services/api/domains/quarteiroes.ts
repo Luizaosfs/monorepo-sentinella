@@ -46,6 +46,8 @@ export const quarteiroes = {
     features: Array<{ codigo: string; geojson: Record<string, unknown>; bairroId?: string; bairro?: string; areaM2?: number }>;
   }): Promise<{ ok: number; criados: string[]; erros: Array<{ codigo: string; motivo: string }> }> =>
     http.post('/quarteiroes/importar-geojson', payload),
+  deletarQuadrasBairro: (bairroId: string): Promise<{ deletadas: number }> =>
+    http.delete(`/quarteiroes/bairro/${bairroId}`),
   gerarQuadrasOSM: (payload: {
     bairroId: string;
     geojson: { type: 'Polygon'; coordinates: number[][][] };

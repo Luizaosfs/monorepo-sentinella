@@ -1,5 +1,5 @@
 import { useMemo, useRef, useEffect } from 'react';
-import { Search, ChevronDown, ChevronRight, CheckSquare, Square, Plus, MapPin, AlertTriangle, PenLine, PenSquare } from 'lucide-react';
+import { Search, ChevronDown, ChevronRight, CheckSquare, Square, Plus, MapPin, AlertTriangle, PenLine, PenSquare, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -31,6 +31,8 @@ interface Props {
   onDesenharQuarteirao?: (codigo: string, bairroId: string | null) => void;
   /** Abre modal de desenho de nova quadra para uma região específica */
   onDesenharNova?: (bairroId: string) => void;
+  /** Remove todas as quadras de um bairro — só disponível quando nenhuma tem agente */
+  onDeletarBairro?: (bairroId: string) => void;
   onExpandAll?: () => void;
   onCollapseAll?: () => void;
 }
@@ -68,7 +70,7 @@ export function PainelRegioesQuadras({
   uuidToCode,
   highlightQ,
   onSearchChange, onFiltroChange, onToggleQuadra, onSelectQuadras, onToggleAberta,
-  onGerarQuarteiroes, onDesenharQuarteirao, onDesenharNova,
+  onGerarQuarteiroes, onDesenharQuarteirao, onDesenharNova, onDeletarBairro,
   onExpandAll, onCollapseAll,
 }: Props) {
   const term = searchTerm.trim().toLowerCase();
@@ -242,6 +244,17 @@ export function PainelRegioesQuadras({
                       />
                     )}
                   </button>
+                  {/* Botão: excluir todas as quadras do bairro (só quando sem agente) */}
+                  {onDeletarBairro && qs.length > 0 && atribuidosTotal === 0 && bairroId !== '__sem_regiao__' && (
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); onDeletarBairro(bairroId); }}
+                      className="shrink-0 text-muted-foreground hover:text-destructive p-0.5 rounded transition-colors"
+                      title="Excluir todas as quadras deste bairro"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  )}
                   {/* Botão: desenhar nova quadra nesta região */}
                   {onDesenharNova && bairroId !== '__sem_regiao__' && (
                     <button

@@ -82,6 +82,7 @@ export default function AdminDistribuicaoQuarteirao() {
   const [modalDesenharRegiaoId, setModalDesenharRegiaoId] = useState<string | null>(null);
   const [modalImportarOpen, setModalImportarOpen] = useState(false);
   const [highlightEntry, setHighlightEntry] = useState<{ codigo: string; tick: number } | null>(null);
+  const [confirmarDeletarBairro, setConfirmarDeletarBairro] = useState<string | null>(null);
 
   // ── Data ──────────────────────────────────────────────────────────────────
   const { data: distribuicaoSalva = [], isLoading: loadingDist } =
@@ -386,10 +387,6 @@ export default function AdminDistribuicaoQuarteirao() {
       }
       return next;
     });
-    setAbertas((prev) => {
-      if (prev.size > 0) return prev;
-      return new Set(bairroIds);
-    });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [distribuicaoSalva, loadingDist, quarteiroes.join(','), mode]);
 
@@ -404,10 +401,6 @@ export default function AdminDistribuicaoQuarteirao() {
         next[q] = { salvo: agente, pendente: agente };
       }
       return next;
-    });
-    setAbertas((prev) => {
-      if (prev.size > 0) return prev;
-      return new Set(bairroIds);
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [distribuicaoTerritorial, loadingTerritorial, quarteiroes.join(','), mode]);
@@ -598,6 +591,21 @@ export default function AdminDistribuicaoQuarteirao() {
   const handleEditarGeometria = useCallback((q: QuarteiraoParaEdicao) => {
     setModalEditarGeometria(q);
   }, []);
+
+  const deletarBairroMutation = useMutation({
+    mutationFn: async (bairroId: string) => {
+      return api.quarteiroes.deletarQuadrasBairro(bairroId);
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['quarteiroes_mestre', clienteId] });
+      toast.success(`${result.deletadas} quadra(s) removida(s) do bairro.`);
+      setConfirmarDeletarBairro(null);
+    },
+    onError: () => {
+      toast.error('Não foi possível excluir — verifique se há distribuições registradas.');
+      setConfirmarDeletarBairro(null);
+    },
+  });
 
   // ── Salvar mutation (ciclo mode only) ─────────────────────────────────────
   const salvarMutation = useMutation({
@@ -955,6 +963,7 @@ export default function AdminDistribuicaoQuarteirao() {
               onGerarQuarteiroes={handleGerarQuarteiroes}
               onDesenharQuarteirao={handleDesenharFromPanel}
               onDesenharNova={handleDesenharNova}
+              onDeletarBairro={setConfirmarDeletarBairro}
               onExpandAll={expandAll}
               onCollapseAll={collapseAll}
               highlightQ={highlightEntry}
@@ -1128,6 +1137,30 @@ export default function AdminDistribuicaoQuarteirao() {
         onLimpar={() => { setSelecionadas(new Set()); setHighlightEntry(null); }}
         onToggleQuadra={toggleQuadra}
       />
+
+      {/* Confirmação — excluir quadras do bairro */}
+      <Dialog open={!!confirmarDeletarBairro} onOpenChange={(open) => { if (!open) setConfirmarDeletarBairro(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Excluir quadras do bairro</DialogTitle>
+            <DialogDescription>
+              Todas as quadras deste bairro serão removidas permanentemente. Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setConfirmarDeletarBairro(null)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={deletarBairroMutation.isPending}
+              onClick={() => confirmarDeletarBairro && deletarBairroMutation.mutate(confirmarDeletarBairro)}
+            >
+              {deletarBairroMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Excluir'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Confirmação — troca de ciclo com pendentes não salvos */}
       <Dialog open={!!pendingCicloId} onOpenChange={(open) => { if (!open) setPendingCicloId(null); }}>
