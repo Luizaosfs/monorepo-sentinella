@@ -12,6 +12,7 @@ import { ValidarCicloVistoria } from './validar-ciclo-vistoria';
 import { Vistoria } from '../entities/vistoria';
 import { VistoriaReadRepository } from '../repositories/vistoria-read.repository';
 import { VistoriaWriteRepository } from '../repositories/vistoria-write.repository';
+import { EnsureAgentePodeAtuarNaQuadra } from '../../quarteirao/use-cases/ensure-agente-pode-atuar-na-quadra';
 import { AtualizarPerfilImovel } from './atualizar-perfil-imovel';
 import { ConsolidarVistoria } from './consolidar-vistoria';
 
@@ -29,6 +30,7 @@ export class CreateVistoria {
     private validarCicloVistoria: ValidarCicloVistoria,
     private iniciarInspecao: IniciarInspecao,
     private atualizarPerfilImovel: AtualizarPerfilImovel,
+    private ensureAgentePodeAtuar: EnsureAgentePodeAtuarNaQuadra,
   ) {}
 
   async execute(data: CreateVistoriaBody) {
@@ -45,6 +47,11 @@ export class CreateVistoria {
     const _user = this.req['user'] as any;
     const _isPrivileged = _user?.isPlatformAdmin || _user?.papeis?.includes('supervisor');
     const resolvedAgenteId = (_isPrivileged ? data.agenteId : null) ?? _user?.id;
+
+    // Valida território do agente — supervisor/admin não são bloqueados
+    if (!_isPrivileged && data.imovelId) {
+      await this.ensureAgentePodeAtuar.execute(clienteId, resolvedAgenteId, data.imovelId);
+    }
 
     const vistoria = new Vistoria(
       {

@@ -394,7 +394,17 @@
       "Bash(pnpm --filter backend test -- --testPathPattern=\"modules/foco-risco\" --passWithNoTests)",
       "Bash(pnpm --filter backend test -- --testPathPattern=\"src/modules/foco-risco\")",
       "Bash(pnpm --filter backend test -- --testPathPattern=\"foco-risco\" --passWithNoTests)",
-      "Bash(pnpm --filter backend test -- \"list-focos-territorio\")"
+      "Bash(pnpm --filter backend test -- \"list-focos-territorio\")",
+      "mcp__plugin_context-mode_context-mode__ctx_upgrade",
+      "PowerShell(\\(Get-Command npm -ErrorAction SilentlyContinue\\).Source; \\(Get-Command node -ErrorAction SilentlyContinue\\).Source; \\(Get-Command npx -ErrorAction SilentlyContinue\\).Source)",
+      "PowerShell(node \"C:\\\\Users\\\\luiz\\\\.claude\\\\plugins\\\\cache\\\\context-mode\\\\context-mode\\\\1.0.89\\\\cli.bundle.mjs\" upgrade 2>&1)",
+      "PowerShell(Get-Command *)",
+      "PowerShell(npm install *)",
+      "PowerShell(& \"C:\\\\Program Files\\\\nodejs\\\\npm.cmd\" install -g context-mode@latest 2>&1 | Select-Object -Last 20)",
+      "PowerShell(& \"C:\\\\Program Files\\\\nodejs\\\\npm.cmd\" root -g)",
+      "PowerShell(node \"C:\\\\Users\\\\luiz\\\\AppData\\\\Roaming\\\\npm\\\\node_modules\\\\context-mode\\\\cli.bundle.mjs\" upgrade 2>&1 | Select-Object -Last 40)",
+      "Bash(Select-String -Path \"D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend\\\\.env\" -Pattern \"^DATABASE_URL\")",
+      "Bash(Select-Object -First 1 -ExpandProperty Line)"
     ]
   }
 }

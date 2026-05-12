@@ -15,6 +15,7 @@ import { Vistoria } from '../entities/vistoria';
 import { VistoriaWriteRepository } from '../repositories/vistoria-write.repository';
 import { AtualizarPerfilImovel } from './atualizar-perfil-imovel';
 import { ConsolidarVistoria } from './consolidar-vistoria';
+import { EnsureAgentePodeAtuarNaQuadra } from '../../quarteirao/use-cases/ensure-agente-pode-atuar-na-quadra';
 import { VistoriaException } from '../errors/vistoria.exception';
 
 @Injectable()
@@ -31,6 +32,7 @@ export class CreateVistoriaCompleta {
     private validarCicloVistoria: ValidarCicloVistoria,
     private atualizarPerfilImovel: AtualizarPerfilImovel,
     private prisma: PrismaService,
+    private ensureAgentePodeAtuar: EnsureAgentePodeAtuarNaQuadra,
   ) {}
 
   async execute(data: CreateVistoriaCompletaBody): Promise<{ id: string }> {
@@ -51,6 +53,11 @@ export class CreateVistoriaCompleta {
       agenteId = data.agenteId;
     } else {
       agenteId = userId;
+    }
+
+    // Valida território do agente — supervisor não é bloqueado
+    if (userPapeis.includes('agente') && data.imovelId) {
+      await this.ensureAgentePodeAtuar.execute(clienteId, agenteId, data.imovelId);
     }
 
     // G.6 — rejeita ciclo diferente do ativo

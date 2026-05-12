@@ -6,6 +6,7 @@ import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 import { BillingModule } from '../billing/billing.module';
 import { CloudinaryModule } from '../cloudinary/cloudinary.module';
 import { FocoRiscoModule } from '../foco-risco/foco-risco.module';
+import { QuarteiraoModule } from '../quarteirao/quarteirao.module';
 import { IniciarInspecao } from '../foco-risco/use-cases/iniciar-inspecao';
 import { RecalcularScorePrioridadeFoco } from '../foco-risco/use-cases/recalcular-score-prioridade-foco';
 import { JobModule } from '../job/job.module';
@@ -53,6 +54,6 @@ import { VistoriaController } from './vistoria.controller';
     PrismaService,
   ],
   controllers: [VistoriaController],
-  imports: [DatabaseModule, FocoRiscoModule, JobModule, BillingModule, CloudinaryModule],
+  imports: [DatabaseModule, FocoRiscoModule, JobModule, BillingModule, CloudinaryModule, QuarteiraoModule],
 })
 export class VistoriaModule {}

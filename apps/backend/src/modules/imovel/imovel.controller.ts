@@ -42,6 +42,7 @@ import {
 } from './dtos/find-by-endereco.input';
 import { SaveImovelBody, saveImovelSchema } from './dtos/save-imovel.body';
 import { BatchCreateImoveis } from './use-cases/batch-create-imoveis';
+import { PreencherBairroImoveis } from './use-cases/preencher-bairro-imoveis';
 import { BuscarChavesExistentes } from './use-cases/buscar-chaves-existentes';
 import { CalcularScore } from './use-cases/calcular-score';
 import { CountPrioridadeDrone } from './use-cases/count-prioridade-drone';
@@ -77,6 +78,7 @@ export class ImovelController {
     private buscarChavesExistentesUc: BuscarChavesExistentes,
     private countPrioridadeDroneUc: CountPrioridadeDrone,
     private batchCreateImoveisUc: BatchCreateImoveis,
+    private preencherBairroImoveisUc: PreencherBairroImoveis,
     @Inject(REQUEST) private req: Request,
   ) {}
 
@@ -180,6 +182,14 @@ export class ImovelController {
   async findById(@Param('id') id: string) {
     const { imovel } = await this.getImovel.execute(id, getAccessScope(this.req).tenantId);
     return ImovelViewModel.toHttp(imovel);
+  }
+
+  @Post('backfill-bairro')
+  @Roles('admin')
+  @ApiOperation({ summary: 'Backfill de bairro_id: PostGIS (passo 1) + nome ILIKE (passo 2)' })
+  async backfillBairro() {
+    const clienteId = requireTenantId(getAccessScope(this.req));
+    return this.preencherBairroImoveisUc.execute(clienteId);
   }
 
   @Post('batch')

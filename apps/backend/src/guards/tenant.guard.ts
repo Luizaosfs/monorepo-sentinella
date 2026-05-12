@@ -65,9 +65,6 @@ export class TenantGuard implements CanActivate {
 
     request['accessScope'] = scope;
 
-    // Compatibilidade temporária — fase 1B/1C migra os callers
-    request['tenantId'] = scope.tenantId;
-
     return true;
   }
 

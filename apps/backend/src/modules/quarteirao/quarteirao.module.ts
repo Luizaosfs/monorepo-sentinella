@@ -27,6 +27,7 @@ import { ListarTerritorioAgente } from './use-cases/listar-territorio-agente';
 import { AtribuirQuadraTerritorial } from './use-cases/atribuir-quadra-territorial';
 import { DesatribuirQuadraTerritorial } from './use-cases/desatribuir-quadra-territorial';
 import { DeletarQuadrasBairro } from './use-cases/deletar-quadras-bairro';
+import { EnsureAgentePodeAtuarNaQuadra } from './use-cases/ensure-agente-pode-atuar-na-quadra';
 
 @Module({
   providers: [
@@ -53,10 +54,12 @@ import { DeletarQuadrasBairro } from './use-cases/deletar-quadras-bairro';
     AtribuirQuadraTerritorial,
     DesatribuirQuadraTerritorial,
     DeletarQuadrasBairro,
+    EnsureAgentePodeAtuarNaQuadra,
     JwtService,
     PrismaService,
   ],
   controllers: [QuarteiraoController],
   imports: [DatabaseModule],
+  exports: [EnsureAgentePodeAtuarNaQuadra],
 })
 export class QuarteiraoModule {}

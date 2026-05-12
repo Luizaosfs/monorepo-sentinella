@@ -114,11 +114,11 @@ Módulos adicionados após a documentação original (abr-mai/2026):
 
 ### Multitenancy
 - Isolamento via `cliente_id` (UUID) em WHERE — não via schema separado
-- `TenantGuard` injeta `request['tenantId']` do JWT
+- `TenantGuard` injeta `request['accessScope']` (ver `access-scope.helpers.ts`); `request['tenantId']` foi removido (mai/2026)
 - Admin sem `cliente_id` seleciona tenant via `?clienteId=xxx`
 - Todo repository de tenant DEVE filtrar por `cliente_id`
 
-### Máquina de estados — focos_risco (8 estados)
+### Máquina de estados — focos_risco (11 estados)
 
 Fonte da verdade: `TRANSICOES_VALIDAS` em `src/modules/foco-risco/entities/foco-risco.ts`.
 
@@ -126,11 +126,14 @@ Transições válidas **pelo endpoint genérico** `POST /focos-risco/:id/transic
 - `suspeita` → `em_triagem`
 - `em_triagem` → `aguarda_inspecao` | `descartado`
 - `aguarda_inspecao` → `descartado`
-- `em_inspecao` → `confirmado` | `descartado`
+- `em_inspecao` → `confirmado` | `aguarda_inspecao` | `descartado`  ← back-transition permitida
+- `aguardando_nova_tentativa` → `descartado` | `encaminhado_administrativo` | `acionado_juridico`
 - `confirmado` → `em_tratamento`
 - `em_tratamento` → `resolvido` | `descartado`
 - `resolvido` → (terminal)
 - `descartado` → (terminal)
+- `encaminhado_administrativo` → (terminal)
+- `acionado_juridico` → (terminal)
 
 **`aguarda_inspecao` → `em_inspecao` NÃO passa pelo endpoint genérico.** Essa transição ocorre pelo use-case `IniciarInspecao` via endpoint próprio `PATCH /focos-risco/:id/iniciar-inspecao` (evento operacional + histórico `inicio_inspecao`). Comentário explícito em `entities/foco-risco.ts` reforça isso.
 
@@ -279,7 +282,7 @@ Nomes terminados em `*SchedulerService` (ex.: `SlaSchedulerService`, `BillingSch
 >
 > **Aviso (Fase A, abr/2026):** o cron `slaMarcarVencidos` foi restaurado de `0 6 * * *` para `*/15 * * * *` e `relatorioSemanal` de diário para `0 8 * * 1` (segunda 8h). O cron `scoreDiario` (equivalente ao `score-recalculo-diario` do pg_cron legado) passou a existir. O cron `redactSensitiveLogs` (equivalente LGPD ao `retencao-logs-redact`) passou a existir.
 >
-> **Débito conhecido (NÃO tratado na Fase A):** o mapa de escalada de prioridades em `SlaSchedulerService.marcarVencidos` usa `baixa/media/alta/critica` enquanto o `sla_operacional.prioridade` real usa `Crítica/Urgente/Alta/Moderada/Média/Baixa/Monitoramento` (ver `apps/frontend/src/types/sla.ts`). A escalada atual do TS **não surte efeito** nos dados reais. Tratar em tarefa separada.
+> **Débito resolvido (mai/2026):** a escalada usa `ESCALA_PRIORIDADE = ['P5','P4','P3','P2','P1']` em `escalar-sla.ts` — paridade com o formato real do banco. O débito documentado aqui era referente a uma versão anterior do código.
 
 ---
 
@@ -442,17 +445,15 @@ Controller `@Controller('denuncias')` (plural). 4 rotas reais:
 
 | Método | Rota | Auth | Throttle | Use-case |
 |---|---|---|---|---|
-| POST | `/denuncias/cidadao` | `@Public()` | 5/min (`{ limit: 5, ttl: 60_000 }`) | `DenunciarCidadao` (V1, SQL legado) ou `DenunciarCidadaoV2` (V2, TS) |
+| POST | `/denuncias/cidadao` | `@Public()` | 5/min (`{ limit: 5, ttl: 60_000 }`) | `DenunciarCidadaoV2` (TS) |
 | POST | `/denuncias/upload-foto` | `@Public()` | 5/min | `UploadFotoDenuncia` |
 | GET  | `/denuncias/stats` | `@Roles('admin','supervisor','analista_regional')` | (sem @Throttle) | `CanalCidadaoStats` |
 | GET  | `/denuncias/consultar` | `@Public()` | 30/min | `ConsultarDenuncia` |
 
-- Flag `env.CANAL_CIDADAO_V2_ENABLED` (default `false` em `src/lib/env/server.ts`) escolhe entre V1 e V2 no POST `/denuncias/cidadao`.
-  - V1: `use-cases/denunciar-cidadao.ts` → chama função SQL `denunciar_cidadao()`.
-  - V2: `use-cases/denunciar-cidadao-v2.ts` → TypeScript puro, cria `focos_risco` e `foco_risco_historico` via Prisma.
+- Controller usa `DenunciarCidadaoV2` diretamente (sem flag de alternância). `CANAL_CIDADAO_V2_ENABLED` existe no schema Zod mas não é consumido pelo controller — V2 está sempre ativo.
 - Retorno de V2: `{ protocolo, id }` (protocolo = primeiros 8 chars do `foco_id` sem hífens).
-- `GET /denuncias/consultar` ainda depende da função SQL `consultar_denuncia_cidadao()` (não há fallback TypeScript).
-- Hash de IP (V2) usa `env.CANAL_CIDADAO_IP_SALT`.
+- `GET /denuncias/consultar` usa `ConsultarDenuncia` TypeScript puro (`$queryRaw` em `focos_risco`) — sem dependência de função SQL legada.
+- Hash de IP usa `env.CANAL_CIDADAO_IP_SALT`.
 
 ---
 
@@ -460,9 +461,32 @@ Controller `@Controller('denuncias')` (plural). 4 rotas reais:
 
 - `platform_admin` é valor morto — nenhum usuário deve tê-lo.
 - Proteção cross-tenant: o repositório `findById(id, clienteId?)` filtra por `cliente_id` quando o `clienteId` é passado. Use-cases de domínio DEVEM passar `tenantId` no `findById`. Parte dos use-cases ainda usa `findById(id)` sem tenant e faz validação `assert`/`assertTenantOwnership` a posteriori (`src/shared/security/tenant-ownership.util.ts`). Ao criar novo código, **sempre passar tenant no `findById`** — não confiar em asserts a posteriori.
-- `denunciar_cidadao` (V1 SQL ou V2 TS) cria `focos_risco` diretamente com rate limit de 5/min por IP.
+- `DenunciarCidadaoV2` (TS) cria `focos_risco` diretamente com rate limit de 5/min por IP. V1 SQL foi removido.
 - Sem RLS no banco — toda segurança é NestJS guards (`AuthGuard`, `RolesGuard`, `TenantGuard`) e asserts em use-cases.
 - `TenantGuard` é global via `APP_GUARD`; opt-out via `@Public()` ou `@SkipTenant()`.
+- `request['tenantId']` foi removido do `TenantGuard` (mai/2026) — todos os callers usam `getAccessScope(req).tenantId` via `access-scope.helpers.ts`. Não reintroduzir o campo legado.
+
+---
+
+## IMPLEMENTAÇÕES MAI/2026
+
+### Backfill bairro_id (imovel)
+`POST /imoveis/backfill-bairro` (`@Roles('admin')`) — use-case `PreencherBairroImoveis` (`imovel/use-cases/preencher-bairro-imoveis.ts`):
+- **Passo 1 (PostGIS):** `ST_Contains(bairros.area, imoveis.geo)` — preenche `bairro_id` para imóveis com coordenadas.
+- **Passo 2 (texto):** `imoveis.bairro ILIKE bairros.nome` — preenche os restantes por nome.
+- Idempotente: só atualiza linhas com `bairro_id IS NULL`.
+- Retorno: `{ postgis, texto, total }`.
+
+### Dashboard territorial — tratamentos executados
+`GET /dashboard/territorial` agora inclui `tratamentosExecutados` no response:
+```typescript
+tratamentosExecutados: {
+  larvicida: { depositosUsaram: number; totalGramas: number };
+  eliminacao: { totalDepositos: number };
+}
+```
+Dados vêm de `vistoria_depositos.usou_larvicida` e `qtd_larvicida_g` (sem schema change).
+Campo `depositosComLarvicida` e `totalLarvicidaG` também adicionados em cada item de `depositosPncd.porTipo`.
 
 ---
 
@@ -484,7 +508,7 @@ PORT=3333                                 # default '3333'
 NODE_ENV=development                      # enum development|production|test, default development
 SMTP_PORT=587                             # default '587'
 CANAL_CIDADAO_IP_SALT=sentinella-dev-salt # default 'sentinella-dev-salt'
-CANAL_CIDADAO_V2_ENABLED=false            # default false (boolean via transform)
+CANAL_CIDADAO_V2_ENABLED=true             # default true — V2 sempre ativo (controller não lê mais esta flag)
 ```
 
 **Opcionais (sem default):**
@@ -504,6 +528,7 @@ SMTP_HOST=
 SMTP_USER=
 SMTP_PASS=
 SMTP_FROM=
+GOOGLE_MAPS_KEY=
 ```
 
 ---

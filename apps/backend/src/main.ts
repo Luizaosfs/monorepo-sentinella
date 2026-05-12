@@ -42,7 +42,6 @@ async function bootstrap() {
   // '1' = confiar em exatamente 1 hop de proxy (nginx/LB); evita IP spoofing via X-Forwarded-For
   app.getHttpAdapter().getInstance().set('trust proxy', 1);
 
-  //app.use(helmet());
   app.use(
     helmet({
       contentSecurityPolicy: {

@@ -59,4 +59,16 @@ export const QuarteiraoException = createExceptionFactory({
     type: 'conflict',
     message: 'Este bairro já possui distribuições registradas e não pode ser resetado',
   },
+  territorioNaoAtribuido: {
+    type: 'forbidden',
+    message: 'Este imóvel está em uma quadra não atribuída ao agente na distribuição territorial ativa',
+  },
+  imovelSemQuadra: {
+    type: 'forbidden',
+    message: 'Este imóvel não possui quadra atribuída — vistoria não permitida',
+  },
+  imovelNaoEncontrado: {
+    type: 'notFound',
+    message: 'Imóvel não encontrado ou não pertence a este município',
+  },
 });

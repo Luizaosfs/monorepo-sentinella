@@ -18,6 +18,7 @@ import { ListImovelProblematicos } from './use-cases/list-imovel-problematicos';
 import { ListImovelResumo } from './use-cases/list-imovel-resumo';
 import { PaginationImovel } from './use-cases/pagination-imovel';
 import { SaveImovel } from './use-cases/save-imovel';
+import { PreencherBairroImoveis } from './use-cases/preencher-bairro-imoveis';
 
 @Module({
   providers: [
@@ -35,6 +36,7 @@ import { SaveImovel } from './use-cases/save-imovel';
     BuscarChavesExistentes,
     CountPrioridadeDrone,
     BatchCreateImoveis,
+    PreencherBairroImoveis,
     JwtService,
     PrismaService,
   ],

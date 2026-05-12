@@ -46,6 +46,8 @@ interface DepositoRow {
   qtd_com_focos: bigint;
   qtd_eliminados: bigint;
   qtd_com_agua: bigint;
+  depositos_com_larvicida: bigint;
+  total_larvicida_g: number;
 }
 
 interface RiscoRow {
@@ -240,7 +242,9 @@ export class GetDashboardTerritorial {
             SUM(vd.qtd_inspecionados)::bigint AS qtd_inspecionados,
             SUM(vd.qtd_com_focos)::bigint AS qtd_com_focos,
             SUM(vd.qtd_eliminados)::bigint AS qtd_eliminados,
-            SUM(vd.qtd_com_agua)::bigint AS qtd_com_agua
+            SUM(vd.qtd_com_agua)::bigint AS qtd_com_agua,
+            COUNT(*) FILTER (WHERE vd.usou_larvicida = true)::bigint AS depositos_com_larvicida,
+            COALESCE(SUM(vd.qtd_larvicida_g), 0)::float8 AS total_larvicida_g
           FROM vistoria_depositos vd
           JOIN vistorias v ON v.id = vd.vistoria_id AND v.deleted_at IS NULL
           JOIN focos_risco f ON f.id = v.foco_risco_id AND f.deleted_at IS NULL
@@ -358,7 +362,18 @@ export class GetDashboardTerritorial {
           qtdComFocos: Number(r.qtd_com_focos),
           qtdEliminados: Number(r.qtd_eliminados),
           qtdComAgua: Number(r.qtd_com_agua),
+          depositosComLarvicida: Number(r.depositos_com_larvicida),
+          totalLarvicidaG: Number(r.total_larvicida_g),
         })),
+      },
+      tratamentosExecutados: {
+        larvicida: {
+          depositosUsaram: depositosRaw.reduce((s, r) => s + Number(r.depositos_com_larvicida), 0),
+          totalGramas: depositosRaw.reduce((s, r) => s + Number(r.total_larvicida_g), 0),
+        },
+        eliminacao: {
+          totalDepositos: depositosRaw.reduce((s, r) => s + Number(r.qtd_eliminados), 0),
+        },
       },
       fatoresRisco: risco
         ? {
