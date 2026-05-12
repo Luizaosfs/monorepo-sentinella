@@ -103,29 +103,35 @@ export class TransicionarFocoRisco {
       }
 
       // Hook SLA + reinspeção:
-      //   confirmado          → inicia SLA
-      //   em_tratamento       → cria reinspeção pós-tratamento
-      //   resolvido/descartado → fecha SLA + cancela reinspeções pendentes
-      try {
-        if (novoStatus === 'confirmado') {
-          slaResult = await this.iniciarSla.execute(foco, tx);
-        } else if (novoStatus === 'em_tratamento') {
-          reinspecaoResult = await this.criarReinspecao.execute(foco, tx);
-        } else if (STATUS_FECHAMENTO.includes(novoStatus) && foco.id) {
-          slaFechados = await this.fecharSla.execute(foco.id, tx);
-          reinspecoesCanceladas = await this.cancelarReinspecoes.execute(
-            foco.id,
-            this.req['user']?.id,
-            tx,
+      //   confirmado          → inicia SLA (OBRIGATÓRIO — reverte tx se falhar)
+      //   em_tratamento       → cria reinspeção pós-tratamento (best-effort)
+      //   resolvido/descartado → fecha SLA + cancela reinspeções (best-effort)
+      if (novoStatus === 'confirmado') {
+        // Sem try/catch: falha aqui reverte a transação inteira.
+        // Garante que todo foco confirmado sempre tem sla_operacional associado.
+        // ResolveSlaConfig tem fallback hard-coded (P1-P5) — nunca lança por config ausente.
+        // Erro aqui = falha de banco, onde reverter é o comportamento correto.
+        slaResult = await this.iniciarSla.execute(foco, tx);
+      } else {
+        try {
+          if (novoStatus === 'em_tratamento') {
+            reinspecaoResult = await this.criarReinspecao.execute(foco, tx);
+          } else if (STATUS_FECHAMENTO.includes(novoStatus) && foco.id) {
+            slaFechados = await this.fecharSla.execute(foco.id, tx);
+            reinspecoesCanceladas = await this.cancelarReinspecoes.execute(
+              foco.id,
+              this.req['user']?.id,
+              tx,
+            );
+          }
+        } catch (err) {
+          // Compensação: NÃO relança. foco + histórico seguem salvos.
+          slaError = err;
+          this.logger.error(
+            `Hook (sla/reinspecao) falhou em transição ${statusAnterior} → ${novoStatus} do foco ${foco.id}`,
+            err instanceof Error ? err.stack : String(err),
           );
         }
-      } catch (err) {
-        // Compensação: NÃO relança. foco + histórico seguem salvos.
-        slaError = err;
-        this.logger.error(
-          `Hook (sla/reinspecao) falhou em transição ${statusAnterior} → ${novoStatus} do foco ${foco.id}`,
-          err instanceof Error ? err.stack : String(err),
-        );
       }
 
       await this.writeRepository.createHistorico(

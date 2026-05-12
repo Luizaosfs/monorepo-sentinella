@@ -31,6 +31,7 @@ export type TerritorioAgenteQuadra = {
   bairroId: string | null;
   bairroNome: string | null;
   imoveisCount: number;
+  geojson: Record<string, unknown> | null;
 };
 
 @Injectable()

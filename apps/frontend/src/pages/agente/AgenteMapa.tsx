@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useItensAgente } from "@/hooks/queries/useItensAgente";
 import { useFocosAtribuidos } from "@/hooks/queries/useFocosAtribuidos";
+import { useTerritorioAgente } from "@/hooks/queries/useTerritorioAgente";
 
 const PRIORIDADE_RISCO: Record<string, string> = {
   P1: 'critico', P2: 'alto', P3: 'medio', P4: 'baixo', P5: 'baixo',
@@ -87,6 +88,15 @@ export default function AgenteMapa() {
   const { usuario } = useAuth();
   const { data: itens = [], isLoading, refetch } = useItensAgente(clienteId, usuario?.id ?? null);
   const { data: focosAtribuidos = [] } = useFocosAtribuidos(clienteId, usuario?.id ?? null);
+  const { data: territorio } = useTerritorioAgente();
+  const quadrasGeoJson = useMemo(
+    () =>
+      (territorio?.quadras ?? [])
+        .filter((q) => q.geojson != null)
+        .map((q) => ({ quadraId: q.quadraId, geojson: q.geojson! })),
+    [territorio],
+  );
+
   const focosComoItens = useMemo(
     () => focosAtribuidos.filter((f) => f.latitude != null || f.longitude != null).map(focoToItem),
     [focosAtribuidos],
@@ -341,6 +351,7 @@ export default function AgenteMapa() {
             focos={filteredFocos}
             onFocoClick={(foco) => setSelectedItem(focoToItem(foco))}
             onFocoVistoria={(foco) => navigate(`/agente/focos/${foco.id}`)}
+            quadrasGeoJson={quadrasGeoJson}
           />
         </div>
       </div>

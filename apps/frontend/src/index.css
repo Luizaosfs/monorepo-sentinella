@@ -109,6 +109,24 @@
 
     --card-border: 216 34% 25%;
 
+    --warning: 38 85% 60%;
+    --warning-foreground: 38 95% 15%;
+
+    --success: 152 60% 52%;
+    --success-foreground: 0 0% 100%;
+
+    --info: 210 80% 60%;
+    --info-foreground: 0 0% 100%;
+
+    --chart-1: 161 60% 50%;
+    --chart-2: 173 50% 55%;
+    --chart-3: 197 40% 55%;
+    --chart-4: 43 70% 60%;
+    --chart-5: 27 80% 62%;
+
+    --shadow-premium: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.25);
+    --shadow-soft: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+
     /* Sidebar dark (modo escuro) */
     --sidebar-background: 224 71% 2%;
     --sidebar-foreground: 215.4 16.3% 56.9%;

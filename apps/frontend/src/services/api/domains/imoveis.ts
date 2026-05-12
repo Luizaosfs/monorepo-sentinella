@@ -35,7 +35,7 @@ export const imoveis = {
     http.put(`/imoveis/${imovelId}`, deepToCamel(payload)),
 
   listResumo: async (
-    _clienteId: string,
+    _clienteId: string, // TenantGuard injeta clienteId — não enviado na query
     regiaoId?: string,
     quadraIds?: string[],
   ): Promise<Ret<typeof _sb.imoveis.listResumo>> => {

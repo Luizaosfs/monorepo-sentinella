@@ -1,6 +1,7 @@
 import { ForbiddenException, Inject, Injectable, Logger } from '@nestjs/common';
 import { Request } from 'express';
 import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
+import { AuthenticatedUser } from 'src/guards/auth.guard';
 
 import { QuarteiraoWriteRepository } from '../../quarteirao/repositories/quarteirao-write.repository';
 import { CreateImovelBody } from '../dtos/create-imovel.body';
@@ -56,10 +57,10 @@ export class CreateImovel {
       { createdBy: this.req['user']?.id },
     );
 
-    // Resolve quadra_id antes de criar — best-effort, não bloqueia cadastro
+    // Resolve quadra_id: usa o UUID direto se fornecido, senão resolve por código
     const quarteirao = normalizarQuarteirao(input.quarteirao);
-    let quadraId: string | null = null;
-    if (quarteirao) {
+    let quadraId: string | null = input.quadraId ?? null;
+    if (!quadraId && quarteirao) {
       try {
         quadraId = await this.quarteiraoWriteRepository.upsertMestreIfMissing(
           clienteId,
@@ -70,6 +71,29 @@ export class CreateImovel {
       } catch (err) {
         this.logger.error(
           `[CreateImovel] Falha ao sincronizar quarteirao mestre "${quarteirao}": ${(err as Error).message}`,
+        );
+      }
+    }
+
+    // Validação territorial: agente só pode cadastrar imóvel em quadra atribuída a ele
+    const user = this.req['user'] as AuthenticatedUser | undefined;
+    const isAgente =
+      !user?.isPlatformAdmin &&
+      !user?.papeis?.includes('supervisor') &&
+      user?.papeis?.includes('agente');
+    if (isAgente && quadraId && user?.id) {
+      const dist = await this.prisma.client.bairros_distribuicao.findFirst({
+        where: {
+          cliente_id: clienteId,
+          agente_id: user.id,
+          quadra_id: quadraId,
+          ciclo_id: null,
+        },
+        select: { id: true },
+      });
+      if (!dist) {
+        throw new ForbiddenException(
+          'Você não está atribuído a este quarteirão. Selecione um quarteirão do seu território.',
         );
       }
     }

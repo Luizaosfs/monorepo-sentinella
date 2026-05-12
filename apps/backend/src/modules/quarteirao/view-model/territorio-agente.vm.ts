@@ -22,6 +22,7 @@ export class TerritorioAgenteViewModel {
         bairroId:     q.bairroId,
         bairroNome:   q.bairroNome,
         imoveisCount: q.imoveisCount,
+        geojson:      q.geojson ?? null,
       })),
       cicloAtivo: data.cicloAtivo,
     };

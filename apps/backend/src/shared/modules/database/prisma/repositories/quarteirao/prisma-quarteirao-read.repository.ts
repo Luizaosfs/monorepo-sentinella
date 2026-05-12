@@ -174,6 +174,7 @@ export class PrismaQuarteiraoReadRepository implements QuarteiraoReadRepository 
       bairro_id: string | null;
       bairro_nome: string | null;
       imoveis_count: number;
+      geojson: Record<string, unknown> | null;
     };
 
     const rows = await this.prisma.client.$queryRaw<RawRow[]>(Prisma.sql`
@@ -181,20 +182,21 @@ export class PrismaQuarteiraoReadRepository implements QuarteiraoReadRepository 
         SELECT DISTINCT ON (bd.quadra_id)
           bd.quadra_id,
           bq.codigo,
-          bq.bairro_id
+          bq.bairro_id,
+          bq.geojson
         FROM bairros_distribuicao bd
         JOIN bairros_quadras bq ON bq.id = bd.quadra_id AND bq.deleted_at IS NULL
         WHERE bd.cliente_id = ${clienteId}::uuid
           AND bd.agente_id  = ${agenteId}::uuid
-          AND bd.ciclo_id   IS NULL
-        ORDER BY bd.quadra_id, bd.updated_at DESC
+        ORDER BY bd.quadra_id, (bd.ciclo_id IS NULL) DESC, bd.updated_at DESC
       )
       SELECT
         t.quadra_id,
         t.codigo,
         t.bairro_id,
         b.nome                              AS bairro_nome,
-        COALESCE(COUNT(i.id), 0)::int       AS imoveis_count
+        COALESCE(COUNT(i.id), 0)::int       AS imoveis_count,
+        t.geojson
       FROM territorial t
       LEFT JOIN bairros b ON b.id = t.bairro_id
       LEFT JOIN imoveis i
@@ -202,7 +204,7 @@ export class PrismaQuarteiraoReadRepository implements QuarteiraoReadRepository 
             AND i.cliente_id  = ${clienteId}::uuid
             AND i.deleted_at  IS NULL
             AND i.ativo       = true
-      GROUP BY t.quadra_id, t.codigo, t.bairro_id, b.nome
+      GROUP BY t.quadra_id, t.codigo, t.bairro_id, b.nome, t.geojson
       ORDER BY t.codigo
     `);
 
@@ -212,6 +214,7 @@ export class PrismaQuarteiraoReadRepository implements QuarteiraoReadRepository 
       bairroId:    r.bairro_id,
       bairroNome:  r.bairro_nome,
       imoveisCount: r.imoveis_count,
+      geojson:     r.geojson ?? null,
     }));
   }
 

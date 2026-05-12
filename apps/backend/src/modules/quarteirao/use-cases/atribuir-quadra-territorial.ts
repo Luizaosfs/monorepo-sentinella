@@ -1,6 +1,5 @@
 import { Inject, Injectable, Scope } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
-import { Prisma } from '@prisma/client';
 import { Request } from 'express';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 import { getAccessScope } from '@shared/security/access-scope.helpers';
@@ -26,17 +25,10 @@ export class AtribuirQuadraTerritorial {
     });
     if (!quadra) throw QuarteiraoException.notFound();
 
-    const [agente] = await this.prisma.client.$queryRaw<{ id: string }[]>(
-      Prisma.sql`
-        SELECT u.id
-        FROM usuarios u
-        JOIN papeis_usuarios pu ON pu.usuario_id = u.id
-        WHERE u.id        = ${input.agenteId}::uuid
-          AND pu.cliente_id = ${clienteId}::uuid
-          AND u.ativo      = true
-        LIMIT 1
-      `,
-    );
+    const agente = await this.prisma.client.usuarios.findFirst({
+      where: { id: input.agenteId, cliente_id: clienteId, ativo: true },
+      select: { id: true },
+    });
     if (!agente) throw QuarteiraoException.agenteNotFound();
 
     const distribuicao = await this.repository.atribuirQuadraTerritorial({

@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import {
   Loader2, Search, MapPin, ChevronRight,
   Map, PlusCircle, ListTodo, Users, RefreshCw,
-  AlertTriangle, Pencil,
+  AlertTriangle, Pencil, ArrowLeft,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -33,10 +33,10 @@ const ACTIVE_STATUSES: FocoRiscoStatus[] = [
 
 /** Ação rápida de transição disponível para cada status. */
 const ACAO_RAPIDA: Partial<Record<FocoRiscoStatus, { label: string; proximo: FocoRiscoStatus; cor: string }>> = {
-  aguarda_inspecao: { label: 'Iniciar inspeção', proximo: 'em_inspecao',    cor: 'bg-blue-600 hover:bg-blue-700 text-white' },
-  em_inspecao:      { label: 'Confirmar foco',   proximo: 'confirmado',     cor: 'bg-amber-600 hover:bg-amber-700 text-white' },
-  confirmado:       { label: 'Iniciar tratamento', proximo: 'em_tratamento', cor: 'bg-purple-600 hover:bg-purple-700 text-white' },
-  em_tratamento:    { label: 'Marcar resolvido', proximo: 'resolvido',      cor: 'bg-emerald-600 hover:bg-emerald-700 text-white' },
+  aguarda_inspecao: { label: 'Iniciar inspeção',   proximo: 'em_inspecao',    cor: 'bg-blue-600 hover:bg-blue-700 text-white' },
+  em_inspecao:      { label: 'Confirmar foco',     proximo: 'confirmado',     cor: 'bg-amber-600 hover:bg-amber-700 text-white' },
+  confirmado:       { label: 'Iniciar tratamento', proximo: 'em_tratamento',  cor: 'bg-purple-600 hover:bg-purple-700 text-white' },
+  em_tratamento:    { label: 'Marcar resolvido',   proximo: 'resolvido',      cor: 'bg-emerald-600 hover:bg-emerald-700 text-white' },
 };
 
 /** Borda esquerda colorida por prioridade. */
@@ -68,11 +68,10 @@ const AgenteLevantamentos = () => {
   const navigate      = useNavigate();
   const qc            = useQueryClient();
 
-  const [tab,         setTab]         = useState<ViewTab>('minha_fila');
-  const [search,      setSearch]      = useState('');
-  const [statusChip,  setStatusChip]  = useState<StatusChip>('todos');
+  const [tab,        setTab]        = useState<ViewTab>('minha_fila');
+  const [search,     setSearch]     = useState('');
+  const [statusChip, setStatusChip] = useState<StatusChip>('todos');
   const debouncedSearch = useDebounce(search, 300);
-  // IDs de focos bloqueados pós-transição (1.5s cooldown para evitar toque duplo)
   const [lockedFocos, setLockedFocos] = useState<Set<string>>(new Set());
 
   const lockFoco = (focoId: string) => {
@@ -82,7 +81,7 @@ const AgenteLevantamentos = () => {
     }, 1500);
   };
 
-  // ── Query: Minha Fila — focos atribuídos ao agente ─────────────────────────
+  // ── Query: Minha Fila ──────────────────────────────────────────────────────
   const {
     data:    minhaFilaResult,
     isLoading: loadingFila,
@@ -99,7 +98,7 @@ const AgenteLevantamentos = () => {
     staleTime: STALE.SHORT,
   });
 
-  // ── Query: Fila Aberta — aguarda_inspecao sem responsável ──────────────────
+  // ── Query: Fila Aberta ─────────────────────────────────────────────────────
   const {
     data:    filaAbertaResult,
     isLoading: loadingAberta,
@@ -116,7 +115,7 @@ const AgenteLevantamentos = () => {
     staleTime: STALE.SHORT,
   });
 
-  // ── Mutation: assumir foco (claim) ─────────────────────────────────────────
+  // ── Mutation: assumir foco ─────────────────────────────────────────────────
   const claimMutation = useMutation({
     mutationFn: (focoId: string) =>
       api.focosRisco.atribuirAgente(focoId, usuario!.id, 'Agente assumiu foco da fila aberta'),
@@ -134,7 +133,7 @@ const AgenteLevantamentos = () => {
     },
   });
 
-  // ── Mutation: transição rápida de status ───────────────────────────────────
+  // ── Mutation: transição rápida ─────────────────────────────────────────────
   const transitionMutation = useMutation({
     mutationFn: ({ focoId, statusNovo }: { focoId: string; statusNovo: FocoRiscoStatus }) =>
       api.focosRisco.transicionar(focoId, statusNovo),
@@ -153,8 +152,8 @@ const AgenteLevantamentos = () => {
   });
 
   // ── Derived data ───────────────────────────────────────────────────────────
-  const todosAtivos   = minhaFilaResult?.data ?? [];
-  const filaAberta    = filaAbertaResult?.data ?? [];
+  const todosAtivos = minhaFilaResult?.data ?? [];
+  const filaAberta  = filaAbertaResult?.data ?? [];
 
   const counts = useMemo(() => ({
     aguarda:    todosAtivos.filter((f) => f.status === 'aguarda_inspecao').length,
@@ -179,7 +178,6 @@ const AgenteLevantamentos = () => {
       );
     }
 
-    // Ordenação: P1 > P2 > P3 > P4 > P5
     const ORDER_P: Record<string, number> = { P1: 0, P2: 1, P3: 2, P4: 3, P5: 4 };
     return [...list].sort((a, b) =>
       (ORDER_P[a.prioridade ?? 'P5'] ?? 4) - (ORDER_P[b.prioridade ?? 'P5'] ?? 4)
@@ -187,6 +185,8 @@ const AgenteLevantamentos = () => {
   }, [todosAtivos, statusChip, debouncedSearch]);
 
   const isLoading = tab === 'minha_fila' ? loadingFila : loadingAberta;
+
+  const totalAtivos = counts.aguarda + counts.inspecao + counts.semAcesso + counts.tratamento;
 
   // ── Guard ──────────────────────────────────────────────────────────────────
   if (!clienteId || !usuario?.id) {
@@ -208,21 +208,46 @@ const AgenteLevantamentos = () => {
   };
 
   return (
-    <PullToRefresh onRefresh={handleRefresh}>
-      <div className="px-2 py-2 pb-24 space-y-2 animate-fade-in">
+    <div className="min-h-screen bg-muted/30 flex flex-col">
 
-        {/* ── Header ─────────────────────────────────────────────────────── */}
-        <div className="px-1 pt-1 space-y-2">
-          <div>
-            <h1 className="text-xl font-bold text-foreground">Minha Fila</h1>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Focos atribuídos a você para atendimento em campo
-            </p>
-          </div>
+      {/* ── Sticky header ───────────────────────────────────────────────── */}
+      <div className="bg-background border-b sticky top-0 z-20 px-4 py-3 flex items-center gap-3">
+        <Button
+          variant="ghost" size="icon" className="shrink-0 -ml-1"
+          onClick={() => navigate('/agente/hoje')}
+          aria-label="Voltar"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <div className="flex-1 min-w-0">
+          <h1 className="font-semibold text-base leading-tight">Levantamentos</h1>
+          <p className="text-xs text-muted-foreground leading-tight">
+            {isLoading
+              ? 'Carregando…'
+              : tab === 'minha_fila'
+              ? `${minhaFila.length} foco${minhaFila.length !== 1 ? 's' : ''} na sua fila`
+              : `${filaAberta.length} disponíve${filaAberta.length !== 1 ? 'is' : 'l'} na fila aberta`}
+          </p>
+        </div>
+        <Button
+          variant="ghost" size="icon" className="shrink-0"
+          onClick={handleRefresh}
+          disabled={isLoading}
+          aria-label="Atualizar"
+        >
+          <RefreshCw className={cn('h-4 w-4', isLoading && 'animate-spin')} />
+        </Button>
+      </div>
+
+      {/* ── Conteúdo scrollável ─────────────────────────────────────────── */}
+      <PullToRefresh onRefresh={handleRefresh}>
+        <div className="px-3 py-3 pb-28 space-y-3 animate-fade-in">
+
+          {/* ── Botões de ação rápida ─────────────────────────────────── */}
           <div className="flex gap-2">
             <Button
               variant="outline" size="sm"
-              className="flex-1 gap-1.5 rounded-xl h-9 text-sm"
+              className="flex-1 gap-1.5 rounded-xl h-10 text-sm"
               onClick={() => navigate('/agente/levantamentos/novo-item')}
             >
               <PlusCircle className="h-4 w-4 shrink-0" />
@@ -230,263 +255,252 @@ const AgenteLevantamentos = () => {
             </Button>
             <Button
               variant="default" size="sm"
-              className="flex-1 gap-1.5 rounded-xl h-9 text-sm"
+              className="flex-1 gap-1.5 rounded-xl h-10 text-sm"
               onClick={() => navigate('/agente/mapa')}
             >
               <Map className="h-4 w-4 shrink-0" />
               Mapa
             </Button>
           </div>
-        </div>
 
-        {/* ── KPI cards ──────────────────────────────────────────────────── */}
-        {!loadingFila && (
-          <div className="flex gap-2 overflow-x-auto pb-1 -mx-2 px-2 scrollbar-none">
-            {([
-              { label: 'Aguardando', value: counts.aguarda,    color: 'text-amber-600',   bg: 'bg-amber-50 dark:bg-amber-950/20',     chip: 'aguarda_inspecao' as StatusChip },
-              { label: 'Inspeção',   value: counts.inspecao,   color: 'text-blue-600',    bg: 'bg-blue-50 dark:bg-blue-950/20',       chip: 'em_inspecao' as StatusChip },
-              { label: 'Sem acesso', value: counts.semAcesso,  color: 'text-rose-600',    bg: 'bg-rose-50 dark:bg-rose-950/20',       chip: 'aguardando_nova_tentativa' as StatusChip },
-              { label: 'Tratamento', value: counts.tratamento, color: 'text-purple-600',  bg: 'bg-purple-50 dark:bg-purple-950/20',   chip: 'em_tratamento' as StatusChip },
-              { label: 'Resolvidos', value: counts.resolvidos, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-950/20', chip: 'resolvido' as StatusChip },
-            ] as const).map(({ label, value, color, bg, chip }) => (
-              <button
-                key={chip}
-                type="button"
-                onClick={() => { setTab('minha_fila'); setStatusChip((prev) => prev === chip ? 'todos' : chip); }}
-                className={cn(
-                  'flex flex-col items-center gap-1 rounded-2xl border-2 border-transparent min-w-[64px] flex-shrink-0 px-2 py-3 transition-all active:scale-95',
-                  bg,
-                  statusChip === chip && 'ring-2 ring-offset-1 ring-current'
-                )}
-              >
-                <span className={cn('text-2xl font-bold leading-none tabular-nums', color)}>{value}</span>
-                <span className={cn('text-[11px] font-medium leading-tight text-center whitespace-nowrap', color)}>{label}</span>
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* ── Abas: Minha Fila | Fila Aberta ─────────────────────────────── */}
-        <div className="flex gap-0 rounded-xl border border-border overflow-hidden bg-muted/30">
-          <button
-            type="button"
-            onClick={() => setTab('minha_fila')}
-            className={cn(
-              'flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-semibold transition-colors',
-              tab === 'minha_fila'
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            )}
-          >
-            <ListTodo className="w-4 h-4" />
-            Minha Fila
-            {counts.aguarda + counts.inspecao + counts.semAcesso + counts.tratamento > 0 && (
-              <span className={cn(
-                'rounded-full px-1.5 py-0 text-[10px] font-bold',
-                tab === 'minha_fila' ? 'bg-white/20' : 'bg-muted'
-              )}>
-                {counts.aguarda + counts.inspecao + counts.semAcesso + counts.tratamento}
-              </span>
-            )}
-          </button>
-          <button
-            type="button"
-            onClick={() => setTab('fila_aberta')}
-            className={cn(
-              'flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-semibold transition-colors',
-              tab === 'fila_aberta'
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            )}
-          >
-            <Users className="w-4 h-4" />
-            Fila Aberta
-            {tab === 'fila_aberta' && filaAberta.length > 0 && (
-              <span className="rounded-full px-1.5 py-0 text-[10px] font-bold bg-white/20">
-                {filaAberta.length}
-              </span>
-            )}
-          </button>
-        </div>
-
-        {/* ── Filtros — só na aba Minha Fila ─────────────────────────────── */}
-        {tab === 'minha_fila' && (
-          <div className="space-y-1.5">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por endereço, bairro ou tipo..."
-                className="pl-10 h-10 rounded-xl border-border bg-muted/30"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
-            <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-2 px-2 scrollbar-none">
-              {STATUS_CHIPS.map(({ key, label }) => (
+          {/* ── KPI cards (scroll horizontal) ─────────────────────────── */}
+          {!loadingFila && (
+            <div className="flex gap-2 overflow-x-auto pb-1 -mx-3 px-3 scrollbar-none">
+              {([
+                { label: 'Aguardando', value: counts.aguarda,    color: 'text-amber-600',   bg: 'bg-amber-50 dark:bg-amber-950/20',     chip: 'aguarda_inspecao' as StatusChip },
+                { label: 'Inspeção',   value: counts.inspecao,   color: 'text-blue-600',    bg: 'bg-blue-50 dark:bg-blue-950/20',       chip: 'em_inspecao' as StatusChip },
+                { label: 'Sem acesso', value: counts.semAcesso,  color: 'text-rose-600',    bg: 'bg-rose-50 dark:bg-rose-950/20',       chip: 'aguardando_nova_tentativa' as StatusChip },
+                { label: 'Tratamento', value: counts.tratamento, color: 'text-purple-600',  bg: 'bg-purple-50 dark:bg-purple-950/20',   chip: 'em_tratamento' as StatusChip },
+                { label: 'Resolvidos', value: counts.resolvidos, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-950/20', chip: 'resolvido' as StatusChip },
+              ] as const).map(({ label, value, color, bg, chip }) => (
                 <button
-                  key={key}
+                  key={chip}
                   type="button"
-                  onClick={() => setStatusChip(key)}
+                  onClick={() => { setTab('minha_fila'); setStatusChip((prev) => prev === chip ? 'todos' : chip); }}
                   className={cn(
-                    'flex-shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition-all',
-                    statusChip === key
-                      ? 'bg-primary text-primary-foreground border-primary'
-                      : 'border-border text-muted-foreground hover:border-muted-foreground/40'
+                    'flex flex-col items-center gap-1 rounded-2xl border-2 border-transparent min-w-[68px] flex-shrink-0 px-2 py-3 transition-all active:scale-95',
+                    bg,
+                    statusChip === chip && 'ring-2 ring-offset-1 ring-current'
                   )}
                 >
-                  {label}
-                  {key !== 'todos' && (
-                    <span className={cn(
-                      'ml-1 rounded-full px-1 text-[10px] font-bold',
-                      statusChip === key ? 'bg-white/20' : 'bg-muted'
-                    )}>
-                      {key === 'aguarda_inspecao'           ? counts.aguarda
-                       : key === 'em_inspecao'              ? counts.inspecao
-                       : key === 'aguardando_nova_tentativa'? counts.semAcesso
-                       : key === 'em_tratamento'            ? counts.tratamento
-                       : counts.resolvidos}
-                    </span>
-                  )}
+                  <span className={cn('text-2xl font-bold leading-none tabular-nums', color)}>{value}</span>
+                  <span className={cn('text-[11px] font-medium leading-tight text-center whitespace-nowrap', color)}>{label}</span>
                 </button>
               ))}
             </div>
-          </div>
-        )}
+          )}
 
-        {/* ── Loading ─────────────────────────────────────────────────────── */}
-        {isLoading ? (
-          <Card className="rounded-2xl border-border">
-            <CardContent className="flex flex-col items-center justify-center py-10">
-              <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
-              <p className="text-sm text-muted-foreground">Carregando focos...</p>
-            </CardContent>
-          </Card>
-        ) : tab === 'minha_fila' ? (
-          /* ── Lista: Minha Fila ─────────────────────────────────────────── */
-          minhaFila.length === 0 ? (
-            <Card className="rounded-2xl border-border">
-              <CardContent className="flex flex-col items-center justify-center py-10 px-4">
-                <ListTodo className="w-12 h-12 mb-3 text-muted-foreground/30" />
-                <p className="text-sm font-semibold text-foreground text-center">
-                  {todosAtivos.length === 0
-                    ? 'Nenhum foco atribuído a você no momento.'
-                    : `Nenhum foco com status "${STATUS_CHIPS.find((c) => c.key === statusChip)?.label}".`}
-                </p>
-                <p className="text-xs text-muted-foreground mt-1 text-center">
-                  {todosAtivos.length === 0
-                    ? 'Verifique a Fila Aberta para assumir focos disponíveis.'
-                    : 'Tente outro filtro de status.'}
-                </p>
-                {todosAtivos.length === 0 && (
-                  <Button
-                    variant="outline" size="sm"
-                    className="mt-3 rounded-xl"
-                    onClick={() => setTab('fila_aberta')}
-                  >
-                    <Users className="w-4 h-4 mr-1.5" />
-                    Ver Fila Aberta
-                  </Button>
+          {/* ── Abas: sticky abaixo do header ─────────────────────────── */}
+          <div className="sticky top-[57px] z-10 -mx-3 px-3 pt-1 pb-2 bg-muted/95 backdrop-blur-sm">
+            <div className="flex gap-0 rounded-xl border border-border overflow-hidden bg-background">
+              <button
+                type="button"
+                onClick={() => setTab('minha_fila')}
+                className={cn(
+                  'flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-semibold transition-colors',
+                  tab === 'minha_fila'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
                 )}
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-1.5">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">
-                {minhaFila.length} foco{minhaFila.length !== 1 ? 's' : ''}
-              </p>
-              {minhaFila.map((foco) => (
-                <FocoCard
-                  key={foco.id}
-                  foco={foco}
-                  agenteId={usuario?.id}
-                  onNavigate={() => navigate(`/agente/focos/${foco.id}`)}
-                  onAcaoRapida={(statusNovo) => {
-                    if (statusNovo === 'aguardando_nova_tentativa') {
-                      const base = foco.imovel_id
-                        ? `/agente/vistoria/${foco.imovel_id}`
-                        : '/agente/vistoria';
-                      navigate(`${base}?focoId=${foco.id}&atividade=pesquisa`);
-                    } else if (statusNovo === 'em_inspecao') {
-                      navigate(`/agente/focos/${foco.id}`);
-                    } else if (statusNovo === 'confirmado') {
-                      const base = foco.imovel_id
-                        ? `/agente/vistoria/${foco.imovel_id}`
-                        : '/agente/vistoria';
-                      navigate(`${base}?focoId=${foco.id}&atividade=pesquisa`);
-                    } else {
-                      transitionMutation.mutate({ focoId: foco.id, statusNovo });
-                    }
-                  }}
-                  isPending={transitionMutation.isPending || lockedFocos.has(foco.id)}
-                />
-              ))}
+              >
+                <ListTodo className="w-4 h-4" />
+                Minha Fila
+                {totalAtivos > 0 && (
+                  <span className={cn(
+                    'rounded-full px-1.5 py-0 text-[10px] font-bold',
+                    tab === 'minha_fila' ? 'bg-white/20' : 'bg-muted'
+                  )}>
+                    {totalAtivos}
+                  </span>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => setTab('fila_aberta')}
+                className={cn(
+                  'flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-semibold transition-colors',
+                  tab === 'fila_aberta'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                <Users className="w-4 h-4" />
+                Fila Aberta
+                {tab === 'fila_aberta' && filaAberta.length > 0 && (
+                  <span className="rounded-full px-1.5 py-0 text-[10px] font-bold bg-white/20">
+                    {filaAberta.length}
+                  </span>
+                )}
+              </button>
             </div>
-          )
-        ) : (
-          /* ── Lista: Fila Aberta ────────────────────────────────────────── */
-          filaAberta.length === 0 ? (
-            <Card className="rounded-2xl border-border">
-              <CardContent className="flex flex-col items-center justify-center py-10 px-4">
-                <Users className="w-12 h-12 mb-3 text-muted-foreground/30" />
-                <p className="text-sm font-semibold text-foreground text-center">
-                  Nenhum foco disponível no momento.
-                </p>
-                <p className="text-xs text-muted-foreground mt-1 text-center">
-                  Todos os focos já foram assumidos ou ainda não foram criados.
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-2 px-1">
-                <AlertTriangle className="w-4 h-4 text-amber-500" />
-                <p className="text-xs font-semibold text-amber-700 dark:text-amber-400">
-                  {filaAberta.length} foco{filaAberta.length !== 1 ? 's' : ''} aguardando um responsável
-                </p>
-              </div>
-              {filaAberta.map((foco) => (
-                <FocoCard
-                  key={foco.id}
-                  foco={foco}
-                  agenteId={usuario?.id}
-                  onNavigate={() => navigate(`/agente/focos/${foco.id}`)}
-                  onAssumir={() => claimMutation.mutate(foco.id)}
-                  isPending={claimMutation.isPending}
-                  modoFila
-                />
-              ))}
-            </div>
-          )
-        )}
-
-        {/* ── Botão de refresh manual ─────────────────────────────────────── */}
-        {!isLoading && (
-          <div className="flex justify-center pt-1">
-            <Button
-              variant="ghost" size="sm"
-              className="gap-1.5 text-xs text-muted-foreground rounded-xl"
-              onClick={handleRefresh}
-            >
-              <RefreshCw className="w-3.5 h-3.5" />
-              Atualizar
-            </Button>
           </div>
-        )}
-      </div>
-    </PullToRefresh>
+
+          {/* ── Filtros — só na aba Minha Fila ───────────────────────── */}
+          {tab === 'minha_fila' && (
+            <div className="space-y-2">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por endereço, bairro ou tipo..."
+                  className="pl-10 h-10 rounded-xl border-border bg-background"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
+              <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-3 px-3 scrollbar-none">
+                {STATUS_CHIPS.map(({ key, label }) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setStatusChip(key)}
+                    className={cn(
+                      'flex-shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition-all',
+                      statusChip === key
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'border-border text-muted-foreground hover:border-muted-foreground/40'
+                    )}
+                  >
+                    {label}
+                    {key !== 'todos' && (
+                      <span className={cn(
+                        'ml-1 rounded-full px-1 text-[10px] font-bold',
+                        statusChip === key ? 'bg-white/20' : 'bg-muted'
+                      )}>
+                        {key === 'aguarda_inspecao'            ? counts.aguarda
+                         : key === 'em_inspecao'               ? counts.inspecao
+                         : key === 'aguardando_nova_tentativa' ? counts.semAcesso
+                         : key === 'em_tratamento'             ? counts.tratamento
+                         : counts.resolvidos}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── Loading ───────────────────────────────────────────────── */}
+          {isLoading ? (
+            <Card className="rounded-2xl border-border">
+              <CardContent className="flex flex-col items-center justify-center py-10">
+                <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
+                <p className="text-sm text-muted-foreground">Carregando focos...</p>
+              </CardContent>
+            </Card>
+          ) : tab === 'minha_fila' ? (
+            /* ── Lista: Minha Fila ───────────────────────────────────── */
+            minhaFila.length === 0 ? (
+              <Card className="rounded-2xl border-border">
+                <CardContent className="flex flex-col items-center justify-center py-12 px-4">
+                  <ListTodo className="w-12 h-12 mb-3 text-muted-foreground/30" />
+                  <p className="text-sm font-semibold text-foreground text-center">
+                    {todosAtivos.length === 0
+                      ? 'Nenhum foco atribuído a você no momento.'
+                      : `Nenhum foco com status "${STATUS_CHIPS.find((c) => c.key === statusChip)?.label}".`}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1 text-center">
+                    {todosAtivos.length === 0
+                      ? 'Verifique a Fila Aberta para assumir focos disponíveis.'
+                      : 'Tente outro filtro de status.'}
+                  </p>
+                  {todosAtivos.length === 0 && (
+                    <Button
+                      variant="outline" size="sm"
+                      className="mt-4 rounded-xl h-9"
+                      onClick={() => setTab('fila_aberta')}
+                    >
+                      <Users className="w-4 h-4 mr-1.5" />
+                      Ver Fila Aberta
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">
+                  {minhaFila.length} foco{minhaFila.length !== 1 ? 's' : ''}
+                </p>
+                {minhaFila.map((foco) => (
+                  <FocoCard
+                    key={foco.id}
+                    foco={foco}
+                    agenteId={usuario?.id}
+                    onNavigate={() => navigate(`/agente/focos/${foco.id}`)}
+                    onAcaoRapida={(statusNovo) => {
+                      if (statusNovo === 'aguardando_nova_tentativa') {
+                        const base = foco.imovel_id
+                          ? `/agente/vistoria/${foco.imovel_id}`
+                          : '/agente/vistoria';
+                        navigate(`${base}?focoId=${foco.id}&atividade=pesquisa`);
+                      } else if (statusNovo === 'em_inspecao') {
+                        navigate(`/agente/focos/${foco.id}`);
+                      } else if (statusNovo === 'confirmado') {
+                        const base = foco.imovel_id
+                          ? `/agente/vistoria/${foco.imovel_id}`
+                          : '/agente/vistoria';
+                        navigate(`${base}?focoId=${foco.id}&atividade=pesquisa`);
+                      } else {
+                        transitionMutation.mutate({ focoId: foco.id, statusNovo });
+                      }
+                    }}
+                    isPending={transitionMutation.isPending || lockedFocos.has(foco.id)}
+                  />
+                ))}
+              </div>
+            )
+          ) : (
+            /* ── Lista: Fila Aberta ──────────────────────────────────── */
+            filaAberta.length === 0 ? (
+              <Card className="rounded-2xl border-border">
+                <CardContent className="flex flex-col items-center justify-center py-12 px-4">
+                  <Users className="w-12 h-12 mb-3 text-muted-foreground/30" />
+                  <p className="text-sm font-semibold text-foreground text-center">
+                    Nenhum foco disponível no momento.
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1 text-center">
+                    Todos os focos já foram assumidos ou ainda não foram criados.
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 px-1">
+                  <AlertTriangle className="w-4 h-4 text-amber-500" />
+                  <p className="text-xs font-semibold text-amber-700 dark:text-amber-400">
+                    {filaAberta.length} foco{filaAberta.length !== 1 ? 's' : ''} aguardando um responsável
+                  </p>
+                </div>
+                {filaAberta.map((foco) => (
+                  <FocoCard
+                    key={foco.id}
+                    foco={foco}
+                    agenteId={usuario?.id}
+                    onNavigate={() => navigate(`/agente/focos/${foco.id}`)}
+                    onAssumir={() => claimMutation.mutate(foco.id)}
+                    isPending={claimMutation.isPending}
+                    modoFila
+                  />
+                ))}
+              </div>
+            )
+          )}
+
+        </div>
+      </PullToRefresh>
+    </div>
   );
 };
 
 // ── Card de foco ──────────────────────────────────────────────────────────────
 
 interface FocoCardProps {
-  foco:        FocoRiscoAtivo;
-  onNavigate:  () => void;
+  foco:         FocoRiscoAtivo;
+  onNavigate:   () => void;
   onAcaoRapida?: (statusNovo: FocoRiscoStatus) => void;
-  onAssumir?:  () => void;
-  isPending:   boolean;
-  modoFila?:   boolean;
-  agenteId?:   string;
+  onAssumir?:   () => void;
+  isPending:    boolean;
+  modoFila?:    boolean;
+  agenteId?:    string;
 }
 
 function FocoCard({ foco, onNavigate, onAcaoRapida, onAssumir, isPending, modoFila, agenteId }: FocoCardProps) {
@@ -498,9 +512,11 @@ function FocoCard({ foco, onNavigate, onAcaoRapida, onAssumir, isPending, modoFi
   const [rascunhoInfo, setRascunhoInfo] = useState<{ existe: boolean; savedAt?: string }>({ existe: false });
   useEffect(() => {
     if (!foco.imovel_id || !agenteId) return;
+    let cancelled = false;
     carregarRascunho(foco.imovel_id, agenteId).then((r) => {
-      if (r) setRascunhoInfo({ existe: true, savedAt: r.savedAt });
+      if (!cancelled && r) setRascunhoInfo({ existe: true, savedAt: r.savedAt });
     });
+    return () => { cancelled = true; };
   }, [foco.imovel_id, agenteId]);
 
   return (
@@ -510,11 +526,11 @@ function FocoCard({ foco, onNavigate, onAcaoRapida, onAssumir, isPending, modoFi
         BORDA_PRIORIDADE[foco.prioridade ?? 'P5'] ?? ''
       )}
     >
-      <CardContent className="px-3 py-2.5 space-y-2">
+      <CardContent className="px-3 py-3 space-y-2.5">
 
-        {/* Linha 1: badges + prioridade */}
+        {/* Linha 1: badges + chevron */}
         <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-1.5 flex-wrap">
+          <div className="flex items-center gap-1.5 flex-wrap min-w-0">
             <StatusBadge status={foco.status as FocoRiscoStatus} />
             <PrioridadeBadge prioridade={foco.prioridade} />
             {foco.sla_status && foco.sla_status !== 'sem_sla' && (
@@ -524,7 +540,7 @@ function FocoCard({ foco, onNavigate, onAcaoRapida, onAssumir, isPending, modoFi
           <button
             type="button"
             onClick={onNavigate}
-            className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
+            className="shrink-0 p-1 -mr-1 text-muted-foreground hover:text-foreground transition-colors rounded-lg"
             aria-label="Ver detalhes"
           >
             <ChevronRight className="w-5 h-5" />
@@ -535,7 +551,7 @@ function FocoCard({ foco, onNavigate, onAcaoRapida, onAssumir, isPending, modoFi
         <div className="flex items-start gap-1.5">
           <MapPin className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <p className="text-sm font-semibold text-foreground leading-tight truncate">
                 {endereco}
               </p>
@@ -551,7 +567,7 @@ function FocoCard({ foco, onNavigate, onAcaoRapida, onAssumir, isPending, modoFi
               </p>
             )}
             {rascunhoInfo.existe && (
-              <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5">
+              <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-medium text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded px-1.5 py-0.5">
                 <Pencil className="w-2.5 h-2.5" />
                 Rascunho salvo {rascunhoInfo.savedAt ? formatarTempoRascunho(rascunhoInfo.savedAt) : ''}
               </span>
@@ -560,12 +576,12 @@ function FocoCard({ foco, onNavigate, onAcaoRapida, onAssumir, isPending, modoFi
         </div>
 
         {/* Linha 3: ações */}
-        <div className="flex gap-1.5">
+        <div className="flex gap-2">
           {modoFila ? (
             <>
               <Button
                 size="sm"
-                className="flex-1 h-8 rounded-xl text-xs font-semibold bg-primary"
+                className="flex-1 h-9 rounded-xl text-xs font-semibold bg-primary"
                 onClick={onAssumir}
                 disabled={isPending}
               >
@@ -573,7 +589,7 @@ function FocoCard({ foco, onNavigate, onAcaoRapida, onAssumir, isPending, modoFi
               </Button>
               <Button
                 size="sm" variant="outline"
-                className="h-8 rounded-xl text-xs"
+                className="h-9 px-4 rounded-xl text-xs"
                 onClick={onNavigate}
               >
                 Ver
@@ -583,13 +599,13 @@ function FocoCard({ foco, onNavigate, onAcaoRapida, onAssumir, isPending, modoFi
             <>
               {foco.status === 'aguardando_nova_tentativa' && onAcaoRapida ? (
                 foco.pendente_decisao_supervisor || (foco.tentativas_sem_acesso ?? 0) >= 3 ? (
-                  <span className="flex-1 flex items-center justify-center h-8 rounded-xl text-xs font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
+                  <span className="flex-1 flex items-center justify-center h-9 rounded-xl text-xs font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
                     Aguardando decisão do supervisor
                   </span>
                 ) : (
                   <Button
                     size="sm"
-                    className="flex-1 h-8 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white"
+                    className="flex-1 h-9 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white"
                     onClick={() => onAcaoRapida('aguardando_nova_tentativa')}
                     disabled={isPending}
                   >
@@ -601,7 +617,7 @@ function FocoCard({ foco, onNavigate, onAcaoRapida, onAssumir, isPending, modoFi
               ) : acao && onAcaoRapida ? (
                 <Button
                   size="sm"
-                  className={cn('flex-1 h-8 rounded-xl text-xs font-semibold', acao.cor)}
+                  className={cn('flex-1 h-9 rounded-xl text-xs font-semibold', acao.cor)}
                   onClick={() => onAcaoRapida(acao.proximo)}
                   disabled={isPending}
                 >
@@ -610,7 +626,7 @@ function FocoCard({ foco, onNavigate, onAcaoRapida, onAssumir, isPending, modoFi
               ) : null}
               <Button
                 size="sm" variant="outline"
-                className="h-8 rounded-xl text-xs"
+                className="h-9 px-4 rounded-xl text-xs"
                 onClick={onNavigate}
               >
                 Detalhes

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "@/lib/leaflet";
-import { MapContainer, useMap } from "react-leaflet";
+import { MapContainer, useMap, GeoJSON } from "react-leaflet";
 import { LevantamentoItem, FocoRiscoAtivo } from "@/types/database";
 import { MapClusterLayer } from "./MapClusterLayer";
 import { MapPopupLayer } from "./MapPopupLayer";
@@ -26,6 +26,7 @@ interface LeafletMapViewProps {
   focos?: FocoRiscoAtivo[];
   onFocoClick?: (foco: FocoRiscoAtivo) => void;
   onFocoVistoria?: (foco: FocoRiscoAtivo) => void;
+  quadrasGeoJson?: Array<{ quadraId: string; geojson: Record<string, unknown> }>;
 }
 
 function MapFitter({ items, focos = [], fallbackCenter }: { items: LevantamentoItem[]; focos?: FocoRiscoAtivo[]; fallbackCenter: [number, number] }) {
@@ -89,10 +90,11 @@ export function LeafletMapView({
   focos,
   onFocoClick,
   onFocoVistoria,
+  quadrasGeoJson,
 }: LeafletMapViewProps) {
   const { theme } = useTheme();
   const isDark = theme === "dark";
-  const [tileType, setTileType] = useState<TileLayerType>(() => (isDark ? "dark" : "street"));
+  const [tileType, setTileType] = useState<TileLayerType>("street");
 
   const mapBg = isDark ? "#0f172a" : "#f1f5f9";
 
@@ -123,6 +125,20 @@ export function LeafletMapView({
 
       <MapContainer center={center} zoom={12} style={{ width: "100%", height: "100%" }} zoomControl={false}>
         <TileLayerManager tileType={tileType} />
+
+        {quadrasGeoJson && quadrasGeoJson.map((q) => (
+          <GeoJSON
+            key={q.quadraId}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            data={q.geojson as any}
+            style={{
+              color: '#2563eb',
+              fillColor: '#3b82f6',
+              fillOpacity: 0.15,
+              weight: 2,
+            }}
+          />
+        ))}
 
         {!heatmapEnabled && (
           <MapClusterLayer

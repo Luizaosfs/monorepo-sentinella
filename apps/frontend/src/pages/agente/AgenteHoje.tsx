@@ -3,9 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import {
-  CheckCircle2, Clock, ChevronRight, WifiOff, AlertCircle,
+  CheckCircle2, Clock, ChevronRight, WifiOff, AlertCircle, AlertTriangle,
   List, Map as MapIcon, Navigation, RefreshCw, RotateCcw, UserCheck, Route,
-  MapPin, Info,
+  MapPin, Info, ShieldAlert,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { CicloBadge } from '@/components/foco/CicloBadge';
@@ -203,6 +203,11 @@ export default function AgenteHoje() {
   const revisitasCount = useMemo(
     () => imoveis.filter((im) => resolveStatusImovel(im, hoje) === 'revisita').length,
     [imoveis, hoje],
+  );
+
+  const reinspecoesVencidasCount = useMemo(
+    () => reinspecoesPendentes.filter((r) => r.status === 'vencida').length,
+    [reinspecoesPendentes],
   );
 
   const pct = imoveis.length > 0
@@ -736,6 +741,24 @@ export default function AgenteHoje() {
           </button>
         )}
 
+        {/* ── Banner: reinspeções vencidas ── */}
+        {listFiltro !== 'reinspecao' && reinspecoesVencidasCount > 0 && (
+          <button
+            type="button"
+            onClick={() => setListFiltro('reinspecao')}
+            className="w-full flex items-center gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-left transition-colors hover:bg-rose-100 active:bg-rose-200 dark:border-rose-800 dark:bg-rose-950/40 dark:hover:bg-rose-950/60"
+          >
+            <AlertTriangle className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-rose-800 dark:text-rose-300">
+                {reinspecoesVencidasCount === 1 ? '1 reinspeção vencida' : `${reinspecoesVencidasCount} reinspeções vencidas`}
+              </p>
+              <p className="text-xs text-rose-600 dark:text-rose-400">Toque para ver as reinspeções vencidas</p>
+            </div>
+            <span className="text-rose-400 text-lg leading-none">›</span>
+          </button>
+        )}
+
         {/* ── Atribuídos a mim ── */}
         {listFiltro === 'atribuido' && (
           <div className="space-y-2">
@@ -880,6 +903,11 @@ export default function AgenteHoje() {
                           {!temRetorno && temRecorrencia && (
                             <p className="text-[10px] text-amber-600 dark:text-amber-400 font-medium mt-0.5">
                               {im.focos_recorrentes} foco(s) recorrente(s)
+                            </p>
+                          )}
+                          {im.historico_recusa && !temRetorno && (
+                            <p className="text-[10px] text-rose-600 dark:text-rose-400 font-semibold flex items-center gap-1 mt-0.5">
+                              <ShieldAlert className="w-3 h-3" /> Acesso negado anteriormente
                             </p>
                           )}
                         </div>

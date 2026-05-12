@@ -78,6 +78,7 @@ export type TerritorioAgenteVM = {
     bairroId: string | null;
     bairroNome: string | null;
     imoveisCount: number;
+    geojson: Record<string, unknown> | null;
   }[];
   cicloAtivo: {
     id: string;

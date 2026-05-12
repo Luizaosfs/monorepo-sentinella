@@ -4,6 +4,7 @@ import { z } from 'zod';
 
 export const createImovelSchema = z.object({
   regiaoId: z.string().uuid().describe('ID da região').optional(),
+  quadraId: z.string().uuid().describe('ID da bairros_quadras — quando fornecido sobrepõe a resolução por código').optional(),
   tipoImovel: z
     .string()
     .default('residencial')

@@ -93,12 +93,11 @@ const baseNavItems = [
 ];
 
 // ─── AGENTE DE ENDEMIAS ───────────────────────────────────────────────────────
-// MENU_OFICIAL: Meu Dia → Registrar Vistoria → Minhas Vistorias → Mapa.
 const agenteNavItems = [
-  { to: '/agente/hoje',            label: 'Meu Dia',            icon: Home },
-  { to: '/agente/imoveis',         label: 'Registrar Vistoria', icon: ClipboardCheck },
-  { to: '/agente/levantamentos',   label: 'Minhas Vistorias',   icon: ClipboardList },
-  { to: '/agente/mapa',            label: 'Mapa',               icon: MapIcon },
+  { to: '/agente/hoje',          label: 'Meu Dia',   icon: Home },
+  { to: '/agente/imoveis',       label: 'Imóveis',   icon: Building2 },
+  { to: '/agente/mapa',          label: 'Mapa',      icon: MapIcon },
+  { to: '/agente/levantamentos', label: 'Vistorias', icon: ClipboardList },
 ];
 
 // ─── ANALISTA REGIONAL ────────────────────────────────────────────────────────
@@ -341,9 +340,9 @@ const AppLayout = () => {
     ];
     if (papel === 'notificador') return [...notificadorNavItems];
     if (isAgente) return [
-      { to: '/agente/hoje',          label: 'Meu Dia',  icon: Home },
-      { to: '/agente/imoveis',       label: 'Imóveis',  icon: Building2 },
-      { to: '/agente/mapa',          label: 'Mapa',     icon: MapIcon },
+      { to: '/agente/hoje',          label: 'Meu Dia',   icon: Home },
+      { to: '/agente/imoveis',       label: 'Imóveis',   icon: Building2 },
+      { to: '/agente/mapa',          label: 'Mapa',      icon: MapIcon },
       { to: '/agente/levantamentos', label: 'Vistorias', icon: ClipboardList },
     ];
     return [

@@ -1,10 +1,11 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useClienteAtivo } from '@/hooks/useClienteAtivo';
 import { useAuth } from '@/hooks/useAuth';
 import { useCreateImovelMutation } from '@/hooks/queries/useImoveis';
 import { useImoveisTerritorio } from '@/hooks/queries/useImoveisTerritorio';
 import { useTerritorioAgente } from '@/hooks/queries/useTerritorioAgente';
+import { api } from '@/services/api';
 import { getCurrentCiclo } from '@/lib/ciclo';
 import { useVistorias } from '@/hooks/queries/useVistorias';
 import {
@@ -45,7 +46,7 @@ import {
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { TipoAtividade, TipoImovel, Imovel } from '@/types/database';
-import { MapContainer, TileLayer, CircleMarker, Popup, Tooltip } from 'react-leaflet';
+import { MapContainer, TileLayer, CircleMarker, Popup, Tooltip, GeoJSON } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 
 const ATIVIDADE_LABEL: Record<TipoAtividade, string> = {
@@ -99,6 +100,8 @@ interface NovoImovelForm {
   numero: string;
   complemento: string;
   bairro: string;
+  regiaoId: string | null;
+  quadraId: string | null;
   quarteirao: string;
   tipo_imovel: TipoImovel;
   latitude: number | null;
@@ -110,6 +113,8 @@ const EMPTY_FORM: NovoImovelForm = {
   numero: '',
   complemento: '',
   bairro: '',
+  regiaoId: null,
+  quadraId: null,
   quarteirao: '',
   tipo_imovel: 'residencial',
   latitude: null,
@@ -134,6 +139,9 @@ export default function AgenteListaImoveis() {
   const [viewMode, setViewMode] = useState<'lista' | 'mapa'>('lista');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState<NovoImovelForm>(EMPTY_FORM);
+  const [dedupWarning, setDedupWarning] = useState<string | null>(null);
+  const [checkingDedup, setCheckingDedup] = useState(false);
+  const dedupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // C-05: captura GPS automaticamente ao abrir o dialog de cadastro
   useEffect(() => {
@@ -206,8 +214,31 @@ export default function AgenteListaImoveis() {
     for (const im of imoveis) {
       if (im.bairro) set.add(im.bairro);
     }
+    for (const q of territorio?.quadras ?? []) {
+      if (q.bairroNome) set.add(q.bairroNome);
+    }
     return Array.from(set).sort();
-  }, [imoveis]);
+  }, [imoveis, territorio]);
+
+  // Bairros únicos do território atribuído ao agente (para o select do formulário)
+  const bairrosDoTerritorio = useMemo(() => {
+    if (!territorio?.quadras) return [];
+    const map = new Map<string, string>();
+    for (const q of territorio.quadras) {
+      if (q.bairroId && q.bairroNome) map.set(q.bairroId, q.bairroNome);
+    }
+    return Array.from(map.entries())
+      .map(([id, nome]) => ({ id, nome }))
+      .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  }, [territorio]);
+
+  // Quarteirões do bairro selecionado no formulário
+  const quarteiroesDoBairro = useMemo(() => {
+    if (!territorio?.quadras || !form.regiaoId) return [];
+    return territorio.quadras
+      .filter((q) => q.bairroId === form.regiaoId)
+      .sort((a, b) => a.codigo.localeCompare(b.codigo, undefined, { numeric: true }));
+  }, [territorio, form.regiaoId]);
 
   const imoveisFiltrados = useMemo(() => {
     const q = search.toLowerCase();
@@ -254,23 +285,76 @@ export default function AgenteListaImoveis() {
     setForm((prev) => ({ ...prev, [field]: value }));
   }
 
+  function handleBairroChange(bairroId: string) {
+    const bairro = bairrosDoTerritorio.find((b) => b.id === bairroId);
+    setForm((prev) => ({
+      ...prev,
+      regiaoId: bairroId,
+      bairro: bairro?.nome ?? '',
+      quadraId: null,
+      quarteirao: '',
+    }));
+  }
+
+  function handleQuarteiraoChange(quadraId: string) {
+    const quadra = quarteiroesDoBairro.find((q) => q.quadraId === quadraId);
+    setForm((prev) => ({ ...prev, quadraId, quarteirao: quadra?.codigo ?? '' }));
+  }
+
+  // Dedup de endereço: dispara 600ms após parar de digitar logradouro ou numero
+  useEffect(() => {
+    if (!form.logradouro.trim() || !form.numero.trim() || !clienteId) {
+      setDedupWarning(null);
+      return;
+    }
+    if (dedupTimerRef.current) clearTimeout(dedupTimerRef.current);
+    dedupTimerRef.current = setTimeout(async () => {
+      setCheckingDedup(true);
+      try {
+        const result = await api.imoveis.findByEndereco(clienteId, form.logradouro.trim(), form.numero.trim());
+        setDedupWarning(
+          result
+            ? `Endereço já cadastrado: ${result.logradouro}, nº ${result.numero}${result.bairro ? ` — ${result.bairro}` : ''}`
+            : null,
+        );
+      } catch {
+        setDedupWarning(null);
+      } finally {
+        setCheckingDedup(false);
+      }
+    }, 600);
+    return () => { if (dedupTimerRef.current) clearTimeout(dedupTimerRef.current); };
+  }, [form.logradouro, form.numero, clienteId]);
+
   async function handleCreateImovel() {
     if (!clienteId) return;
     if (!form.logradouro.trim()) {
       toast.error('Logradouro é obrigatório.');
       return;
     }
+    if (dedupWarning) {
+      toast.error('Este endereço já está cadastrado no sistema.');
+      return;
+    }
     try {
       await createImovelMutation.mutateAsync({
         ...form,
+        regiaoId: form.regiaoId ?? undefined,
+        quadraId: form.quadraId ?? undefined,
         cliente_id: clienteId,
         ativo: true,
       } as Omit<Imovel, 'id' | 'created_at' | 'updated_at'>);
       toast.success('Imóvel cadastrado com sucesso.');
       setDialogOpen(false);
       setForm(EMPTY_FORM);
-    } catch (err) {
-      toast.error('Erro ao cadastrar imóvel. Tente novamente.');
+      setDedupWarning(null);
+    } catch (err: unknown) {
+      const msg = (err as { message?: string })?.message ?? '';
+      if (msg.includes('quarteirão') || msg.includes('território')) {
+        toast.error('Você não está atribuído a este quarteirão.');
+      } else {
+        toast.error('Erro ao cadastrar imóvel. Tente novamente.');
+      }
     }
   }
 
@@ -368,6 +452,24 @@ export default function AgenteListaImoveis() {
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
+              {(territorio?.quadras ?? [])
+                .filter((q) => q.geojson != null)
+                .map((q) => {
+                  const highlighted = filtroBairro === '__all__' || q.bairroNome === filtroBairro;
+                  return (
+                    <GeoJSON
+                      key={`${q.quadraId}-${filtroBairro}`}
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      data={q.geojson as any}
+                      style={{
+                        color: highlighted ? '#2563eb' : '#94a3b8',
+                        fillColor: highlighted ? '#3b82f6' : '#cbd5e1',
+                        fillOpacity: highlighted ? 0.18 : 0.05,
+                        weight: highlighted ? 2 : 1,
+                      }}
+                    />
+                  );
+                })}
               {imoveisComCoordenadas.map((imovel) => {
                 const status = statusPorImovel.get(imovel.id) ?? 'none';
                 const bloqueado = status === 'visitado' || status === 'fechado';
@@ -540,6 +642,43 @@ export default function AgenteListaImoveis() {
           </DialogHeader>
 
           <div className="space-y-3 mt-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label htmlFor="bairro">Bairro *</Label>
+                <Select
+                  value={form.regiaoId ?? ''}
+                  onValueChange={handleBairroChange}
+                  disabled={bairrosDoTerritorio.length === 0}
+                >
+                  <SelectTrigger id="bairro">
+                    <SelectValue placeholder={bairrosDoTerritorio.length === 0 ? 'Sem território' : 'Selecione'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {bairrosDoTerritorio.map((b) => (
+                      <SelectItem key={b.id} value={b.id}>{b.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="quarteirao">Quarteirão *</Label>
+                <Select
+                  value={quarteiroesDoBairro.find((q) => q.codigo === form.quarteirao)?.quadraId ?? ''}
+                  onValueChange={handleQuarteiraoChange}
+                  disabled={!form.regiaoId || quarteiroesDoBairro.length === 0}
+                >
+                  <SelectTrigger id="quarteirao">
+                    <SelectValue placeholder={!form.regiaoId ? 'Selecione o bairro' : 'Selecione'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {quarteiroesDoBairro.map((q) => (
+                      <SelectItem key={q.quadraId} value={q.quadraId}>Qt. {q.codigo}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
             <div className="space-y-1">
               <Label htmlFor="logradouro">Logradouro *</Label>
               <Input
@@ -567,27 +706,6 @@ export default function AgenteListaImoveis() {
                   placeholder="Ex: Apt 2"
                   value={form.complemento}
                   onChange={(e) => handleFormChange('complemento', e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label htmlFor="bairro">Bairro</Label>
-                <Input
-                  id="bairro"
-                  placeholder="Ex: Centro"
-                  value={form.bairro}
-                  onChange={(e) => handleFormChange('bairro', e.target.value)}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="quarteirao">Quarteirão</Label>
-                <Input
-                  id="quarteirao"
-                  placeholder="Ex: 01"
-                  value={form.quarteirao}
-                  onChange={(e) => handleFormChange('quarteirao', e.target.value)}
                 />
               </div>
             </div>
@@ -624,6 +742,16 @@ export default function AgenteListaImoveis() {
               </div>
             )}
 
+            {dedupWarning && (
+              <div className="flex items-start gap-1.5 rounded-lg border border-destructive/40 bg-destructive/10 px-2.5 py-2 text-xs text-destructive">
+                <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                <span>{dedupWarning}</span>
+              </div>
+            )}
+            {checkingDedup && (
+              <p className="text-xs text-muted-foreground">Verificando endereço…</p>
+            )}
+
             <div className="flex gap-2 pt-2">
               <Button
                 variant="outline"
@@ -631,6 +759,7 @@ export default function AgenteListaImoveis() {
                 onClick={() => {
                   setDialogOpen(false);
                   setForm(EMPTY_FORM);
+                  setDedupWarning(null);
                 }}
               >
                 Cancelar
@@ -638,7 +767,7 @@ export default function AgenteListaImoveis() {
               <Button
                 className="flex-1"
                 onClick={handleCreateImovel}
-                disabled={createImovelMutation.isPending}
+                disabled={createImovelMutation.isPending || !!dedupWarning || checkingDedup}
               >
                 {createImovelMutation.isPending ? 'Salvando…' : 'Salvar'}
               </Button>
