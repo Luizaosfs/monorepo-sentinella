@@ -3,6 +3,7 @@ model focos_risco {
   cliente_id                      String    @db.Uuid
   imovel_id                       String?   @db.Uuid
   bairro_id                       String?   @db.Uuid
+  quadra_id                       String?   @db.Uuid
   origem_tipo                     String
   origem_levantamento_item_id     String?   @db.Uuid
   origem_vistoria_id              String?   @db.Uuid
@@ -26,6 +27,7 @@ model focos_risco {
   deleted_by                      String?   @db.Uuid
   created_by                      String?   @db.Uuid
   observacao                      String?
+  motivo_triagem                  String?
   classificacao_inicial           String    @default("suspeito")
   dados_minimos_em                DateTime? @db.Timestamptz
   inspecao_em                     DateTime? @db.Timestamptz
@@ -36,9 +38,10 @@ model focos_risco {
   tentativas_sem_acesso           Int       @default(0)
   pendente_decisao_supervisor     Boolean   @default(false)
 
-  cliente       clientes   @relation(fields: [cliente_id], references: [id])
-  imovel        imoveis?   @relation(fields: [imovel_id], references: [id])
-  bairro        bairros?   @relation(fields: [bairro_id], references: [id])
+  cliente       clientes        @relation(fields: [cliente_id], references: [id])
+  imovel        imoveis?        @relation(fields: [imovel_id], references: [id])
+  bairro        bairros?        @relation(fields: [bairro_id], references: [id])
+  quadra        bairros_quadras? @relation(fields: [quadra_id], references: [id])
   responsavel   usuarios?  @relation("foco_responsavel", fields: [responsavel_id], references: [id])
 
   historico     foco_risco_historico[]
@@ -50,6 +53,7 @@ model focos_risco {
   @@index([cliente_id, created_at])
   @@index([imovel_id])
   @@index([bairro_id])
+  @@index([quadra_id])
   @@index([responsavel_id])
   @@index([status])
   @@map("focos_risco")

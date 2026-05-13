@@ -4,6 +4,7 @@ import { DatabaseModule } from '@shared/modules/database/database.module';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 
 import { JobModule } from '../job/job.module';
+import { QuarteiraoModule } from '../quarteirao/quarteirao.module';
 import { ReinspecaoModule } from '../reinspecao/reinspecao.module';
 import { SlaModule } from '../sla/sla.module';
 import { FocoRiscoController } from './foco-risco.controller';
@@ -68,7 +69,7 @@ import { ListFocosTerritorioUseCase } from './use-cases/list-focos-territorio';
     PrismaService,
   ],
   controllers: [FocoRiscoController],
-  imports: [DatabaseModule, SlaModule, ReinspecaoModule, JobModule],
+  imports: [DatabaseModule, SlaModule, ReinspecaoModule, JobModule, QuarteiraoModule],
   exports: [CriarFocoDeLevantamentoItem, CriarFocoDeVistoriaDeposito, IniciarInspecao],
 })
 export class FocoRiscoModule {}

@@ -38,6 +38,7 @@ export class CreateFocoRisco {
       {
         clienteId,
         imovelId: input.imovelId,
+        quadraId: input.quadraId,
         regiaoId: input.regiaoId,
         origemTipo: input.origemTipo,
         origemLevantamentoItemId: input.origemLevantamentoItemId,
@@ -53,6 +54,7 @@ export class CreateFocoRisco {
         focoAnteriorId: input.focoAnteriorId,
         casosIds: [],
         observacao: input.observacao,
+        motivoTriagem: input.motivoTriagem,
         classificacaoInicial: autoClassificarFoco({
           origemTipo: input.origemTipo,
           classificacaoInicial: input.classificacaoInicial,

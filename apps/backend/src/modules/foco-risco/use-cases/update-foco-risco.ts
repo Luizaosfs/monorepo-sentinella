@@ -11,6 +11,8 @@ export interface UpdateFocoRiscoInput {
   responsavel_id?: string;
   desfecho?: string;
   imovel_id?: string;
+  quadra_id?: string;
+  motivo_triagem?: string;
 }
 
 @Injectable()
@@ -38,6 +40,8 @@ export class UpdateFocoRisco {
     }
     if (input.desfecho !== undefined) foco.desfecho = input.desfecho;
     if (input.imovel_id !== undefined) foco.imovelId = input.imovel_id;
+    if (input.quadra_id !== undefined) foco.quadraId = input.quadra_id;
+    if (input.motivo_triagem !== undefined) foco.motivoTriagem = input.motivo_triagem;
 
     await this.writeRepository.save(foco);
   }

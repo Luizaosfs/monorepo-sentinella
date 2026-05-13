@@ -30,4 +30,8 @@ export const FocoRiscoException = createExceptionFactory({
     type: 'forbidden',
     message: 'Agente só pode transicionar focos atribuídos a si',
   },
+  semTerritorioParaVerificacao: {
+    type: 'forbidden',
+    message: 'Foco sem imóvel ou quadra definidos — vincule o foco a um território antes de iniciar a inspeção',
+  },
 });

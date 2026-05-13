@@ -1725,6 +1725,7 @@ export interface FocoRisco {
   id: string;
   cliente_id: string;
   imovel_id: string | null;
+  quadra_id: string | null;
   bairro_id: string | null;
   origem_tipo: FocoRiscoOrigem;
   origem_levantamento_item_id: string | null;
@@ -1755,6 +1756,8 @@ export interface FocoRisco {
   created_by: string | null;
   /** Observação livre do agente sobre o atendimento. Migration 20260923. */
   observacao?: string | null;
+  /** Motivo de triagem preenchido pelo projeto Python/YOLO ao criar o foco. */
+  motivo_triagem?: string | null;
   /** QW-10A: Soft delete. Null = ativo. */
   deleted_at?: string | null;
   deleted_by?: string | null;

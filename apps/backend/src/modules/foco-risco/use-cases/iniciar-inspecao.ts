@@ -3,6 +3,7 @@ import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
 import { getAccessScope } from '@shared/security/access-scope.helpers';
 import type { AuthenticatedUser } from 'src/guards/auth.guard';
+import { EnsureAgentePodeAtuarNaQuadra } from 'src/modules/quarteirao/use-cases/ensure-agente-pode-atuar-na-quadra';
 
 import { IniciarInspecaoInput } from '../dtos/iniciar-inspecao.body';
 import { FocoRiscoException } from '../errors/foco-risco.exception';
@@ -14,6 +15,7 @@ export class IniciarInspecao {
   constructor(
     private readRepository: FocoRiscoReadRepository,
     private writeRepository: FocoRiscoWriteRepository,
+    private ensureAgentePodeAtuar: EnsureAgentePodeAtuarNaQuadra,
     @Inject(REQUEST) private req: Request,
   ) {}
 
@@ -42,6 +44,17 @@ export class IniciarInspecao {
     // G4: idempotência — foco já em inspeção retorna ok sem alterar.
     if (foco.status === 'em_inspecao') {
       return { foco, jaEmInspecao: true };
+    }
+
+    // G7: verificação territorial — agente só atua em quadras atribuídas a ele.
+    // Resolve quadra via imovel_id (campo de domínio) ou quadra_id direto (focos de drone/Python).
+    // Sem nenhum dos dois: foco sem território definido → bloquear até que o supervisor vincule.
+    if (foco.quadraId) {
+      await this.ensureAgentePodeAtuar.executeByQuadraId(tenantId!, user.id, foco.quadraId);
+    } else if (foco.imovelId) {
+      await this.ensureAgentePodeAtuar.execute(tenantId!, user.id, foco.imovelId);
+    } else {
+      throw FocoRiscoException.semTerritorioParaVerificacao();
     }
 
     if (foco.status !== 'aguarda_inspecao' && foco.status !== 'aguardando_nova_tentativa') {

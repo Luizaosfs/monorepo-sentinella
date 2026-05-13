@@ -5,20 +5,40 @@ import { mock } from 'jest-mock-extended';
 import { FocoRiscoException } from '../../errors/foco-risco.exception';
 import { FocoRiscoReadRepository } from '../../repositories/foco-risco-read.repository';
 import { FocoRiscoWriteRepository } from '../../repositories/foco-risco-write.repository';
+import { EnsureAgentePodeAtuarNaQuadra } from 'src/modules/quarteirao/use-cases/ensure-agente-pode-atuar-na-quadra';
+import { QuarteiraoException } from 'src/modules/quarteirao/errors/quarteirao.exception';
 import { expectHttpException } from '@test/utils/expect-http-exception';
 import { mockRequest } from '@test/utils/user-helpers';
 
 import { IniciarInspecao } from '../iniciar-inspecao';
 import { FocoRiscoBuilder } from './builders/foco-risco.builder';
 
-async function buildUseCase(reqValue: unknown) {
+const AGENTE_REQ = mockRequest({
+  tenantId: 'cliente-uuid-1',
+  user: {
+    id: 'agente-uuid-1',
+    email: 'a@t.com',
+    nome: 'Agente',
+    clienteId: 'cliente-uuid-1',
+    papeis: ['agente'],
+  },
+});
+
+async function buildUseCase(reqValue: unknown, ensureOverride?: Partial<EnsureAgentePodeAtuarNaQuadra>) {
   const readRepo = mock<FocoRiscoReadRepository>();
   const writeRepo = mock<FocoRiscoWriteRepository>();
+  const ensureGuard = mock<EnsureAgentePodeAtuarNaQuadra>();
+  // Por padrão guard permite (resolve sem lançar)
+  ensureGuard.execute.mockResolvedValue(undefined);
+  ensureGuard.executeByQuadraId.mockResolvedValue(undefined);
+  if (ensureOverride) Object.assign(ensureGuard, ensureOverride);
+
   const module: TestingModule = await Test.createTestingModule({
     providers: [
       IniciarInspecao,
       { provide: FocoRiscoReadRepository, useValue: readRepo },
       { provide: FocoRiscoWriteRepository, useValue: writeRepo },
+      { provide: EnsureAgentePodeAtuarNaQuadra, useValue: ensureGuard },
       { provide: REQUEST, useValue: reqValue },
     ],
   }).compile();
@@ -26,6 +46,7 @@ async function buildUseCase(reqValue: unknown) {
     useCase: module.get<IniciarInspecao>(IniciarInspecao),
     readRepo,
     writeRepo,
+    ensureGuard,
   };
 }
 
@@ -47,6 +68,7 @@ describe('IniciarInspecao (paridade fn_iniciar_inspecao_foco hardening)', () => 
     );
     const foco = new FocoRiscoBuilder()
       .withStatus('aguarda_inspecao')
+      .withImovelId('imovel-uuid-1')
       .build();
     readRepo.findById.mockResolvedValue(foco);
     writeRepo.save.mockResolvedValue();
@@ -196,7 +218,7 @@ describe('IniciarInspecao (paridade fn_iniciar_inspecao_foco hardening)', () => 
         },
       }),
     );
-    const foco = new FocoRiscoBuilder().withStatus('suspeita').build();
+    const foco = new FocoRiscoBuilder().withStatus('suspeita').withImovelId('imovel-uuid-1').build();
     readRepo.findById.mockResolvedValue(foco);
 
     await expectHttpException(
@@ -272,6 +294,7 @@ describe('IniciarInspecao (paridade fn_iniciar_inspecao_foco hardening)', () => 
     const foco = new FocoRiscoBuilder()
       .withStatus('aguarda_inspecao')
       .withResponsavelId('agente-original')
+      .withImovelId('imovel-uuid-1')
       .build();
     readRepo.findById.mockResolvedValue(foco);
     writeRepo.save.mockResolvedValue();
@@ -303,6 +326,7 @@ describe('IniciarInspecao (paridade fn_iniciar_inspecao_foco hardening)', () => 
     const foco = new FocoRiscoBuilder()
       .withStatus('aguarda_inspecao')
       .withInspecaoEm(inspecaoEmAntiga)
+      .withImovelId('imovel-uuid-1')
       .build();
     readRepo.findById.mockResolvedValue(foco);
     writeRepo.save.mockResolvedValue();
@@ -331,6 +355,7 @@ describe('IniciarInspecao (paridade fn_iniciar_inspecao_foco hardening)', () => 
     );
     const foco = new FocoRiscoBuilder()
       .withStatus('aguarda_inspecao')
+      .withImovelId('imovel-uuid-1')
       .build();
     readRepo.findById.mockResolvedValue(foco);
     writeRepo.save.mockResolvedValue();
@@ -347,5 +372,51 @@ describe('IniciarInspecao (paridade fn_iniciar_inspecao_foco hardening)', () => 
       }),
     );
     expect(foco.observacao).toBe('inspeção iniciada com observação');
+  });
+
+  it('G7: foco sem imovelId nem quadraId → semTerritorioParaVerificacao', async () => {
+    const { useCase, readRepo, writeRepo } = await buildUseCase(AGENTE_REQ);
+    const foco = new FocoRiscoBuilder().withStatus('aguarda_inspecao').build();
+    readRepo.findById.mockResolvedValue(foco);
+
+    await expectHttpException(
+      () => useCase.execute(foco.id!, {}),
+      FocoRiscoException.semTerritorioParaVerificacao(),
+    );
+    expect(writeRepo.save).not.toHaveBeenCalled();
+  });
+
+  it('G7: foco com imovelId → guard.execute chamado; territórioNaoAtribuido bloqueia', async () => {
+    const { useCase, readRepo, writeRepo, ensureGuard } = await buildUseCase(AGENTE_REQ);
+    ensureGuard.execute.mockRejectedValue(QuarteiraoException.territorioNaoAtribuido());
+    const foco = new FocoRiscoBuilder()
+      .withStatus('aguarda_inspecao')
+      .withImovelId('imovel-fora-do-territorio')
+      .build();
+    readRepo.findById.mockResolvedValue(foco);
+
+    await expectHttpException(
+      () => useCase.execute(foco.id!, {}),
+      QuarteiraoException.territorioNaoAtribuido(),
+    );
+    expect(ensureGuard.execute).toHaveBeenCalledWith('cliente-uuid-1', 'agente-uuid-1', 'imovel-fora-do-territorio');
+    expect(writeRepo.save).not.toHaveBeenCalled();
+  });
+
+  it('G7: foco com quadraId (drone) → guard.executeByQuadraId chamado', async () => {
+    const { useCase, readRepo, writeRepo, ensureGuard } = await buildUseCase(AGENTE_REQ);
+    writeRepo.save.mockResolvedValue();
+    writeRepo.createHistorico.mockResolvedValue({ clienteId: 'cliente-uuid-1', statusNovo: 'em_inspecao' });
+    const foco = new FocoRiscoBuilder()
+      .withStatus('aguarda_inspecao')
+      .withQuadraId('quadra-uuid-drone')
+      .build();
+    readRepo.findById.mockResolvedValue(foco);
+
+    await useCase.execute(foco.id!, {});
+
+    expect(ensureGuard.executeByQuadraId).toHaveBeenCalledWith('cliente-uuid-1', 'agente-uuid-1', 'quadra-uuid-drone');
+    expect(ensureGuard.execute).not.toHaveBeenCalled();
+    expect(writeRepo.save).toHaveBeenCalledTimes(1);
   });
 });

@@ -50,6 +50,7 @@ export interface FocoRiscoHistorico {
 interface FocoRiscoProps {
   clienteId: string;
   imovelId?: string;
+  quadraId?: string;
   regiaoId?: string;
   origemTipo: string;
   origemLevantamentoItemId?: string;
@@ -73,6 +74,7 @@ interface FocoRiscoProps {
   focoAnteriorId?: string;
   casosIds: string[];
   observacao?: string;
+  motivoTriagem?: string;
   classificacaoInicial: string;
   scorePrioridade: number;
   codigoFoco?: string;
@@ -114,6 +116,12 @@ export class FocoRisco extends BaseEntity<FocoRiscoProps> {
   }
   set imovelId(v: string | undefined) {
     this.props.imovelId = v;
+  }
+  get quadraId() {
+    return this.props.quadraId;
+  }
+  set quadraId(v: string | undefined) {
+    this.props.quadraId = v;
   }
   get regiaoId() {
     return this.props.regiaoId;
@@ -222,6 +230,12 @@ export class FocoRisco extends BaseEntity<FocoRiscoProps> {
   }
   set observacao(v: string | undefined) {
     this.props.observacao = v;
+  }
+  get motivoTriagem() {
+    return this.props.motivoTriagem;
+  }
+  set motivoTriagem(v: string | undefined) {
+    this.props.motivoTriagem = v;
   }
   get classificacaoInicial() {
     return this.props.classificacaoInicial;

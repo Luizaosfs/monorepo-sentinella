@@ -35,6 +35,7 @@ export class PrismaFocoRiscoMapper {
       {
         clienteId: raw.cliente_id,
         imovelId: raw.imovel_id || undefined,
+        quadraId: raw.quadra_id || undefined,
         regiaoId: raw.bairro_id || undefined,
         origemTipo: raw.origem_tipo,
         origemLevantamentoItemId: raw.origem_levantamento_item_id || undefined,
@@ -56,6 +57,7 @@ export class PrismaFocoRiscoMapper {
         focoAnteriorId: raw.foco_anterior_id || undefined,
         casosIds: raw.casos_ids || [],
         observacao: raw.observacao || undefined,
+        motivoTriagem: raw.motivo_triagem || undefined,
         classificacaoInicial: raw.classificacao_inicial,
         scorePrioridade: raw.score_prioridade,
         codigoFoco: raw.codigo_foco || undefined,
@@ -80,6 +82,7 @@ export class PrismaFocoRiscoMapper {
     return {
       cliente_id: entity.clienteId,
       imovel_id: entity.imovelId || null,
+      quadra_id: entity.quadraId || null,
       bairro_id: entity.regiaoId || null,
       origem_tipo: entity.origemTipo,
       origem_levantamento_item_id: entity.origemLevantamentoItemId || null,
@@ -101,6 +104,7 @@ export class PrismaFocoRiscoMapper {
       foco_anterior_id: entity.focoAnteriorId || null,
       casos_ids: entity.casosIds,
       observacao: entity.observacao || null,
+      motivo_triagem: entity.motivoTriagem || null,
       classificacao_inicial: entity.classificacaoInicial,
       score_prioridade: entity.scorePrioridade,
       codigo_foco: entity.codigoFoco || null,

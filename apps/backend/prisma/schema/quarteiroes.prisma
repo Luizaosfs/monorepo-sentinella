@@ -17,6 +17,7 @@ model bairros_quadras {
 
   distribuicoes bairros_distribuicao[]
   imoveis       imoveis[]
+  focos_risco   focos_risco[]
 
   @@unique([cliente_id, bairro_id, codigo])
   @@index([bairro_id])

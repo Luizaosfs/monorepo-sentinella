@@ -18,14 +18,21 @@ export class EnsureAgentePodeAtuarNaQuadra {
     });
 
     if (!imovel) throw QuarteiraoException.imovelNaoEncontrado();
-
     if (!imovel.quadra_id) throw QuarteiraoException.imovelSemQuadra();
 
+    await this.executeByQuadraId(clienteId, agenteId, imovel.quadra_id);
+  }
+
+  async executeByQuadraId(
+    clienteId: string,
+    agenteId: string,
+    quadraId: string,
+  ): Promise<void> {
     const dist = await this.prisma.client.bairros_distribuicao.findFirst({
       where: {
         cliente_id: clienteId,
         agente_id:  agenteId,
-        quadra_id:  imovel.quadra_id,
+        quadra_id:  quadraId,
         ciclo_id:   null,
       },
       select: { id: true },

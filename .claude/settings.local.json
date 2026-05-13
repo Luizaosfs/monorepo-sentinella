@@ -404,7 +404,9 @@
       "PowerShell(& \"C:\\\\Program Files\\\\nodejs\\\\npm.cmd\" root -g)",
       "PowerShell(node \"C:\\\\Users\\\\luiz\\\\AppData\\\\Roaming\\\\npm\\\\node_modules\\\\context-mode\\\\cli.bundle.mjs\" upgrade 2>&1 | Select-Object -Last 40)",
       "Bash(Select-String -Path \"D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend\\\\.env\" -Pattern \"^DATABASE_URL\")",
-      "Bash(Select-Object -First 1 -ExpandProperty Line)"
+      "Bash(Select-Object -First 1 -ExpandProperty Line)",
+      "Bash(cd /cygdrive/d/sentinella/monorepo-sentinella/apps/backend && pnpm generate 2>&1 | tail -20)",
+      "Read(//cygdrive/d/sentinella/monorepo-sentinella/apps/**)"
     ]
   }
 }

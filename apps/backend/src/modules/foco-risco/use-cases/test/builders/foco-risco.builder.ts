@@ -12,8 +12,10 @@ export class FocoRiscoBuilder {
   private casosIds: string[] = [];
   private responsavelId: string | undefined = undefined;
   private imovelId: string | undefined = undefined;
+  private quadraId: string | undefined = undefined;
   private regiaoId: string | undefined = undefined;
   private observacao: string | undefined = undefined;
+  private motivoTriagem: string | undefined = undefined;
   private inspecaoEm: Date | undefined = undefined;
   private confirmadoEm: Date | undefined = undefined;
   private resolvidoEm: Date | undefined = undefined;
@@ -31,8 +33,10 @@ export class FocoRiscoBuilder {
   withCasosIds(ids: string[]) { this.casosIds = ids; return this; }
   withResponsavelId(id: string) { this.responsavelId = id; return this; }
   withImovelId(id: string) { this.imovelId = id; return this; }
+  withQuadraId(id: string) { this.quadraId = id; return this; }
   withRegiaoId(id: string) { this.regiaoId = id; return this; }
   withObservacao(obs: string) { this.observacao = obs; return this; }
+  withMotivoTriagem(m: string) { this.motivoTriagem = m; return this; }
   withInspecaoEm(d: Date) { this.inspecaoEm = d; return this; }
   withConfirmadoEm(d: Date) { this.confirmadoEm = d; return this; }
   withResolvidoEm(d: Date) { this.resolvidoEm = d; return this; }
@@ -52,8 +56,10 @@ export class FocoRiscoBuilder {
         casosIds: this.casosIds,
         responsavelId: this.responsavelId,
         imovelId: this.imovelId,
+        quadraId: this.quadraId,
         regiaoId: this.regiaoId,
         observacao: this.observacao,
+        motivoTriagem: this.motivoTriagem,
         inspecaoEm: this.inspecaoEm,
         confirmadoEm: this.confirmadoEm,
         resolvidoEm: this.resolvidoEm,

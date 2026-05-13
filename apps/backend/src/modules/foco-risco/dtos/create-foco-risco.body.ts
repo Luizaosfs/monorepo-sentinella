@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 export const createFocoRiscoSchema = z.object({
   imovelId: z.string().uuid().describe('ID do imóvel').optional(),
+  quadraId: z.string().uuid().describe('ID da quadra').optional(),
   regiaoId: z.string().uuid().describe('ID da região').optional(),
   origemTipo: z
     .string()
@@ -38,6 +39,7 @@ export const createFocoRiscoSchema = z.object({
     .describe('ID do foco anterior (recorrência)')
     .optional(),
   observacao: z.string().describe('Observações iniciais').optional(),
+  motivoTriagem: z.string().describe('Motivo de triagem (preenchido pelo projeto Python/YOLO)').optional(),
   classificacaoInicial: z
     .string()
     .default('suspeito')
