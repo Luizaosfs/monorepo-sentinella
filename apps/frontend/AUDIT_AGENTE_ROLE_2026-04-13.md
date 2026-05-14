@@ -1,5 +1,7 @@
 # AUDITORIA DETALHADA — PAPEL AGENTE (FIELD AGENT)
 
+> ⚠️ **DOCUMENTO HISTÓRICO** (revisado 2026-05-14). Snapshot do estado Supabase em **2026-04-13**, antes da migração para NestJS. Referências a triggers `trg_*`, funções `fn_*`/`rpc_*` PL/pgSQL e Supabase RPC descrevem objetos que **foram removidos** — a mesma lógica vive hoje em use-cases TS no backend NestJS. Conclusões de negócio continuam válidas. Estado atual canônico: [`docs/DB_STATE_ATUAL.md`](../../docs/DB_STATE_ATUAL.md).
+
 **Data:** 2026-04-13 | **Status:** Leitura completa (sem modificações)
 
 ## RESUMO EXECUTIVO

@@ -1,5 +1,7 @@
 # P1 — Análise Operacional do Sentinella
 
+> ⚠️ **DOC PARCIALMENTE DESATUALIZADO** (revisado 2026-05-14). Análise pré-migração NestJS. Trechos sobre Supabase/triggers/RLS não refletem o estado atual. Análise operacional/negócio continua válida. Canônico: [`docs/DB_STATE_ATUAL.md`](../../../docs/DB_STATE_ATUAL.md).
+
 > Documento gerado com base na leitura direta do código-fonte em `src/`. Toda citação referencia arquivo e linha reais.
 > Data de análise: 2026-04-11
 

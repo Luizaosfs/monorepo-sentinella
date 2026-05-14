@@ -1,5 +1,7 @@
 # 00 — Visão Geral do Sentinella Web
 
+> ⚠️ **DOC PARCIALMENTE DESATUALIZADO** (revisado 2026-05-14). Trechos sobre lógica em triggers/funções PL/pgSQL refletem o estado Supabase pré-migração. Banco NestJS atual = 0 triggers/funções de aplicação. Canônico: [`docs/DB_STATE_ATUAL.md`](../../../docs/DB_STATE_ATUAL.md).
+
 > **Para quem é este documento:** qualquer pessoa nova no projeto — desenvolvedor, analista, gestor ou parceiro — que queira entender o sistema antes de qualquer detalhe técnico.
 
 ---

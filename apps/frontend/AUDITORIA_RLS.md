@@ -1,4 +1,7 @@
 # AUDITORIA RLS — Sentinella Web
+
+> ⚠️ **DOCUMENTO HISTÓRICO** (revisado 2026-05-14). RLS (Row Level Security) **foi removido** na migração Supabase → NestJS. Segurança hoje = `AuthGuard` + `TenantGuard` globais no NestJS. Esta auditoria descreve políticas RLS de uma realidade que **não existe mais**. Estado atual canônico: [`docs/DB_STATE_ATUAL.md`](../../docs/DB_STATE_ATUAL.md).
+
 > Gerado em: 2026-04-02 | Base: schema.sql + migrations completas
 
 ---

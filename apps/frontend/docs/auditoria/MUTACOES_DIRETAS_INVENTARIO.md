@@ -1,5 +1,7 @@
 # Inventário de Mutações Diretas — P7.11
 
+> ⚠️ **DOCUMENTO HISTÓRICO** (revisado 2026-05-14). Inventário do estado Supabase, antes da migração NestJS. Mutações diretas a Supabase foram **todas substituídas** por chamadas HTTP ao backend NestJS via `@sentinella/api-client`. Mecânica via triggers/funções PL/pgSQL não existe mais. Canônico: [`docs/DB_STATE_ATUAL.md`](../../../../docs/DB_STATE_ATUAL.md).
+
 > Auditado em 2026-04-14. Baseado no código real encontrado em `src/services/api.ts` e componentes.
 
 ---

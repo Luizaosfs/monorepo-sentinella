@@ -1,5 +1,7 @@
 # Dashboard Analítico Estratégico — Pitch Comercial
 
+> ⚠️ **DOC PARCIALMENTE DESATUALIZADO** (revisado 2026-05-14). Detalhes técnicos sobre triggers/funções PL/pgSQL Supabase não refletem o estado atual (NestJS, 0 triggers de aplicação). Métricas e proposta de valor continuam válidos. Canônico: [`docs/DB_STATE_ATUAL.md`](../../../../docs/DB_STATE_ATUAL.md).
+
 > Versão: P8.2 | Data: 2026-04-14
 > Público: gestores municipais, secretarias de saúde, coordenadores de vigilância epidemiológica
 

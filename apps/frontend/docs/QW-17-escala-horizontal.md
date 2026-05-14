@@ -1,6 +1,8 @@
 # SENTINELLA WEB — QW-17
 # Diagnóstico de Escala Horizontal e Preparação para Crescimento
 
+> ⚠️ **DOC PARCIALMENTE DESATUALIZADO** (revisado 2026-05-14). Diagnóstico baseado em arquitetura Supabase. Hoje: NestJS + PostgreSQL 17 + Cloudinary. Análise de gargalos e estratégia de escala continuam válidos; pontos específicos sobre Edge Functions/RPC PL/pgSQL não se aplicam. Canônico: [`docs/DB_STATE_ATUAL.md`](../../../docs/DB_STATE_ATUAL.md).
+
 **Status:** Diagnóstico concluído
 **Data:** 2026-03-27
 **Escopo:** Análise arquitetural sem implementação imediata

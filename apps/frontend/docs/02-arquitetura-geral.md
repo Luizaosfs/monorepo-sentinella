@@ -1,5 +1,7 @@
 # 02 — Arquitetura Geral
 
+> ⚠️ **DOC PARCIALMENTE DESATUALIZADO** (revisado 2026-05-14). Descrições de "lógica no banco via triggers/funções PL/pgSQL" não refletem o estado atual. Migração Supabase → NestJS removeu **todas** as triggers de aplicação e funções `fn_*`/`rpc_*`. Lógica vive em use-cases TS. Canônico: [`docs/DB_STATE_ATUAL.md`](../../../docs/DB_STATE_ATUAL.md).
+
 > **Para quem é este documento:** desenvolvedores e arquitetos que precisam entender as decisões técnicas do sistema antes de contribuir ou avaliar mudanças.
 
 ---

@@ -1,5 +1,7 @@
 # Modelo Canônico — Consolidação Avançada da Vistoria
 
+> ⚠️ **DOC PARCIALMENTE DESATUALIZADO** (revisado 2026-05-14). Modelo de dados (estrutura JSON) continua válido. Mecânica via triggers/funções PL/pgSQL **não existe mais** — toda consolidação é feita pelo use-case TS no NestJS. Canônico: [`docs/DB_STATE_ATUAL.md`](../../../../docs/DB_STATE_ATUAL.md).
+
 > Versão: P8 | Data: 2026-04-14
 > Função: `fn_consolidar_vistoria` V2.0.0
 > Migração: `20270223000000_consolidacao_vistoria_fase2.sql`

@@ -1,5 +1,7 @@
 # SENTINELLA — PLANO FINAL PARA IMPLANTAÇÃO EM PREFEITURA
 
+> ⚠️ **DOC PARCIALMENTE DESATUALIZADO** (revisado 2026-05-14). Trechos sobre infra Supabase não se aplicam — stack atual: NestJS + PostgreSQL 17 + Cloudinary. Plano comercial/operacional continua válido. Canônico: [`docs/DB_STATE_ATUAL.md`](../../docs/DB_STATE_ATUAL.md).
+
 > Versão: 1.0 — Data: 2026-04-02
 > Baseado em: VERDADE_FUNCIONAL.md, AUDITORIA_RLS.md, PADRONIZACAO_FRONTEND.md, REVISAO_UI_UX.md
 

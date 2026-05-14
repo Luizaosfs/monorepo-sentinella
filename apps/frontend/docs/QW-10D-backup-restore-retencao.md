@@ -1,5 +1,7 @@
 # QW-10D — Backup, Restore e Operação de Retenção
 
+> ⚠️ **DOC PARCIALMENTE DESATUALIZADO** (revisado 2026-05-14). Procedimentos de backup/restore via Supabase precisam ser reescritos para `pg_dump`/`pg_restore` direto contra a instância PostgreSQL 17 NestJS (`177.7.37.14:5432/sentinella`). Política de retenção em si continua válida. Canônico: [`docs/DB_STATE_ATUAL.md`](../../../docs/DB_STATE_ATUAL.md).
+
 > **Tipo:** Runbook operacional
 > **Status:** Implementado
 > **Depende de:** QW-10A, QW-10B, QW-10C

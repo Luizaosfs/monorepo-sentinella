@@ -1,5 +1,7 @@
 # 05 — Banco de Dados
 
+> ⚠️ **DOC PARCIALMENTE DESATUALIZADO** (revisado 2026-05-14). Trechos sobre triggers `trg_*` e funções `fn_*`/`rpc_*` descrevem o schema **Supabase pré-migração**. O banco NestJS atual tem **0 triggers de aplicação e 0 funções `fn_*`** — toda a lógica vive em use-cases TS no backend. Modelagem de tabelas/índices/FKs descritos aqui continuam válidos. Canônico: [`docs/DB_STATE_ATUAL.md`](../../../docs/DB_STATE_ATUAL.md).
+
 > **Para quem é este documento:** desenvolvedores e DBAs que precisam entender a modelagem do banco, a timeline de migrations, os relacionamentos entre entidades e os pontos de atenção na estrutura atual.
 
 ---

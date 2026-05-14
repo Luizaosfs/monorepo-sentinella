@@ -1,4 +1,7 @@
 # VERDADE FUNCIONAL DO SISTEMA — Sentinella Web
+
+> ⚠️ **DOCUMENTO HISTÓRICO** (revisado 2026-05-14). Snapshot em **2026-04-02** baseado em código + migrations Supabase, **antes** da migração NestJS. Triggers/funções PL/pgSQL e RLS descritos foram removidos. Verdade funcional sobre regras de negócio continua válida; mecânica mudou. Canônico: [`docs/DB_STATE_ATUAL.md`](../../docs/DB_STATE_ATUAL.md).
+
 > Gerado em: 2026-04-02 | Base: análise estática de código + migrations SQL
 
 ---

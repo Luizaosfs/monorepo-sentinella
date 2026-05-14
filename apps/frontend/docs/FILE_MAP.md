@@ -1,5 +1,7 @@
 # FILE_MAP — Sentinella Web
 
+> ⚠️ **DOC POSSIVELMENTE DESATUALIZADO** (revisado 2026-05-14). Mapa pré-migração. Pastas `src/integrations/supabase/` e `supabase/migrations/` foram **removidas** — backend é NestJS em `apps/backend/`. Estrutura frontend pode continuar válida; backend tem outra arquitetura. Canônico: [`docs/DB_STATE_ATUAL.md`](../../../docs/DB_STATE_ATUAL.md).
+
 Mapa de arquivos-chave do projeto. Consulte antes de criar qualquer tipo, hook ou método.
 
 ## Tipos e serviços centrais

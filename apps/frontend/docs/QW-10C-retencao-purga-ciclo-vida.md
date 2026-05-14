@@ -1,5 +1,7 @@
 # QW-10C — Retenção de Logs, Purga Segura e Ciclo de Vida dos Dados
 
+> ⚠️ **DOC PARCIALMENTE DESATUALIZADO** (revisado 2026-05-14). Triggers de audit/retenção foram **removidas** — audit hoje é INSERT explícito em tabelas de audit a partir dos use-cases TS. Política de ciclo de vida continua válida. Canônico: [`docs/DB_STATE_ATUAL.md`](../../../docs/DB_STATE_ATUAL.md).
+
 > **Tipo:** Implementação técnica
 > **Status:** Implementado
 > **Migration:** `supabase/migrations/20260722000000_qw10c_retencao_logs.sql`

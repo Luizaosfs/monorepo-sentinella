@@ -1,5 +1,7 @@
 # 03 — Backend
 
+> ⚠️ **DOC PARCIALMENTE DESATUALIZADO** (revisado 2026-05-14). Trechos que afirmam "trigger `trg_X` faz Y" ou "função `fn_X`/`rpc_X` executa Z" descrevem o estado **Supabase pré-migração**. O banco NestJS atual tem **0 triggers de aplicação e 0 funções `fn_*`** — tudo foi portado para use-cases TS em `apps/backend/src/modules/*/use-cases/`. O **comportamento esperado** descrito aqui continua válido; só a mecânica mudou. Canônico: [`docs/DB_STATE_ATUAL.md`](../../../docs/DB_STATE_ATUAL.md).
+
 > **Para quem é este documento:** desenvolvedores que precisam entender onde a lógica de negócio vive, como o banco processa dados automaticamente, o que cada Edge Function faz e onde estão os principais pontos de acoplamento e duplicação.
 
 ---

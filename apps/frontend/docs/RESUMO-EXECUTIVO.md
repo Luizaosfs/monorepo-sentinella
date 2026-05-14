@@ -1,5 +1,7 @@
 # Resumo Executivo — Análise do Sentinella Web
 
+> ⚠️ **DOC PARCIALMENTE DESATUALIZADO** (revisado 2026-05-14). Análise pré-migração NestJS. Detalhes sobre Supabase/triggers/RLS não se aplicam mais. Visão de produto e métricas continuam válidos. Canônico: [`docs/DB_STATE_ATUAL.md`](../../../docs/DB_STATE_ATUAL.md).
+
 **Data da análise:** 2026-03-26
 **Escopo:** Frontend, Backend, Banco de Dados, RLS, Regras de Negócio, Fluxos Operacionais, Segurança, Dívida Técnica
 

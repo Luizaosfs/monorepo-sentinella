@@ -38,6 +38,10 @@ interface MapaRow {
   prioridade: string | null;
   // Peso por prioridade real: P1=5, P2=4, P3=3, P4=2, demais=1
   peso: number;
+  idoso_incapaz: boolean;
+  menor_incapaz: boolean;
+  mobilidade_reduzida: boolean;
+  acamado: boolean;
 }
 
 interface DepositoRow {
@@ -204,6 +208,7 @@ export class GetDashboardTerritorial {
 
         // 4. Pontos mapa — apenas focos com coordenadas (máx. 500)
         // Peso por prioridade real: P1=5, P2=4, P3=3, P4=2, demais=1
+        // Vulnerabilidades agregadas (BOOL_OR) de todas vistorias do foco via vistoria_riscos
         this.prisma.client.$queryRaw<MapaRow[]>(Prisma.sql`
           SELECT
             f.id,
@@ -217,9 +222,15 @@ export class GetDashboardTerritorial {
               WHEN 'P3' THEN 3
               WHEN 'P4' THEN 2
               ELSE 1
-            END AS peso
+            END AS peso,
+            COALESCE(BOOL_OR(vr.idoso_incapaz), false) AS idoso_incapaz,
+            COALESCE(BOOL_OR(vr.menor_incapaz), false) AS menor_incapaz,
+            COALESCE(BOOL_OR(vr.mobilidade_reduzida), false) AS mobilidade_reduzida,
+            COALESCE(BOOL_OR(vr.acamado), false) AS acamado
           FROM focos_risco f
           LEFT JOIN imoveis im ON im.id = f.imovel_id AND im.deleted_at IS NULL
+          LEFT JOIN vistorias vv ON vv.foco_risco_id = f.id AND vv.deleted_at IS NULL
+          LEFT JOIN vistoria_riscos vr ON vr.vistoria_id = vv.id
           WHERE f.cliente_id = ${clienteId}::uuid
             AND f.deleted_at IS NULL
             AND f.latitude IS NOT NULL
@@ -231,6 +242,7 @@ export class GetDashboardTerritorial {
             ${fPrioridade}
             ${fStatus}
             ${fAgenteIdExists}
+          GROUP BY f.id
           ORDER BY f.prioridade NULLS LAST, f.suspeita_em DESC
           LIMIT 500
         `),
@@ -341,14 +353,22 @@ export class GetDashboardTerritorial {
         focosAtivos: Number(r.focos_ativos),
         vistoriasRealizadas: Number(r.vistorias_realizadas),
       })),
-      pontosMapa: mapaRaw.map((r) => ({
-        id: r.id,
-        latitude: r.latitude,
-        longitude: r.longitude,
-        status: r.status,
-        prioridade: r.prioridade ?? null,
-        peso: Number(r.peso),
-      })),
+      pontosMapa: mapaRaw.map((r) => {
+        const vulnerabilidades: Array<'idosoIncapaz' | 'menorIncapaz' | 'mobilidadeReduzida' | 'acamado'> = [];
+        if (r.idoso_incapaz) vulnerabilidades.push('idosoIncapaz');
+        if (r.menor_incapaz) vulnerabilidades.push('menorIncapaz');
+        if (r.mobilidade_reduzida) vulnerabilidades.push('mobilidadeReduzida');
+        if (r.acamado) vulnerabilidades.push('acamado');
+        return {
+          id: r.id,
+          latitude: r.latitude,
+          longitude: r.longitude,
+          status: r.status,
+          prioridade: r.prioridade ?? null,
+          peso: Number(r.peso),
+          vulnerabilidades,
+        };
+      }),
       depositosPncd: {
         totais: {
           inspecionados: depositosRaw.reduce((s, r) => s + Number(r.qtd_inspecionados), 0),

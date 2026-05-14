@@ -1,6 +1,8 @@
 # SENTINELLA WEB — QW-16
 # Limites por Cliente e Enforcement de Quotas
 
+> ⚠️ **DOC PARCIALMENTE DESATUALIZADO** (revisado 2026-05-14). Triggers `trg_check_quota_*` foram **removidas** — enforcement hoje é validação no use-case TS antes do INSERT (módulo `quotas`). Estratégia e limites por cliente continuam válidos. Canônico: [`docs/DB_STATE_ATUAL.md`](../../../docs/DB_STATE_ATUAL.md).
+
 **Status:** Diagnóstico concluído — aguardando Sprint A
 **Data:** 2026-03-27
 

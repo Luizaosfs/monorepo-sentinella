@@ -1,5 +1,7 @@
 # P1 — Checklist de Não Regressão
 
+> ⚠️ **DOC PARCIALMENTE DESATUALIZADO** (revisado 2026-05-14). Checklist pré-migração. Itens sobre verificar triggers/funções/RLS Supabase estão superados (não existem mais). Cenários de negócio continuam válidos para validar regressão. Canônico: [`docs/DB_STATE_ATUAL.md`](../../../docs/DB_STATE_ATUAL.md).
+
 > Roteiro de validação manual após o hardening P0/P1 (2026-04).
 > Execute **após cada deploy** que toque auth, RLS, billing ou guards.
 

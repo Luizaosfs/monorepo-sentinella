@@ -1,5 +1,7 @@
 # Implementação — Ciclo de Atendimento e Evidências
 
+> ⚠️ **DOC PARCIALMENTE DESATUALIZADO** (revisado 2026-05-14). Implementação pré-migração. Trechos sobre triggers/RPC Supabase referem-se a mecânica removida. Modelo de ciclo de atendimento e estrutura de evidências continuam válidos. Canônico: [`docs/DB_STATE_ATUAL.md`](../../../docs/DB_STATE_ATUAL.md).
+
 Migrações para fechar o ciclo: Coleta → Identificação → Operação (Atendimento) → Evidências e Encerramento de SLA.
 
 ## Ordem de execução (Supabase)

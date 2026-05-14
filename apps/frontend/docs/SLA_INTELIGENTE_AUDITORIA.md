@@ -1,5 +1,7 @@
 # SLA Inteligente — Auditoria e Proposta de Implementação
 
+> ⚠️ **DOC PARCIALMENTE DESATUALIZADO** (revisado 2026-05-14). Auditoria pré-migração: SLAs **não são mais** abertos/fechados/escalados por triggers `trg_iniciar_sla_*`, `trg_fechar_sla_*`, `trg_sla_reset_escalonado_automatico` — tudo isso virou módulo `sla` no backend NestJS chamado pelos use-cases de foco/operação. Lógica e regras de SLA continuam válidas. Canônico: [`docs/DB_STATE_ATUAL.md`](../../../docs/DB_STATE_ATUAL.md).
+
 > Gerado em: 2026-04-12
 > Status: somente leitura — nenhum código ou migration foi alterado
 > Escopo: auditar infraestrutura SLA existente e propor camada complementar baseada em `foco_risco`

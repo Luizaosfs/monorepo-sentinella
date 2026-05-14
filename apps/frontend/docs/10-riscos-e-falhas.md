@@ -1,5 +1,7 @@
 # 10 — Riscos e Falhas
 
+> ⚠️ **DOC PARCIALMENTE DESATUALIZADO** (revisado 2026-05-14). Riscos associados a triggers/funções PL/pgSQL e a RLS estão **superados** pela migração para NestJS — esses mecanismos não existem mais no banco atual. Outros riscos continuam válidos; reavaliar lista. Canônico: [`docs/DB_STATE_ATUAL.md`](../../../docs/DB_STATE_ATUAL.md).
+
 ## Objetivo deste documento
 
 Identificar e analisar riscos de segurança, operacionais, de regressão, de dados e de escalabilidade no sistema Sentinella Web.

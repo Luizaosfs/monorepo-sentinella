@@ -1,5 +1,7 @@
 # Relatório Executivo Padrão — Estrutura Canônica
 
+> ⚠️ **DOC PARCIALMENTE DESATUALIZADO** (revisado 2026-05-14). Estrutura de relatório continua válida. Onde menciona Supabase/triggers/RPC PL/pgSQL, leia "endpoints NestJS / use-cases TS". Banco atual = 0 triggers/funções de aplicação. Canônico: [`docs/DB_STATE_ATUAL.md`](../../../../docs/DB_STATE_ATUAL.md).
+
 > Versão: P8.3 | Data: 2026-04-14
 
 ---

@@ -1,5 +1,7 @@
 # Ações do SLA Operacional
 
+> ⚠️ **DOC PARCIALMENTE DESATUALIZADO** (revisado 2026-05-14). Triggers `trg_sla_*` foram **removidas**. Cálculo de SLA hoje é módulo `sla` no NestJS. Lista de ações operacionais e regras continuam válidas. Canônico: [`docs/DB_STATE_ATUAL.md`](../../../docs/DB_STATE_ATUAL.md).
+
 ## Quais ações um SLA pode ter
 
 O SLA operacional tem **status** e, conforme o status, a coluna **Ações** no Painel Operacional exibe botões diferentes.

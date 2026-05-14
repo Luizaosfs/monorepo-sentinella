@@ -1,5 +1,7 @@
 # Smoke Tests Operacionais — SentinelaWeb
 
+> ⚠️ **DOC PARCIALMENTE DESATUALIZADO** (revisado 2026-05-14). Smoke tests via Supabase/triggers estão superados. Cenários de teste continuam válidos; execução hoje passa pelos endpoints NestJS. Canônico: [`docs/DB_STATE_ATUAL.md`](../../../../docs/DB_STATE_ATUAL.md).
+
 > Versão: P7.12 | Data: 2026-04-14
 > Executar antes de cada ciclo de piloto.
 

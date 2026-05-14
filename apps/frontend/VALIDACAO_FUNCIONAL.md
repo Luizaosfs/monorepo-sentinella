@@ -1,4 +1,7 @@
 # VALIDAÇÃO FUNCIONAL POR PERFIL — SENTINELLA
+
+> ⚠️ **DOC PARCIALMENTE DESATUALIZADO** (revisado 2026-05-14). Cenários funcionais e validações por perfil continuam válidos. Detalhes técnicos sobre Supabase/triggers não se aplicam (stack NestJS). Canônico: [`docs/DB_STATE_ATUAL.md`](../../docs/DB_STATE_ATUAL.md).
+
 **Objetivo:** Garantir que cada perfil consegue operar de forma autônoma.
 **Como usar:** Execute cada item em ambiente real com usuário de teste. Marque ✅ ao concluir ou ❌ se falhar (anotar o problema).
 

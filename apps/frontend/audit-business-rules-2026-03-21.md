@@ -1,4 +1,7 @@
 # SentinelaWeb — Business Rules Audit Report
+
+> ⚠️ **DOCUMENTO HISTÓRICO** (revisado 2026-05-14). Auditoria do estado Supabase em **2026-03-21**, pré-migração NestJS. Triggers/funções PL/pgSQL e políticas RLS descritas foram removidas; lógica equivalente em use-cases TS. Canônico: [`docs/DB_STATE_ATUAL.md`](../../docs/DB_STATE_ATUAL.md).
+
 **Date:** 2026-03-21
 **Auditor:** Claude Sonnet 4.6 (automated deep audit)
 **Scope:** Domains A–H as specified in audit brief

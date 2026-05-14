@@ -1,5 +1,7 @@
 # 11 — Melhorias Priorizadas
 
+> ⚠️ **DOC PARCIALMENTE DESATUALIZADO** (revisado 2026-05-14). Itens que pedem ajustes em triggers/funções PL/pgSQL podem estar superados pela migração Supabase → NestJS — o banco atual tem 0 triggers/funções de aplicação. Reavaliar contra estado atual. Canônico: [`docs/DB_STATE_ATUAL.md`](../../../docs/DB_STATE_ATUAL.md).
+
 ## Objetivo deste documento
 
 Listar melhorias concretas, viáveis e priorizadas para o sistema Sentinella Web, com justificativa, esforço estimado e impacto esperado. Nenhuma melhoria proposta aqui requer reescrita total — todas são incrementais e podem ser implementadas sem interromper o sistema em operação.

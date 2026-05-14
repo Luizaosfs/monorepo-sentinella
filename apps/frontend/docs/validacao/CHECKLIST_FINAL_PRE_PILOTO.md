@@ -1,5 +1,7 @@
 # Checklist Final Pré-Piloto — SentinelaWeb
 
+> ⚠️ **DOC PARCIALMENTE DESATUALIZADO** (revisado 2026-05-14). Itens validando triggers/RLS/Supabase estão superados — esses mecanismos não existem mais. Cenários funcionais continuam válidos para validação de piloto. Canônico: [`docs/DB_STATE_ATUAL.md`](../../../../docs/DB_STATE_ATUAL.md).
+
 > Versão: P7.12 | Data: 2026-04-14
 > Execute este checklist antes de autorizar o piloto com o cliente real.
 > Referência de execução: `docs/validacao/SMOKE_TESTS_OPERACIONAIS.md`

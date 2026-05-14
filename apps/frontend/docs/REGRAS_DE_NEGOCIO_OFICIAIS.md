@@ -1,5 +1,7 @@
 # Regras de Negócio Oficiais — SentinelaWeb
 
+> ⚠️ **DOC PARCIALMENTE DESATUALIZADO** (revisado 2026-05-14). Gerado em 2026-04-01, antes da remoção das triggers. Onde diz "trigger `trg_X` faz Y" ou cita `fn_X`/`rpc_X` PL/pgSQL, leia "use-case TS em `apps/backend/src/modules/*/use-cases/`". Banco NestJS atual = 0 triggers/funções de aplicação. Regras de negócio em si continuam válidas. Canônico: [`docs/DB_STATE_ATUAL.md`](../../../docs/DB_STATE_ATUAL.md).
+
 > Documento de referência consolidado. Gerado em 2026-04-01.
 > Em caso de conflito com código, prevalece este documento — abrir issue para corrigir o código.
 

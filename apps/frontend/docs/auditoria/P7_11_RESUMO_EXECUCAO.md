@@ -1,5 +1,7 @@
 # P7.11 — Resumo de Execução: Correções Estruturais + Hardening de Governança
 
+> ⚠️ **DOCUMENTO HISTÓRICO** (revisado 2026-05-14). Resumo de execução pré-migração NestJS. Correções via triggers `trg_*` ou políticas RLS estão superadas — mecanismos não existem mais. Princípios de governança continuam válidos. Canônico: [`docs/DB_STATE_ATUAL.md`](../../../../docs/DB_STATE_ATUAL.md).
+
 > Executado em 2026-04-14
 
 ---

@@ -1,5 +1,7 @@
 # Mapeamento de Dados — Consolidação Avançada da Vistoria
 
+> ⚠️ **DOC PARCIALMENTE DESATUALIZADO** (revisado 2026-05-14). Consolidação **não** acontece mais via triggers `trg_consolidar_*` — foi portada para use-case TS. Mapeamento de dados (colunas, formato) continua válido. Canônico: [`docs/DB_STATE_ATUAL.md`](../../../../docs/DB_STATE_ATUAL.md).
+
 > Versão: P8 | Data: 2026-04-14
 > Gerado a partir da análise de `fn_consolidar_vistoria` V2.0.0
 

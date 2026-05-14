@@ -1,5 +1,13 @@
 # CLAUDE.MD — MS-API-SENTINELLA
 
+> ## ⚠️ ESTADO REAL DO BANCO (verificado 2026-05-14)
+>
+> **O banco de produção NestJS tem ZERO triggers de aplicação e ZERO funções `fn_*`/`rpc_*` PL/pgSQL.** Todas as ~102 triggers e ~100+ funções do schema Supabase legado foram **removidas** na migração e portadas para use-cases TypeScript.
+>
+> - **Não confie em qualquer doc, COMMENT em tabela ou audit que diga "ao inserir/atualizar X, a trigger Y faz Z"** — a trigger não existe mais. A mecânica é o use-case TS, embora o COMPORTAMENTO esperado descrito nesses docs continue válido.
+> - **Fonte canônica:** [`docs/DB_STATE_ATUAL.md`](../../docs/DB_STATE_ATUAL.md) (na raiz do monorepo).
+> - **Como reverificar:** `SELECT * FROM pg_trigger WHERE NOT tgisinternal` deve retornar só `topology.layer.layer_integrity_checks` (extensão PostGIS, não nosso código).
+
 ## VISÃO GERAL
 
 Backend REST API do **Sentinella Web** — plataforma B2G SaaS de vigilância entomológica para municípios brasileiros no combate ao Aedes aegypti (dengue/chikungunya/zika).

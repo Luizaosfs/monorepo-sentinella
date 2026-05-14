@@ -1,5 +1,7 @@
 # DOMAIN.md — SentinelaWeb
 
+> ⚠️ **DOC PARCIALMENTE DESATUALIZADO** (revisado 2026-05-14). Trechos que descrevem comportamento via triggers/funções PL/pgSQL refletem o estado Supabase pré-migração. Banco NestJS atual = 0 triggers/funções de aplicação. Conceitos de domínio continuam válidos. Canônico: [`docs/DB_STATE_ATUAL.md`](../../../docs/DB_STATE_ATUAL.md).
+
 Documento de referência do domínio de negócio da aplicação. Descreve entidades, fluxos, regras e decisões de design que guiam o desenvolvimento.
 
 ---

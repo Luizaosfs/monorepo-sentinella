@@ -1,5 +1,7 @@
 # 06 — RLS e Segurança
 
+> ⚠️ **DOCUMENTO HISTÓRICO** (revisado 2026-05-14). **RLS foi removido** na migração Supabase → NestJS. Segurança hoje = `AuthGuard` + `TenantGuard` globais (`APP_GUARD`) no NestJS, validando JWT HS256 próprio (`SECRET_JWT`). Políticas RLS descritas aqui **não existem mais**. Princípios de isolamento por `cliente_id` continuam válidos, mas são impostos no backend, não no banco. Canônico: [`docs/DB_STATE_ATUAL.md`](../../../docs/DB_STATE_ATUAL.md).
+
 > **Para quem é este documento:** desenvolvedores e responsáveis pela segurança que precisam entender como o isolamento entre clientes é implementado, como o controle de acesso por papel funciona, e onde estão os riscos identificados.
 
 ---

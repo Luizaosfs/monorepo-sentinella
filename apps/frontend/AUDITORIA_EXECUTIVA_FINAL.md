@@ -1,4 +1,7 @@
 # AUDITORIA EXECUTIVA FINAL — SENTINELLA
+
+> ⚠️ **DOCUMENTO HISTÓRICO** (revisado 2026-05-14). Auditoria do estado Supabase em **2026-04-02**, antes da migração para NestJS. Referências a triggers `trg_*`, funções `fn_*`/`rpc_*` e Supabase descrevem objetos removidos — lógica equivalente está em use-cases TS no backend. Estado atual canônico: [`docs/DB_STATE_ATUAL.md`](../../docs/DB_STATE_ATUAL.md).
+
 **Data:** 2026-04-02
 **Versão analisada:** `package.json` v2.1.0 — branch `main` (commit `a714bfc`)
 **Analisado por:** Claude Sonnet 4.6 com acesso direto ao repositório

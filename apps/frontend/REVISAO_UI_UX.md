@@ -1,5 +1,7 @@
 # SENTINELLA — REVISÃO DE UI/UX POR PERFIL
 
+> ⚠️ **DOC PARCIALMENTE DESATUALIZADO** (revisado 2026-05-14). Trechos backend (Supabase, triggers) não se aplicam. Análise UI/UX por perfil continua plenamente válida. Canônico: [`docs/DB_STATE_ATUAL.md`](../../docs/DB_STATE_ATUAL.md).
+
 > Documento de análise qualitativa da experiência de uso para cada perfil.
 > Data: 2026-04-02
 

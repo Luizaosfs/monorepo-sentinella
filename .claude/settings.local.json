@@ -406,7 +406,8 @@
       "Bash(Select-String -Path \"D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend\\\\.env\" -Pattern \"^DATABASE_URL\")",
       "Bash(Select-Object -First 1 -ExpandProperty Line)",
       "Bash(cd /cygdrive/d/sentinella/monorepo-sentinella/apps/backend && pnpm generate 2>&1 | tail -20)",
-      "Read(//cygdrive/d/sentinella/monorepo-sentinella/apps/**)"
+      "Read(//cygdrive/d/sentinella/monorepo-sentinella/apps/**)",
+      "PowerShell(& pnpm.cmd --filter @sentinella/backend exec jest --testPathPattern=get-dashboard-territorial.spec 2>&1)"
     ]
   }
 }

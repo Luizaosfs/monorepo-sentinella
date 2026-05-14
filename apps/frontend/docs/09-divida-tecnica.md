@@ -1,5 +1,7 @@
 # 09 — Dívida Técnica
 
+> ⚠️ **DOC PARCIALMENTE DESATUALIZADO** (revisado 2026-05-14). Itens listando "trigger `trg_X` precisa de X" ou "função `fn_Y`" podem estar resolvidos pela própria migração Supabase → NestJS — o banco atual tem 0 triggers/funções de aplicação. Reavaliar pendências contra o estado atual antes de priorizar. Canônico: [`docs/DB_STATE_ATUAL.md`](../../../docs/DB_STATE_ATUAL.md).
+
 ## Objetivo deste documento
 
 Identificar, catalogar e priorizar toda a dívida técnica do projeto: código legado, abstrações prematuras ou ausentes, arquivos grandes, duplicidade, acoplamento excessivo e inconsistências técnicas.

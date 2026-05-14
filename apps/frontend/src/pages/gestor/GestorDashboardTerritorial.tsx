@@ -227,6 +227,8 @@ function KpiCard({
   iconColor,
   urgent,
   loading,
+  active,
+  onClick,
 }: {
   title: string;
   value: number | null | undefined;
@@ -236,14 +238,32 @@ function KpiCard({
   iconColor?: string;
   urgent?: boolean;
   loading?: boolean;
+  active?: boolean;
+  onClick?: () => void;
 }) {
   const isHot = urgent && !!value && value > 0;
+  const clickable = !!onClick;
   return (
     <div
+      role={clickable ? 'button' : undefined}
+      tabIndex={clickable ? 0 : undefined}
+      onClick={onClick}
+      onKeyDown={
+        clickable
+          ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onClick?.();
+              }
+            }
+          : undefined
+      }
       className={cn(
         'h-[120px] rounded-2xl bg-white border border-slate-200 shadow-sm p-5 flex flex-col justify-between',
-        'transition-all duration-200 hover:shadow-md hover:scale-[1.02] cursor-default',
+        'transition-all duration-200 hover:shadow-md hover:scale-[1.02]',
+        clickable ? 'cursor-pointer' : 'cursor-default',
         isHot && 'border-red-200 bg-red-50/30',
+        active && 'border-purple-300 bg-purple-50/40 ring-2 ring-purple-200',
       )}
     >
       <div className="flex items-center gap-2">
@@ -409,8 +429,22 @@ export default function GestorDashboardTerritorial() {
   const [params, setParams] = useState<DashboardTerritorialParams>({});
   const [showHeatmap, setShowHeatmap] = useState(true);
   const [showFiltros, setShowFiltros] = useState(false);
+  const [vulnFilter, setVulnFilter] = useState<Set<VulnKey>>(new Set());
 
   const { data, isLoading, isError, refetch } = useDashboardTerritorial(params);
+
+  const toggleVulnFilter = (k: VulnKey) => {
+    setVulnFilter((prev) => {
+      const next = new Set(prev);
+      if (next.has(k)) next.delete(k);
+      else next.add(k);
+      return next;
+    });
+  };
+
+  const toggleAllVulnFilters = () => {
+    setVulnFilter((prev) => (prev.size === VULN_KEYS.length ? new Set() : new Set(VULN_KEYS)));
+  };
 
   const aplicar = () => {
     setParams({
@@ -430,14 +464,20 @@ export default function GestorDashboardTerritorial() {
 
   const temFiltros = Object.values(params).some(Boolean);
 
-  const mapCenter = useMemo<[number, number]>(() => {
+  const pontosFiltrados = useMemo(() => {
     const pts = data?.pontosMapa ?? [];
+    if (vulnFilter.size === 0) return pts;
+    return pts.filter((p) => p.vulnerabilidades.some((v) => vulnFilter.has(v)));
+  }, [data?.pontosMapa, vulnFilter]);
+
+  const mapCenter = useMemo<[number, number]>(() => {
+    const pts = pontosFiltrados;
     if (!pts.length) return [-15.8, -47.9];
     return [
       pts.reduce((s, p) => s + p.latitude, 0) / pts.length,
       pts.reduce((s, p) => s + p.longitude, 0) / pts.length,
     ];
-  }, [data?.pontosMapa]);
+  }, [pontosFiltrados]);
 
   const totalVulneraveis = useMemo(() => {
     if (!data?.fatoresRisco) return null;
@@ -637,10 +677,16 @@ export default function GestorDashboardTerritorial() {
           <KpiCard
             title="Grupos vulneráveis"
             value={totalVulneraveis}
-            subtitle="pessoas em risco"
+            subtitle={
+              vulnFilter.size > 0
+                ? `${vulnFilter.size}/${VULN_KEYS.length} filtros · clique p/ limpar`
+                : 'clique para filtrar mapa'
+            }
             icon={Users}
             iconColor="text-purple-500"
             loading={isLoading}
+            active={vulnFilter.size > 0}
+            onClick={toggleAllVulnFilters}
           />
         </div>
 
@@ -650,13 +696,26 @@ export default function GestorDashboardTerritorial() {
           {/* Mapa */}
           <Card className="col-span-12 xl:col-span-7 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             <CardHeader className="pb-0 px-5 pt-4">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <Map className="h-4 w-4 text-slate-400 shrink-0" />
                 <CardTitle className="text-sm font-semibold text-slate-700 flex-1">Mapa operacional de risco</CardTitle>
                 {data && (
                   <span className="text-xs text-slate-400 tabular-nums">
-                    {data.meta.totalPontosMapa} pontos
+                    {vulnFilter.size > 0
+                      ? `${pontosFiltrados.length}/${data.meta.totalPontosMapa} pontos`
+                      : `${data.meta.totalPontosMapa} pontos`}
                   </span>
+                )}
+                {vulnFilter.size > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2.5 text-xs gap-1.5 rounded-lg text-purple-700 hover:bg-purple-50"
+                    onClick={() => setVulnFilter(new Set())}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                    Limpar filtro vulneráveis
+                  </Button>
                 )}
                 <Button
                   variant={showHeatmap ? 'secondary' : 'ghost'}
@@ -668,15 +727,38 @@ export default function GestorDashboardTerritorial() {
                   Heatmap
                 </Button>
               </div>
+              {vulnFilter.size > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {Array.from(vulnFilter).map((k) => (
+                    <span
+                      key={k}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-purple-100 text-purple-700 border border-purple-200"
+                    >
+                      {VULN_CARD_THEME[k].label}
+                      <button
+                        onClick={() => toggleVulnFilter(k)}
+                        className="hover:bg-purple-200 rounded-sm"
+                        aria-label={`Remover filtro ${VULN_CARD_THEME[k].label}`}
+                      >
+                        <X className="h-2.5 w-2.5" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
             </CardHeader>
 
             <CardContent className="p-0 mt-3">
               {isLoading ? (
                 <Skeleton className="h-[500px] w-full rounded-none" />
-              ) : !data?.pontosMapa.length ? (
+              ) : !pontosFiltrados.length ? (
                 <div className="h-[500px] flex flex-col items-center justify-center gap-3 text-slate-400">
                   <Map className="h-12 w-12 opacity-10" />
-                  <p className="text-sm">Sem pontos com coordenadas para o filtro selecionado.</p>
+                  <p className="text-sm">
+                    {vulnFilter.size > 0
+                      ? 'Nenhum ponto com as vulnerabilidades selecionadas no período.'
+                      : 'Sem pontos com coordenadas para o filtro selecionado.'}
+                  </p>
                 </div>
               ) : (
                 <div className="relative" style={{ height: '500px' }}>
@@ -691,46 +773,65 @@ export default function GestorDashboardTerritorial() {
                       attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                     />
                     <MapResizer />
-                    <AutoFitBounds points={data.pontosMapa} />
-                    {showHeatmap && <TerritorialHeatmapLayer points={data.pontosMapa} />}
-                    {data.pontosMapa.map((p) => (
-                      <CircleMarker
-                        key={p.id}
-                        center={[p.latitude, p.longitude]}
-                        radius={4 + p.peso * 0.8}
-                        pathOptions={{
-                          color: STATUS_COLOR[p.status] ?? '#6b7280',
-                          fillColor: STATUS_COLOR[p.status] ?? '#6b7280',
-                          fillOpacity: showHeatmap ? 0.4 : 0.8,
-                          weight: 1,
-                        }}
-                      >
-                        <Popup>
-                          <div className="text-xs space-y-1.5 min-w-[160px]">
-                            <p className="font-mono text-[10px] text-gray-400 break-all">{p.id}</p>
-                            <div className="flex flex-wrap gap-1.5">
-                              <span
-                                className="px-1.5 py-0.5 rounded-md text-[10px] font-medium text-white"
-                                style={{ background: STATUS_COLOR[p.status] ?? '#6b7280' }}
-                              >
-                                {STATUS_LABEL[p.status] ?? p.status}
-                              </span>
-                              {p.prioridade && (
-                                <span className="px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 text-slate-700">
-                                  {p.prioridade}
+                    <AutoFitBounds points={pontosFiltrados} />
+                    {showHeatmap && <TerritorialHeatmapLayer points={pontosFiltrados} />}
+                    {pontosFiltrados.map((p) => {
+                      const hasVuln = p.vulnerabilidades.length > 0;
+                      return (
+                        <CircleMarker
+                          key={p.id}
+                          center={[p.latitude, p.longitude]}
+                          radius={4 + p.peso * 0.8 + (hasVuln ? 2 : 0)}
+                          pathOptions={{
+                            color: hasVuln ? '#7c3aed' : STATUS_COLOR[p.status] ?? '#6b7280',
+                            fillColor: STATUS_COLOR[p.status] ?? '#6b7280',
+                            fillOpacity: showHeatmap ? 0.4 : 0.8,
+                            weight: hasVuln ? 2.5 : 1,
+                          }}
+                        >
+                          <Popup>
+                            <div className="text-xs space-y-1.5 min-w-[160px]">
+                              <p className="font-mono text-[10px] text-gray-400 break-all">{p.id}</p>
+                              <div className="flex flex-wrap gap-1.5">
+                                <span
+                                  className="px-1.5 py-0.5 rounded-md text-[10px] font-medium text-white"
+                                  style={{ background: STATUS_COLOR[p.status] ?? '#6b7280' }}
+                                >
+                                  {STATUS_LABEL[p.status] ?? p.status}
                                 </span>
+                                {p.prioridade && (
+                                  <span className="px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 text-slate-700">
+                                    {p.prioridade}
+                                  </span>
+                                )}
+                              </div>
+                              {hasVuln && (
+                                <div className="flex flex-wrap gap-1 pt-1 border-t border-slate-100">
+                                  {p.vulnerabilidades.map((v) => {
+                                    const Icon = VULN_CARD_THEME[v].icon;
+                                    return (
+                                      <span
+                                        key={v}
+                                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-purple-100 text-purple-700"
+                                      >
+                                        <Icon className="h-2.5 w-2.5" strokeWidth={2.2} />
+                                        {VULN_CARD_THEME[v].label}
+                                      </span>
+                                    );
+                                  })}
+                                </div>
                               )}
+                              <button
+                                className="text-[11px] text-blue-600 hover:text-blue-800 underline underline-offset-2"
+                                onClick={() => navigate(`/gestor/focos/${p.id}/relatorio`)}
+                              >
+                                Ver relatório →
+                              </button>
                             </div>
-                            <button
-                              className="text-[11px] text-blue-600 hover:text-blue-800 underline underline-offset-2"
-                              onClick={() => navigate(`/gestor/focos/${p.id}/relatorio`)}
-                            >
-                              Ver relatório →
-                            </button>
-                          </div>
-                        </Popup>
-                      </CircleMarker>
-                    ))}
+                          </Popup>
+                        </CircleMarker>
+                      );
+                    })}
                   </MapContainer>
 
                   {/* Legenda de risco — overlay */}
@@ -747,6 +848,10 @@ export default function GestorDashboardTerritorial() {
                         {label}
                       </div>
                     ))}
+                    <div className="flex items-center gap-2 text-[10px] text-slate-600 py-0.5 mt-1 pt-1 border-t border-slate-200/60">
+                      <span className="w-2.5 h-2.5 rounded-full shrink-0 border-2 border-[#7c3aed] bg-white" />
+                      <span>c/ vulnerável</span>
+                    </div>
                   </div>
                 </div>
               )}
@@ -969,13 +1074,16 @@ export default function GestorDashboardTerritorial() {
               <ResolutionGauge value={data?.kpis.taxaResolucaoPct} loading={isLoading} />
             </SectionCard>
 
-            {/* Grupos vulneráveis — cartões no estilo referência (barra lateral, fundo tintado, ícone em disco) */}
+            {/* Grupos vulneráveis — cartões clicáveis para filtrar o mapa */}
             <Card className="bg-white rounded-2xl border border-slate-200 shadow-sm flex-1">
               <CardHeader className="pb-0 px-5 pt-5">
-                <CardTitle className="text-base font-bold text-slate-800 tracking-tight flex items-center gap-2 font-sans">
-                  <Users className="h-4 w-4 text-slate-500 shrink-0" strokeWidth={2} />
-                  Grupos vulneráveis
-                </CardTitle>
+                <div className="flex items-center justify-between gap-2">
+                  <CardTitle className="text-base font-bold text-slate-800 tracking-tight flex items-center gap-2 font-sans">
+                    <Users className="h-4 w-4 text-slate-500 shrink-0" strokeWidth={2} />
+                    Grupos vulneráveis
+                  </CardTitle>
+                  <span className="text-[10px] text-slate-400">clique p/ filtrar o mapa</span>
+                </div>
               </CardHeader>
               <CardContent className="px-5 pb-5 pt-4">
                 {isLoading ? (
@@ -990,14 +1098,22 @@ export default function GestorDashboardTerritorial() {
                       const theme = VULN_CARD_THEME[k];
                       const Icon = theme.icon;
                       const value = data?.fatoresRisco?.[k] ?? 0;
+                      const isActive = vulnFilter.has(k);
                       const numCls =
                         value > 0 ? theme.accent : cn(theme.accent, 'opacity-40');
                       return (
-                        <div
+                        <button
                           key={k}
+                          type="button"
+                          onClick={() => toggleVulnFilter(k)}
+                          aria-pressed={isActive}
                           className={cn(
-                            'rounded-xl border border-black/[0.06] shadow-sm overflow-hidden flex border-l-4 bg-white',
+                            'text-left rounded-xl border shadow-sm overflow-hidden flex border-l-4 bg-white',
+                            'transition-all duration-150 hover:shadow-md hover:scale-[1.01] cursor-pointer',
                             theme.bar,
+                            isActive
+                              ? 'border-purple-400 ring-2 ring-purple-300 ring-offset-1'
+                              : 'border-black/[0.06]',
                           )}
                         >
                           <div
@@ -1008,12 +1124,17 @@ export default function GestorDashboardTerritorial() {
                           >
                             <div
                               className={cn(
-                                'flex h-14 w-14 shrink-0 items-center justify-center rounded-full',
+                                'flex h-14 w-14 shrink-0 items-center justify-center rounded-full relative',
                                 theme.iconDisc,
                               )}
                               aria-hidden
                             >
                               <Icon className={cn('h-8 w-8', theme.accent)} strokeWidth={2} />
+                              {isActive && (
+                                <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-purple-600 text-white text-[9px] font-bold flex items-center justify-center shadow">
+                                  ✓
+                                </span>
+                              )}
                             </div>
                             <div className="min-w-0 flex-1 flex flex-col justify-center gap-0.5">
                               <p
@@ -1032,7 +1153,7 @@ export default function GestorDashboardTerritorial() {
                               </p>
                             </div>
                           </div>
-                        </div>
+                        </button>
                       );
                     })}
                   </div>

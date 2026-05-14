@@ -1,5 +1,7 @@
 # QW-10 — Auditoria de Backup, Retenção, Recuperação e LGPD
 
+> ⚠️ **DOC PARCIALMENTE DESATUALIZADO** (revisado 2026-05-14). Auditoria pré-migração. Trechos sobre Supabase Storage/triggers/Edge Functions referem-se a infra removida. Princípios LGPD e estratégia de retenção continuam válidos. Canônico: [`docs/DB_STATE_ATUAL.md`](../../../docs/DB_STATE_ATUAL.md).
+
 > **Tipo:** Diagnóstico técnico-operacional
 > **Status:** Concluído (diagnóstico)
 > **Escopo:** Banco de dados Supabase/PostgreSQL · Cloudinary · Supabase Storage · dados pessoais · saúde pública

@@ -1,5 +1,13 @@
 # CLAUDE.md — sentinella-frontend
 
+> ## ⚠️ ESTADO REAL DO BANCO (verificado 2026-05-14)
+>
+> **O banco NestJS prod tem ZERO triggers de aplicação e ZERO funções `fn_*`/`rpc_*` PL/pgSQL.** A migração Supabase → NestJS removeu toda a lógica do banco e portou para use-cases TS no backend.
+>
+> Qualquer doc em `docs/`, `audit-*.md`, `AUDIT_*.md`, `AUDITORIA_*.md` que afirme "ao inserir/atualizar X, a trigger Y faz Z" ou referencie `fn_*`/`trg_*`/`rpc_*` PostgreSQL está **descrevendo o estado Supabase antigo** — o comportamento esperado normalmente continua válido, mas a mecânica é o backend NestJS, não trigger.
+>
+> Fonte canônica: [`../../docs/DB_STATE_ATUAL.md`](../../docs/DB_STATE_ATUAL.md).
+
 ## Visão geral
 
 Frontend React do Sentinella Web — plataforma B2G SaaS de vigilância entomológica municipal.

@@ -1,5 +1,7 @@
 # SLA — Contexto e fluxo
 
+> ⚠️ **DOC PARCIALMENTE DESATUALIZADO** (revisado 2026-05-14). Fluxos via triggers `trg_sla_*` não existem mais — SLA hoje é orquestrado pelos use-cases TS no backend. Conceitos e regras de SLA continuam válidos. Canônico: [`docs/DB_STATE_ATUAL.md`](../../../docs/DB_STATE_ATUAL.md).
+
 Este documento explica o que é o SLA na aplicação Sentinella Map e como ele funciona de ponta a ponta.
 
 ---

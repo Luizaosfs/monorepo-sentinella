@@ -1,5 +1,7 @@
 # QW-14 — Hardening de Segurança
 
+> ⚠️ **DOC PARCIALMENTE DESATUALIZADO** (revisado 2026-05-14). Itens RLS/Supabase/triggers de segurança estão superados — segurança hoje = `AuthGuard` + `TenantGuard` globais no NestJS. Princípios de hardening continuam válidos; revisar itens. Canônico: [`docs/DB_STATE_ATUAL.md`](../../../docs/DB_STATE_ATUAL.md).
+
 **Status:** Planejamento
 **Data:** 2026-03-26
 **Escopo:** Auditoria técnica e endurecimento incremental de segurança

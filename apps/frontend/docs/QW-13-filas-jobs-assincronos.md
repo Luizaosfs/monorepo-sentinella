@@ -1,5 +1,7 @@
 # QW-13 — Filas, processamento assíncrono e jobs pesados
 
+> ⚠️ **DOC PARCIALMENTE DESATUALIZADO** (revisado 2026-05-14). Análise pré-migração baseada em Edge Functions Supabase. Hoje os jobs assíncronos rodam via `@nestjs/schedule` (cron) + tabela `job_queue` no banco NestJS. Análise de carga e necessidade de fila externa continua válida. Canônico: [`docs/DB_STATE_ATUAL.md`](../../../docs/DB_STATE_ATUAL.md).
+
 ## Objetivo
 
 Separar processos pesados ou demorados do fluxo operacional síncrono, garantindo que o usuário não espere por tarefas que podem rodar em background. A infraestrutura deve ser simples, idempotente e resiliente.

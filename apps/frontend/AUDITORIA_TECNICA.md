@@ -1,4 +1,7 @@
 # RELATÓRIO DE AUDITORIA TÉCNICA — SENTINELLA
+
+> ⚠️ **DOCUMENTO HISTÓRICO** (revisado 2026-05-14). Auditoria do estado Supabase em **2026-03-30**, antes da migração para NestJS. Referências a triggers/funções PL/pgSQL e Supabase RPC descrevem objetos removidos. Estado atual canônico: [`docs/DB_STATE_ATUAL.md`](../../docs/DB_STATE_ATUAL.md).
+
 **Data:** 2026-03-30
 **Escopo:** Banco de dados · Edge Functions · Frontend · Mobile/Offline · Regras de negócio
 

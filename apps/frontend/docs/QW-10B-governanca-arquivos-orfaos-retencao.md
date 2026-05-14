@@ -1,5 +1,7 @@
 # QW-10B — Governança de Arquivos, Órfãos e Retenção de Imagens
 
+> ⚠️ **DOC PARCIALMENTE DESATUALIZADO** (revisado 2026-05-14). Triggers de soft-delete que populavam `cloudinary_orfaos` foram **removidas** — soft-delete hoje é tratado em use-cases TS. Edge Function `cloudinary-cleanup-orfaos` foi portada para NestJS. Estratégia de retenção continua válida. Canônico: [`docs/DB_STATE_ATUAL.md`](../../../docs/DB_STATE_ATUAL.md).
+
 ## Status: Implementado
 
 ---

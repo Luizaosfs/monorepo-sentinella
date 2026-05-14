@@ -1,5 +1,7 @@
 # 07 — Regras de Negócio
 
+> ⚠️ **DOC PARCIALMENTE DESATUALIZADO** (revisado 2026-05-14). Onde diz "regra implementada via trigger `trg_X`" ou "validada por `fn_X`/`rpc_X`", leia "regra implementada no use-case TS correspondente em `apps/backend/src/modules/*/use-cases/`". O banco NestJS atual tem **0 triggers de aplicação e 0 funções `fn_*`**. As regras de negócio em si continuam válidas. Canônico: [`docs/DB_STATE_ATUAL.md`](../../../docs/DB_STATE_ATUAL.md).
+
 > **Para quem é este documento:** desenvolvedores, analistas e gestores que precisam entender o que o sistema garante, onde cada regra vive e quais são os pontos frágeis ou ambíguos.
 
 **Convenção de localização:**

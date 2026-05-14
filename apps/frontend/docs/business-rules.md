@@ -1,5 +1,7 @@
 # Sentinella — Business Rules Catalogue
 
+> ⚠️ **DOC PARCIALMENTE DESATUALIZADO** (revisado 2026-05-14). Catálogo extraído de migrations Supabase. Onde diz "trigger `trg_X` impõe Y" leia "use-case TS impõe Y". Banco NestJS atual = 0 triggers de aplicação. Regras de negócio continuam válidas. Canônico: [`docs/DB_STATE_ATUAL.md`](../../../docs/DB_STATE_ATUAL.md).
+
 Extracted from: `src/types/sla.ts`, `src/types/database.ts`, `src/services/api.ts`, `src/lib/queryConfig.ts`, all `supabase/migrations/`, `CLAUDE.md`.
 
 ---

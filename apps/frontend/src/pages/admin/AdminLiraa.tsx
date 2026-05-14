@@ -94,9 +94,15 @@ export default function AdminLiraa() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={CICLO_TODOS_VALUE}>Todos os ciclos</SelectItem>
-              {ciclos.map((c) => (
-                <SelectItem key={c} value={String(c)}>Ciclo {c}</SelectItem>
-              ))}
+              {ciclos.map((c) => {
+                const numero = typeof c === 'number' ? c : c.numero;
+                const ano = typeof c === 'number' ? null : c.ano;
+                return (
+                  <SelectItem key={typeof c === 'number' ? c : c.id} value={String(numero)}>
+                    Ciclo {numero}{ano ? `/${ano}` : ''}
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
           <Button

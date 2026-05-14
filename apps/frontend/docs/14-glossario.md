@@ -1,5 +1,7 @@
 # 14 — Glossário do Sentinella Web
 
+> ⚠️ **DOC PARCIALMENTE DESATUALIZADO** (revisado 2026-05-14). Entradas referenciando triggers `trg_*` ou funções `fn_*`/`rpc_*` descrevem objetos que **não existem mais** no banco NestJS atual. Conceitos de domínio continuam válidos. Canônico: [`docs/DB_STATE_ATUAL.md`](../../../docs/DB_STATE_ATUAL.md).
+
 > **Para quem é este documento:** qualquer pessoa que encontre um termo desconhecido no código, na documentação ou em uma conversa sobre o sistema. Cada entrada explica o termo como ele existe no sistema real — não como conceito genérico.
 
 ---

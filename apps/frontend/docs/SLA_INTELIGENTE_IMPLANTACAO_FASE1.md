@@ -1,5 +1,7 @@
 # SLA Inteligente — Implantação Fase 1
 
+> ⚠️ **DOC PARCIALMENTE DESATUALIZADO** (revisado 2026-05-14). Plano de fase 1 baseado em triggers `trg_iniciar_sla_*`/`trg_fechar_sla_*` que foram **removidas**. Módulo `sla` no backend NestJS hoje é chamado explicitamente pelos use-cases de foco/operação. Regras de SLA continuam válidas. Canônico: [`docs/DB_STATE_ATUAL.md`](../../../docs/DB_STATE_ATUAL.md).
+
 **Data de implantação:** Abril de 2026
 **Status:** Produção
 **Fases implementadas:** A (base analítica), B (integração frontend), C (alertas visuais e priorização)

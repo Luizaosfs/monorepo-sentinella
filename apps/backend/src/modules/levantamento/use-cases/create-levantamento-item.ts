@@ -37,6 +37,7 @@ export class CreateLevantamentoItem {
 
     const item = await this.writeRepository.createItem({
       levantamentoId,
+      clienteId: levantamento.clienteId,
       latitude: input.latitude,
       longitude: input.longitude,
       item: input.item,

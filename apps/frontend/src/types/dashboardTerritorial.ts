@@ -27,6 +27,12 @@ export interface DashboardTerritorialRegiaoItem {
   vistoriasRealizadas: number;
 }
 
+export type DashboardTerritorialVulnKey =
+  | 'idosoIncapaz'
+  | 'menorIncapaz'
+  | 'mobilidadeReduzida'
+  | 'acamado';
+
 export interface DashboardTerritorialPontoMapa {
   id: string;
   latitude: number;
@@ -34,6 +40,7 @@ export interface DashboardTerritorialPontoMapa {
   status: string;
   prioridade: string | null;
   peso: number;
+  vulnerabilidades: DashboardTerritorialVulnKey[];
 }
 
 export interface DashboardTerritorialDepositoTipo {

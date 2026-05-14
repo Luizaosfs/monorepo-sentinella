@@ -1,5 +1,7 @@
 # QW-11 — Auditoria de Custos, Limites e Escalabilidade Financeira
 
+> ⚠️ **DOC PARCIALMENTE DESATUALIZADO** (revisado 2026-05-14). Modelo de custos Supabase (RPC, Edge Functions, Storage) não se aplica mais. Stack hoje: VPS PostgreSQL 17 + NestJS + Cloudinary. Análise de quotas/limites por cliente continua válida. Canônico: [`docs/DB_STATE_ATUAL.md`](../../../docs/DB_STATE_ATUAL.md).
+
 > **Tipo:** Análise técnico-financeira
 > **Status:** Concluído (diagnóstico)
 > **Sistema:** SaaS multi-tenant — prefeituras

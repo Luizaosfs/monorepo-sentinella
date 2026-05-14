@@ -1,5 +1,9 @@
 ---
 title: SentinelaWeb — Documentação Técnica
+warning: >
+  DOCUMENTO HISTÓRICO (revisado 2026-05-14): documentação técnica pré-migração NestJS.
+  Triggers/funções PL/pgSQL e Supabase RPC foram removidos.
+  Estado atual canônico em docs/DB_STATE_ATUAL.md na raiz do monorepo.
 date: Março 2026
 ---
 

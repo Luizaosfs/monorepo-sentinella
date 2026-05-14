@@ -1,5 +1,7 @@
 # Verdade Canônica vs Compatibilidade — SentinelaWeb
 
+> ⚠️ **DOC PARCIALMENTE DESATUALIZADO** (revisado 2026-05-14). Discussões sobre "verdade no banco via trigger/função" estão superadas — banco NestJS atual tem 0 triggers/funções de aplicação. Verdade hoje vive no use-case TS. Conceitos de canonicidade vs compatibilidade continuam válidos. Canônico: [`docs/DB_STATE_ATUAL.md`](../../../../docs/DB_STATE_ATUAL.md).
+
 > Documento fiel ao estado real do código em 2026-04-14.
 > Objetivo: reduzir ambiguidade para manutenção e treinamento.
 

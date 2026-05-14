@@ -1,4 +1,7 @@
 # MÉTODO DE IMPLANTAÇÃO SENTINELLA
+
+> ⚠️ **DOC PARCIALMENTE DESATUALIZADO** (revisado 2026-05-14). Trechos técnicos sobre Supabase/triggers não se aplicam — stack atual é NestJS. Método e processo de implantação em prefeituras continuam válidos. Canônico: [`docs/DB_STATE_ATUAL.md`](../../docs/DB_STATE_ATUAL.md).
+
 **Versão:** 1.0
 **Data:** 2026-04-02
 **Validade:** Revisão semestral

@@ -1,5 +1,7 @@
 # 13 — Padrões de Desenvolvimento
 
+> ⚠️ **DOC PARCIALMENTE DESATUALIZADO** (revisado 2026-05-14). Padrões que pressupõem "lógica via trigger no banco" não se aplicam mais — toda lógica vive em use-cases TS no backend NestJS. Padrões frontend/TS continuam válidos. Canônico: [`docs/DB_STATE_ATUAL.md`](../../../docs/DB_STATE_ATUAL.md).
+
 ## Objetivo deste documento
 
 Documentar os padrões técnicos estabelecidos no projeto Sentinella Web, para que qualquer desenvolvedor possa contribuir de forma consistente, sem introduzir inconsistências ou quebrar convenções existentes.

@@ -1,5 +1,7 @@
 # 08 — Fluxos Operacionais
 
+> ⚠️ **DOC PARCIALMENTE DESATUALIZADO** (revisado 2026-05-14). Trechos sobre "o banco age automaticamente via trigger" descrevem o estado Supabase pré-migração. No banco NestJS atual o banco **não age automaticamente** — toda a cadeia (gerar foco, abrir SLA, registrar histórico, cruzar com casos, score, notificar) é orquestrada explicitamente pelos use-cases TS no backend. Os fluxos descritos aqui continuam válidos quanto ao quê acontece; só a mecânica mudou. Canônico: [`docs/DB_STATE_ATUAL.md`](../../../docs/DB_STATE_ATUAL.md).
+
 > **Para quem é este documento:** desenvolvedores, analistas e gestores que precisam entender o que acontece passo a passo em cada operação do sistema, quem faz o quê, quando o banco age automaticamente e onde pode haver falhas.
 
 **Notação:**

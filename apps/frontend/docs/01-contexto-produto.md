@@ -1,5 +1,7 @@
 # 01 — Contexto do Produto
 
+> ⚠️ **DOC PARCIALMENTE DESATUALIZADO** (revisado 2026-05-14). Trechos sobre Supabase/triggers/funções PL/pgSQL refletem o estado pré-migração. Stack atual: NestJS 11 + Prisma 7 + JWT próprio (sem Supabase, sem RLS). Banco com 0 triggers/funções de aplicação. Contexto de produto/domínio continua válido. Canônico: [`docs/DB_STATE_ATUAL.md`](../../../docs/DB_STATE_ATUAL.md).
+
 > **Para quem é este documento:** quem precisa entender o *porquê* do sistema antes de entender o *como*. Produto managers, parceiros comerciais, novos membros de time, avaliadores técnicos.
 
 ---

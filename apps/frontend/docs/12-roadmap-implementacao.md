@@ -1,5 +1,7 @@
 # 12 — Roadmap de Implementação
 
+> ⚠️ **DOC PARCIALMENTE DESATUALIZADO** (revisado 2026-05-14). Itens de roadmap que pressupõem ajustes em triggers/funções PL/pgSQL ou políticas RLS Supabase estão **superados** pela migração para NestJS. Reavaliar pendências contra estado atual. Canônico: [`docs/DB_STATE_ATUAL.md`](../../../docs/DB_STATE_ATUAL.md).
+
 ## Objetivo deste documento
 
 Apresentar um plano incremental, seguro e realista de implementação das melhorias identificadas, organizado em fases que não quebram funcionalidades existentes e consideram que o sistema já está em operação com prefeituras reais.

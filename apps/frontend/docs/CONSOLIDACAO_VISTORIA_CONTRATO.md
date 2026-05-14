@@ -1,5 +1,7 @@
 # Contrato Funcional — Consolidação de Vistoria
 
+> ⚠️ **DOC PARCIALMENTE DESATUALIZADO** (revisado 2026-05-14). Consolidação **NÃO** acontece mais via triggers no banco — as triggers `trg_consolidar_*` foram removidas. A consolidação é executada pelo use-case TS de salvar vistoria. Contrato de DADOS (quais colunas, formato JSON) continua válido. Canônico: [`docs/DB_STATE_ATUAL.md`](../../../docs/DB_STATE_ATUAL.md).
+
 **Fonte da verdade:** banco de dados (tabela `vistorias`, colunas de consolidação)
 **Versão:** baseada nas migrations 20270222/23/24 e código real em 2026-04-14
 
