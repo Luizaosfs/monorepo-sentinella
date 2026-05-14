@@ -41,6 +41,7 @@ export interface DashboardTerritorialPontoMapa {
   prioridade: string | null;
   peso: number;
   vulnerabilidades: DashboardTerritorialVulnKey[];
+  slaVencido: boolean;
 }
 
 export interface DashboardTerritorialDepositoTipo {

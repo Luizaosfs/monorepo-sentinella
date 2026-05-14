@@ -42,6 +42,7 @@ interface MapaRow {
   menor_incapaz: boolean;
   mobilidade_reduzida: boolean;
   acamado: boolean;
+  sla_vencido: boolean;
 }
 
 interface DepositoRow {
@@ -226,11 +227,13 @@ export class GetDashboardTerritorial {
             COALESCE(BOOL_OR(vr.idoso_incapaz), false) AS idoso_incapaz,
             COALESCE(BOOL_OR(vr.menor_incapaz), false) AS menor_incapaz,
             COALESCE(BOOL_OR(vr.mobilidade_reduzida), false) AS mobilidade_reduzida,
-            COALESCE(BOOL_OR(vr.acamado), false) AS acamado
+            COALESCE(BOOL_OR(vr.acamado), false) AS acamado,
+            COALESCE(BOOL_OR(sl.violado), false) AS sla_vencido
           FROM focos_risco f
           LEFT JOIN imoveis im ON im.id = f.imovel_id AND im.deleted_at IS NULL
           LEFT JOIN vistorias vv ON vv.foco_risco_id = f.id AND vv.deleted_at IS NULL
           LEFT JOIN vistoria_riscos vr ON vr.vistoria_id = vv.id
+          LEFT JOIN sla_operacional sl ON sl.foco_risco_id = f.id AND sl.deleted_at IS NULL
           WHERE f.cliente_id = ${clienteId}::uuid
             AND f.deleted_at IS NULL
             AND f.latitude IS NOT NULL
@@ -367,6 +370,7 @@ export class GetDashboardTerritorial {
           prioridade: r.prioridade ?? null,
           peso: Number(r.peso),
           vulnerabilidades,
+          slaVencido: !!r.sla_vencido,
         };
       }),
       depositosPncd: {

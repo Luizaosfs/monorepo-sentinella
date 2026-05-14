@@ -53,6 +53,21 @@ const STATUS_LABEL: Record<string, string> = {
 const PRIORIDADE_OPTIONS = ['P1', 'P2', 'P3', 'P4', 'P5'] as const;
 const STATUS_OPTIONS = Object.keys(STATUS_LABEL) as (keyof typeof STATUS_LABEL)[];
 
+// Mesma lógica do backend (get-dashboard-territorial.ts) para a UI ficar coerente com os KPIs
+const STATUS_ATIVOS = new Set<string>([
+  'em_triagem',
+  'aguarda_inspecao',
+  'em_inspecao',
+  'aguardando_nova_tentativa',
+  'confirmado',
+  'em_tratamento',
+]);
+const STATUS_RESOLVIDOS = new Set<string>([
+  'resolvido',
+  'encaminhado_administrativo',
+  'acionado_juridico',
+]);
+
 const FATOR_LABEL: Record<keyof DashboardTerritorialFatoresRisco, string> = {
   menorIncapaz: 'Menor incapaz',
   idosoIncapaz: 'Idoso incapaz',
@@ -430,6 +445,8 @@ export default function GestorDashboardTerritorial() {
   const [showHeatmap, setShowHeatmap] = useState(true);
   const [showFiltros, setShowFiltros] = useState(false);
   const [vulnFilter, setVulnFilter] = useState<Set<VulnKey>>(new Set());
+  const [statusPreset, setStatusPreset] = useState<'ativos' | 'resolvidos' | null>(null);
+  const [slaOnly, setSlaOnly] = useState(false);
 
   const { data, isLoading, isError, refetch } = useDashboardTerritorial(params);
 
@@ -445,6 +462,18 @@ export default function GestorDashboardTerritorial() {
   const toggleAllVulnFilters = () => {
     setVulnFilter((prev) => (prev.size === VULN_KEYS.length ? new Set() : new Set(VULN_KEYS)));
   };
+
+  const toggleStatusPreset = (preset: 'ativos' | 'resolvidos') => {
+    setStatusPreset((prev) => (prev === preset ? null : preset));
+  };
+
+  const limparPresetsMapa = () => {
+    setVulnFilter(new Set());
+    setStatusPreset(null);
+    setSlaOnly(false);
+  };
+
+  const temPresetMapa = vulnFilter.size > 0 || statusPreset !== null || slaOnly;
 
   const aplicar = () => {
     setParams({
@@ -466,9 +495,15 @@ export default function GestorDashboardTerritorial() {
 
   const pontosFiltrados = useMemo(() => {
     const pts = data?.pontosMapa ?? [];
-    if (vulnFilter.size === 0) return pts;
-    return pts.filter((p) => p.vulnerabilidades.some((v) => vulnFilter.has(v)));
-  }, [data?.pontosMapa, vulnFilter]);
+    if (!temPresetMapa) return pts;
+    return pts.filter((p) => {
+      if (vulnFilter.size > 0 && !p.vulnerabilidades.some((v) => vulnFilter.has(v))) return false;
+      if (statusPreset === 'ativos' && !STATUS_ATIVOS.has(p.status)) return false;
+      if (statusPreset === 'resolvidos' && !STATUS_RESOLVIDOS.has(p.status)) return false;
+      if (slaOnly && !p.slaVencido) return false;
+      return true;
+    });
+  }, [data?.pontosMapa, vulnFilter, statusPreset, slaOnly, temPresetMapa]);
 
   const mapCenter = useMemo<[number, number]>(() => {
     const pts = pontosFiltrados;
@@ -651,28 +686,34 @@ export default function GestorDashboardTerritorial() {
           <KpiCard
             title="Focos ativos"
             value={data?.kpis.focosAtivos}
-            subtitle="requerem atenção"
+            subtitle={statusPreset === 'ativos' ? 'filtrando mapa · clique p/ limpar' : 'clique para filtrar mapa'}
             icon={AlertTriangle}
             iconColor="text-orange-500"
             urgent
             loading={isLoading}
+            active={statusPreset === 'ativos'}
+            onClick={() => toggleStatusPreset('ativos')}
           />
           <KpiCard
             title="Focos resolvidos"
             value={data?.kpis.focosResolvidos}
-            subtitle="no período"
+            subtitle={statusPreset === 'resolvidos' ? 'filtrando mapa · clique p/ limpar' : 'clique para filtrar mapa'}
             icon={CheckCircle}
             iconColor="text-emerald-500"
             loading={isLoading}
+            active={statusPreset === 'resolvidos'}
+            onClick={() => toggleStatusPreset('resolvidos')}
           />
           <KpiCard
             title="SLA vencidos"
             value={data?.kpis.slaVencidos}
-            subtitle="prazo excedido"
+            subtitle={slaOnly ? 'filtrando mapa · clique p/ limpar' : 'clique para filtrar mapa'}
             icon={Clock}
             iconColor="text-red-500"
             urgent
             loading={isLoading}
+            active={slaOnly}
+            onClick={() => setSlaOnly((v) => !v)}
           />
           <KpiCard
             title="Grupos vulneráveis"
@@ -701,20 +742,20 @@ export default function GestorDashboardTerritorial() {
                 <CardTitle className="text-sm font-semibold text-slate-700 flex-1">Mapa operacional de risco</CardTitle>
                 {data && (
                   <span className="text-xs text-slate-400 tabular-nums">
-                    {vulnFilter.size > 0
+                    {temPresetMapa
                       ? `${pontosFiltrados.length}/${data.meta.totalPontosMapa} pontos`
                       : `${data.meta.totalPontosMapa} pontos`}
                   </span>
                 )}
-                {vulnFilter.size > 0 && (
+                {temPresetMapa && (
                   <Button
                     variant="ghost"
                     size="sm"
                     className="h-7 px-2.5 text-xs gap-1.5 rounded-lg text-purple-700 hover:bg-purple-50"
-                    onClick={() => setVulnFilter(new Set())}
+                    onClick={limparPresetsMapa}
                   >
                     <X className="h-3.5 w-3.5" />
-                    Limpar filtro vulneráveis
+                    Limpar filtros do mapa
                   </Button>
                 )}
                 <Button
@@ -727,8 +768,44 @@ export default function GestorDashboardTerritorial() {
                   Heatmap
                 </Button>
               </div>
-              {vulnFilter.size > 0 && (
+              {temPresetMapa && (
                 <div className="flex flex-wrap gap-1.5 mt-2">
+                  {statusPreset === 'ativos' && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-orange-100 text-orange-700 border border-orange-200">
+                      Focos ativos
+                      <button
+                        onClick={() => setStatusPreset(null)}
+                        className="hover:bg-orange-200 rounded-sm"
+                        aria-label="Remover filtro Focos ativos"
+                      >
+                        <X className="h-2.5 w-2.5" />
+                      </button>
+                    </span>
+                  )}
+                  {statusPreset === 'resolvidos' && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-emerald-100 text-emerald-700 border border-emerald-200">
+                      Focos resolvidos
+                      <button
+                        onClick={() => setStatusPreset(null)}
+                        className="hover:bg-emerald-200 rounded-sm"
+                        aria-label="Remover filtro Focos resolvidos"
+                      >
+                        <X className="h-2.5 w-2.5" />
+                      </button>
+                    </span>
+                  )}
+                  {slaOnly && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-red-100 text-red-700 border border-red-200">
+                      SLA vencido
+                      <button
+                        onClick={() => setSlaOnly(false)}
+                        className="hover:bg-red-200 rounded-sm"
+                        aria-label="Remover filtro SLA vencido"
+                      >
+                        <X className="h-2.5 w-2.5" />
+                      </button>
+                    </span>
+                  )}
                   {Array.from(vulnFilter).map((k) => (
                     <span
                       key={k}
@@ -755,10 +832,21 @@ export default function GestorDashboardTerritorial() {
                 <div className="h-[500px] flex flex-col items-center justify-center gap-3 text-slate-400">
                   <Map className="h-12 w-12 opacity-10" />
                   <p className="text-sm">
-                    {vulnFilter.size > 0
-                      ? 'Nenhum ponto com as vulnerabilidades selecionadas no período.'
+                    {temPresetMapa
+                      ? 'Nenhum ponto com os filtros selecionados no período.'
                       : 'Sem pontos com coordenadas para o filtro selecionado.'}
                   </p>
+                  {temPresetMapa && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2.5 text-xs gap-1.5 rounded-lg text-purple-700 hover:bg-purple-50"
+                      onClick={limparPresetsMapa}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                      Limpar filtros do mapa
+                    </Button>
+                  )}
                 </div>
               ) : (
                 <div className="relative" style={{ height: '500px' }}>
