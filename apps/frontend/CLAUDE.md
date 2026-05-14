@@ -178,7 +178,7 @@ Toda listagem deve filtrar por registros ativos (o backend faz isso, mas hooks d
 
 - `casos_notificados` não armazena nome, CPF ou data de nascimento (LGPD)
 - Cruzamento caso ↔ foco é feito pelo backend (trigger + Use Case) — nunca replicar no frontend
-- `levantamento_itens.cliente_id` é denormalizado via trigger — nunca setar manualmente
+- `levantamento_itens.cliente_id` **deve ser setado explicitamente** no use-case que cria o item (a trigger SQL legada do Supabase foi removida na migração; não há Prisma extension cobrindo essa coluna). Frontend não cria itens diretamente, mas auditorias que comparam `cliente_id` entre `levantamentos`/`levantamento_itens` devem considerar que dados gravados antes do fix de mai/2026 podem estar com NULL (backfill aplicado em 2026-05-14).
 - `score_prioridade` em `focos_risco` é calculado pelo trigger — não atualizar manualmente
 - `logEvento()` (piloto_eventos) é fire-and-forget — nunca `await`, nunca captura exceção
 - `platform_admin` não existe — nunca criar usuário com esse papel
