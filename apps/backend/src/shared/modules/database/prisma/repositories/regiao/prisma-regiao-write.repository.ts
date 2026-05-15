@@ -26,11 +26,19 @@ export class PrismaRegiaoWriteRepository implements RegiaoWriteRepository {
     await this.syncArea(regiao.id!);
   }
 
-  /** Popula area (geometry) a partir do geojson salvo — usado pelo ST_Contains no despacho. */
+  /**
+   * Popula `area` (geometry) a partir do geojson salvo — usado pelo ST_Contains
+   * no despacho — e sincroniza `latitude`/`longitude` com o centroide do
+   * polígono. Política: havendo polígono, o centroide é a fonte da verdade da
+   * coordenada (sobrescreve qualquer lat/long enviada pelo caller). Bairros
+   * sem geojson não são tocados (preservam lat/long manual).
+   */
   private async syncArea(id: string): Promise<void> {
     await this.prisma.client.$executeRaw(Prisma.sql`
       UPDATE bairros
-         SET area = ST_GeomFromGeoJSON(geojson::text)
+         SET area      = ST_GeomFromGeoJSON(geojson::text),
+             latitude  = ST_Y(ST_Centroid(ST_GeomFromGeoJSON(geojson::text))),
+             longitude = ST_X(ST_Centroid(ST_GeomFromGeoJSON(geojson::text)))
        WHERE id = ${id}::uuid
          AND geojson IS NOT NULL
          AND jsonb_typeof(geojson) = 'object'

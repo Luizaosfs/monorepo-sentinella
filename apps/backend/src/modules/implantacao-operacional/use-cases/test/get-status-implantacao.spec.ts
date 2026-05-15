@@ -75,11 +75,10 @@ describe('GetStatusImplantacao', () => {
     (prismaMock.client as any).ciclos.findFirst.mockResolvedValue(CICLO_ATIVO);
     (prismaMock.client as any).bairros_quadras = { count: jest.fn().mockResolvedValue(10) };
     (prismaMock.client as any).bairros_distribuicao.findMany.mockResolvedValue([
-      { quadra_rel: { codigo: 'Q01' } }, { quadra_rel: { codigo: 'Q02' } },
+      { quadra_id: 'q1', agente_id: 'ag1' }, { quadra_id: 'q2', agente_id: 'ag2' },
     ]);
     (prismaMock.client as any).$queryRaw
-      .mockResolvedValueOnce([{ total: 3 }])  // agentes
-      .mockResolvedValueOnce([{ total: 2 }])  // agentes com quarteirao
+      .mockResolvedValueOnce([{ total: 3 }])  // agentes ativos
       .mockResolvedValueOnce([{ total: 1 }]); // visitados no ciclo
     (prismaMock.client as any).planejamentos.findFirst.mockResolvedValue(PLANEJAMENTO);
     (prismaMock.client as any).imoveis.count.mockResolvedValue(15);
@@ -104,11 +103,10 @@ describe('GetStatusImplantacao', () => {
     (prismaMock.client as any).ciclos.findFirst.mockResolvedValue(CICLO_ATIVO);
     (prismaMock.client as any).bairros_quadras = { count: jest.fn().mockResolvedValue(5) };
     (prismaMock.client as any).bairros_distribuicao.findMany.mockResolvedValue([
-      { quadra_rel: { codigo: 'Q01' } },
+      { quadra_id: 'q1', agente_id: 'ag1' },
     ]);
     (prismaMock.client as any).$queryRaw
-      .mockResolvedValueOnce([{ total: 2 }])  // agentes
-      .mockResolvedValueOnce([{ total: 1 }]); // agentes com quarteirao
+      .mockResolvedValueOnce([{ total: 2 }]); // agentes ativos
     (prismaMock.client as any).imoveis.count.mockResolvedValue(0);
 
     const result = await useCase.execute(CLIENT_ID);

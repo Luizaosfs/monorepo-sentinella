@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { http } from '@sentinella/api-client';
-import { ArrowLeft, Save, Loader2, MapPin, Calendar as CalendarIcon, AlertCircle, CheckCircle2, GitMerge, Pencil } from 'lucide-react';
+import { Save, Loader2, MapPin, Calendar as CalendarIcon, AlertCircle, CheckCircle2, GitMerge, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -17,6 +17,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { PageShell } from '@/components/layout/PageShell';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { useClienteAtivo } from '@/hooks/useClienteAtivo';
 import { useAuth } from '@/hooks/useAuth';
 import { useUnidadesSaude } from '@/hooks/queries/useUnidadesSaude';
@@ -138,12 +140,14 @@ export default function NotificadorRegistroCaso() {
       });
 
       setSavedCasoId(novoCaso.id);
-      const terr = (novoCaso as Record<string, any>).territorio ?? {};
-      const ag = (novoCaso as Record<string, any>).agente ?? {};
+      const resp = novoCaso as {
+        territorio?: { bairro_nome?: string | null; quadra_codigo?: string | null };
+        agente?: { nome?: string | null };
+      };
       setTerritorioDetectado({
-        bairro: terr.bairro_nome ?? null,
-        quadra: terr.quadra_codigo ?? null,
-        agente: ag.nome ?? null,
+        bairro: resp.territorio?.bairro_nome ?? null,
+        quadra: resp.territorio?.quadra_codigo ?? null,
+        agente: resp.agente?.nome ?? null,
       });
       setSuccess(true);
     } catch (err: unknown) {
@@ -238,24 +242,14 @@ export default function NotificadorRegistroCaso() {
 
   // ── Formulário mobile-first ─────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <PageShell className="flex flex-col">
 
-      {/* Header sticky */}
-      <div className="bg-card border-b px-4 py-3 flex items-center gap-3 sticky top-0 z-10">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="shrink-0"
-          onClick={() => navigate(-1)}
-          aria-label="Voltar"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <div className="flex-1">
-          <h1 className="font-semibold text-base leading-tight">Registrar Caso</h1>
-          <p className="text-xs text-muted-foreground">Suspeito ou confirmado de arbovirose</p>
-        </div>
-      </div>
+      <PageHeader
+        variant="back"
+        title="Registrar Caso"
+        subtitle="Suspeito ou confirmado de arbovirose"
+        onBack={() => navigate(-1)}
+      />
 
       {/* Aviso LGPD */}
       <div className="mx-4 mt-4 flex items-start gap-2 rounded-xl border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-4 py-3">
@@ -520,6 +514,6 @@ export default function NotificadorRegistroCaso() {
           {isSubmitting ? 'Registrando...' : 'Registrar caso'}
         </Button>
       </div>
-    </div>
+    </PageShell>
   );
 }

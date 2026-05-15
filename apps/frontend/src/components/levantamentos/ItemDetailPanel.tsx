@@ -22,7 +22,8 @@ import { enqueue } from '@/lib/offlineQueue';
 import { cn } from '@/lib/utils';
 
 // Subcomponents
-import { ItemScoreBadge, normalizeScore, getScoreConfig } from './detail/ItemScoreBadge';
+import { ItemScoreBadge } from './detail/ItemScoreBadge';
+import { normalizeScore, getScoreConfig } from '@/lib/scoreNormalization';
 import { useItemDetecoes } from '@/hooks/queries/useItemDetecoes';
 import { YoloOverlayGroup, YoloDetectionsSummary } from '@/components/levantamentos/YoloImageOverlays';
 import { ItemCasosNotificados } from './detail/ItemCasosNotificados';

@@ -3,6 +3,8 @@ import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 
 import { ImplantacaoException } from '../errors/implantacao.exception';
 
+import { resolverDistribuicaoCanonica } from './shared/resolver-distribuicao-canonica';
+
 export interface IniciarImplantacaoResult {
   planejamentoId: string;
   criado: boolean;
@@ -36,15 +38,23 @@ export class IniciarImplantacao {
     });
     if (totalQuarteiroes === 0) throw ImplantacaoException.semQuarteiroes();
 
-    // Validação 4: ao menos um quarteirão distribuído
-    const distribuicoes = await this.prisma.client.bairros_distribuicao.count({
-      where: { cliente_id: clienteId, ciclo_id: cicloAtivo.id },
-    });
-    if (distribuicoes === 0) throw ImplantacaoException.semDistribuicao();
+    // Validação 4: ao menos um quarteirão distribuído (território fixo canônico)
+    const distribuicoes = await resolverDistribuicaoCanonica(
+      this.prisma,
+      clienteId,
+      cicloAtivo.id,
+    );
+    if (distribuicoes.length === 0) throw ImplantacaoException.semDistribuicao();
 
-    // Criar planejamento inicial MANUAL se não existir
+    // Planejamento inicial: MANUAL ou DRONE já satisfaz (drone também libera).
+    // Só cria um MANUAL novo se NÃO existir nenhum plano.
     const existente = await this.prisma.client.planejamentos.findFirst({
-      where: { cliente_id: clienteId, tipo_levantamento: 'MANUAL', deleted_at: null },
+      where: {
+        cliente_id: clienteId,
+        tipo_levantamento: { in: ['MANUAL', 'DRONE'] },
+        deleted_at: null,
+      },
+      orderBy: { created_at: 'asc' },
       select: { id: true },
     });
 

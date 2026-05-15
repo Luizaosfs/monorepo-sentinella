@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   HttpCode,
+  Inject,
   Param,
   Patch,
   Post,
@@ -11,8 +12,11 @@ import {
   UseInterceptors,
   UsePipes,
 } from '@nestjs/common';
+import { REQUEST } from '@nestjs/core';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Request } from 'express';
 import { PrismaInterceptor } from '@shared/modules/database/prisma/prisma.interceptor';
+import { getAccessScope, requireTenantId } from '@shared/security/access-scope.helpers';
 import { MyZodValidationPipe } from 'src/pipes/zod-validations.pipe';
 
 import { Roles } from '@/decorators/roles.decorator';
@@ -39,6 +43,7 @@ export class JobController {
     private jobRetry: RetryJob,
     private jobCancel: CancelJob,
     private pluvioScheduler: PluvioSchedulerService,
+    @Inject(REQUEST) private req: Request,
   ) {}
 
   @Get()
@@ -76,9 +81,20 @@ export class JobController {
 
   @Post('pluvio-risco-daily')
   @Roles('admin')
-  @ApiOperation({ summary: 'Executar job pluvio-risco-daily manualmente' })
+  @ApiOperation({ summary: 'Executar job pluvio-risco-daily global (todos os clientes)' })
   async pluvioRiscoDaily() {
     return this.pluvioScheduler.riscoDaily();
+  }
+
+  @Post('pluvio-risco-daily/meu-cliente')
+  @Roles('admin', 'supervisor')
+  @ApiOperation({
+    summary:
+      'Executar pluvio-risco-daily apenas para o cliente do usuário (supervisor municipal)',
+  })
+  async pluvioRiscoDailyMeuCliente() {
+    const clienteId = requireTenantId(getAccessScope(this.req));
+    return this.pluvioScheduler.riscoDailyForCliente(clienteId);
   }
 
   @Post()

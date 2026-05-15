@@ -31,8 +31,8 @@ describe('GerarOperacaoInicial', () => {
       usuarios: { count: jest.fn().mockResolvedValue(2) },
       bairros_distribuicao: {
         findMany: jest.fn().mockResolvedValue([
-          { quadra_rel: { codigo: 'Q01' }, agente_id: 'ag-001' },
-          { quadra_rel: { codigo: 'Q02' }, agente_id: 'ag-002' },
+          { quadra_id: 'q-001', agente_id: 'ag-001' },
+          { quadra_id: 'q-002', agente_id: 'ag-002' },
         ]),
       },
       imoveis: { count: jest.fn().mockResolvedValue(30) },

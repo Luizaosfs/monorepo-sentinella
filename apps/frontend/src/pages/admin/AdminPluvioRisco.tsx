@@ -21,7 +21,6 @@ import AdminPageHeader from '@/components/AdminPageHeader';
 import MobileListCard from '@/components/admin/MobileListCard';
 import ConfirmDialog from '@/components/admin/ConfirmDialog';
 import { getErrorMessage } from '@/lib/utils';
-import { seedDefaultRiskPolicy } from '@/lib/seedDefaultRiskPolicy';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
@@ -341,46 +340,29 @@ const AdminPluvioRisco = () => {
 
   const handleRunJob = () => {
     setConfirmDialog({
-      title: 'Executar job meteorológico',
-      description: 'Executar o job pluvio-risco-daily agora? Isso buscará dados meteorológicos para todas as regiões com coordenadas.',
+      title: 'Executar coleta meteorológica',
+      description: 'Buscar dados meteorológicos agora para as regiões deste município (apenas o cliente ativo)? Regiões sem coordenadas são puladas.',
       onConfirm: async () => {
         setRunningJob(true);
         try {
-          let data = await http.post('/jobs/pluvio-risco-daily', {}) as Record<string, unknown>;
-          if (!data?.ok) {
-            throw new Error(String(data?.error ?? 'Erro desconhecido'));
-          }
+          const data = await http.post('/jobs/pluvio-risco-daily/meu-cliente', {}) as {
+            regioes: number; atualizadas: number; erros: number; puladas: number;
+          };
 
-          // Auto-seed clientes sem policy e retentar
-          const semPolicy: string[] = ((data.errors as string[] | undefined) ?? [])
-            .filter((e: string) => String(e).includes('sem policy ativa'))
-            .map((e: string) => e.replace(/^Cliente\s+/, '').replace(/:\s*sem policy ativa$/, '').trim());
+          const parts = [`${data.atualizadas} região(ões) atualizada(s)`];
+          if (data.puladas > 0) parts.push(`${data.puladas} pulada(s) (sem coordenada)`);
+          if (data.erros > 0) parts.push(`${data.erros} erro(s)`);
+          toast.success(`Coleta concluída — ${parts.join(', ')}`, { duration: 6000 });
 
-          if (semPolicy.length > 0) {
-            toast.info(`Inicializando policy padrão para ${semPolicy.length} cliente(s)...`);
-            await Promise.all(semPolicy.map((id) => seedDefaultRiskPolicy(id)));
-            // Retentar o job após seed
-            const retry = await http.post('/jobs/pluvio-risco-daily', {}).catch(() => null) as Record<string, unknown> | null;
-            if (retry?.ok) {
-              data = retry;
-            }
-          }
-
-          const parts = [`${data.inserted} registro(s) inserido(s)`];
-          if (data.skipped > 0) parts.push(`${data.skipped} já existente(s)`);
-          const remainingErrors = (data.errors ?? []).filter(
-            (e: string) => !String(e).includes('sem policy ativa')
-          );
-          if (remainingErrors.length) parts.push(`${remainingErrors.length} erro(s)`);
-          toast.success(`Job concluído — ${parts.join(', ')}`, { duration: 6000 });
-          if (remainingErrors.length) {
-            const firstError = String(remainingErrors[0] ?? '').trim();
-            if (firstError) toast.error(`Primeiro erro: ${firstError}`, { duration: 9000 });
-            console.warn('[pluvio-risco-daily] Erros:', remainingErrors);
+          if (data.atualizadas === 0 && data.puladas > 0) {
+            toast.error(
+              'Nenhuma região atualizada: as regiões não têm latitude/longitude. Preencha as coordenadas dos bairros.',
+              { duration: 9000 },
+            );
           }
           queryClient.invalidateQueries({ queryKey: ['admin_pluvio_risco', clienteId] });
         } catch (err: unknown) {
-          toast.error(`Erro ao executar job: ${err instanceof Error ? err.message : 'desconhecido'}`);
+          toast.error(`Erro ao executar coleta: ${err instanceof Error ? err.message : 'desconhecido'}`);
         } finally {
           setRunningJob(false);
         }

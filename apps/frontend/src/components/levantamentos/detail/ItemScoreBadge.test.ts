@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { normalizeScore, getScoreConfig } from './ItemScoreBadge';
+import { normalizeScore, getScoreConfig } from '@/lib/scoreNormalization';
 
 describe('normalizeScore', () => {
   // ── Null / undefined inputs ──────────────────────────────────────────────

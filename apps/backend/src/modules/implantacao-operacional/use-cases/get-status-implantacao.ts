@@ -7,6 +7,8 @@ import {
   ImplantacaoStatusVM,
 } from '../view-model/implantacao-status.vm';
 
+import { resolverDistribuicaoCanonica } from './shared/resolver-distribuicao-canonica';
+
 @Injectable()
 export class GetStatusImplantacao {
   constructor(private prisma: PrismaService) {}
@@ -23,17 +25,16 @@ export class GetStatusImplantacao {
       where: { cliente_id: clienteId, deleted_at: null },
     });
 
-    // 3. Quarteirões com agente atribuído no ciclo ativo
-    let quarteiroesComAgente = 0;
-    let codigosQuarteiroes: string[] = [];
-    if (cicloAtivo) {
-      const distribuicoes = await this.prisma.client.bairros_distribuicao.findMany({
-        where: { cliente_id: clienteId, ciclo_id: cicloAtivo.id },
-        select: { quadra_rel: { select: { codigo: true } } },
-      });
-      quarteiroesComAgente = distribuicoes.length;
-      codigosQuarteiroes = distribuicoes.map(d => d.quadra_rel!.codigo);
-    }
+    // 3. Distribuição CANÔNICA (território fixo: ciclo_id IS NULL; ciclo ativo
+    //    apenas fallback). Quarteirões e agentes derivam da mesma fonte.
+    const distribuicoes = await resolverDistribuicaoCanonica(
+      this.prisma,
+      clienteId,
+      cicloAtivo?.id ?? null,
+    );
+    const quadraIds = [...new Set(distribuicoes.map(d => d.quadra_id))];
+    const quarteiroesComAgente = quadraIds.length;
+    const agentesComQuarteirao = new Set(distribuicoes.map(d => d.agente_id)).size;
 
     // 4. Total de agentes ativos do cliente
     const agentesRows = await this.prisma.client.$queryRaw<{ total: number }[]>(
@@ -48,46 +49,35 @@ export class GetStatusImplantacao {
     );
     const totalAgentesAtivos = Number(agentesRows[0]?.total ?? 0);
 
-    // 5. Agentes com ao menos um quarteirão no ciclo ativo
-    let agentesComQuarteirao = 0;
-    if (cicloAtivo) {
-      const agentesDistRows = await this.prisma.client.$queryRaw<{ total: number }[]>(
-        Prisma.sql`
-          SELECT COUNT(DISTINCT agente_id)::int AS total
-          FROM bairros_distribuicao
-          WHERE cliente_id = ${clienteId}::uuid
-            AND ciclo_id = ${cicloAtivo.id}::uuid
-        `,
-      );
-      agentesComQuarteirao = Number(agentesDistRows[0]?.total ?? 0);
-    }
-
-    // 6. Planejamento MANUAL mais antigo (candidato ao "levantamento inicial")
+    // 5. Planejamento inicial mais antigo — MANUAL ou DRONE (drone também
+    //    libera a operação; ambos são canais válidos de levantamento).
     const planejamento = await this.prisma.client.planejamentos.findFirst({
       where: {
         cliente_id: clienteId,
-        tipo_levantamento: 'MANUAL',
+        tipo_levantamento: { in: ['MANUAL', 'DRONE'] },
         deleted_at: null,
       },
       orderBy: { created_at: 'asc' },
-      select: { id: true, descricao: true, ativo: true },
+      select: { id: true, descricao: true, ativo: true, tipo_levantamento: true },
     });
 
-    // 7. Imóveis elegíveis: pertencentes aos quarteirões distribuídos do ciclo ativo
+    // 6. Imóveis elegíveis: ligados por quadra_id (FK canônica) às quadras
+    //    distribuídas — não por casamento de texto livre `quarteirao`.
     let totalImoveisElegiveis = 0;
-    if (cicloAtivo && codigosQuarteiroes.length > 0) {
+    if (quadraIds.length > 0) {
       totalImoveisElegiveis = await this.prisma.client.imoveis.count({
         where: {
           cliente_id: clienteId,
           deleted_at: null,
-          quarteirao: { in: codigosQuarteiroes },
+          quadra_id: { in: quadraIds },
         },
       });
     }
 
-    // 8. Imóveis já visitados no ciclo ativo (distinct por imovel_id, nos quarteirões distribuídos)
+    // 7. Imóveis já visitados no ciclo ativo (distinct imovel_id, nas quadras
+    //    distribuídas, casados por quadra_id).
     let totalImoveisJaVisitadosNoCiclo = 0;
-    if (cicloAtivo && codigosQuarteiroes.length > 0 && totalImoveisElegiveis > 0) {
+    if (cicloAtivo && quadraIds.length > 0 && totalImoveisElegiveis > 0) {
       const visitadosRows = await this.prisma.client.$queryRaw<{ total: number }[]>(
         Prisma.sql`
           SELECT COUNT(DISTINCT v.imovel_id)::int AS total
@@ -95,7 +85,7 @@ export class GetStatusImplantacao {
           INNER JOIN imoveis i ON i.id = v.imovel_id
           WHERE v.cliente_id = ${clienteId}::uuid
             AND v.ciclo = ${cicloAtivo.numero}
-            AND i.quarteirao = ANY(${codigosQuarteiroes}::text[])
+            AND i.quadra_id = ANY(${quadraIds}::uuid[])
             AND v.deleted_at IS NULL
             AND i.deleted_at IS NULL
         `,

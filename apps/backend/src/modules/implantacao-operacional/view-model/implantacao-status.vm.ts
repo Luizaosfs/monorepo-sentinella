@@ -23,6 +23,7 @@ export interface ImplantacaoStatusDto {
     id?: string;
     nome?: string;
     ativo?: boolean;
+    tipo?: string;
   };
   operacaoInicial: {
     existe: boolean;
@@ -48,7 +49,12 @@ export interface ImplantacaoStatusRawData {
   quarteiroesComAgente: number;
   totalAgentesAtivos: number;
   agentesComQuarteirao: number;
-  planejamento: { id: string; descricao: string | null; ativo: boolean } | null;
+  planejamento: {
+    id: string;
+    descricao: string | null;
+    ativo: boolean;
+    tipo_levantamento?: string;
+  } | null;
   totalImoveisElegiveis: number;
   totalImoveisJaVisitadosNoCiclo: number;
 }
@@ -135,6 +141,7 @@ export class ImplantacaoStatusVM {
             id: data.planejamento.id,
             nome: data.planejamento.descricao ?? undefined,
             ativo: data.planejamento.ativo,
+            tipo: data.planejamento.tipo_levantamento ?? undefined,
           }
         : { existe: false },
       operacaoInicial: {

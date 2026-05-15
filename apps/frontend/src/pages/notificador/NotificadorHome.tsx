@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { PlusCircle, Stethoscope, Activity, CheckCircle2, XCircle, TrendingUp, ChevronDown, ChevronUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import {
@@ -9,9 +9,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { PageShell } from '@/components/layout/PageShell';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { ListState } from '@/components/layout/ListState';
 import { useClienteAtivo } from '@/hooks/useClienteAtivo';
 import { useAuth } from '@/hooks/useAuth';
-import { useCasosNotificados } from '@/hooks/queries/useCasosNotificados';
+import { useNotificadorResumo } from '@/hooks/useNotificadorResumo';
 import { CasoNotificado } from '@/types/database';
 
 const DOENCA_LABEL: Record<string, string> = {
@@ -34,95 +37,42 @@ const STATUS_COLOR: Record<string, string> = {
   descartado: '#94a3b8',
 };
 
-function semanaEpidemiologica(date: Date): number {
-  const start = new Date(date.getFullYear(), 0, 1);
-  const diff = date.getTime() - start.getTime();
-  return Math.ceil((diff / 86400000 + start.getDay() + 1) / 7);
-}
-
-function daysAgo(n: number) {
-  return new Date(Date.now() - n * 86400000);
-}
-
-function formatDate(d: Date) {
-  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-}
+const LIMITE_INICIAL = 5;
 
 export default function NotificadorHome() {
   const { clienteId } = useClienteAtivo();
   const { usuario } = useAuth();
-  const { data: todos = [], isLoading } = useCasosNotificados(clienteId);
   const [verTodosCasos, setVerTodosCasos] = useState(false);
 
-  // Últimos 30 dias
-  const corte30 = daysAgo(30);
-  const casos30 = useMemo(
-    () => todos.filter(c => new Date(c.created_at) >= corte30),
-    [todos],
-  );
+  const {
+    isLoading,
+    meusCasosTodos,
+    totalSemana,
+    suspeitos,
+    confirmados,
+    descartados,
+    pieData,
+    barData,
+    semanaEpidemiologicaAtual,
+  } = useNotificadorResumo(clienteId, usuario?.id);
 
-  // Casos do próprio notificador (últimos 30 dias)
-  const meusCasosTodos = useMemo(
-    () => casos30.filter(c => c.notificador_id === usuario?.id || !c.notificador_id),
-    [casos30, usuario?.id],
-  );
-  const LIMITE_INICIAL = 5;
   const meusCasos = verTodosCasos ? meusCasosTodos : meusCasosTodos.slice(0, LIMITE_INICIAL);
-
-  // KPIs
-  const totalSemana = useMemo(() => {
-    const corte7 = daysAgo(7);
-    return todos.filter(c => new Date(c.created_at) >= corte7).length;
-  }, [todos]);
-  const confirmados = casos30.filter(c => c.status === 'confirmado').length;
-  const suspeitos   = casos30.filter(c => c.status === 'suspeito').length;
-  const descartados = casos30.filter(c => c.status === 'descartado').length;
-
-  // Pizza: distribuição por doença
-  const pieData = useMemo(() => {
-    const counts: Record<string, number> = {};
-    for (const c of casos30) counts[c.doenca] = (counts[c.doenca] || 0) + 1;
-    return Object.entries(counts).map(([doenca, value]) => ({ doenca, value }));
-  }, [casos30]);
-
-  // Barras: casos por dia (últimos 14 dias)
-  const barData = useMemo(() => {
-    const days = Array.from({ length: 14 }, (_, i) => {
-      const d = daysAgo(13 - i);
-      return { label: formatDate(d), date: d, total: 0 };
-    });
-    for (const c of todos) {
-      const d = new Date(c.created_at);
-      const idx = days.findIndex(
-        day =>
-          day.date.getDate() === d.getDate() &&
-          day.date.getMonth() === d.getMonth(),
-      );
-      if (idx >= 0) days[idx].total++;
-    }
-    return days;
-  }, [todos]);
-
-  const seAtual = semanaEpidemiologica(new Date());
   const nome = usuario?.nome?.split(' ')[0] || 'Notificador';
 
   return (
-    <div className="min-h-screen bg-background pb-24">
-      {/* Header */}
-      <div className="bg-card border-b px-4 py-4 sticky top-0 z-10">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-lg font-bold">Olá, {nome}</h1>
-            <p className="text-xs text-muted-foreground">Semana epidemiológica {seAtual}</p>
-          </div>
+    <PageShell className="pb-24">
+      <PageHeader
+        title={`Olá, ${nome}`}
+        subtitle={`Semana epidemiológica ${semanaEpidemiologicaAtual}`}
+        actions={
           <Button asChild size="sm" className="gap-1.5 rounded-xl h-9">
             <Link to="/notificador/registrar">
               <PlusCircle className="h-4 w-4" />
               Registrar
             </Link>
           </Button>
-        </div>
-      </div>
+        }
+      />
 
       <div className="px-4 py-4 space-y-5">
 
@@ -265,16 +215,12 @@ export default function NotificadorHome() {
             <span className="text-xs text-muted-foreground">{meusCasosTodos.length} caso{meusCasosTodos.length !== 1 ? 's' : ''}</span>
           </CardHeader>
           <CardContent className="px-4 pb-4">
-            {isLoading ? (
-              <div className="space-y-2">
-                {[1, 2, 3].map(i => <Skeleton key={i} className="h-12 rounded-xl" />)}
-              </div>
-            ) : meusCasos.length === 0 ? (
-              <div className="text-center py-6 text-muted-foreground text-xs">
-                <Stethoscope className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                Nenhum caso registrado ainda
-              </div>
-            ) : (
+            <ListState
+              isLoading={isLoading}
+              isEmpty={meusCasos.length === 0}
+              emptyIcon={<Stethoscope className="h-8 w-8 mx-auto mb-2 opacity-30" />}
+              emptyText="Nenhum caso registrado ainda"
+            >
               <div className="space-y-2">
                 {meusCasos.map((caso: CasoNotificado) => (
                   <div
@@ -317,11 +263,11 @@ export default function NotificadorHome() {
                   </button>
                 )}
               </div>
-            )}
+            </ListState>
           </CardContent>
         </Card>
 
       </div>
-    </div>
+    </PageShell>
   );
 }

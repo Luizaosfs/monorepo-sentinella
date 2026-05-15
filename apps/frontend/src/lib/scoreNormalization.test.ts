@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { normalizeScore } from '@/components/levantamentos/detail/ItemScoreBadge';
+import { normalizeScore } from '@/lib/scoreNormalization';
 
 describe('normalizeScore — edge cases', () => {
   it('score 1.0 (exatamente 1) permanece 1.0 sem ser dividido por 100', () => {

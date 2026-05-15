@@ -3,6 +3,8 @@ import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 
 import { ImplantacaoException } from '../errors/implantacao.exception';
 
+import { resolverDistribuicaoCanonica } from './shared/resolver-distribuicao-canonica';
+
 export interface GerarOperacaoInicialResult {
   planejamentoId: string;
   cicloId: string;
@@ -35,27 +37,36 @@ export class GerarOperacaoInicial {
     });
     if (totalAgentes === 0) throw ImplantacaoException.semAgentes();
 
-    // 3. Ao menos um quarteirão distribuído no ciclo ativo
-    const distribuicoes = await this.prisma.client.bairros_distribuicao.findMany({
-      where: { cliente_id: clienteId, ciclo_id: cicloAtivo.id },
-      select: { quadra_rel: { select: { codigo: true } }, agente_id: true },
-    });
+    // 3. Ao menos um quarteirão distribuído (território fixo canônico:
+    //    ciclo_id IS NULL; ciclo ativo apenas fallback)
+    const distribuicoes = await resolverDistribuicaoCanonica(
+      this.prisma,
+      clienteId,
+      cicloAtivo.id,
+    );
     if (distribuicoes.length === 0) throw ImplantacaoException.semDistribuicao();
 
-    // 4. Ao menos um imóvel elegível nos quarteirões distribuídos
-    const codigosQuarteiroes = [...new Set(distribuicoes.map(d => d.quadra_rel!.codigo))];
+    // 4. Ao menos um imóvel elegível, ligado por quadra_id (FK canônica)
+    const quadraIds = [...new Set(distribuicoes.map(d => d.quadra_id))];
     const totalImoveisElegiveis = await this.prisma.client.imoveis.count({
       where: {
         cliente_id: clienteId,
         deleted_at: null,
-        quarteirao: { in: codigosQuarteiroes },
+        quadra_id: { in: quadraIds },
       },
     });
     if (totalImoveisElegiveis === 0) throw ImplantacaoException.semImoveis();
 
-    // 5. Idempotente: garantir planejamento MANUAL ativo (cria se não existir, ativa se inativo)
+    // 5. Idempotente: garantir um planejamento inicial ATIVO. Drone também
+    //    libera — qualquer plano MANUAL ou DRONE existente é reaproveitado
+    //    (ativado se inativo). Só cria um MANUAL novo se não existir nenhum.
     let planejamento = await this.prisma.client.planejamentos.findFirst({
-      where: { cliente_id: clienteId, tipo_levantamento: 'MANUAL', deleted_at: null },
+      where: {
+        cliente_id: clienteId,
+        tipo_levantamento: { in: ['MANUAL', 'DRONE'] },
+        deleted_at: null,
+      },
+      orderBy: { created_at: 'asc' },
       select: { id: true, ativo: true },
     });
 
@@ -77,7 +88,7 @@ export class GerarOperacaoInicial {
       });
     }
 
-    // 6. Estatísticas de agentes com/sem rota (baseado em distribuição)
+    // 6. Estatísticas de agentes com/sem rota (baseado na distribuição canônica)
     const agentesComRota = new Set(distribuicoes.map((d) => d.agente_id)).size;
     const totalAgentesSemRota = Math.max(0, totalAgentes - agentesComRota);
 
@@ -88,7 +99,7 @@ export class GerarOperacaoInicial {
       totalImoveisIncluidos: totalImoveisElegiveis,
       totalAgentesComRota: agentesComRota,
       totalAgentesSemRota,
-      mensagem: `Operação inicial gerada com ${totalImoveisElegiveis} imóvel(is) elegível(is) em ${codigosQuarteiroes.length} quarteirão(s) para ${agentesComRota} agente(s).`,
+      mensagem: `Operação inicial gerada com ${totalImoveisElegiveis} imóvel(is) elegível(is) em ${quadraIds.length} quarteirão(s) para ${agentesComRota} agente(s).`,
     };
   }
 }

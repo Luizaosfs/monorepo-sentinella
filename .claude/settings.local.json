@@ -417,7 +417,11 @@
       "Read(//cygdrive/d/sentinella/**)",
       "Bash(cat)",
       "Bash(bash /tmp/analyze-frontend.sh)",
-      "Bash(powershell -Command ' *)"
+      "Bash(powershell -Command ' *)",
+      "PowerShell($o = & \"C:\\\\Program Files\\\\nodejs\\\\node.exe\" \"apps\\\\backend\\\\node_modules\\\\typescript\\\\bin\\\\tsc\" -p \"apps\\\\backend\\\\tsconfig.json\" --noEmit 2>&1; \\($o | Select-String -Pattern \"error TS\"\\).Count; \"---\"; $o | Select-String -Pattern \"implantacao|resolver-distribuicao\")",
+      "PowerShell($env:PGPASSWORD='Sentinella147852369'; $psql='C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe'; & $psql -h 177.7.37.14 -p 5432 -U luizAntonio -d sentinella -c \"SELECT id, nome FROM clientes WHERE unaccent\\(lower\\(nome\\)\\) LIKE '%tres lagoas%' OR lower\\(nome\\) LIKE '%lagoas%';\" 2>&1)",
+      "PowerShell($env:PGPASSWORD='Sentinella147852369'; $psql='C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe'; $cid='2e3f32f3-f8bf-433b-9839-553f7f1ce2d8'; & $psql -h 177.7.37.14 -p 5432 -U luizAntonio -d sentinella -c \"UPDATE bairros SET latitude = ST_Y\\(ST_Centroid\\(area\\)\\), longitude = ST_X\\(ST_Centroid\\(area\\)\\) WHERE cliente_id='$cid' AND deleted_at IS NULL AND area IS NOT NULL;\" 2>&1; & $psql -h 177.7.37.14 -p 5432 -U luizAntonio -d sentinella -c \"SELECT nome, round\\(latitude::numeric,6\\) AS latitude, round\\(longitude::numeric,6\\) AS longitude FROM bairros WHERE cliente_id='$cid' AND deleted_at IS NULL ORDER BY nome;\" 2>&1)",
+      "Bash(netstat -ano)"
     ]
   }
 }
