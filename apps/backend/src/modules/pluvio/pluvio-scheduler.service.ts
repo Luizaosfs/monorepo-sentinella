@@ -126,12 +126,15 @@ export class PluvioSchedulerService {
           : nivelRisco === 'alto' ? 'atencao'
           : 'normal';
 
+        // dt_ref é DateTime @db.Date — Prisma 7 exige ISO-8601, não a string "YYYY-MM-DD".
+        const dtRef = new Date(`${hoje}T00:00:00.000Z`);
+
         await this.prisma.client.pluvio_risco.upsert({
-          where: { bairro_id_dt_ref: { bairro_id: regiao.id, dt_ref: hoje } },
+          where: { bairro_id_dt_ref: { bairro_id: regiao.id, dt_ref: dtRef } },
           create: {
             bairro_id: regiao.id,
             cliente_id: clienteId,
-            dt_ref: hoje,
+            dt_ref: dtRef,
             chuva_24h: chuva24h,
             chuva_72h: chuva72h,
             chuva_7d: chuva7d,
