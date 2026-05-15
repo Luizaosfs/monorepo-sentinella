@@ -39,7 +39,12 @@ import {
   FilterPluvioRunInput,
   filterPluvioRunSchema,
 } from './dtos/filter-pluvio-run.input';
+import {
+  CriarRunComItensBody,
+  criarRunComItensSchema,
+} from './dtos/criar-run-com-itens.body';
 import { BulkInsertItems } from './use-cases/bulk-insert-items';
+import { CriarRunComItens } from './use-cases/criar-run-com-itens';
 import { GerarSlasRun } from './use-cases/gerar-slas-run';
 import { BulkInsertRisco } from './use-cases/bulk-insert-risco';
 import { CreateRun } from './use-cases/create-run';
@@ -78,6 +83,7 @@ export class PluvioController {
     private upsertItemUC: UpsertItem,
     private deleteItemUC: DeleteItem,
     private bulkInsertItemsUC: BulkInsertItems,
+    private criarRunComItensUC: CriarRunComItens,
     private filterRiscoUC: FilterRisco,
     private upsertRiscoUC: UpsertRisco,
     private deleteRiscoUC: DeleteRisco,
@@ -119,6 +125,18 @@ export class PluvioController {
     const clienteId = requireTenantId(getAccessScope(this.req));
     const { run } = await this.createRunUC.execute(parsed, clienteId);
     return PluvioRunViewModel.toHttp(run);
+  }
+
+  @Post('runs/com-itens')
+  @Roles('admin', 'supervisor')
+  @ApiOperation({
+    summary: 'Cria run + itens numa única transação (porte da RPC criar_pluvio_run_com_itens)',
+  })
+  async criarRunComItens(@Body() body: CriarRunComItensBody) {
+    const parsed = criarRunComItensSchema.parse(body);
+    // MT-02: tenantId do guard sempre vence — nunca aceita clienteId do frontend
+    const clienteId = requireTenantId(getAccessScope(this.req));
+    return this.criarRunComItensUC.execute(parsed, clienteId);
   }
 
   @Patch('runs/:id/total')

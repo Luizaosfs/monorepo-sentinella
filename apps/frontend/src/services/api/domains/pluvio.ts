@@ -73,6 +73,19 @@ export const pluvioOperacional = {
     http.delete(`/pluvio/items/${id}`),
   bulkInsertItems: (rows: Parameters<typeof _sb.pluvioOperacional.bulkInsertItems>[0]): Promise<void> =>
     http.post('/pluvio/items/bulk', rows.map((r) => deepToCamel(r))),
+  /**
+   * Run + itens numa única transação (porte da RPC criar_pluvio_run_com_itens).
+   * Substitui createRunGetId + bulkInsertItems — atômico e sem perda de campos.
+   */
+  criarRunComItens: async (payload: {
+    cliente_id?: string | null;
+    dt_ref: string;
+    total_bairros?: number;
+    itens: Record<string, unknown>[];
+  }): Promise<{ id: string; total: number }> => {
+    const raw = await http.post('/pluvio/runs/com-itens', deepToCamel(payload));
+    return deepToSnake(raw) as { id: string; total: number };
+  },
 };
 
 export const pluvioRisco = {

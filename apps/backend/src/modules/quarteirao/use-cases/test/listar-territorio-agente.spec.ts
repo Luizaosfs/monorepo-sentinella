@@ -9,9 +9,9 @@ import { QuarteiraoException } from '../../errors/quarteirao.exception';
 const CLIENTE_ID = 'aaaaaaaa-0000-0000-0000-000000000001';
 const AGENTE_ID  = 'bbbbbbbb-0000-0000-0000-000000000002';
 
-const QUADRAS = [
-  { quadraId: 'q1', codigo: 'Q001', bairroId: 'b1', bairroNome: 'Centro', imoveisCount: 12 },
-  { quadraId: 'q2', codigo: 'Q002', bairroId: 'b1', bairroNome: 'Centro', imoveisCount:  5 },
+const QUADRAS: TerritorioAgenteQuadra[] = [
+  { quadraId: 'q1', codigo: 'Q001', bairroId: 'b1', bairroNome: 'Centro', imoveisCount: 12, geojson: null },
+  { quadraId: 'q2', codigo: 'Q002', bairroId: 'b1', bairroNome: 'Centro', imoveisCount:  5, geojson: null },
 ];
 
 const CICLO_ATIVO_RAW = {
@@ -95,7 +95,7 @@ describe('ListarTerritorioAgente', () => {
 
   it('inclui imoveisCount=0 quando quadra não tem imóveis', async () => {
     const semImoveis = [
-      { quadraId: 'q3', codigo: 'Q003', bairroId: null, bairroNome: null, imoveisCount: 0 },
+      { quadraId: 'q3', codigo: 'Q003', bairroId: null, bairroNome: null, imoveisCount: 0, geojson: null },
     ];
     const uc = await buildUc(makeRequest(AGENTE_ID, CLIENTE_ID), makeReadRepo(semImoveis));
     const result = await uc.execute();

@@ -5,6 +5,7 @@ import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 
 import { PluvioController } from './pluvio.controller';
 import { BulkInsertItems } from './use-cases/bulk-insert-items';
+import { CriarRunComItens } from './use-cases/criar-run-com-itens';
 import { BulkInsertRisco } from './use-cases/bulk-insert-risco';
 import { CreateRun } from './use-cases/create-run';
 import { DeleteItem } from './use-cases/delete-item';
@@ -36,6 +37,7 @@ import { OpenMeteoService } from './services/open-meteo.service';
     UpsertItem,
     DeleteItem,
     BulkInsertItems,
+    CriarRunComItens,
     FilterRisco,
     UpsertRisco,
     DeleteRisco,

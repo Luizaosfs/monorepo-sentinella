@@ -352,11 +352,13 @@ const AdminPluvioOperacional = () => {
   const executeImport = async (dtRef: string, mapped: Partial<PluvioOperacionalItem>[]) => {
     setImporting(true);
     try {
-      const runId = await api.pluvioOperacional.createRunGetId({
-        cliente_id: clienteId, dt_ref: dtRef, total_bairros: mapped.length,
+      // Atômico: run + itens numa única transação (porte da RPC criar_pluvio_run_com_itens)
+      await api.pluvioOperacional.criarRunComItens({
+        cliente_id: clienteId,
+        dt_ref: dtRef,
+        total_bairros: mapped.length,
+        itens: mapped as Record<string, unknown>[],
       });
-      const mappedWithRun = mapped.map((v) => ({ ...v, run_id: runId }));
-      await api.pluvioOperacional.bulkInsertItems(mappedWithRun);
 
       toast.success(`Importados ${mapped.length} bairros para run ${dtRef}`);
       queryClient.invalidateQueries({ queryKey: ['admin_pluvio_operacional_runs', clienteId] });
