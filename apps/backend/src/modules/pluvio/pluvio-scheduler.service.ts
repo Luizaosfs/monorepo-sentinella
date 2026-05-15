@@ -108,7 +108,8 @@ export class PluvioSchedulerService {
         const chuva72h = precip.slice(5, 8).reduce((a, b) => a + (b ?? 0), 0);
         const chuva7d = precip.slice(0, 8).reduce((a, b) => a + (b ?? 0), 0);
         const diasPosChuva = precip.slice(0, 8).filter((p) => (p ?? 0) > 1).length;
-        const persistencia7d = Math.round((diasPosChuva / 7) * 100) / 100;
+        // persistencia_7d é Int? no schema — armazenar como percentual inteiro 0-100.
+        const persistencia7d = Math.round((diasPosChuva / 7) * 100);
         const prevD1 = precip[8] ?? 0;
         const tendencia =
           prevD1 > chuva24h + 2 ? 'crescente'
@@ -125,6 +126,15 @@ export class PluvioSchedulerService {
           nivelRisco === 'critico' ? 'favoravel_proliferacao'
           : nivelRisco === 'alto' ? 'atencao'
           : 'normal';
+
+        // O job não tem modelo probabilístico próprio — deriva uma faixa de
+        // probabilidade + classificação a partir do nivelRisco já calculado.
+        // Os rótulos batem com o mapa classificacaoColor do AdminPluvioRisco.tsx.
+        const { probMin, probMax, classificacao } =
+          nivelRisco === 'critico' ? { probMin: 70, probMax: 95, classificacao: 'Critico' }
+          : nivelRisco === 'alto'  ? { probMin: 45, probMax: 70, classificacao: 'Alto' }
+          : nivelRisco === 'medio' ? { probMin: 20, probMax: 45, classificacao: 'Moderado' }
+          : { probMin: 5, probMax: 20, classificacao: 'Baixo' };
 
         // dt_ref é DateTime @db.Date — Prisma 7 exige ISO-8601, não a string "YYYY-MM-DD".
         const dtRef = new Date(`${hoje}T00:00:00.000Z`);
@@ -143,6 +153,10 @@ export class PluvioSchedulerService {
             tendencia,
             nivel_risco: nivelRisco,
             situacao_ambiental: situacaoAmbiental,
+            prob_label: classificacao,
+            prob_final_min: probMin,
+            prob_final_max: probMax,
+            classificacao_final: classificacao,
           },
           update: {
             chuva_24h: chuva24h,
@@ -153,6 +167,10 @@ export class PluvioSchedulerService {
             tendencia,
             nivel_risco: nivelRisco,
             situacao_ambiental: situacaoAmbiental,
+            prob_label: classificacao,
+            prob_final_min: probMin,
+            prob_final_max: probMax,
+            classificacao_final: classificacao,
           },
         });
 
