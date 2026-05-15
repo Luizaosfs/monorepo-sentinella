@@ -66,6 +66,11 @@ export default function NotificadorRegistroCaso() {
   const [showManualCoords, setShowManualCoords] = useState(false);
   const [success, setSuccess] = useState(false);
   const [savedCasoId, setSavedCasoId] = useState<string | null>(null);
+  const [territorioDetectado, setTerritorioDetectado] = useState<{
+    bairro: string | null;
+    quadra: string | null;
+    agente: string | null;
+  } | null>(null);
   const { data: cruzamentos = [] } = useCruzamentosDoCaso(savedCasoId);
 
   const set = (field: keyof FormState) => (value: string) =>
@@ -133,6 +138,13 @@ export default function NotificadorRegistroCaso() {
       });
 
       setSavedCasoId(novoCaso.id);
+      const terr = (novoCaso as Record<string, any>).territorio ?? {};
+      const ag = (novoCaso as Record<string, any>).agente ?? {};
+      setTerritorioDetectado({
+        bairro: terr.bairro_nome ?? null,
+        quadra: terr.quadra_codigo ?? null,
+        agente: ag.nome ?? null,
+      });
       setSuccess(true);
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Erro ao registrar caso');
@@ -144,6 +156,7 @@ export default function NotificadorRegistroCaso() {
     setGeoWarning(null);
     setSuccess(false);
     setSavedCasoId(null);
+    setTerritorioDetectado(null);
   };
 
   const isSubmitting = casosNotificadosMutation.isPending;
@@ -169,6 +182,28 @@ export default function NotificadorRegistroCaso() {
             <p className="text-xs text-muted-foreground">Guarde este número para referência</p>
           </div>
         )}
+
+        {/* Território resolvido pelo lat/long do endereço */}
+        {territorioDetectado &&
+          (territorioDetectado.bairro || territorioDetectado.quadra || territorioDetectado.agente) && (
+            <div className="w-full max-w-xs rounded-xl border border-border bg-muted/40 px-4 py-3 flex items-start gap-2.5 text-left">
+              <MapPin className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+              <div className="text-sm text-foreground space-y-0.5">
+                {territorioDetectado.bairro && (
+                  <p><span className="text-muted-foreground">Bairro:</span> <span className="font-semibold">{territorioDetectado.bairro}</span></p>
+                )}
+                {territorioDetectado.quadra && (
+                  <p><span className="text-muted-foreground">Quadra:</span> <span className="font-semibold">{territorioDetectado.quadra}</span></p>
+                )}
+                <p>
+                  <span className="text-muted-foreground">Agente:</span>{' '}
+                  <span className="font-semibold">
+                    {territorioDetectado.agente ?? 'a definir pela supervisão'}
+                  </span>
+                </p>
+              </div>
+            </div>
+          )}
 
         {/* Focos próximos encontrados pelo trigger */}
         {cruzamentos.length > 0 ? (

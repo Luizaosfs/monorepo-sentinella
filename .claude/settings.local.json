@@ -407,7 +407,17 @@
       "Bash(Select-Object -First 1 -ExpandProperty Line)",
       "Bash(cd /cygdrive/d/sentinella/monorepo-sentinella/apps/backend && pnpm generate 2>&1 | tail -20)",
       "Read(//cygdrive/d/sentinella/monorepo-sentinella/apps/**)",
-      "PowerShell(& pnpm.cmd --filter @sentinella/backend exec jest --testPathPattern=get-dashboard-territorial.spec 2>&1)"
+      "PowerShell(& pnpm.cmd --filter @sentinella/backend exec jest --testPathPattern=get-dashboard-territorial.spec 2>&1)",
+      "PowerShell(Set-Location \"D:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\frontend\"; $out = & cmd /c \"npx.cmd tsc --noEmit -p tsconfig.json 2>&1\"; $errs = $out | Select-String -Pattern \"error TS\"; Write-Output \\(\"TOTAL_TS_ERRORS=\" + \\($errs | Measure-Object\\).Count\\); $out | Select-String -Pattern \"AgenteFocoDetalhe|quadrasAgente\"; Write-Output \"DONE\")",
+      "Read(//d/manfrota-web/manfrota-mobile/**)",
+      "Skill(context-mode:context-mode)",
+      "Skill(context-mode:context-mode:*)",
+      "Read(//c/Users/luiz/.claude/plans/**)",
+      "Bash(cd /cygdrive/d/sentinella/monorepo-sentinella && find apps packages -maxdepth 1 -type d | head -20)",
+      "Read(//cygdrive/d/sentinella/**)",
+      "Bash(cat)",
+      "Bash(bash /tmp/analyze-frontend.sh)",
+      "Bash(powershell -Command ' *)"
     ]
   }
 }

@@ -129,6 +129,7 @@ interface CasoNotificadoProps {
   latitude?: number;
   longitude?: number;
   regiaoId?: string;
+  quadraId?: string;
   observacao?: string;
   payload?: JsonObject;
   createdBy?: string;
@@ -201,6 +202,12 @@ export class CasoNotificado extends BaseEntity<CasoNotificadoProps> {
   }
   set regiaoId(v: string | undefined) {
     this.props.regiaoId = v;
+  }
+  get quadraId() {
+    return this.props.quadraId;
+  }
+  set quadraId(v: string | undefined) {
+    this.props.quadraId = v;
   }
   get observacao() {
     return this.props.observacao;

@@ -37,6 +37,8 @@ import { GetCruzamentoCount } from './use-cases/get-cruzamento-count';
 import { CruzarCasoComFocos } from './use-cases/cruzar-caso-com-focos';
 import { CriarFocoDeCasoNotificado } from './use-cases/criar-foco-de-caso-notificado';
 import { ReverterPrioridadeCasoDescartado } from './use-cases/reverter-prioridade-caso-descartado';
+import { ResolverTerritorioPorCoordenada } from './use-cases/resolver-territorio-por-coordenada';
+import { ResolverAgentePorQuadra } from './use-cases/resolver-agente-por-quadra';
 
 @Module({
   providers: [
@@ -71,6 +73,8 @@ import { ReverterPrioridadeCasoDescartado } from './use-cases/reverter-prioridad
     CruzarCasoComFocos,
     CriarFocoDeCasoNotificado,
     ReverterPrioridadeCasoDescartado,
+    ResolverTerritorioPorCoordenada,
+    ResolverAgentePorQuadra,
     JwtService,
     PrismaService,
   ],

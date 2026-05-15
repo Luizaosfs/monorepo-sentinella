@@ -306,8 +306,12 @@ export class NotificacaoController {
     const parsed = createCasoSchema.parse(body);
     const clienteId = requireTenantId(getAccessScope(this.req));
     const userId = (this.req['user'] as AuthenticatedUser).id;
-    const { caso } = await this.casoCreate.execute(clienteId, userId, parsed);
-    return NotificacaoViewModel.toHttp(caso);
+    const { caso, territorio, agente } = await this.casoCreate.execute(
+      clienteId,
+      userId,
+      parsed,
+    );
+    return { ...NotificacaoViewModel.toHttp(caso), territorio, agente };
   }
 
   @Put('casos/:id')

@@ -14,7 +14,7 @@
  * pode constatar que o foco não existe ou foi resolvido naturalmente.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -40,6 +40,7 @@ import {
 } from '@/hooks/queries/useFocosRisco';
 import { useReinspecoesByFoco } from '@/hooks/queries/useReinspecoes';
 import { useRegioes } from '@/hooks/queries/useRegioes';
+import { useTerritorioAgente } from '@/hooks/queries/useTerritorioAgente';
 import { useResumoVisualVistoria } from '@/hooks/queries/useResumoVisualVistoria';
 import { useClienteAtivo } from '@/hooks/useClienteAtivo';
 import { logEvento } from '@/lib/pilotoEventos';
@@ -72,6 +73,7 @@ export default function AgenteFocoDetalhe() {
     logradouro: '',
     numero: '',
     quarteirao: '',
+    quadra_id: '',
     tipo_imovel: 'residencial' as TipoImovel,
     bairro: '',
     bairro_id: '',
@@ -80,6 +82,20 @@ export default function AgenteFocoDetalhe() {
 
   const { clienteId } = useClienteAtivo();
   const { data: regioes = [] } = useRegioes(clienteId);
+  const { data: territorio } = useTerritorioAgente();
+
+  // Bairros distintos do território do agente (cascata: bairro → quarteirão)
+  const bairrosDoTerritorio = useMemo(() => {
+    if (!territorio?.quadras) return [];
+    const map = new Map<string, string>();
+    for (const q of territorio.quadras) {
+      if (q.bairroId && q.bairroNome) map.set(q.bairroId, q.bairroNome);
+    }
+    return Array.from(map.entries())
+      .map(([id, nome]) => ({ id, nome }))
+      .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  }, [territorio]);
+
   const iniciarInspecao = useIniciarInspecaoFoco();
   const atualizarStatus = useAtualizarStatusFoco();
 
@@ -143,6 +159,16 @@ export default function AgenteFocoDetalhe() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [foco?.id]);
+
+  // Quarteirões do bairro selecionado (cascata bairro → quarteirão)
+  const quarteiroesDoBairro = useMemo(() => {
+    if (!territorio?.quadras || !imovelForm.bairro_id) return [];
+    return territorio.quadras
+      .filter((q) => q.bairroId === imovelForm.bairro_id)
+      .sort((a, b) => a.codigo.localeCompare(b.codigo, undefined, { numeric: true }));
+  }, [territorio, imovelForm.bairro_id]);
+
+  const temTerritorio = bairrosDoTerritorio.length > 0;
 
   // ── Handlers ──────────────────────────────────────────────────────────────────
 
@@ -295,6 +321,7 @@ export default function AgenteFocoDetalhe() {
           numero,
           bairro: imovelForm.bairro || foco.bairro || undefined,
           quarteirao: imovelForm.quarteirao.trim() || undefined,
+          quadra_id: imovelForm.quadra_id || undefined,
           latitude: foco.latitude ?? undefined,
           longitude: foco.longitude ?? undefined,
           proprietario_ausente: false,
@@ -459,40 +486,35 @@ export default function AgenteFocoDetalhe() {
                   Este foco não tem imóvel cadastrado. Registre o imóvel para iniciar a vistoria.
                 </p>
                 <div className="space-y-2.5">
+                  {/* 1 — Bairro */}
                   <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Logradouro</Label>
-                    <Input
-                      placeholder="Rua, Av., Travessa..."
-                      value={imovelForm.logradouro}
-                      onChange={(e) => setImovelForm((p) => ({ ...p, logradouro: e.target.value }))}
-                      className="h-9 text-sm"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="space-y-1">
-                      <Label className="text-xs font-semibold">
-                        Número <span className="text-destructive">*</span>
-                      </Label>
-                      <Input
-                        placeholder="Ex: 123"
-                        value={imovelForm.numero}
-                        onChange={(e) => setImovelForm((p) => ({ ...p, numero: e.target.value }))}
-                        className="h-9 text-sm"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs font-semibold">Quarteirão</Label>
-                      <Input
-                        placeholder="Ex: 045"
-                        value={imovelForm.quarteirao}
-                        onChange={(e) => setImovelForm((p) => ({ ...p, quarteirao: e.target.value }))}
-                        className="h-9 text-sm"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Bairro / Região</Label>
-                    {regioes.length > 0 ? (
+                    <Label className="text-xs font-semibold">
+                      Bairro / Região {temTerritorio && <span className="text-destructive">*</span>}
+                    </Label>
+                    {temTerritorio ? (
+                      <Select
+                        value={imovelForm.bairro_id}
+                        onValueChange={(v) => {
+                          const b = bairrosDoTerritorio.find((x) => x.id === v);
+                          setImovelForm((p) => ({
+                            ...p,
+                            bairro_id: v,
+                            bairro: b?.nome ?? p.bairro,
+                            quadra_id: '',
+                            quarteirao: '',
+                          }));
+                        }}
+                      >
+                        <SelectTrigger className="h-9 text-sm">
+                          <SelectValue placeholder="Selecione o bairro..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {bairrosDoTerritorio.map((b) => (
+                            <SelectItem key={b.id} value={b.id}>{b.nome}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : regioes.length > 0 ? (
                       <Select
                         value={imovelForm.bairro_id}
                         onValueChange={(v) => {
@@ -518,6 +540,74 @@ export default function AgenteFocoDetalhe() {
                       />
                     )}
                   </div>
+
+                  {/* 2 — Quarteirão */}
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold">
+                      Quarteirão <span className="text-destructive">*</span>
+                    </Label>
+                    {temTerritorio ? (
+                      <Select
+                        value={imovelForm.quadra_id}
+                        onValueChange={(v) => {
+                          const q = quarteiroesDoBairro.find((qd) => qd.quadraId === v);
+                          setImovelForm((p) => ({
+                            ...p,
+                            quadra_id: v,
+                            quarteirao: q?.codigo ?? p.quarteirao,
+                          }));
+                        }}
+                        disabled={!imovelForm.bairro_id || quarteiroesDoBairro.length === 0}
+                      >
+                        <SelectTrigger className="h-9 text-sm">
+                          <SelectValue placeholder={!imovelForm.bairro_id ? 'Selecione o bairro' : 'Selecione...'} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {quarteiroesDoBairro.map((q) => (
+                            <SelectItem key={q.quadraId} value={q.quadraId}>Qt. {q.codigo}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <>
+                        <Input
+                          placeholder="Ex: 045"
+                          value={imovelForm.quarteirao}
+                          onChange={(e) => setImovelForm((p) => ({ ...p, quarteirao: e.target.value }))}
+                          className="h-9 text-sm"
+                        />
+                        <p className="text-[11px] text-amber-600 dark:text-amber-400 leading-tight">
+                          Sem quarteirões no seu território — o supervisor precisará revisar a vinculação.
+                        </p>
+                      </>
+                    )}
+                  </div>
+
+                  {/* 3 — Logradouro */}
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold">Logradouro</Label>
+                    <Input
+                      placeholder="Rua, Av., Travessa..."
+                      value={imovelForm.logradouro}
+                      onChange={(e) => setImovelForm((p) => ({ ...p, logradouro: e.target.value }))}
+                      className="h-9 text-sm"
+                    />
+                  </div>
+
+                  {/* 4 — Número */}
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold">
+                      Número <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      placeholder="Ex: 123"
+                      value={imovelForm.numero}
+                      onChange={(e) => setImovelForm((p) => ({ ...p, numero: e.target.value }))}
+                      className="h-9 text-sm"
+                    />
+                  </div>
+
+                  {/* 5 — Tipo de imóvel */}
                   <div className="space-y-1">
                     <Label className="text-xs font-semibold">Tipo de imóvel</Label>
                     <Select

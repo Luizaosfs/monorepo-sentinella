@@ -1,6 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 
-import { FocoRisco, FocoRiscoHistorico } from '../../foco-risco/entities/foco-risco';
+import {
+  FocoRisco,
+  FocoRiscoHistorico,
+} from '../../foco-risco/entities/foco-risco';
 import { FocoRiscoWriteRepository } from '../../foco-risco/repositories/foco-risco-write.repository';
 import { NotificacaoWriteRepository } from '../repositories/notificacao-write.repository';
 
@@ -25,6 +28,12 @@ export interface CriarFocoDeCasoNotificadoInput {
   regiaoId?: string | null;
   /** Status clínico do caso ('suspeito' | 'confirmado'). Determina prioridade inicial do foco. */
   statusCaso?: string;
+  /** Bairro resolvido geoespacialmente — precede regiaoId (seleção manual). */
+  bairroId?: string | null;
+  /** Quadra resolvida geoespacialmente pelo lat/long. */
+  quadraId?: string | null;
+  /** Agente territorial responsável pré-atribuído ao foco. */
+  responsavelId?: string | null;
 }
 
 export interface CriarFocoDeCasoNotificadoResult {
@@ -57,7 +66,9 @@ export class CriarFocoDeCasoNotificado {
   async execute(
     input: CriarFocoDeCasoNotificadoInput,
   ): Promise<CriarFocoDeCasoNotificadoResult> {
-    const { casoId, clienteId, latitude, longitude, regiaoId, statusCaso } = input;
+    const { casoId, clienteId, latitude, longitude, regiaoId, statusCaso } =
+      input;
+    const { bairroId, quadraId, responsavelId } = input;
 
     if (latitude == null || longitude == null) {
       await this.notificacaoWriteRepository.vincularFoco(casoId, {
@@ -66,7 +77,9 @@ export class CriarFocoDeCasoNotificado {
         vinculoTipo: 'pendente_geocodificacao',
         distanciaMetros: null,
       });
-      this.logger.debug(`Caso ${casoId} sem coordenadas — marcado como pendente_geocodificacao`);
+      this.logger.debug(
+        `Caso ${casoId} sem coordenadas — marcado como pendente_geocodificacao`,
+      );
       return { focoId: null };
     }
 
@@ -86,7 +99,9 @@ export class CriarFocoDeCasoNotificado {
         longitude,
         suspeitaEm,
         casosIds: [casoId],
-        regiaoId: regiaoId ?? undefined,
+        regiaoId: bairroId ?? regiaoId ?? undefined,
+        quadraId: quadraId ?? undefined,
+        responsavelId: responsavelId ?? undefined,
         scorePrioridade: 0,
         payload: { confirmacoes: 1 },
       },
@@ -102,7 +117,8 @@ export class CriarFocoDeCasoNotificado {
       statusAnterior: undefined,
       statusNovo: 'em_triagem',
       tipoEvento: 'criacao',
-      motivo: 'Foco epidemiológico criado automaticamente a partir de caso notificado',
+      motivo:
+        'Foco epidemiológico criado automaticamente a partir de caso notificado',
     };
     this.focoRiscoWriteRepository.createHistorico(historico).catch(() => null);
 

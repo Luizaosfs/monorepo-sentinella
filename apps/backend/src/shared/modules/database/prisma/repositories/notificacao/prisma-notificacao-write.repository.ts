@@ -9,6 +9,7 @@ import {
 import {
   NotificacaoWriteRepository,
   VincularFocoCasoData,
+  VincularTerritorioCasoData,
 } from 'src/modules/notificacao/repositories/notificacao-write.repository';
 
 import { PrismaRepository } from '@/decorators/prisma-repository.decorator';
@@ -114,6 +115,19 @@ export class PrismaNotificacaoWriteRepository implements NotificacaoWriteReposit
         foco_vinculado_em: data.vinculadoEm ?? null,
         foco_vinculo_tipo: data.vinculoTipo,
         foco_vinculo_distancia_metros: data.distanciaMetros ?? null,
+      } as any,
+    });
+  }
+
+  async vincularTerritorio(
+    casoId: string,
+    data: VincularTerritorioCasoData,
+  ): Promise<void> {
+    await this.prisma.client.casos_notificados.update({
+      where: { id: casoId },
+      data: {
+        bairro_id: data.bairroId ?? null,
+        quadra_id: data.quadraId ?? null,
       } as any,
     });
   }

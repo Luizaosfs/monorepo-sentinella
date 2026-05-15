@@ -16,6 +16,12 @@ export interface VincularFocoCasoData {
   distanciaMetros: number | null;
 }
 
+/** Território resolvido geoespacialmente (lat/long → bairro/quadra) para o caso. */
+export interface VincularTerritorioCasoData {
+  bairroId: string | null;
+  quadraId: string | null;
+}
+
 @Injectable()
 export abstract class NotificacaoWriteRepository {
   abstract createUnidade(entity: UnidadeSaude): Promise<UnidadeSaude>;
@@ -32,4 +38,9 @@ export abstract class NotificacaoWriteRepository {
   abstract nextProtocolo(clienteId: string): Promise<string>;
   /** E.1.1 — persiste o vínculo operacional principal caso ↔ foco. */
   abstract vincularFoco(casoId: string, data: VincularFocoCasoData): Promise<void>;
+  /** Persiste o território (bairro/quadra) resolvido geoespacialmente no caso. */
+  abstract vincularTerritorio(
+    casoId: string,
+    data: VincularTerritorioCasoData,
+  ): Promise<void>;
 }
