@@ -28,6 +28,8 @@ export type AuthenticatedUser = {
   clienteId: string | null;
   /** Preenchido apenas para `analista_regional` — null para todos os outros papéis. */
   agrupamentoId: string | null;
+  /** Unidade de saúde vinculada — preenchido para `notificador`, null nos demais. */
+  unidadeSaudeId: string | null;
   papeis: PapelApp[];
   /** `true` quando `papeis` inclui `'admin'`. Use este campo — nunca `papeis.includes('admin')` direto. */
   isPlatformAdmin: boolean;
@@ -140,6 +142,7 @@ export class AuthGuard implements CanActivate {
         nome: usuario.nome,
         clienteId: usuario.cliente_id,
         agrupamentoId: usuario.agrupamento_id ?? null,
+        unidadeSaudeId: usuario.unidade_saude_id ?? null,
         papeis,
         isPlatformAdmin: papeis.includes('admin'),
       } satisfies AuthenticatedUser;

@@ -7,6 +7,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { mock } from 'jest-mock-extended';
 import { ForbiddenException } from '@nestjs/common';
 
+import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
+
 import { VerificarQuota } from '../../../billing/use-cases/verificar-quota';
 import { CreateUsuarioBody } from '../../dtos/create-usuario.body';
 import { UsuarioException } from '../../errors/usuario.exception';
@@ -34,6 +36,7 @@ describe('CreateUsuario', () => {
         { provide: UsuarioWriteRepository, useValue: writeRepo },
         { provide: 'REQUEST', useValue: mockRequest({ tenantId: 'test-cliente-id' }) },
         { provide: VerificarQuota, useValue: mockVerificarQuota },
+        { provide: PrismaService, useValue: mock<PrismaService>() },
       ],
     }).compile();
     useCase = module.get<CreateUsuario>(CreateUsuario);

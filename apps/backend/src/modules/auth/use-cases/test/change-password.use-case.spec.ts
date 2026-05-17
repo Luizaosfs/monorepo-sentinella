@@ -22,6 +22,7 @@ describe('ChangePasswordUseCase', () => {
     nome: 'Test User',
     clienteId: 'cliente-id-1',
     agrupamentoId: null,
+    unidadeSaudeId: null,
     papeis: ['supervisor'],
     isPlatformAdmin: false,
   };

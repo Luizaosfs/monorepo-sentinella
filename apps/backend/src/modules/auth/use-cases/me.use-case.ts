@@ -11,6 +11,7 @@ export class MeUseCase {
       nome: user.nome,
       clienteId: user.clienteId,
       agrupamentoId: user.agrupamentoId,
+      unidadeSaudeId: user.unidadeSaudeId,
       papeis: user.papeis,
       isPlatformAdmin: user.isPlatformAdmin,
     };

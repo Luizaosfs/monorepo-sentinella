@@ -24,6 +24,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Loader2, Users, Plus, Pencil, Trash2, Search, ArrowLeft } from 'lucide-react';
@@ -382,8 +383,7 @@ const AdminUsuarios = () => {
             {!editing && (
               <div className="space-y-2">
                 <Label>Senha *</Label>
-                <Input
-                  type="password"
+                <PasswordInput
                   value={form.senha}
                   onChange={(e) => setForm((p) => ({ ...p, senha: e.target.value }))}
                   placeholder="Mín. 8 chars, maiúscula, número e especial"

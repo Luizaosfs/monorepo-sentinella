@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 
 import { EnfileirarScoreImovel } from '../../job/enfileirar-score-imovel';
 import { CreateCasoBody } from '../dtos/create-notificacao.body';
@@ -20,7 +21,38 @@ export class CreateCaso {
     private enfileirarScore: EnfileirarScoreImovel,
     private resolverTerritorio: ResolverTerritorioPorCoordenada,
     private resolverAgentePorQuadra: ResolverAgentePorQuadra,
+    private prisma: PrismaService,
   ) {}
+
+  /**
+   * Regra de integridade: um notificador só notifica pela unidade de saúde
+   * vinculada ao seu cadastro. admin/supervisor (sem vínculo) permanecem
+   * livres para escolher a unidade. Defesa em profundidade — não confiar no
+   * lock do frontend.
+   */
+  private async resolverUnidadeObrigatoria(
+    userId: string | undefined,
+    unidadeSaudeIdInformada: string,
+  ): Promise<string> {
+    if (!userId) return unidadeSaudeIdInformada;
+
+    const usuario = await this.prisma.client.usuarios.findUnique({
+      where: { id: userId },
+      select: {
+        unidade_saude_id: true,
+        papeis_usuarios: { select: { papel: true } },
+      },
+    });
+
+    const ehNotificador = (usuario?.papeis_usuarios ?? []).some(
+      (p) => p.papel === 'notificador',
+    );
+
+    if (ehNotificador && usuario?.unidade_saude_id) {
+      return usuario.unidade_saude_id;
+    }
+    return unidadeSaudeIdInformada;
+  }
 
   async execute(
     clienteId: string,
@@ -36,10 +68,15 @@ export class CreateCaso {
     };
     agente: { id: string | null; nome: string | null };
   }> {
+    const unidadeSaudeId = await this.resolverUnidadeObrigatoria(
+      userId,
+      input.unidadeSaudeId,
+    );
+
     const entity = new CasoNotificado(
       {
         clienteId,
-        unidadeSaudeId: input.unidadeSaudeId,
+        unidadeSaudeId,
         notificadorId: userId,
         doenca: input.doenca ?? 'suspeito',
         status: input.status ?? 'suspeito',

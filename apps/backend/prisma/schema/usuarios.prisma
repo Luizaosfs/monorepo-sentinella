@@ -12,8 +12,10 @@ model usuarios {
   onboarding_versao     String?
   onboarding_concluido_em DateTime? @db.Timestamptz
   agrupamento_id        String?   @db.Uuid
+  unidade_saude_id      String?   @db.Uuid
 
   cliente          clientes?         @relation(fields: [cliente_id], references: [id])
+  unidade_saude    unidades_saude?   @relation(fields: [unidade_saude_id], references: [id])
   papeis_usuarios  papeis_usuarios[]
 
   // Relações inversas
@@ -32,6 +34,7 @@ model usuarios {
   @@index([cliente_id, ativo])
   @@index([email])
   @@index([agrupamento_id])
+  @@index([unidade_saude_id])
   @@map("usuarios")
   @@schema("public")
 }

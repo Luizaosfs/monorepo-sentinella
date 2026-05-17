@@ -119,6 +119,7 @@ describe('TenantGuard', () => {
       nome: 'Admin',
       clienteId: null,
       agrupamentoId: null,
+      unidadeSaudeId: null,
       papeis: ['admin'],
       isPlatformAdmin: true,
     };
@@ -146,6 +147,7 @@ describe('TenantGuard', () => {
       nome: 'Admin',
       clienteId: null,
       agrupamentoId: null,
+      unidadeSaudeId: null,
       papeis: ['admin'],
       isPlatformAdmin: true,
     };
@@ -171,6 +173,7 @@ describe('TenantGuard', () => {
       nome: 'Supervisor',
       clienteId: 'muni-uuid',
       agrupamentoId: null,
+      unidadeSaudeId: null,
       papeis: ['supervisor'],
       isPlatformAdmin: false,
     };
@@ -197,6 +200,7 @@ describe('TenantGuard', () => {
       nome: 'Supervisor',
       clienteId: null,
       agrupamentoId: null,
+      unidadeSaudeId: null,
       papeis: ['supervisor'],
       isPlatformAdmin: false,
     };
@@ -214,6 +218,7 @@ describe('TenantGuard', () => {
       nome: 'Analista',
       clienteId: null,
       agrupamentoId: null,
+      unidadeSaudeId: null,
       papeis: ['analista_regional'],
       isPlatformAdmin: false,
     };
@@ -232,6 +237,7 @@ describe('TenantGuard', () => {
       nome: 'Analista',
       clienteId: null,
       agrupamentoId: 'ag-vazio',
+      unidadeSaudeId: null,
       papeis: ['analista_regional'],
       isPlatformAdmin: false,
     };
@@ -253,6 +259,7 @@ describe('TenantGuard', () => {
       nome: 'Analista',
       clienteId: null,
       agrupamentoId: 'ag-uuid',
+      unidadeSaudeId: null,
       papeis: ['analista_regional'],
       isPlatformAdmin: false,
     };

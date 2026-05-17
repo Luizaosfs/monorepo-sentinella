@@ -263,7 +263,8 @@ export function OnboardingModal({ userId, usuarioDbId, papel, forceOpen, onClose
     <Dialog open={open} onOpenChange={(v) => { if (!v) fechar(); }}>
       <DialogContent
         className="max-w-md p-0 gap-0 overflow-hidden rounded-2xl"
-        // Remove o X padrão do shadcn — usamos o nosso
+        // Remove o X padrão do shadcn — usamos o nosso (botão no header colorido)
+        hideCloseButton
         onPointerDownOutside={(e) => e.preventDefault()}
       >
         {/* Radix: DialogTitle como primeiro filho de Content (acessibilidade) */}

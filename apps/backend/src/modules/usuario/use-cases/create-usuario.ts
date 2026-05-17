@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { Request } from 'express';
 
@@ -9,6 +10,7 @@ import { Usuario } from '../entities/usuario';
 import { UsuarioException } from '../errors/usuario.exception';
 import { UsuarioReadRepository } from '../repositories/usuario-read.repository';
 import { UsuarioWriteRepository } from '../repositories/usuario-write.repository';
+import { assertUnidadeSaudePertenceCliente } from './_helpers/assert-unidade-saude';
 
 @Injectable()
 export class CreateUsuario {
@@ -17,6 +19,7 @@ export class CreateUsuario {
     private writeRepository: UsuarioWriteRepository,
     @Inject('REQUEST') private req: Request,
     private verificarQuota: VerificarQuota,
+    private prisma: PrismaService,
   ) {}
 
   async execute(input: CreateUsuarioBody) {
@@ -38,6 +41,19 @@ export class CreateUsuario {
       if (!ok) throw QuotaException.excedida({ metrica: 'usuarios_ativos', usado, limite, motivo });
     }
 
+    // Notificador exige unidade vinculada (defesa além do Zod superRefine)
+    const ehNotificador = input.papeis.includes('notificador');
+    if (ehNotificador && !input.unidadeSaudeId) {
+      throw UsuarioException.unidadeSaudeObrigatoria();
+    }
+    if (input.unidadeSaudeId) {
+      await assertUnidadeSaudePertenceCliente(
+        this.prisma,
+        input.unidadeSaudeId,
+        input.clienteId,
+      );
+    }
+
     const senhaHash = await bcrypt.hash(input.senha, 10);
 
     const usuario = new Usuario(
@@ -46,6 +62,7 @@ export class CreateUsuario {
         email: input.email.toLowerCase().trim(),
         senhaHash,
         clienteId: input.clienteId,
+        unidadeSaudeId: input.unidadeSaudeId,
         ativo: true,
         onboardingConcluido: false,
         papeis: input.papeis as any,

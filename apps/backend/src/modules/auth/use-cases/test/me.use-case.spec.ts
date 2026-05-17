@@ -23,6 +23,7 @@ describe('MeUseCase', () => {
       nome: 'Test User',
       clienteId: 'cliente-id-1',
       agrupamentoId: 'agrup-id-1',
+      unidadeSaudeId: null,
       papeis: ['supervisor'],
       isPlatformAdmin: false,
     };
@@ -36,6 +37,7 @@ describe('MeUseCase', () => {
       nome: 'Test User',
       clienteId: 'cliente-id-1',
       agrupamentoId: 'agrup-id-1',
+      unidadeSaudeId: null,
       papeis: ['supervisor'],
       isPlatformAdmin: false,
     });
@@ -49,6 +51,7 @@ describe('MeUseCase', () => {
       nome: 'Admin User',
       clienteId: null,
       agrupamentoId: null,
+      unidadeSaudeId: null,
       papeis: ['admin'],
       isPlatformAdmin: true,
     };

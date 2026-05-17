@@ -11,6 +11,7 @@ import { http } from '@sentinella/api-client';
 import { api } from '@/services/api';
 import { useAuth } from '@/hooks/useAuth';
 import { useClienteAtivo } from '@/hooks/useClienteAtivo';
+import { useUnidadesSaude } from '@/hooks/queries/useUnidadesSaude';
 import { usePagination } from '@/hooks/usePagination';
 import TablePagination from '@/components/TablePagination';
 import { Card, CardContent } from '@/components/ui/card';
@@ -23,6 +24,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Loader2, Users, Plus, Pencil, Search, ArrowLeft } from 'lucide-react';
@@ -38,6 +40,7 @@ interface UsuarioRow {
   nome: string;
   email: string;
   cliente_id: string | null;
+  unidade_saude_id: string | null;
   created_at: string;
   papel: PapelCliente;
 }
@@ -60,6 +63,7 @@ const emptyForm = {
   papel: 'agente' as PapelCliente,
   auth_id: '',
   senha: '',
+  unidade_saude_id: '',
 };
 
 class EmailExistsError extends Error {
@@ -72,6 +76,7 @@ class EmailExistsError extends Error {
 const AgenteUsuarios = () => {
   const { isAdmin } = useAuth();
   const { clienteId } = useClienteAtivo();
+  const { data: unidades = [], isLoading: loadingUnidades } = useUnidadesSaude(clienteId);
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
@@ -108,6 +113,7 @@ const AgenteUsuarios = () => {
           nome: u.nome,
           email: u.email,
           cliente_id: u.cliente_id,
+          unidade_saude_id: (u as { unidade_saude_id?: string | null }).unidade_saude_id ?? null,
           created_at: u.created_at,
           papel: papelMap.get(u.auth_id ?? '') ?? 'agente',
         } as UsuarioRow))
@@ -131,7 +137,7 @@ const AgenteUsuarios = () => {
 
   const openEdit = (u: UsuarioRow) => {
     setEditing(u);
-    setForm({ nome: u.nome, email: u.email, papel: u.papel, auth_id: u.auth_id || '', senha: '' });
+    setForm({ nome: u.nome, email: u.email, papel: u.papel, auth_id: u.auth_id || '', senha: '', unidade_saude_id: u.unidade_saude_id || '' });
     setShowForm(true);
   };
 
@@ -140,13 +146,17 @@ const AgenteUsuarios = () => {
       if (!clienteId) throw new Error('Cliente não definido');
       const emailNormalizado = formData.email.trim().toLowerCase();
 
+      const unidadeVinculo =
+        formData.papel === 'notificador' ? (formData.unidade_saude_id || null) : null;
+
       if (editingUser) {
         await api.usuarios.update(editingUser.id, {
           nome: formData.nome.trim(),
           email: emailNormalizado,
           cliente_id: clienteId,
+          unidadeSaudeId: unidadeVinculo,
           ...(formData.auth_id.trim() ? { auth_id: formData.auth_id.trim() } : {}),
-        });
+        } as Parameters<typeof api.usuarios.update>[1]);
         const authId = formData.auth_id.trim() || editingUser.auth_id;
         if (authId) await api.usuarios.setPapel(authId, formData.papel);
         return { isNew: false };
@@ -159,6 +169,7 @@ const AgenteUsuarios = () => {
         senha: formData.senha,
         cliente_id: clienteId,
         papel: formData.papel,
+        ...(unidadeVinculo ? { unidade_saude_id: unidadeVinculo } : {}),
       } as Parameters<typeof api.usuarios.insert>[0]);
 
       if ((fnData as { error?: string })?.error === 'EMAIL_EXISTS') throw new EmailExistsError(emailNormalizado);
@@ -183,6 +194,9 @@ const AgenteUsuarios = () => {
   const handleSave = () => {
     if (!form.nome.trim() || !form.email.trim()) {
       toast.error('Nome e email são obrigatórios'); return;
+    }
+    if (form.papel === 'notificador' && !form.unidade_saude_id) {
+      toast.error('Notificador exige uma unidade de saúde vinculada'); return;
     }
     if (!editing) {
       if (!form.senha || form.senha.length < 8) { toast.error('Senha: mínimo 8 caracteres'); return; }
@@ -278,12 +292,35 @@ const AgenteUsuarios = () => {
               </div>
             </div>
 
+            {/* Unidade de saúde — obrigatória para notificador */}
+            {form.papel === 'notificador' && (
+              <div className="space-y-2">
+                <Label>Unidade de saúde *</Label>
+                <Select
+                  value={form.unidade_saude_id}
+                  onValueChange={(v) => setForm((p) => ({ ...p, unidade_saude_id: v }))}
+                  disabled={loadingUnidades}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={loadingUnidades ? 'Carregando...' : 'Selecione a unidade'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {unidades.map((u) => (
+                      <SelectItem key={u.id} value={u.id}>{u.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  O notificador só poderá registrar casos por esta unidade.
+                </p>
+              </div>
+            )}
+
             {/* Senha — somente criação */}
             {!editing && (
               <div className="space-y-2">
                 <Label>Senha *</Label>
-                <Input
-                  type="password"
+                <PasswordInput
                   value={form.senha}
                   onChange={(e) => setForm((p) => ({ ...p, senha: e.target.value }))}
                   placeholder="Mín. 8 chars, maiúscula, número e especial"

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { http } from '@sentinella/api-client';
 import { Save, Loader2, MapPin, Calendar as CalendarIcon, AlertCircle, CheckCircle2, GitMerge, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
@@ -57,7 +57,7 @@ const INITIAL_FORM: FormState = {
 export default function NotificadorRegistroCaso() {
   const navigate = useNavigate();
   const { clienteId, tenantStatus, clienteAtivo } = useClienteAtivo();
-  const { usuario } = useAuth();
+  const { usuario, isNotificador } = useAuth();
   const { data: unidades = [], isLoading: loadingUnidades } = useUnidadesSaude(clienteId);
   const { data: regioes = [] } = useRegioes(clienteId);
   const casosNotificadosMutation = useCasosNotificadosMutation();
@@ -74,6 +74,21 @@ export default function NotificadorRegistroCaso() {
     agente: string | null;
   } | null>(null);
   const { data: cruzamentos = [] } = useCruzamentosDoCaso(savedCasoId);
+
+  // Notificador só notifica pela unidade vinculada ao seu cadastro:
+  // preenche e trava o campo. admin/supervisor seguem com dropdown livre.
+  const unidadeVinculada = isNotificador ? (usuario?.unidadeSaudeId ?? null) : null;
+  const unidadeTravada = !!unidadeVinculada;
+
+  useEffect(() => {
+    if (unidadeVinculada) {
+      setForm((prev) =>
+        prev.unidade_saude_id === unidadeVinculada
+          ? prev
+          : { ...prev, unidade_saude_id: unidadeVinculada },
+      );
+    }
+  }, [unidadeVinculada]);
 
   const set = (field: keyof FormState) => (value: string) =>
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -286,7 +301,7 @@ export default function NotificadorRegistroCaso() {
           <Select
             value={form.unidade_saude_id}
             onValueChange={set('unidade_saude_id')}
-            disabled={loadingUnidades}
+            disabled={loadingUnidades || unidadeTravada}
           >
             <SelectTrigger className="h-12 text-base rounded-xl">
               <SelectValue placeholder={loadingUnidades ? 'Carregando...' : 'Selecione a unidade'} />
@@ -297,6 +312,11 @@ export default function NotificadorRegistroCaso() {
               ))}
             </SelectContent>
           </Select>
+          {unidadeTravada && (
+            <p className="text-xs text-muted-foreground">
+              Unidade vinculada ao seu cadastro.
+            </p>
+          )}
         </div>
 
         {/* Região / Bairro */}

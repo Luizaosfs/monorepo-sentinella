@@ -12,6 +12,7 @@ type AuthMeResult = {
   nome: string;
   clienteId: string | null;
   agrupamentoId: string | null;
+  unidadeSaudeId: string | null;
   papeis: string[];
 };
 

@@ -37,6 +37,8 @@ export const usuarios = {
       senha: string;
       cliente_id?: string;
       clienteId?: string;
+      unidade_saude_id?: string;
+      unidadeSaudeId?: string;
       papel?: string;
       papeis?: string[];
     };
@@ -45,6 +47,7 @@ export const usuarios = {
       email: p.email,
       senha: p.senha,
       clienteId: p.clienteId ?? p.cliente_id,
+      unidadeSaudeId: p.unidadeSaudeId ?? p.unidade_saude_id,
       papeis: p.papeis ?? (p.papel ? [p.papel] : undefined),
     };
     return deepToSnake(await http.post('/usuarios', body)) as Ret<typeof _sb.usuarios.insert>;

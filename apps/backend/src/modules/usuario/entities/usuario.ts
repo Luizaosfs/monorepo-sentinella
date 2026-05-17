@@ -13,6 +13,8 @@ interface UsuarioProps {
   nome: string;
   email: string;
   clienteId?: string;
+  /** Unidade de saúde vinculada (obrigatória para notificador — enforçado no use-case). */
+  unidadeSaudeId?: string;
   /** Hash da senha (criação local; persistência depende do schema/mapper). */
   senhaHash?: string;
   ativo: boolean;
@@ -54,6 +56,12 @@ export class Usuario extends BaseEntity<UsuarioProps> {
   }
   set clienteId(v: string | undefined) {
     this.props.clienteId = v;
+  }
+  get unidadeSaudeId() {
+    return this.props.unidadeSaudeId;
+  }
+  set unidadeSaudeId(v: string | undefined) {
+    this.props.unidadeSaudeId = v;
   }
   get ativo() {
     return this.props.ativo;

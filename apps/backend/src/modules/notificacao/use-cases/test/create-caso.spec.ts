@@ -1,5 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { mock } from 'jest-mock-extended';
+import { mock, mockDeep } from 'jest-mock-extended';
+
+import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 
 import { EnfileirarScoreImovel } from '../../../job/enfileirar-score-imovel';
 import { CasoNotificado } from '../../entities/notificacao';
@@ -82,6 +84,7 @@ describe('CreateCaso', () => {
         },
         { provide: ResolverAgentePorQuadra, useValue: resolverAgentePorQuadra },
         { provide: EnfileirarScoreImovel, useValue: enfileirarScore },
+        { provide: PrismaService, useValue: mockDeep<PrismaService>() },
       ],
     }).compile();
 

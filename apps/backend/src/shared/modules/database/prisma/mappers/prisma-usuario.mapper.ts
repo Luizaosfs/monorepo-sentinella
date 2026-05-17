@@ -6,6 +6,7 @@ type RawUsuario = {
   nome: string;
   email: string;
   cliente_id: string | null;
+  unidade_saude_id: string | null;
   ativo: boolean;
   onboarding_concluido: boolean;
   created_at: Date;
@@ -21,6 +22,7 @@ export class PrismaUsuarioMapper {
         nome: raw.nome,
         email: raw.email,
         clienteId: raw.cliente_id || undefined,
+        unidadeSaudeId: raw.unidade_saude_id || undefined,
         ativo: raw.ativo,
         onboardingConcluido: raw.onboarding_concluido,
         papeis: (raw.papeis_usuarios || []).map((p) => p.papel as PapelApp),
@@ -38,6 +40,7 @@ export class PrismaUsuarioMapper {
       nome: entity.nome,
       email: entity.email,
       cliente_id: entity.clienteId || null,
+      unidade_saude_id: entity.unidadeSaudeId || null,
       ativo: entity.ativo,
       onboarding_concluido: entity.onboardingConcluido || false,
       updated_at: new Date(),

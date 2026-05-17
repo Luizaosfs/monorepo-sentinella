@@ -66,6 +66,7 @@ describe('LoginUseCase', () => {
       nome: 'Test User',
       clienteId: 'cliente-id-1',
       agrupamentoId: null,
+      unidadeSaudeId: null,
       papeis: ['supervisor', 'notificador'],
       isPlatformAdmin: false,
     });

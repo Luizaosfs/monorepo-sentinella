@@ -7,6 +7,7 @@ import AdminPageHeader from '@/components/AdminPageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
@@ -174,8 +175,7 @@ export default function AdminIntegracoes() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="sm:col-span-2 space-y-1.5">
               <Label>API Key <span className="text-destructive">*</span></Label>
-              <Input
-                type="password"
+              <PasswordInput
                 placeholder={integracao?.api_key_masked ?? 'eyJhbGci... (obtida no Portal DATASUS)'}
                 value={form.api_key}
                 onChange={(e) => setForm({ ...form, api_key: e.target.value })}

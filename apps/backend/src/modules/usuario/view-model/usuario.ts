@@ -10,6 +10,7 @@ export class UsuarioViewModel {
       nome: usuario.nome,
       email: usuario.email,
       clienteId: usuario.clienteId,
+      unidadeSaudeId: usuario.unidadeSaudeId,
       ativo: usuario.ativo,
       onboardingConcluido: usuario.onboardingConcluido,
       papeis: usuario.papeis,

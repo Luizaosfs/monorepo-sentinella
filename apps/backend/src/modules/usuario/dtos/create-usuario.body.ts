@@ -19,6 +19,11 @@ export const createUsuarioSchema = z.object({
     .uuid('clienteId inválido')
     .optional()
     .describe('ID do município/cliente ao qual o usuário pertence'),
+  unidadeSaudeId: z
+    .string()
+    .uuid('unidadeSaudeId inválido')
+    .optional()
+    .describe('Unidade de saúde vinculada (obrigatória para notificador)'),
   papeis: z
     .array(
       z.enum([
@@ -31,6 +36,14 @@ export const createUsuarioSchema = z.object({
     )
     .min(1, 'É obrigatório informar ao menos um papel')
     .describe('Papéis do usuário (admin, supervisor, agente, notificador, analista_regional)'),
+}).superRefine((data, ctx) => {
+  if (data.papeis.includes('notificador') && !data.unidadeSaudeId) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['unidadeSaudeId'],
+      message: 'Notificador exige uma unidade de saúde vinculada',
+    });
+  }
 });
 
 export class CreateUsuarioBody extends createZodDto(createUsuarioSchema) {}

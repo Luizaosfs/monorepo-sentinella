@@ -7,6 +7,7 @@ export interface AuthUserShape {
   nome: string;
   clienteId: string | null;
   agrupamentoId: string | null;
+  unidadeSaudeId: string | null;
   papeis: PapelApp[];
   isPlatformAdmin: boolean;
 }
@@ -19,6 +20,7 @@ export function buildAuthUser(
     nome: string;
     cliente_id: string | null;
     agrupamento_id?: string | null;
+    unidade_saude_id?: string | null;
   },
   papeis: PapelApp[],
 ): AuthUserShape {
@@ -29,6 +31,7 @@ export function buildAuthUser(
     nome: usuario.nome,
     clienteId: usuario.cliente_id,
     agrupamentoId: usuario.agrupamento_id ?? null,
+    unidadeSaudeId: usuario.unidade_saude_id ?? null,
     papeis,
     isPlatformAdmin: papeis.includes('admin' as PapelApp),
   };
