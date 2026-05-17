@@ -440,7 +440,12 @@
       "Bash(cd /cygdrive/d/sentinella/monorepo-sentinella)",
       "Bash(grep -rln \"useCreateUnidadeSaudeMutation\\\\|UnidadesSaude\\\\|unidades-saude\\\\|UnidadeSaude\" apps/frontend/src/pages apps/frontend/src/components)",
       "Bash(grep -rn \"@Post\\\\|@Get\\\\|@Roles\\\\|sync\\\\|Controller\\(\" apps/backend/src/modules/cnes/*.controller.ts)",
-      "PowerShell($env:PGPASSWORD='Sentinella147852369'; & \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -h 177.7.37.14 -p 5432 -U luizAntonio -d sentinella -A -F'|' -c \"SELECT id,nome,cliente_id,ativo,deleted_at,origem,created_at FROM unidades_saude ORDER BY created_at DESC LIMIT 10;\" -c \"SELECT id,nome FROM clientes WHERE nome ILIKE '%lagoas%';\")"
+      "PowerShell($env:PGPASSWORD='Sentinella147852369'; & \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -h 177.7.37.14 -p 5432 -U luizAntonio -d sentinella -A -F'|' -c \"SELECT id,nome,cliente_id,ativo,deleted_at,origem,created_at FROM unidades_saude ORDER BY created_at DESC LIMIT 10;\" -c \"SELECT id,nome FROM clientes WHERE nome ILIKE '%lagoas%';\")",
+      "Bash(pnpm --filter @sentinella/backend run test)",
+      "Bash(pnpm --filter @sentinella/frontend run test)",
+      "PowerShell($env:PGPASSWORD='Sentinella147852369'; $psql=\"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\"; & $psql -h 177.7.37.14 -p 5432 -U luizAntonio -d sentinella -tAc \"SELECT rolname, rolcreatedb, rolsuper FROM pg_roles WHERE rolname=current_user;\"; & $psql -h 177.7.37.14 -p 5432 -U luizAntonio -d sentinella -tAc \"SELECT 1 FROM pg_database WHERE datname='sentinella_test';\")",
+      "Bash(pnpm --filter @sentinella/frontend run test:e2e:chromium)",
+      "Bash(grep -avE \"^\\\\s*$\")"
     ]
   }
 }
