@@ -14,6 +14,7 @@ import {
 } from '../cruzar-caso-com-focos';
 import { ResolverAgentePorQuadra } from '../resolver-agente-por-quadra';
 import { ResolverTerritorioPorCoordenada } from '../resolver-territorio-por-coordenada';
+import { GeocodificarEndereco } from '../../../denuncia/use-cases/geocodificar-endereco';
 
 const SEM_TERRITORIO = {
   bairroId: null,
@@ -52,6 +53,7 @@ describe('CreateCaso', () => {
   const criarFocoDeCasoNotificado = mock<CriarFocoDeCasoNotificado>();
   const resolverTerritorio = mock<ResolverTerritorioPorCoordenada>();
   const resolverAgentePorQuadra = mock<ResolverAgentePorQuadra>();
+  const geocodificarEndereco = mock<GeocodificarEndereco>();
   const enfileirarScore = {
     enfileirarPorCaso: jest.fn().mockResolvedValue(undefined),
   };
@@ -67,6 +69,7 @@ describe('CreateCaso', () => {
       agenteId: null,
       agenteNome: null,
     });
+    geocodificarEndereco.execute.mockResolvedValue(null);
     enfileirarScore.enfileirarPorCaso.mockResolvedValue(undefined);
 
     const module: TestingModule = await Test.createTestingModule({
@@ -83,6 +86,7 @@ describe('CreateCaso', () => {
           useValue: resolverTerritorio,
         },
         { provide: ResolverAgentePorQuadra, useValue: resolverAgentePorQuadra },
+        { provide: GeocodificarEndereco, useValue: geocodificarEndereco },
         { provide: EnfileirarScoreImovel, useValue: enfileirarScore },
         { provide: PrismaService, useValue: mockDeep<PrismaService>() },
       ],
@@ -242,6 +246,59 @@ describe('CreateCaso', () => {
       quadraCodigo: 'Q-007',
     });
     expect(result.agente).toEqual({ id: 'agente-1', nome: 'João' });
+  });
+
+  it('caso sem GPS com endereço: geocodifica, resolve território e persiste coords', async () => {
+    const caso = makeCaso({ latitude: null as any, longitude: null as any });
+    repository.createCaso.mockResolvedValue(caso);
+    geocodificarEndereco.execute.mockResolvedValue({ lat: -20.787, lng: -51.711 });
+    resolverTerritorio.execute.mockResolvedValue({
+      bairroId: 'b-1',
+      bairroNome: 'Centro',
+      quadraId: 'q-1',
+      quadraCodigo: 'Q001',
+    });
+    resolverAgentePorQuadra.execute.mockResolvedValue({
+      agenteId: 'ag-1',
+      agenteNome: 'Maria',
+    });
+
+    await useCase.execute('cliente-uuid-1', 'user-1', {
+      logradouroBairro: 'R. Bruno García, 71 - Centro',
+    } as any);
+
+    expect(geocodificarEndereco.execute).toHaveBeenCalledWith(
+      'R. Bruno García, 71 - Centro',
+      undefined,
+      undefined,
+    );
+    expect(resolverTerritorio.execute).toHaveBeenCalledWith(
+      expect.objectContaining({
+        latitude: -20.787,
+        longitude: -51.711,
+        quadraSnapMetros: [5, 15],
+      }),
+    );
+    expect(repository.vincularTerritorio).toHaveBeenCalledWith('caso-uuid-1', {
+      bairroId: 'b-1',
+      quadraId: 'q-1',
+      latitude: -20.787,
+      longitude: -51.711,
+    });
+    expect(criarFocoDeCasoNotificado.execute).toHaveBeenCalledWith(
+      expect.objectContaining({ latitude: -20.787, longitude: -51.711 }),
+    );
+  });
+
+  it('caso com GPS NÃO geocodifica (usa coords do input)', async () => {
+    const caso = makeCaso({ latitude: -23.5, longitude: -46.6 });
+    repository.createCaso.mockResolvedValue(caso);
+
+    await useCase.execute('cliente-uuid-1', 'user-1', {
+      logradouroBairro: 'Rua X, 1',
+    } as any);
+
+    expect(geocodificarEndereco.execute).not.toHaveBeenCalled();
   });
 
   it('sem quadra resolvida NÃO chama resolverAgentePorQuadra', async () => {

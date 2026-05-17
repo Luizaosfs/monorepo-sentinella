@@ -39,6 +39,7 @@ import { CriarFocoDeCasoNotificado } from './use-cases/criar-foco-de-caso-notifi
 import { ReverterPrioridadeCasoDescartado } from './use-cases/reverter-prioridade-caso-descartado';
 import { ResolverTerritorioPorCoordenada } from './use-cases/resolver-territorio-por-coordenada';
 import { ResolverAgentePorQuadra } from './use-cases/resolver-agente-por-quadra';
+import { GeocodificarEndereco } from '../denuncia/use-cases/geocodificar-endereco';
 
 @Module({
   providers: [
@@ -75,6 +76,7 @@ import { ResolverAgentePorQuadra } from './use-cases/resolver-agente-por-quadra'
     ReverterPrioridadeCasoDescartado,
     ResolverTerritorioPorCoordenada,
     ResolverAgentePorQuadra,
+    GeocodificarEndereco,
     JwtService,
     PrismaService,
   ],

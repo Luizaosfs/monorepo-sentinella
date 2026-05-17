@@ -20,6 +20,9 @@ export interface VincularFocoCasoData {
 export interface VincularTerritorioCasoData {
   bairroId: string | null;
   quadraId: string | null;
+  /** Quando o caso foi geocodificado do endereço, persiste as coordenadas. */
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 @Injectable()

@@ -5,6 +5,7 @@ import { EnfileirarScoreImovel } from '../../job/enfileirar-score-imovel';
 import { CreateCasoBody } from '../dtos/create-notificacao.body';
 import { CasoNotificado } from '../entities/notificacao';
 import { NotificacaoWriteRepository } from '../repositories/notificacao-write.repository';
+import { GeocodificarEndereco } from '../../denuncia/use-cases/geocodificar-endereco';
 import { CriarFocoDeCasoNotificado } from './criar-foco-de-caso-notificado';
 import { CruzarCasoComFocos } from './cruzar-caso-com-focos';
 import { ResolverAgentePorQuadra } from './resolver-agente-por-quadra';
@@ -21,6 +22,7 @@ export class CreateCaso {
     private enfileirarScore: EnfileirarScoreImovel,
     private resolverTerritorio: ResolverTerritorioPorCoordenada,
     private resolverAgentePorQuadra: ResolverAgentePorQuadra,
+    private geocodificarEndereco: GeocodificarEndereco,
     private prisma: PrismaService,
   ) {}
 
@@ -104,11 +106,38 @@ export class CreateCaso {
     let quadraCodigo: string | null = null;
     let agenteId: string | null = null;
     let agenteNome: string | null = null;
+    // Coordenadas efetivas: GPS do input ou, na falta, geocodificadas do
+    // endereço (notificador da UBS quase sempre digita endereço, sem GPS).
+    let lat: number | null = created.latitude ?? null;
+    let lng: number | null = created.longitude ?? null;
+    let geocodificado = false;
     try {
+      const enderecoTexto =
+        input.logradouroBairro?.trim() || input.bairro?.trim() || null;
+      if ((lat == null || lng == null) && enderecoTexto) {
+        const cli = await this.prisma.client.clientes.findUnique({
+          where: { id: created.clienteId },
+          select: { cidade: true, uf: true },
+        });
+        const geo = await this.geocodificarEndereco.execute(
+          enderecoTexto,
+          cli?.cidade,
+          cli?.uf,
+        );
+        if (geo) {
+          lat = geo.lat;
+          lng = geo.lng;
+          geocodificado = true;
+        }
+      }
+
+      // Bairro estrito; quarteirão com snap [5,15] (o geocode cai no eixo da
+      // rua e o polígono da quadra é o miolo do bloco) — regra da denúncia.
       const territorio = await this.resolverTerritorio.execute({
         clienteId: created.clienteId,
-        latitude: created.latitude,
-        longitude: created.longitude,
+        latitude: lat,
+        longitude: lng,
+        quadraSnapMetros: [5, 15],
       });
       // Bairro resolvido geoespacialmente tem precedência; se null, mantém a
       // seleção manual da região (created.regiaoId).
@@ -126,10 +155,13 @@ export class CreateCaso {
         agenteNome = agente.agenteNome;
       }
 
-      if (bairroId !== (created.regiaoId ?? null) || quadraId) {
+      const territorioMudou =
+        bairroId !== (created.regiaoId ?? null) || !!quadraId;
+      if (territorioMudou || geocodificado) {
         await this.repository.vincularTerritorio(created.id!, {
           bairroId,
           quadraId,
+          ...(geocodificado ? { latitude: lat, longitude: lng } : {}),
         });
       }
     } catch (err) {
@@ -145,8 +177,8 @@ export class CreateCaso {
       const resultado = await this.cruzarCasoComFocos.execute({
         casoId: created.id,
         clienteId: created.clienteId,
-        latitude: created.latitude,
-        longitude: created.longitude,
+        latitude: lat,
+        longitude: lng,
       });
       principalFocoId = resultado.principalFocoId;
     } catch (err) {
@@ -162,8 +194,8 @@ export class CreateCaso {
         await this.criarFocoDeCasoNotificado.execute({
           casoId: created.id!,
           clienteId: created.clienteId,
-          latitude: created.latitude,
-          longitude: created.longitude,
+          latitude: lat,
+          longitude: lng,
           regiaoId: created.regiaoId,
           statusCaso: created.status,
           bairroId,
@@ -178,7 +210,7 @@ export class CreateCaso {
     }
 
     // Fase F.1.B — enfileira recálculo dos scores territoriais próximos (best-effort)
-    if (created.latitude != null && created.longitude != null) {
+    if (lat != null && lng != null) {
       try {
         await this.enfileirarScore.enfileirarPorCaso(
           created.id!,

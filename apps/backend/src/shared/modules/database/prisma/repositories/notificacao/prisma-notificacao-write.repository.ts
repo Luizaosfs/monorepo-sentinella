@@ -128,6 +128,9 @@ export class PrismaNotificacaoWriteRepository implements NotificacaoWriteReposit
       data: {
         bairro_id: data.bairroId ?? null,
         quadra_id: data.quadraId ?? null,
+        ...(data.latitude != null && data.longitude != null
+          ? { latitude: data.latitude, longitude: data.longitude }
+          : {}),
       } as any,
     });
   }
