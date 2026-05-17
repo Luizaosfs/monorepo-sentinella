@@ -223,8 +223,8 @@ describe('podeTransicionar — transições inválidas envolvendo em_inspecao', 
   it('em_inspecao → em_triagem (inválido — sem regressão)', () =>
     expect(podeTransicionar('em_inspecao', 'em_triagem')).toBe(false));
 
-  it('em_inspecao → aguarda_inspecao (inválido — sem regressão)', () =>
-    expect(podeTransicionar('em_inspecao', 'aguarda_inspecao')).toBe(false));
+  it('em_inspecao → aguarda_inspecao (back-transition permitida — CLAUDE.md)', () =>
+    expect(podeTransicionar('em_inspecao', 'aguarda_inspecao')).toBe(true));
 
   it('em_inspecao → em_tratamento (inválido — deve confirmar primeiro)', () =>
     expect(podeTransicionar('em_inspecao', 'em_tratamento')).toBe(false));

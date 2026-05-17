@@ -1,5 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
+// compressImage usa new Image().onload + canvas, que o jsdom não implementa
+// (onload nunca dispara → hang). O alvo aqui é uploadImage (FormData/fetch/
+// tratamento de erro), não a compressão — então mockamos a dependência pesada.
+vi.mock('@/lib/compressImage', () => ({
+  compressImage: vi.fn(async (file: File | Blob) => file),
+}));
+
 describe('cloudinary', () => {
   const origFetch = globalThis.fetch;
 

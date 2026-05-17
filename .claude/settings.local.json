@@ -454,7 +454,22 @@
       "Bash(pnpm --filter @sentinella/backend run test:e2e)",
       "Bash(grep -aA 25 \"^  ● \" /cygdrive/d/sentinella/monorepo-sentinella/.tmp_be2e2.txt)",
       "Bash(grep -aA 18 \"useAtualizarStatusFoco > chama api.focosRisco.transicionar\")",
-      "Bash(grep -aA 12 \"AgenteFocoDetalhe.*aguarda_inspecao: exibe SOMENTE\")"
+      "Bash(grep -aA 12 \"AgenteFocoDetalhe.*aguarda_inspecao: exibe SOMENTE\")",
+      "Bash(xargs -I{} grep -nE \"senha|password|hash\" {})",
+      "Bash(sed 's/\\\\x1b\\\\[[0-9;]*m//g')",
+      "Bash(powershell.exe -NoProfile -Command \"\\(Test-NetConnection -ComputerName localhost -Port 3333 -WarningAction SilentlyContinue\\).TcpTestSucceeded\")",
+      "Bash(DATABASE_URL='postgresql://luizAntonio:Sentinella147852369@177.7.37.14:5432/sentinella_test' SECRET_JWT='e2e_local_jwt_secret_min_32_chars_aaaa' NODE_ENV='development' PORT='3334' CANAL_CIDADAO_IP_SALT='e2e_salt' pnpm --filter @sentinella/backend run start:dev)",
+      "Bash(DATABASE_URL='postgresql://luizAntonio:Sentinella147852369@177.7.37.14:5432/sentinella_test' node scripts/provision-e2e-users.mjs)",
+      "Bash(sed -n '1,70p' apps/frontend/e2e/helpers/auth.ts)",
+      "Bash(sed 's/\\\\x1b\\\\[[0-9;]*m//g' __TRACKED_VAR__/b8n2q8q3f.output)",
+      "Bash(grep -aA 12 \"waitForURL: Timeout\")",
+      "Bash(powershell.exe -NoProfile -Command \"Get-NetTCPConnection -LocalPort 3334 -State Listen -EA SilentlyContinue | Select-Object -First 1 LocalAddress,OwningProcess | Format-List\")",
+      "Bash(sed 's/\\\\x1b\\\\[[0-9;]*m//g' C:/Users/luiz/AppData/Local/Temp/claude/D--sentinella-monorepo-sentinella/b8c3edc2-6289-4a07-901b-bd2db782b321/tasks/btroc3uq7.output)",
+      "Bash(E2E_API=http://127.0.0.1:3334 node /cygdrive/d/sentinella/monorepo-sentinella/apps/backend/scripts/check-e2e-login.mjs)",
+      "Bash(grep -avE '^\\\\s*$')",
+      "Bash(powershell.exe -NoProfile -Command \"\\(Get-NetTCPConnection -LocalPort 3334 -State Listen -EA SilentlyContinue|Measure-Object\\).Count\")",
+      "Bash(echo \"backend :3334 vivo: $\\(powershell.exe -NoProfile -Command \"\\(Get-NetTCPConnection -LocalPort 3334 -State Listen -EA SilentlyContinue|Measure-Object\\).Count\" \\)\")",
+      "Bash(powershell.exe -NoProfile -Command 'Get-CimInstance Win32_Process -Filter \"Name='\\\\''node.exe'\\\\''\" | Where-Object { $_.CommandLine -match '\\\\''vite'\\\\'' } | Select-Object ProcessId,CreationDate | Format-List')"
     ]
   }
 }

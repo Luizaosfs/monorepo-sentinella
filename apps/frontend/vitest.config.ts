@@ -9,6 +9,10 @@ export default defineConfig({
     globals: true,
     setupFiles: ["./src/test/setup.ts"],
     include: ["src/**/*.{test,spec}.{ts,tsx}"],
+    // Specs com lazy `await import()` de páginas pesadas (ex.: AgenteFocoDetalhe)
+    // estouravam o default de 10s no transform a frio do vite-swc.
+    testTimeout: 30000,
+    hookTimeout: 30000,
     coverage: {
       provider: "v8",
       reporter: ["text", "html", "json-summary"],

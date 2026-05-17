@@ -221,14 +221,15 @@ describe('useAtualizarStatusFoco', () => {
     const { result } = renderHook(() => useAtualizarStatusFoco(), { wrapper: makeWrapper() });
     result.current.mutate({ focoId: 'f1', statusNovo: 'confirmado' });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(mockTransicionar).toHaveBeenCalledWith('f1', 'confirmado', undefined, undefined);
+    // Service atual: transicionar(focoId, statusNovo, motivo) — sem responsavelId.
+    expect(mockTransicionar).toHaveBeenCalledWith('f1', 'confirmado', undefined);
   });
 
-  it('repassa motivo e responsavelId quando fornecidos', async () => {
+  it('repassa motivo quando fornecido', async () => {
     const { result } = renderHook(() => useAtualizarStatusFoco(), { wrapper: makeWrapper() });
-    result.current.mutate({ focoId: 'f1', statusNovo: 'resolvido', motivo: 'ok', responsavelId: 'u1' });
+    result.current.mutate({ focoId: 'f1', statusNovo: 'resolvido', motivo: 'ok' });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(mockTransicionar).toHaveBeenCalledWith('f1', 'resolvido', 'ok', 'u1');
+    expect(mockTransicionar).toHaveBeenCalledWith('f1', 'resolvido', 'ok');
   });
 });
 

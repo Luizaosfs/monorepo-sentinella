@@ -44,7 +44,10 @@ export default defineConfig({
       /** Mesmo projeto Supabase que `.env.e2e` (Vite carrega `.env` + `.env.e2e` em `--mode e2e`). */
       command: "npm run dev:e2e",
       url: baseURL,
-      reuseExistingServer: !process.env.CI,
+      // false: SEMPRE sobe um Vite novo lendo o .env.e2e atual. Reusar um
+      // servidor antigo (de run anterior) servia API/env desatualizados —
+      // causava login falhando contra backend errado.
+      reuseExistingServer: false,
       timeout: 120_000,
     },
   }),
