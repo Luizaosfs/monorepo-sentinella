@@ -4,10 +4,13 @@ import { HttpException, HttpStatus, Injectable, Logger, NotFoundException } from
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 
+import { ResolverTerritorioPorCoordenada } from '../../notificacao/use-cases/resolver-territorio-por-coordenada';
+import { ResolverAgentePorQuadra } from '../../notificacao/use-cases/resolver-agente-por-quadra';
 import { autoClassificarFoco } from '../../foco-risco/use-cases/auto-criacao/auto-classificar-foco';
 import { gerarCodigoFoco } from '../../foco-risco/use-cases/helpers/gerar-codigo-foco';
 import { DenunciaCidadaoBody } from '../dtos/denuncia-cidadao.body';
 import { EnfileirarNotifCanalCidadao } from './enfileirar-notif-canal-cidadao';
+import { GeocodificarEndereco } from './geocodificar-endereco';
 
 const RATE_LIMIT_MAX = 5;     // por IP por janela de 30 min (igual à função SQL)
 const RATE_LIMIT_WINDOW = 30; // minutos
@@ -36,6 +39,9 @@ export class DenunciarCidadaoV2 {
   constructor(
     private prisma: PrismaService,
     private enfileirarNotifCanalCidadao: EnfileirarNotifCanalCidadao,
+    private geocodificarEndereco: GeocodificarEndereco,
+    private resolverTerritorio: ResolverTerritorioPorCoordenada,
+    private resolverAgentePorQuadra: ResolverAgentePorQuadra,
   ) {}
 
   async execute(
@@ -45,7 +51,7 @@ export class DenunciarCidadaoV2 {
     // 1. Resolver cliente pelo slug
     const cliente = await this.prisma.client.clientes.findFirst({
       where: { slug: input.slug, ativo: true },
-      select: { id: true },
+      select: { id: true, cidade: true, uf: true },
     });
     if (!cliente) {
       throw new NotFoundException('Canal não encontrado.');
@@ -158,6 +164,71 @@ export class DenunciarCidadaoV2 {
       regiaoId = regiao?.id ?? null;
     }
 
+    // 4b. Enriquecimento geográfico (best-effort — nunca bloqueia a denúncia):
+    //   - sem GPS mas com endereço → geocodifica
+    //   - lat/long → bairro + quadra (ST_Contains) → agente responsável (quadra fixa)
+    let lat: number | null = input.latitude ?? null;
+    let lng: number | null = input.longitude ?? null;
+    let bairroId: string | null = regiaoId;
+    let quadraId: string | null = null;
+    let bairroNome: string | null = null;
+    let quadraCodigo: string | null = null;
+    let agenteId: string | null = null;
+    let agenteNome: string | null = null;
+    let quadraAproximada = false;
+    let geocodificado = false;
+
+    try {
+      // Endereço digitado é a fonte de verdade da localização: o GPS do
+      // aparelho pode estar muito errado (ex.: denunciante em outra cidade).
+      // Sempre que houver endereço, geocodifica e usa esse ponto; o GPS só
+      // é usado como fallback quando não há endereço ou o geocode falha.
+      if (input.endereco) {
+        const geo = await this.geocodificarEndereco.execute(
+          input.endereco,
+          cliente.cidade,
+          cliente.uf,
+        );
+        if (geo) {
+          lat = geo.lat;
+          lng = geo.lng;
+          geocodificado = true;
+        }
+      }
+
+      // Bairro estrito (endereço errado → null, não bairro errado).
+      // Quarteirão: ST_Contains e, se falhar, snap p/ o mais próximo até 5m e
+      // depois 15m — o geocode cai no eixo da rua e o polígono da quadra é o
+      // miolo do bloco (recuado alguns metros). `quadra_aproximada` no payload
+      // sinaliza ao operador que a quadra foi resolvida por proximidade.
+      const territorio = await this.resolverTerritorio.execute({
+        clienteId,
+        latitude: lat,
+        longitude: lng,
+        quadraSnapMetros: [5, 15],
+      });
+      bairroId = territorio.bairroId ?? regiaoId;
+      bairroNome = territorio.bairroNome;
+      quadraId = territorio.quadraId;
+      quadraCodigo = territorio.quadraCodigo;
+      quadraAproximada = territorio.quadraAproximada === true;
+
+      if (quadraId) {
+        const agente = await this.resolverAgentePorQuadra.execute(
+          clienteId,
+          quadraId,
+        );
+        agenteId = agente.agenteId;
+        agenteNome = agente.agenteNome;
+      }
+    } catch (err) {
+      this.logger.error(
+        `Enriquecimento geográfico da denúncia falhou (cliente=${clienteId}): ${
+          err instanceof Error ? err.message : String(err)
+        }`,
+      );
+    }
+
     // 5. Criar foco_risco
     const classificacaoInicial = autoClassificarFoco({
       origemTipo: 'cidadao',
@@ -169,20 +240,29 @@ export class DenunciarCidadaoV2 {
     const foco = await this.prisma.client.focos_risco.create({
       data: {
         cliente_id: clienteId,
-        bairro_id: regiaoId,
+        bairro_id: bairroId,
+        quadra_id: quadraId,
+        responsavel_id: agenteId,
         origem_tipo: 'cidadao',
         status: 'suspeita',
         classificacao_inicial: classificacaoInicial,
         prioridade: 'P3',
         ciclo: calcCiclo(),
-        latitude: input.latitude ?? null,
-        longitude: input.longitude ?? null,
+        latitude: lat,
+        longitude: lng,
+        endereco_normalizado: input.endereco ?? null,
         suspeita_em: suspeitaEm,
         observacao: input.descricao,
         codigo_foco: codigoFoco,
         protocolo_publico: protocoloPublico,
         payload: {
-          bairro_id: input.bairroId ?? null,
+          bairro_id: bairroId,
+          bairro_nome: bairroNome,
+          quadra_codigo: quadraCodigo,
+          quadra_aproximada: quadraAproximada,
+          agente_sugerido_id: agenteId,
+          agente_sugerido_nome: agenteNome,
+          geocodificado,
           confirmacoes: 1,
           foto_url: input.fotoUrl ?? null,
           foto_public_id: input.fotoPublicId ?? null,
@@ -196,9 +276,9 @@ export class DenunciarCidadaoV2 {
       await this.enfileirarNotifCanalCidadao.execute({
         focoId: foco.id,
         clienteId,
-        latitude: input.latitude ?? null,
-        longitude: input.longitude ?? null,
-        endereco: null,
+        latitude: lat,
+        longitude: lng,
+        endereco: input.endereco ?? null,
         suspeitaEm,
         origemLevantamentoItemId: null,
       });

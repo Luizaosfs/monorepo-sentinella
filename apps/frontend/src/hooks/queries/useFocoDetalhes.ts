@@ -8,6 +8,10 @@ export interface FocoDetalhes {
     clienteId: string;
     imovelId: string | null;
     regiaoId: string | null;
+    bairroId: string | null;
+    bairroNome: string | null;
+    quadraId: string | null;
+    quadraCodigo: string | null;
     codigoFoco: string | null;
     status: string;
     prioridade: string | null;
@@ -24,6 +28,7 @@ export interface FocoDetalhes {
     desfecho: string | null;
     observacao: string | null;
     casosIds: string[];
+    payload: Record<string, unknown> | null;
     ciclo: number | null;
     tentativasSemAcesso: number;
     pendenteSemAcesso: boolean;

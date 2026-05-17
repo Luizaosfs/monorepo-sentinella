@@ -276,9 +276,8 @@ const PortalDenuncia: React.FC = () => {
       const result = await http.post<{ protocolo: string; id: string }>('/denuncias/cidadao', {
         slug: clienteResolvido.slug,
         bairroId: bairroIdResolvido,
-        descricao: endereco.trim()
-          ? `${descricao.trim()} — Endereço: ${endereco.trim()}`
-          : descricao.trim(),
+        descricao: descricao.trim(),
+        endereco: endereco.trim() || null,
         latitude: coords?.latitude ?? null,
         longitude: coords?.longitude ?? null,
         fotoUrl: fotoResult?.url ?? null,

@@ -24,6 +24,8 @@ export class GetFocoDetalhes {
       include: {
         imovel: true,
         responsavel: { select: { id: true, nome: true, email: true } },
+        bairro: { select: { id: true, nome: true } },
+        quadra: { select: { id: true, codigo: true } },
       },
     });
 
@@ -70,6 +72,10 @@ export class GetFocoDetalhes {
         clienteId: foco.cliente_id,
         imovelId: foco.imovel_id,
         regiaoId: foco.bairro_id,
+        bairroId: foco.bairro_id,
+        bairroNome: foco.bairro?.nome ?? null,
+        quadraId: foco.quadra_id,
+        quadraCodigo: foco.quadra?.codigo ?? null,
         codigoFoco: foco.codigo_foco,
         status: foco.status,
         prioridade: foco.prioridade,
@@ -86,6 +92,7 @@ export class GetFocoDetalhes {
         desfecho: foco.desfecho,
         observacao: foco.observacao,
         casosIds: foco.casos_ids ?? [],
+        payload: (foco.payload as Record<string, unknown> | null) ?? null,
         ciclo: foco.ciclo,
         tentativasSemAcesso: foco.tentativas_sem_acesso ?? 0,
         pendenteSemAcesso: foco.pendente_decisao_supervisor ?? false,

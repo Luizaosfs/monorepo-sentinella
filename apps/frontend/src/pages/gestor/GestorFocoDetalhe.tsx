@@ -257,6 +257,34 @@ export default function GestorFocoDetalhe() {
   const foco = data?.foco ?? null;
   const timeline = data?.timeline ?? [];
 
+  // Campos derivados — `GET /focos-risco/:id` (FocoRiscoViewModel) não traz
+  // bairro/quarteirão/responsável por nome nem endereço de imóvel; denúncia de
+  // cidadão não tem imóvel. Fallback: endereco_normalizado + payload enriquecido.
+  const fp = (foco?.payload ?? {}) as Record<string, unknown>;
+  const str = (v: unknown): string | null =>
+    typeof v === 'string' && v.trim() ? v : null;
+  const enderecoLinha =
+    [str((foco as { logradouro?: string })?.logradouro), str((foco as { numero?: string })?.numero)]
+      .filter(Boolean)
+      .join(', ') ||
+    str(foco?.endereco_normalizado) ||
+    str(fp.endereco) ||
+    null;
+  const bairroLabel =
+    str((foco as { bairro?: string })?.bairro) || str(fp.bairro_nome);
+  const quarteiraoLabel =
+    str((foco as { quarteirao?: string })?.quarteirao) || str(fp.quadra_codigo);
+  const quadraAproximada = fp.quadra_aproximada === true;
+  const agenteSugeridoNome = str(fp.agente_sugerido_nome);
+  const fotoDenuncia = str(fp.foto_url);
+  const geocodificado = fp.geocodificado === true;
+  const responsavelNome =
+    str((foco as { responsavel_nome?: string })?.responsavel_nome) ||
+    (agentes as Array<{ id: string; nome?: string | null }> | undefined)?.find(
+      (a) => a.id === foco?.responsavel_id,
+    )?.nome ||
+    null;
+
   // Redirect terminal focos to the detailed report page
   useEffect(() => {
     if (foco && ['resolvido', 'encaminhado_administrativo', 'acionado_juridico'].includes(foco.status)) {
@@ -459,7 +487,7 @@ export default function GestorFocoDetalhe() {
         </div>
 
         <p className="text-sm text-muted-foreground">
-          {[foco.logradouro, foco.bairro].filter(Boolean).join(', ') || 'Endereço não informado'}
+          {[enderecoLinha, bairroLabel].filter(Boolean).join(' · ') || 'Endereço não informado'}
         </p>
 
         {/* Alerta sem acesso recorrente */}
@@ -632,6 +660,97 @@ export default function GestorFocoDetalhe() {
         </TabsList>
 
         <TabsContent value="resumo" className="mt-4 space-y-4">
+          {/* Localização */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Building2 className="w-4 h-4" /> Localização
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm">
+              <div className="flex justify-between gap-3">
+                <span className="text-muted-foreground shrink-0">Endereço</span>
+                <span className="font-medium text-right">{enderecoLinha ?? '—'}</span>
+              </div>
+              <div className="flex justify-between gap-3">
+                <span className="text-muted-foreground shrink-0">Bairro</span>
+                <span className="font-medium text-right">{bairroLabel ?? '—'}</span>
+              </div>
+              <div className="flex justify-between gap-3">
+                <span className="text-muted-foreground shrink-0">Quarteirão</span>
+                <span className="font-medium text-right">
+                  {quarteiraoLabel ?? '—'}
+                  {quarteiraoLabel && quadraAproximada && (
+                    <span className="ml-1 text-xs font-normal text-amber-600 dark:text-amber-400">(aprox.)</span>
+                  )}
+                </span>
+              </div>
+              <div className="flex justify-between items-center gap-3">
+                <span className="text-muted-foreground shrink-0">Coordenadas</span>
+                <span className="font-medium text-right">
+                  {foco.latitude != null && foco.longitude != null ? (
+                    <a
+                      href={`https://www.google.com/maps?q=${foco.latitude},${foco.longitude}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline inline-flex items-center gap-1"
+                    >
+                      {Number(foco.latitude).toFixed(5)}, {Number(foco.longitude).toFixed(5)}
+                      <Info className="w-3 h-3" />
+                    </a>
+                  ) : '—'}
+                </span>
+              </div>
+              {foco.origem_tipo === 'cidadao' && (
+                <div className="flex justify-between gap-3">
+                  <span className="text-muted-foreground shrink-0">Origem do ponto</span>
+                  <span className={`font-medium text-right ${geocodificado ? 'text-amber-600 dark:text-amber-400' : ''}`}>
+                    {geocodificado ? 'Geocodificado do endereço' : 'GPS do dispositivo'}
+                  </span>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Denúncia do cidadão */}
+          {foco.origem_tipo === 'cidadao' && (
+            <Card className="border-violet-200 dark:border-violet-900/50">
+              <CardHeader>
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-violet-500" /> Denúncia do cidadão
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm">
+                {str((foco as { protocolo_publico?: string }).protocolo_publico) && (
+                  <div className="flex justify-between gap-3">
+                    <span className="text-muted-foreground shrink-0">Protocolo</span>
+                    <span className="font-mono font-medium text-right">
+                      {(foco as { protocolo_publico?: string }).protocolo_publico}
+                    </span>
+                  </div>
+                )}
+                {str(foco.observacao) && (
+                  <p className="text-foreground whitespace-pre-wrap">{foco.observacao}</p>
+                )}
+                {agenteSugeridoNome && (
+                  <div className="flex justify-between gap-3">
+                    <span className="text-muted-foreground shrink-0">Agente sugerido</span>
+                    <span className="font-medium text-right">{agenteSugeridoNome}</span>
+                  </div>
+                )}
+                {fotoDenuncia && (
+                  <a href={fotoDenuncia} target="_blank" rel="noopener noreferrer">
+                    <img
+                      src={fotoDenuncia}
+                      alt="Foto da denúncia"
+                      className="w-full max-h-64 object-cover rounded-lg border border-border/60"
+                    />
+                  </a>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           <Card>
             <CardHeader><CardTitle className="text-sm">Informações do Foco</CardTitle></CardHeader>
             <CardContent className="space-y-2 text-sm">
@@ -683,14 +802,16 @@ export default function GestorFocoDetalhe() {
                 <span className="text-muted-foreground">Origem</span>
                 <span className="font-medium capitalize">{foco.origem_tipo}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Bairro</span>
-                <span className="font-medium">{foco.bairro ?? '—'}</span>
-              </div>
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Responsável</span>
                 <div className="flex items-center gap-1.5">
-                  <span className="font-medium">{foco.responsavel_nome ?? '—'}</span>
+                  <span className="font-medium text-right">
+                    {responsavelNome ?? (
+                      agenteSugeridoNome
+                        ? <span className="text-muted-foreground italic">Sugerido: {agenteSugeridoNome}</span>
+                        : '—'
+                    )}
+                  </span>
                   <button
                     onClick={() => { setAtribuirDialog(true); setNovoResponsavelAtribuir(foco.responsavel_id ?? ''); }}
                     className="text-muted-foreground hover:text-foreground transition-colors"

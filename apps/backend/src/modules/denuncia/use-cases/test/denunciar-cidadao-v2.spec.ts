@@ -10,7 +10,7 @@ const makeInput = (overrides = {}) => ({
   ...overrides,
 });
 
-const mockCliente = { id: 'cliente-uuid-1111' };
+const mockCliente = { id: 'cliente-uuid-1111', cidade: 'São Paulo', uf: 'SP' };
 
 function makePrisma({
   clienteResult = mockCliente,
@@ -53,10 +53,54 @@ function makeEnfileirar() {
   } as any;
 }
 
+function makeGeocode(result: { lat: number; lng: number } | null = null) {
+  return { execute: jest.fn().mockResolvedValue(result) } as any;
+}
+
+function makeResolverTerritorio(
+  result: {
+    bairroId: string | null;
+    bairroNome: string | null;
+    quadraId: string | null;
+    quadraCodigo: string | null;
+  } = { bairroId: null, bairroNome: null, quadraId: null, quadraCodigo: null },
+) {
+  return { execute: jest.fn().mockResolvedValue(result) } as any;
+}
+
+function makeResolverAgente(
+  result: { agenteId: string | null; agenteNome: string | null } = {
+    agenteId: null,
+    agenteNome: null,
+  },
+) {
+  return { execute: jest.fn().mockResolvedValue(result) } as any;
+}
+
+/** Constrói o use-case com mocks default; cada dependência pode ser sobrescrita. */
+function makeUseCase(
+  prisma = makePrisma(),
+  {
+    enfileirar = makeEnfileirar(),
+    geocode = makeGeocode(),
+    territorio = makeResolverTerritorio(),
+    agente = makeResolverAgente(),
+  } = {},
+) {
+  return {
+    useCase: new DenunciarCidadaoV2(prisma, enfileirar, geocode, territorio, agente),
+    prisma,
+    enfileirar,
+    geocode,
+    territorio,
+    agente,
+  };
+}
+
 describe('DenunciarCidadaoV2', () => {
   it('happy path — cria foco e retorna protocolo', async () => {
     const prisma = makePrisma({ focoId: 'aabbccdd-0000-0000-0000-000000000000' });
-    const useCase = new DenunciarCidadaoV2(prisma, makeEnfileirar());
+    const { useCase } = makeUseCase(prisma);
 
     const result = await useCase.execute(makeInput(), 'ip-hash-abc');
 
@@ -67,7 +111,7 @@ describe('DenunciarCidadaoV2', () => {
 
   it('rate limit excedido — lança 429', async () => {
     const prisma = makePrisma({ rateLimitContagem: 6 });
-    const useCase = new DenunciarCidadaoV2(prisma, makeEnfileirar());
+    const { useCase } = makeUseCase(prisma);
 
     await expect(useCase.execute(makeInput(), 'ip-hash-abc')).rejects.toMatchObject({
       status: HttpStatus.TOO_MANY_REQUESTS,
@@ -78,7 +122,7 @@ describe('DenunciarCidadaoV2', () => {
   it('deduplicação geoespacial — retorna foco existente sem criar novo', async () => {
     const existingId = 'existente-uuid-bbbb-0000-000000000000';
     const prisma = makePrisma({ dedupResult: [{ id: existingId }] });
-    const useCase = new DenunciarCidadaoV2(prisma, makeEnfileirar());
+    const { useCase } = makeUseCase(prisma);
 
     const result = await useCase.execute(makeInput(), 'ip-hash-abc');
 
@@ -88,7 +132,7 @@ describe('DenunciarCidadaoV2', () => {
 
   it('cliente inativo / não encontrado — lança NotFoundException', async () => {
     const prisma = makePrisma({ clienteResult: null as any });
-    const useCase = new DenunciarCidadaoV2(prisma, makeEnfileirar());
+    const { useCase } = makeUseCase(prisma);
 
     await expect(useCase.execute(makeInput(), 'ip-hash-abc')).rejects.toBeInstanceOf(
       NotFoundException,
@@ -102,7 +146,7 @@ describe('DenunciarCidadaoV2', () => {
       if (Array.isArray(args[0])) return Promise.resolve([{ ultimo: BigInt(1) }]);
       return Promise.resolve([{ contagem: 1 }]);
     });
-    const useCase = new DenunciarCidadaoV2(prisma, makeEnfileirar());
+    const { useCase } = makeUseCase(prisma);
 
     const result = await useCase.execute(
       makeInput({ latitude: undefined, longitude: undefined }),
@@ -114,10 +158,9 @@ describe('DenunciarCidadaoV2', () => {
     expect(prisma.client.$queryRaw).toHaveBeenCalledTimes(2);
   });
 
-  it('hook EnfileirarNotifCanalCidadao é chamado após criar foco com 7 campos corretos', async () => {
+  it('hook EnfileirarNotifCanalCidadao é chamado após criar foco com campos corretos', async () => {
     const prisma = makePrisma({ focoId: 'foco-novo-1111' });
-    const enfileirar = makeEnfileirar();
-    const useCase = new DenunciarCidadaoV2(prisma, enfileirar);
+    const { useCase, enfileirar } = makeUseCase(prisma);
 
     await useCase.execute(makeInput({ latitude: -10, longitude: -20 }), 'ip-hash-abc');
 
@@ -139,7 +182,7 @@ describe('DenunciarCidadaoV2', () => {
     const enfileirar = {
       execute: jest.fn().mockRejectedValue(new Error('job_queue offline')),
     } as any;
-    const useCase = new DenunciarCidadaoV2(prisma, enfileirar);
+    const { useCase } = makeUseCase(prisma, { enfileirar });
 
     const result = await useCase.execute(makeInput(), 'ip-hash-abc');
 
@@ -150,11 +193,155 @@ describe('DenunciarCidadaoV2', () => {
   it('hook NÃO é chamado quando deduplicado (foco já existe)', async () => {
     const existingId = 'dedup-existente-0000-0000-000000000000';
     const prisma = makePrisma({ dedupResult: [{ id: existingId }] });
-    const enfileirar = makeEnfileirar();
-    const useCase = new DenunciarCidadaoV2(prisma, enfileirar);
+    const { useCase, enfileirar } = makeUseCase(prisma, {
+      enfileirar: makeEnfileirar(),
+    });
 
     await useCase.execute(makeInput(), 'ip-hash-abc');
 
     expect(enfileirar.execute).not.toHaveBeenCalled();
+  });
+
+  // ── Enriquecimento geográfico ───────────────────────────────────────────────
+
+  it('enriquecimento — lat/long dentro de bairro+quadra grava bairro_id/quadra_id/responsavel_id e payload', async () => {
+    const prisma = makePrisma();
+    const territorio = makeResolverTerritorio({
+      bairroId: 'bairro-1',
+      bairroNome: 'Centro',
+      quadraId: 'quadra-9',
+      quadraCodigo: 'Q09',
+    });
+    const agente = makeResolverAgente({ agenteId: 'agente-7', agenteNome: 'João Agente' });
+    const { useCase, geocode } = makeUseCase(prisma, { territorio, agente });
+
+    await useCase.execute(makeInput(), 'ip-hash-abc');
+
+    expect(geocode.execute).not.toHaveBeenCalled(); // sem endereço digitado → não geocodifica
+    expect(territorio.execute).toHaveBeenCalledWith(
+      expect.objectContaining({
+        clienteId: 'cliente-uuid-1111',
+        latitude: -23.5505,
+        longitude: -46.6333,
+        quadraSnapMetros: [5, 15],
+      }),
+    );
+    expect(agente.execute).toHaveBeenCalledWith('cliente-uuid-1111', 'quadra-9');
+
+    const data = prisma.client.focos_risco.create.mock.calls[0][0].data;
+    expect(data).toMatchObject({
+      bairro_id: 'bairro-1',
+      quadra_id: 'quadra-9',
+      responsavel_id: 'agente-7',
+    });
+    expect(data.payload).toMatchObject({
+      bairro_nome: 'Centro',
+      quadra_codigo: 'Q09',
+      agente_sugerido_id: 'agente-7',
+      agente_sugerido_nome: 'João Agente',
+      geocodificado: false,
+    });
+  });
+
+  it('enriquecimento — só endereço: geocodifica e então resolve território (geocodificado:true)', async () => {
+    const prisma = makePrisma();
+    // Sem coords → dedup é pulado; alinha mock: Prisma.sql=rate limit, tagged=gerarCodigoFoco
+    prisma.client.$queryRaw = jest.fn().mockImplementation((...args: any[]) => {
+      if (Array.isArray(args[0])) return Promise.resolve([{ ultimo: BigInt(1) }]);
+      return Promise.resolve([{ contagem: 1 }]);
+    });
+    const geocode = makeGeocode({ lat: -22.9, lng: -43.2 });
+    const territorio = makeResolverTerritorio({
+      bairroId: 'bairro-geo',
+      bairroNome: 'Bairro Geo',
+      quadraId: null,
+      quadraCodigo: null,
+    });
+    const { useCase } = makeUseCase(prisma, { geocode, territorio });
+
+    await useCase.execute(
+      makeInput({
+        latitude: undefined,
+        longitude: undefined,
+        endereco: 'Rua das Flores, 100',
+      }),
+      'ip-hash-abc',
+    );
+
+    expect(geocode.execute).toHaveBeenCalledWith('Rua das Flores, 100', 'São Paulo', 'SP');
+    expect(territorio.execute).toHaveBeenCalledWith(
+      expect.objectContaining({
+        clienteId: 'cliente-uuid-1111',
+        latitude: -22.9,
+        longitude: -43.2,
+      }),
+    );
+    const data = prisma.client.focos_risco.create.mock.calls[0][0].data;
+    expect(data).toMatchObject({
+      latitude: -22.9,
+      longitude: -43.2,
+      bairro_id: 'bairro-geo',
+      endereco_normalizado: 'Rua das Flores, 100',
+    });
+    expect(data.payload.geocodificado).toBe(true);
+  });
+
+  it('enriquecimento — endereço digitado vence o GPS do aparelho (geocodifica mesmo com lat/long)', async () => {
+    const prisma = makePrisma();
+    const geocode = makeGeocode({ lat: -20.7870666, lng: -51.7114864 });
+    const territorio = makeResolverTerritorio({
+      bairroId: 'bairro-centro',
+      bairroNome: 'Centro',
+      quadraId: null,
+      quadraCodigo: null,
+    });
+    const { useCase } = makeUseCase(prisma, { geocode, territorio });
+
+    // GPS do aparelho longe (105 km) + endereço correto digitado
+    await useCase.execute(
+      makeInput({
+        latitude: -20.202367,
+        longitude: -50.911117,
+        endereco: 'R. Bruno García, 71 - Centro',
+      }),
+      'ip-hash-abc',
+    );
+
+    expect(geocode.execute).toHaveBeenCalledWith(
+      'R. Bruno García, 71 - Centro',
+      'São Paulo',
+      'SP',
+    );
+    expect(territorio.execute).toHaveBeenCalledWith(
+      expect.objectContaining({
+        clienteId: 'cliente-uuid-1111',
+        latitude: -20.7870666,
+        longitude: -51.7114864,
+      }),
+    );
+    const data = prisma.client.focos_risco.create.mock.calls[0][0].data;
+    expect(data).toMatchObject({
+      latitude: -20.7870666,
+      longitude: -51.7114864,
+      bairro_id: 'bairro-centro',
+    });
+    expect(data.payload.geocodificado).toBe(true);
+  });
+
+  it('enriquecimento — falha em ResolverTerritorio NÃO bloqueia: foco é criado mesmo assim', async () => {
+    const prisma = makePrisma({ focoId: 'foco-resiliente' });
+    const territorio = {
+      execute: jest.fn().mockRejectedValue(new Error('PostGIS indisponível')),
+    } as any;
+    const { useCase } = makeUseCase(prisma, { territorio });
+
+    const result = await useCase.execute(makeInput(), 'ip-hash-abc');
+
+    expect(result.id).toBe('foco-resiliente');
+    expect(prisma.client.focos_risco.create).toHaveBeenCalledTimes(1);
+    const data = prisma.client.focos_risco.create.mock.calls[0][0].data;
+    // fallback: sem território resolvido, bairro/quadra/responsável ficam nulos
+    expect(data.quadra_id).toBeNull();
+    expect(data.responsavel_id).toBeNull();
   });
 });

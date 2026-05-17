@@ -249,6 +249,59 @@ function TriagemSheet({
           </div>
         </section>
 
+        {displayFoco.origem_tipo === 'cidadao' && (() => {
+          const p = (displayFoco.payload ?? {}) as {
+            foto_url?: string | null;
+            bairro_nome?: string | null;
+            quadra_codigo?: string | null;
+            agente_sugerido_nome?: string | null;
+            geocodificado?: boolean;
+            descricao_original?: string | null;
+          };
+          const prot = (displayFoco as { protocolo_publico?: string | null }).protocolo_publico;
+          const desc = displayFoco.observacao ?? p.descricao_original ?? null;
+          const { latitude: lat, longitude: lng } = displayFoco;
+          return (
+            <section className="space-y-1.5">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                <MessageSquare className="w-3.5 h-3.5" /> Denúncia do cidadão
+              </p>
+              <div className="rounded-sm border border-violet-200 dark:border-violet-900/50 bg-violet-50/50 dark:bg-violet-950/20 p-3 space-y-2 text-sm">
+                {prot && <p className="text-xs font-mono text-muted-foreground">Protocolo: {prot}</p>}
+                {desc && <p className="text-foreground whitespace-pre-wrap">{desc}</p>}
+                <div className="text-xs text-muted-foreground space-y-0.5">
+                  {(p.bairro_nome || p.quadra_codigo) && (
+                    <p>{p.bairro_nome ?? 'Bairro não identificado'}{p.quadra_codigo ? ` · Qd. ${p.quadra_codigo}` : ''}</p>
+                  )}
+                  {p.agente_sugerido_nome && (
+                    <p>Agente sugerido: <strong className="text-foreground/80">{p.agente_sugerido_nome}</strong></p>
+                  )}
+                  {p.geocodificado && <p className="italic">Local obtido por geocodificação do endereço informado.</p>}
+                </div>
+                {p.foto_url && (
+                  <a href={p.foto_url} target="_blank" rel="noopener noreferrer">
+                    <img
+                      src={p.foto_url}
+                      alt="Foto da denúncia"
+                      className="w-full max-h-56 object-cover rounded-sm border border-border/60"
+                    />
+                  </a>
+                )}
+                {lat != null && lng != null && (
+                  <a
+                    href={`https://www.google.com/maps?q=${lat},${lng}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-primary hover:underline inline-flex items-center gap-1"
+                  >
+                    <MapPin className="w-3.5 h-3.5" /> Ver localização no mapa
+                  </a>
+                )}
+              </div>
+            </section>
+          );
+        })()}
+
         {displayFoco.origem_tipo === 'drone' && (
           <section className="space-y-1.5">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">

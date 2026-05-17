@@ -8,6 +8,7 @@ export const denunciaCidadaoSchema = z.object({
   slug: z.string().min(1).max(100),
   bairroId: z.string().uuid().nullish(),
   descricao: z.string().min(1).max(2000),
+  endereco: z.string().max(300).nullish(),
   latitude: z.number().min(-90).max(90).nullish(),
   longitude: z.number().min(-180).max(180).nullish(),
   fotoUrl: z.string().url().max(2048)

@@ -11,8 +11,10 @@ import { Label } from '@/components/ui/label';
 import { Loader2, Megaphone, Copy, Check, ExternalLink, RefreshCw } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { LevantamentoItem } from '@/types/database';
+import { FocoRiscoAtivo } from '@/types/database';
 import { STALE } from '@/lib/queryConfig';
+
+type StatusAtendimento = 'pendente' | 'em_atendimento' | 'resolvido';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -26,7 +28,7 @@ interface ClienteComSlug {
 // No canal cidadão, `confirmado` aparece como "Pendente" (ainda não tratado do ponto de vista
 // do gestor), diferindo de enrichItensComFoco onde `confirmado` → 'em_atendimento'.
 // Não substituir por mapFocoToStatusOperacional sem validação de produto.
-function mapFocoStatusToAtendimento(status?: string | null): LevantamentoItem['status_atendimento'] {
+function mapFocoStatusToAtendimento(status?: string | null): StatusAtendimento {
   const s = String(status ?? '').toLowerCase();
   if (s === 'resolvido' || s === 'descartado' || s === 'cancelado') return 'resolvido';
   if (s === 'em_triagem' || s === 'em_tratamento') return 'em_atendimento';
@@ -60,14 +62,24 @@ function QrCode({ url }: { url: string }) {
 
 // ── Complaint row ─────────────────────────────────────────────────────────────
 
-function ComplaintRow({ item }: { item: LevantamentoItem }) {
-  const isPending = item.status_atendimento === 'pendente';
-  const descricaoOriginal =
-    (item.payload as Record<string, unknown> | null)?.descricao_original as string | undefined;
-  const bairroId =
-    (item.payload as Record<string, unknown> | null)?.bairro_id as string | undefined;
+function ComplaintRow({ foco }: { foco: FocoRiscoAtivo }) {
+  const statusAtend = mapFocoStatusToAtendimento(foco.status);
+  const isPending = statusAtend === 'pendente';
+  const p = (foco.payload ?? {}) as {
+    foto_url?: string | null;
+    bairro_nome?: string | null;
+    quadra_codigo?: string | null;
+    agente_sugerido_nome?: string | null;
+    descricao_original?: string | null;
+  };
+  const descricao = foco.observacao ?? p.descricao_original ?? null;
+  const protocolo = (foco as { protocolo_publico?: string | null }).protocolo_publico;
+  const local =
+    [p.bairro_nome, p.quadra_codigo ? `Qd. ${p.quadra_codigo}` : null]
+      .filter(Boolean)
+      .join(' · ') || foco.endereco_normalizado;
 
-  const date = new Date(item.created_at).toLocaleString('pt-BR', {
+  const date = new Date(foco.created_at).toLocaleString('pt-BR', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
@@ -84,27 +96,32 @@ function ComplaintRow({ item }: { item: LevantamentoItem }) {
               Novo
             </Badge>
           )}
-          <span className="text-xs font-mono text-muted-foreground">{item.id.slice(0, 8).toUpperCase()}</span>
+          <span className="text-xs font-mono text-muted-foreground">
+            {protocolo ?? foco.codigo_foco ?? foco.id.slice(0, 8).toUpperCase()}
+          </span>
           <span className="text-xs text-muted-foreground">{date}</span>
         </div>
         <p className="text-sm text-foreground mt-1 line-clamp-2">
-          {descricaoOriginal || item.endereco_curto || '(sem descrição)'}
+          {descricao || local || '(sem descrição)'}
         </p>
-        {bairroId && (
+        {local && (
+          <p className="text-xs text-muted-foreground mt-0.5">{local}</p>
+        )}
+        {p.agente_sugerido_nome && (
           <p className="text-xs text-muted-foreground mt-0.5">
-            Bairro ID: {bairroId.slice(0, 8)}...
+            Agente: {p.agente_sugerido_nome}
           </p>
         )}
-        {(item.payload as Record<string, unknown> | null)?.foto_url && (
+        {p.foto_url && (
           <img
-            src={(item.payload as Record<string, unknown>).foto_url as string}
+            src={p.foto_url}
             alt="Foto da denúncia"
             className="mt-1.5 h-16 w-24 object-cover rounded-lg border border-border/60"
           />
         )}
-        {(item.latitude != null && item.longitude != null) && (
+        {(foco.latitude != null && foco.longitude != null) && (
           <a
-            href={`https://www.google.com/maps?q=${item.latitude},${item.longitude}`}
+            href={`https://www.google.com/maps?q=${foco.latitude},${foco.longitude}`}
             target="_blank"
             rel="noopener noreferrer"
             className="text-xs text-primary hover:underline flex items-center gap-1 mt-0.5"
@@ -121,7 +138,7 @@ function ComplaintRow({ item }: { item: LevantamentoItem }) {
             : 'border-emerald-300 text-emerald-700 dark:text-emerald-400'
         }`}
       >
-        {item.status_atendimento === 'resolvido' ? 'Resolvido' : item.status_atendimento === 'em_atendimento' ? 'Em andamento' : 'Pendente'}
+        {statusAtend === 'resolvido' ? 'Resolvido' : statusAtend === 'em_atendimento' ? 'Em andamento' : 'Pendente'}
       </Badge>
     </div>
   );
@@ -160,25 +177,16 @@ const AdminCanalCidadao: React.FC = () => {
     data: denuncias = [],
     isLoading: denLoading,
     refetch: refetchDenuncias,
-  } = useQuery<LevantamentoItem[]>({
+  } = useQuery<FocoRiscoAtivo[]>({
     queryKey: ['canal_cidadao_denuncias', clienteId],
     queryFn: async () => {
       if (!clienteId) return [];
       try {
-        const data = await http.get(
-          `/levantamentos/itens?clienteId=${encodeURIComponent(clienteId)}&tipo=${encodeURIComponent('Denúncia Cidadão')}&limit=200`,
-        ) as Array<Record<string, unknown>>;
-        return ((data) || []).map((row) => {
-          const focoRaw = row.foco as Record<string, unknown> | Array<Record<string, unknown>> | null;
-          const foco = Array.isArray(focoRaw) ? (focoRaw[0] ?? null) : focoRaw;
-          const status = mapFocoStatusToAtendimento((foco?.status as string | undefined) ?? null);
-          return {
-            ...(row as unknown as LevantamentoItem),
-            status_atendimento: status,
-            acao_aplicada: (foco?.desfecho as string | null) ?? null,
-            data_resolucao: (foco?.resolvido_em as string | null) ?? null,
-          } as LevantamentoItem;
-        });
+        const res = await api.focosRisco.list(clienteId, { origem_tipo: 'cidadao' });
+        const data = ((res as { data?: FocoRiscoAtivo[] } | null)?.data ?? []) as FocoRiscoAtivo[];
+        return [...data]
+          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+          .slice(0, 200);
       } catch {
         return [];
       }
@@ -201,8 +209,8 @@ const AdminCanalCidadao: React.FC = () => {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const pendingCount = denuncias.filter((d) => d.status_atendimento === 'pendente').length;
-  const resolvedCount = denuncias.filter((d) => d.status_atendimento !== 'pendente').length;
+  const pendingCount = denuncias.filter((d) => mapFocoStatusToAtendimento(d.status) === 'pendente').length;
+  const resolvedCount = denuncias.length - pendingCount;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -358,8 +366,8 @@ const AdminCanalCidadao: React.FC = () => {
               </div>
             ) : (
               <div className="divide-y divide-border/50">
-                {denuncias.map((item) => (
-                  <ComplaintRow key={item.id} item={item} />
+                {denuncias.map((f) => (
+                  <ComplaintRow key={f.id} foco={f} />
                 ))}
               </div>
             )}
