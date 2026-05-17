@@ -445,7 +445,16 @@
       "Bash(pnpm --filter @sentinella/frontend run test)",
       "PowerShell($env:PGPASSWORD='Sentinella147852369'; $psql=\"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\"; & $psql -h 177.7.37.14 -p 5432 -U luizAntonio -d sentinella -tAc \"SELECT rolname, rolcreatedb, rolsuper FROM pg_roles WHERE rolname=current_user;\"; & $psql -h 177.7.37.14 -p 5432 -U luizAntonio -d sentinella -tAc \"SELECT 1 FROM pg_database WHERE datname='sentinella_test';\")",
       "Bash(pnpm --filter @sentinella/frontend run test:e2e:chromium)",
-      "Bash(grep -avE \"^\\\\s*$\")"
+      "Bash(grep -avE \"^\\\\s*$\")",
+      "Bash(sed 's/\\\\x1b\\\\[[0-9;]*m//g' C:/Users/luiz/AppData/Local/Temp/claude/D--sentinella-monorepo-sentinella/b8c3edc2-6289-4a07-901b-bd2db782b321/tasks/bzty0n8bg.output)",
+      "Bash(grep -aA 18 \"● PATCH /focos-risco/:id/iniciar-inspecao \\(e2e\\) › 200 happy path\" /cygdrive/d/sentinella/monorepo-sentinella/.tmp_be2e.txt)",
+      "Bash(grep -aA 16 \"● BackfillConsolidacaoService \\(e2e\\) › backfill consolida\" /cygdrive/d/sentinella/monorepo-sentinella/.tmp_be2e.txt)",
+      "Bash(xargs -I{} grep -nE \"model bairros_quadras |^  [a-z_]+ +[A-Za-z]|@relation|@db|@default|@id|@@\" {})",
+      "Bash(rm -f .tmp_be2e.txt)",
+      "Bash(pnpm --filter @sentinella/backend run test:e2e)",
+      "Bash(grep -aA 25 \"^  ● \" /cygdrive/d/sentinella/monorepo-sentinella/.tmp_be2e2.txt)",
+      "Bash(grep -aA 18 \"useAtualizarStatusFoco > chama api.focosRisco.transicionar\")",
+      "Bash(grep -aA 12 \"AgenteFocoDetalhe.*aguarda_inspecao: exibe SOMENTE\")"
     ]
   }
 }

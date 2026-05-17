@@ -227,7 +227,12 @@ describe('TransicionarFocoRisco', () => {
     expect(result.slaFechados).toBe(0);
   });
 
-  it('compensação: erro no IniciarSla NÃO bloqueia foco+histórico e registra em sla_erros_criacao', async () => {
+  it('SLA obrigatório ao confirmar: erro no IniciarSla reverte a transição (propaga)', async () => {
+    // Contrato atual (CLAUDE.md / transicionar-foco-risco.ts): no caminho
+    // `confirmado` o IniciarSla roda SEM try/catch — falha reverte a tx inteira
+    // e propaga. Garante que todo foco confirmado tem sla_operacional. (O path
+    // de compensação não-bloqueante cobre os hooks de descartado/resolvido,
+    // não o confirmado.)
     const foco = new FocoRiscoBuilder().withStatus('em_inspecao').build();
     readRepo.findById.mockResolvedValue(foco);
     writeRepo.save.mockResolvedValue();
@@ -236,30 +241,10 @@ describe('TransicionarFocoRisco', () => {
       statusNovo: 'confirmado',
     });
     iniciarSla.execute.mockRejectedValue(new Error('config corrompida'));
-    slaWriteRepo.registrarErroCriacao.mockResolvedValue();
 
-    const result = await useCase.execute(foco.id!, { statusPara: 'confirmado' });
-
-    // Foco salvou e histórico foi criado apesar do erro de SLA
-    expect(writeRepo.save).toHaveBeenCalled();
-    expect(writeRepo.createHistorico).toHaveBeenCalled();
-    expect(result.foco.status).toBe('confirmado');
-    expect(result.sla).toBeNull();
-    expect(result.slaError).toContain('config corrompida');
-
-    // Aguarda o microtask do .catch() no registrarErroCriacao
-    await new Promise((r) => setImmediate(r));
-    expect(slaWriteRepo.registrarErroCriacao).toHaveBeenCalledWith(
-      expect.objectContaining({
-        clienteId: foco.clienteId,
-        focoRiscoId: foco.id,
-        erro: 'config corrompida',
-        contexto: expect.objectContaining({
-          use_case: 'TransicionarFocoRisco',
-          status_novo: 'confirmado',
-        }),
-      }),
-    );
+    await expect(
+      useCase.execute(foco.id!, { statusPara: 'confirmado' }),
+    ).rejects.toThrow('config corrompida');
   });
 
   it('deve rejeitar aguarda_inspecao → em_inspecao (fluxo exclusivo de iniciar-inspecao)', async () => {

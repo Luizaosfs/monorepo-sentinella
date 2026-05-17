@@ -201,7 +201,8 @@ async function waitFor<T>(
       expect(historico).toHaveLength(1);
       expect(historico[0]).toMatchObject({
         cliente_id: E2E_CLIENTE_ID,
-        tipo_evento: 'CRIACAO',
+        // Produto grava em minúsculo (paridade com 'inspecao_iniciada' etc.).
+        tipo_evento: 'criacao',
         status_anterior: null,
         status_novo: 'suspeita',
       });
@@ -294,11 +295,13 @@ async function waitFor<T>(
       expect(jobs).toHaveLength(1);
       expect((jobs[0].payload as Record<string, unknown>).foco_id).toBe(id1);
 
-      // Log: 1 ACEITO + 1 DEDUPLICADO.
+      // Log: 1 ACEITO + 1 DEDUPLICADO. Escopo por foco_id=id1 — o log é
+      // fire-and-forget; sem esse filtro um ACEITO atrasado do teste anterior
+      // (outro foco_id) pode vazar e quebrar o assert (flake de isolamento).
       const logs = await waitFor(
         () =>
           prisma.canal_cidadao_rate_log.findMany({
-            where: { cliente_id: E2E_CLIENTE_ID },
+            where: { cliente_id: E2E_CLIENTE_ID, foco_id: id1 },
             orderBy: { created_at: 'asc' },
           }),
         (rows) => rows.length >= 2,

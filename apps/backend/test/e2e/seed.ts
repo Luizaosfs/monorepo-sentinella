@@ -22,6 +22,15 @@ export const INATIVO_AUTH_ID = '00000000-e2e0-4000-8000-0000000000c2';
 export const ADMIN_USUARIO_ID = '00000000-e2e0-4000-8000-0000000000e1';
 export const ADMIN_AUTH_ID = '00000000-e2e0-4000-8000-0000000000e2';
 
+// Agente referenciado por hardcode em backfill-consolidacao.e2e.spec.ts
+// (vistorias.agente_id → usuarios.id). UUID fixo deve existir como usuário.
+export const BACKFILL_AGENTE_USUARIO_ID = '00000000-0000-4000-8000-000000000030';
+export const BACKFILL_AGENTE_AUTH_ID = '00000000-0000-4000-8000-000000000031';
+
+// Território do AGENTE canônico — exigido pelo G7 de IniciarInspecao
+// (EnsureAgentePodeAtuarNaQuadra: bairros_distribuicao com ciclo_id NULL).
+export const E2E_QUADRA_ID = '00000000-e2e0-4000-8000-0000000000f1';
+
 export async function seedE2E(prisma: PrismaClient): Promise<void> {
   await prisma.clientes.upsert({
     where: { id: E2E_CLIENTE_ID },
@@ -82,6 +91,15 @@ export async function seedE2E(prisma: PrismaClient): Promise<void> {
       ativo: true,
       clienteId: null,
     },
+    {
+      id: BACKFILL_AGENTE_USUARIO_ID,
+      auth_id: BACKFILL_AGENTE_AUTH_ID,
+      nome: 'E2E Agente Backfill',
+      email: 'e2e-agente-backfill@sentinella.test',
+      papel: 'agente' as const,
+      ativo: true,
+      clienteId: E2E_CLIENTE_ID as string | null,
+    },
   ];
 
   for (const u of usuariosFixos) {
@@ -113,5 +131,40 @@ export async function seedE2E(prisma: PrismaClient): Promise<void> {
         data: { usuario_id: u.auth_id, papel: u.papel },
       });
     }
+  }
+
+  // Quadra canônica do cliente E2E (focos_risco.quadra_id / imoveis.quadra_id).
+  await prisma.bairros_quadras.upsert({
+    where: { id: E2E_QUADRA_ID },
+    create: {
+      id: E2E_QUADRA_ID,
+      cliente_id: E2E_CLIENTE_ID,
+      codigo: 'E2E-Q1',
+      ativo: true,
+    },
+    update: { cliente_id: E2E_CLIENTE_ID, codigo: 'E2E-Q1', ativo: true },
+  });
+
+  // Distribuição territorial do AGENTE canônico → quadra E2E.
+  // ciclo_id NULL é o vínculo canônico lido por EnsureAgentePodeAtuarNaQuadra
+  // (G7 de IniciarInspecao). Idempotente.
+  const jaTemDist = await prisma.bairros_distribuicao.findFirst({
+    where: {
+      cliente_id: E2E_CLIENTE_ID,
+      agente_id: AGENTE_USUARIO_ID,
+      quadra_id: E2E_QUADRA_ID,
+      ciclo_id: null,
+    },
+    select: { id: true },
+  });
+  if (!jaTemDist) {
+    await prisma.bairros_distribuicao.create({
+      data: {
+        cliente_id: E2E_CLIENTE_ID,
+        agente_id: AGENTE_USUARIO_ID,
+        quadra_id: E2E_QUADRA_ID,
+        ciclo_id: null,
+      },
+    });
   }
 }

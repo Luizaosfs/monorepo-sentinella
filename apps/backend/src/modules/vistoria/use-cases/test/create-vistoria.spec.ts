@@ -6,6 +6,7 @@ import { ForbiddenException } from '@nestjs/common';
 import { VerificarQuota } from '../../../billing/use-cases/verificar-quota';
 import { IniciarInspecao } from '../../../foco-risco/use-cases/iniciar-inspecao';
 import { EnfileirarScoreImovel } from '../../../job/enfileirar-score-imovel';
+import { EnsureAgentePodeAtuarNaQuadra } from '../../../quarteirao/use-cases/ensure-agente-pode-atuar-na-quadra';
 import { mockRequest } from '@test/utils/user-helpers';
 
 import { CreateVistoriaBody } from '../../dtos/create-vistoria.body';
@@ -27,6 +28,10 @@ describe('CreateVistoria', () => {
   const mockValidarCiclo = { execute: jest.fn().mockResolvedValue(undefined) };
   const mockIniciarInspecao = { execute: jest.fn().mockResolvedValue(undefined) };
   const mockAtualizarPerfil = { execute: jest.fn().mockResolvedValue(undefined) };
+  const mockEnsureAgente = {
+    execute: jest.fn().mockResolvedValue(undefined),
+    executeByQuadraId: jest.fn().mockResolvedValue(undefined),
+  };
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -34,6 +39,8 @@ describe('CreateVistoria', () => {
     mockValidarCiclo.execute.mockResolvedValue(undefined);
     mockIniciarInspecao.execute.mockResolvedValue(undefined);
     mockAtualizarPerfil.execute.mockResolvedValue(undefined);
+    mockEnsureAgente.execute.mockResolvedValue(undefined);
+    mockEnsureAgente.executeByQuadraId.mockResolvedValue(undefined);
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CreateVistoria,
@@ -45,6 +52,7 @@ describe('CreateVistoria', () => {
         { provide: ValidarCicloVistoria, useValue: mockValidarCiclo },
         { provide: IniciarInspecao, useValue: mockIniciarInspecao },
         { provide: AtualizarPerfilImovel, useValue: mockAtualizarPerfil },
+        { provide: EnsureAgentePodeAtuarNaQuadra, useValue: mockEnsureAgente },
         {
           provide: REQUEST,
           useValue: mockRequest({

@@ -47,6 +47,23 @@ const skipE2e = process.env.SKIP_E2E === '1';
 
     afterEach(async () => {
       if (createdIds.length === 0) return;
+      // As vistorias com depósito+larva disparam o hook de auto-criação de
+      // foco (Fase C.3). Esses focos têm origem_vistoria_id = vistoria criada
+      // e NÃO eram limpos aqui — vazavam para a suíte de denúncia (assert
+      // `focos.toHaveLength(0)`). Limpar histórico → focos → vistorias.
+      const focosAuto = await prisma.focos_risco.findMany({
+        where: { origem_vistoria_id: { in: createdIds } },
+        select: { id: true },
+      });
+      const focoIds = focosAuto.map((f) => f.id);
+      if (focoIds.length > 0) {
+        await prisma.foco_risco_historico.deleteMany({
+          where: { foco_risco_id: { in: focoIds } },
+        });
+        await prisma.focos_risco.deleteMany({
+          where: { id: { in: focoIds } },
+        });
+      }
       await prisma.vistoria_consolidacao_historico.deleteMany({
         where: { vistoria_id: { in: createdIds } },
       });

@@ -20,7 +20,8 @@ const quadraMock = { id: QUADRA, bairro_id: null };
 const prismaMock = {
   client: {
     bairros_quadras: { findFirst: jest.fn() },
-    $queryRaw: jest.fn(),
+    // Use-case migrou de $queryRaw para usuarios.findFirst na resolução do agente.
+    usuarios: { findFirst: jest.fn() },
   },
 } as any;
 
@@ -31,7 +32,7 @@ describe('AtribuirQuadraTerritorial', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
     prismaMock.client.bairros_quadras.findFirst.mockResolvedValue(quadraMock);
-    prismaMock.client.$queryRaw.mockResolvedValue([{ id: AGENTE }]);
+    prismaMock.client.usuarios.findFirst.mockResolvedValue({ id: AGENTE });
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -69,7 +70,7 @@ describe('AtribuirQuadraTerritorial', () => {
       .withAgenteId(AGENTE_2)
       .build();
     writeRepo.atribuirQuadraTerritorial.mockResolvedValue(distAtualizada);
-    prismaMock.client.$queryRaw.mockResolvedValue([{ id: AGENTE_2 }]);
+    prismaMock.client.usuarios.findFirst.mockResolvedValue({ id: AGENTE_2 });
 
     const result = await useCase.execute({ quadraId: QUADRA, agenteId: AGENTE_2 });
 
@@ -98,7 +99,7 @@ describe('AtribuirQuadraTerritorial', () => {
   });
 
   it('deve rejeitar agente de outro cliente (não aparece no $queryRaw)', async () => {
-    prismaMock.client.$queryRaw.mockResolvedValue([]);
+    prismaMock.client.usuarios.findFirst.mockResolvedValue(null);
 
     await expectHttpException(
       () => useCase.execute({ quadraId: QUADRA, agenteId: AGENTE }),
@@ -108,7 +109,7 @@ describe('AtribuirQuadraTerritorial', () => {
   });
 
   it('deve rejeitar agente inativo (u.ativo = false — $queryRaw retorna vazio)', async () => {
-    prismaMock.client.$queryRaw.mockResolvedValue([]);
+    prismaMock.client.usuarios.findFirst.mockResolvedValue(null);
 
     await expectHttpException(
       () => useCase.execute({ quadraId: QUADRA, agenteId: AGENTE }),

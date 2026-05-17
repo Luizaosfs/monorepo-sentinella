@@ -70,6 +70,8 @@ describe('CreateLevantamentoItem', () => {
 
     expect(writeRepo.createItem).toHaveBeenCalledWith({
       levantamentoId: 'lev-1',
+      // Fix mai/2026: use-case seta cliente_id explícito (do levantamento pai).
+      clienteId: 'test-cliente-id',
       latitude: -23.5,
       longitude: -46.6,
       item: 'tanque',

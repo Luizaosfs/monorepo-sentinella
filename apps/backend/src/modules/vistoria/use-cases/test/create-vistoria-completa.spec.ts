@@ -7,6 +7,7 @@ import { CriarFocoDeVistoriaDeposito } from '@/modules/foco-risco/use-cases/auto
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 import { VerificarQuota } from '../../../billing/use-cases/verificar-quota';
 import { EnfileirarScoreImovel } from '../../../job/enfileirar-score-imovel';
+import { EnsureAgentePodeAtuarNaQuadra } from '../../../quarteirao/use-cases/ensure-agente-pode-atuar-na-quadra';
 import { mockRequest } from '@test/utils/user-helpers';
 
 import { CreateVistoriaCompletaBody } from '../../dtos/create-vistoria-completa.body';
@@ -27,12 +28,18 @@ describe('CreateVistoriaCompleta', () => {
   const mockVerificarQuota = { execute: jest.fn().mockResolvedValue({ ok: true, usado: 0, limite: null }) };
   const mockValidarCiclo = { execute: jest.fn().mockResolvedValue(undefined) };
   const mockAtualizarPerfil = { execute: jest.fn().mockResolvedValue(undefined) };
+  const mockEnsureAgente = {
+    execute: jest.fn().mockResolvedValue(undefined),
+    executeByQuadraId: jest.fn().mockResolvedValue(undefined),
+  };
 
   beforeEach(async () => {
     jest.clearAllMocks();
     mockVerificarQuota.execute.mockResolvedValue({ ok: true, usado: 0, limite: null });
     mockValidarCiclo.execute.mockResolvedValue(undefined);
     mockAtualizarPerfil.execute.mockResolvedValue(undefined);
+    mockEnsureAgente.execute.mockResolvedValue(undefined);
+    mockEnsureAgente.executeByQuadraId.mockResolvedValue(undefined);
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CreateVistoriaCompleta,
@@ -44,6 +51,7 @@ describe('CreateVistoriaCompleta', () => {
         { provide: ValidarCicloVistoria, useValue: mockValidarCiclo },
         { provide: AtualizarPerfilImovel, useValue: mockAtualizarPerfil },
         { provide: PrismaService, useValue: mockPrisma },
+        { provide: EnsureAgentePodeAtuarNaQuadra, useValue: mockEnsureAgente },
         {
           provide: REQUEST,
           useValue: mockRequest({

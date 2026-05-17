@@ -135,7 +135,7 @@ describe('TenantGuard', () => {
       clienteIdsPermitidos: null,
       agrupamentoId: null,
     });
-    expect(req.tenantId).toBeNull();
+    expect(req.accessScope.tenantId).toBeNull();
   });
 
   it('admin com ?clienteId=X → PlatformScope com tenantId=X, clienteIdsPermitidos=[X]', async () => {
@@ -161,7 +161,7 @@ describe('TenantGuard', () => {
       tenantId: 'cliente-x',
       clienteIdsPermitidos: ['cliente-x'],
     });
-    expect(req.tenantId).toBe('cliente-x');
+    expect(req.accessScope.tenantId).toBe('cliente-x');
   });
 
   it('supervisor com clienteId → MunicipalScope correto', async () => {
@@ -188,7 +188,7 @@ describe('TenantGuard', () => {
       clienteIdsPermitidos: ['muni-uuid'],
       agrupamentoId: null,
     });
-    expect(req.tenantId).toBe('muni-uuid');
+    expect(req.accessScope.tenantId).toBe('muni-uuid');
   });
 
   it('supervisor sem clienteId → ForbiddenException', async () => {
@@ -274,7 +274,7 @@ describe('TenantGuard', () => {
       clienteIdsPermitidos: ['c1', 'c2'],
       agrupamentoId: 'ag-uuid',
     });
-    expect(req.tenantId).toBeNull();
+    expect(req.accessScope.tenantId).toBeNull();
     expect(mockFindMany).toHaveBeenCalledWith({
       where: { agrupamento_id: 'ag-uuid' },
       select: { cliente_id: true },

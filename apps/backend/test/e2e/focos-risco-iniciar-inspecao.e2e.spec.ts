@@ -14,6 +14,7 @@ import {
   AGENTE_AUTH_ID,
   AGENTE_USUARIO_ID,
   E2E_CLIENTE_ID,
+  E2E_QUADRA_ID,
   INATIVO_AUTH_ID,
   signTokenFor,
   SUPERVISOR_AUTH_ID,
@@ -85,6 +86,7 @@ const OUTRO_CLIENTE_ID = '00000000-e2e0-4000-8000-0000000000ee';
         clienteId?: string;
         responsavelId?: string | null;
         inspecaoEm?: Date | null;
+        quadraId?: string | null;
       } = {},
     ) {
       const id = randomUUID();
@@ -97,6 +99,12 @@ const OUTRO_CLIENTE_ID = '00000000-e2e0-4000-8000-0000000000ee';
           classificacao_inicial: 'suspeito',
           responsavel_id: overrides.responsavelId ?? null,
           inspecao_em: overrides.inspecaoEm ?? null,
+          // G7 (EnsureAgentePodeAtuarNaQuadra): foco precisa de território.
+          // Quadra canônica do seed, atribuída ao AGENTE via bairros_distribuicao.
+          quadra_id:
+            overrides.quadraId === undefined
+              ? E2E_QUADRA_ID
+              : overrides.quadraId,
         },
       });
     }
@@ -129,13 +137,14 @@ const OUTRO_CLIENTE_ID = '00000000-e2e0-4000-8000-0000000000ee';
         .expect(401);
     });
 
-    it('401 supervisor (RolesGuard — endpoint só @Roles(admin, agente))', async () => {
+    it('403 supervisor (RolesGuard — endpoint só @Roles(admin, agente))', async () => {
       const foco = await createFoco();
       await request(app.getHttpServer())
         .patch(`/focos-risco/${foco.id}/iniciar-inspecao`)
         .set('Authorization', `Bearer ${signTokenFor(SUPERVISOR_AUTH_ID)}`)
         .send({})
-        .expect(401);
+        // RolesGuard nega papel fora de @Roles → ForbiddenException (403).
+        .expect(403);
     });
 
     it('403 admin — passa RolesGuard mas use-case G3 (apenasAgenteInicia) bloqueia', async () => {
