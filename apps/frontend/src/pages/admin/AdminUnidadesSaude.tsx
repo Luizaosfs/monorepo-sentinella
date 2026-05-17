@@ -428,6 +428,9 @@ export default function AdminUnidadesSaude() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin_unidades_saude', clienteId] });
+      // Mesma fonte consumida por useUnidadesSaude (cadastro de notificador /
+      // registro de caso) — invalidar para a UBS nova aparecer sem hard reload.
+      queryClient.invalidateQueries({ queryKey: ['unidades_saude'] });
       setShowForm(false);
       toast.success(editing ? 'Unidade atualizada' : 'Unidade cadastrada');
     },
@@ -446,6 +449,7 @@ export default function AdminUnidadesSaude() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin_unidades_saude', clienteId] });
+      queryClient.invalidateQueries({ queryKey: ['unidades_saude'] });
       toast.success('Status atualizado');
     },
     onError: (err: unknown) => {

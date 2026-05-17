@@ -432,7 +432,15 @@
       "PowerShell(cd d:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend; npx jest --config jest.config.ts --testPathIgnorePatterns='.e2e.spec.ts$' src/modules/usuario src/modules/auth src/modules/notificacao 2>&1 | Select-String -Pattern \"^\\(FAIL|PASS\\) \" | Select-Object -First 60; \"JEST_EXIT=$LASTEXITCODE\")",
       "PowerShell(cd d:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend; npx jest --config jest.config.ts --runTestsByPath src/modules/auth/use-cases/test/login.use-case.spec.ts src/modules/auth/use-cases/test/refresh-token.use-case.spec.ts src/modules/auth/use-cases/test/me.use-case.spec.ts src/modules/auth/use-cases/test/change-password.use-case.spec.ts src/guards/test/tenant.guard.spec.ts src/modules/usuario/use-cases/test/create-usuario.spec.ts src/modules/notificacao/use-cases/test/create-caso.spec.ts 2>&1 | Select-String -Pattern \"Tests:|Test Suites:|^\\(FAIL|PASS\\) |✕ \" | Select-Object -First 40; \"JEST_EXIT=$LASTEXITCODE\")",
       "PowerShell(cd d:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend; npx jest --config jest.config.ts --runTestsByPath src/modules/usuario/use-cases/test/create-usuario.spec.ts src/modules/notificacao/use-cases/test/create-caso.spec.ts 2>&1 | Select-String -Pattern \"●|Cannot find|is not|TypeError|Nest can't resolve|expect\\\\\\(|Difference|Expected|Received\" | Select-Object -First 50; \"X=$LASTEXITCODE\")",
-      "PowerShell(cd d:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend; npx jest --config jest.config.ts --runTestsByPath src/guards/test/tenant.guard.spec.ts 2>&1 | Select-String -Pattern \"✓|✕|●|Expected|Received|toMatch|Tests:|Test Suites:\" | Select-Object -First 40; \"X=$LASTEXITCODE\")"
+      "PowerShell(cd d:\\\\sentinella\\\\monorepo-sentinella\\\\apps\\\\backend; npx jest --config jest.config.ts --runTestsByPath src/guards/test/tenant.guard.spec.ts 2>&1 | Select-String -Pattern \"✓|✕|●|Expected|Received|toMatch|Tests:|Test Suites:\" | Select-Object -First 40; \"X=$LASTEXITCODE\")",
+      "Bash(cd \"D:\\\\\\\\sentinella\\\\\\\\monorepo-sentinella\\\\\\\\apps\\\\\\\\backend\")",
+      "Bash(./node_modules/.bin/tsc --noEmit -p tsconfig.json)",
+      "Bash(echo \"exit=$?\")",
+      "PowerShell($env:PGPASSWORD='Sentinella147852369'; & \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -h 177.7.37.14 -p 5432 -U luizAntonio -d sentinella -A -F'|' -c \"SELECT id, nome FROM clientes WHERE nome ILIKE '%lagoas%' OR nome ILIKE '%lago%';\")",
+      "Bash(cd /cygdrive/d/sentinella/monorepo-sentinella)",
+      "Bash(grep -rln \"useCreateUnidadeSaudeMutation\\\\|UnidadesSaude\\\\|unidades-saude\\\\|UnidadeSaude\" apps/frontend/src/pages apps/frontend/src/components)",
+      "Bash(grep -rn \"@Post\\\\|@Get\\\\|@Roles\\\\|sync\\\\|Controller\\(\" apps/backend/src/modules/cnes/*.controller.ts)",
+      "PowerShell($env:PGPASSWORD='Sentinella147852369'; & \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -h 177.7.37.14 -p 5432 -U luizAntonio -d sentinella -A -F'|' -c \"SELECT id,nome,cliente_id,ativo,deleted_at,origem,created_at FROM unidades_saude ORDER BY created_at DESC LIMIT 10;\" -c \"SELECT id,nome FROM clientes WHERE nome ILIKE '%lagoas%';\")"
     ]
   }
 }

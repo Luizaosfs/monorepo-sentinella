@@ -8,7 +8,10 @@ export function useUnidadesSaude(clienteId: string | null | undefined) {
     queryKey: ['unidades_saude', clienteId],
     queryFn: () => api.unidadesSaude.list(clienteId!),
     enabled: !!clienteId,
-    staleTime: STALE.LONG, // 10 min — cadastro estável
+    // SHORT (1 min): gateia a criação de notificador e é editado em outra tela
+    // (AdminUnidadesSaude). 10 min de stale escondia UBS recém-criada entre
+    // abas/sessões distintas (admin cria, supervisor não via).
+    staleTime: STALE.SHORT,
   });
 }
 

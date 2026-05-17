@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   Header,
   Inject,
@@ -141,8 +142,12 @@ export class NotificacaoController {
   @Get('unidades-saude')
   @Roles('admin', 'supervisor', 'notificador')
   @ApiOperation({ summary: 'Listar unidades de saúde' })
-  async listUnidades() {
-    const clienteId = requireTenantId(getAccessScope(this.req));
+  async listUnidades(@Query('clienteId') clienteIdQ?: string) {
+    // Admin não tem tenantId no JWT → usa ?clienteId= (rota /operador/usuarios).
+    // Supervisor/notificador: scope.tenantId sempre vence (JWT).
+    const scope = getAccessScope(this.req);
+    const clienteId = scope.tenantId ?? clienteIdQ ?? null;
+    if (!clienteId) throw new ForbiddenException('clienteId obrigatório');
     const { items } = await this.unidadeFilter.execute(clienteId);
     return items.map(NotificacaoViewModel.unidadeToHttp);
   }
