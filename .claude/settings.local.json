@@ -482,7 +482,8 @@
       "PowerShell(Get-CimInstance *)",
       "PowerShell($env:PGPASSWORD='Sentinella147852369'; $psql=\"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\"; $T=\"postgresql://luizAntonio:Sentinella147852369@177.7.37.14:5432/sentinella_test\"; $C='2e3f32f3-f8bf-433b-9839-553f7f1ce2d8'; Write-Output \"=== cliente slug ===\"; & $psql $T -A -F'|' -c \"SELECT id,slug,nome FROM clientes WHERE id='$C';\"; Write-Output \"=== imoveis \\(3\\) ===\"; & $psql $T -A -F'|' -c \"SELECT id, COALESCE\\(numero,'?'\\)||' '||COALESCE\\(logradouro,'?'\\) addr FROM imoveis WHERE cliente_id='$C';\"; Write-Output \"=== bairros \\(4\\) ===\"; & $psql $T -A -F'|' -c \"SELECT id,nome FROM bairros WHERE cliente_id='$C';\"; Write-Output \"=== TEST_CANAL_BAIRRO_ID existe? ===\"; & $psql $T -A -F'|' -c \"SELECT id,nome FROM bairros WHERE id='ba669e48-6d61-4af3-96b0-b05aa7147c35';\")",
       "PowerShell($env:PGPASSWORD='Sentinella147852369'; $psql=\"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\"; $T=\"postgresql://luizAntonio:Sentinella147852369@177.7.37.14:5432/sentinella_test\"; & $psql $T -c \"\\\\d casos_notificados\" 2>&1 | Select-Object -First 50)",
-      "Bash(grep -avE \"^\\\\s*$|npm warn\")"
+      "Bash(grep -avE \"^\\\\s*$|npm warn\")",
+      "Bash(git -C \"D:/sentinella/monorepo-sentinella\" status --porcelain)"
     ]
   }
 }
