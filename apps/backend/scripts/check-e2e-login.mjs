@@ -1,10 +1,10 @@
 // Diagnóstico: testa /auth/login no backend :3334 com os 4 TEST_*.
 const base = process.env.E2E_API ?? 'http://localhost:3334';
 const users = [
-  ['admin', 'luizantoniooliveira.digital@gmail.com', '123456'],
-  ['supervisor', 'supervisor@sentinellamap.com.br', '12345@Mudar'],
-  ['agente', 'agente@sentinellamap.com.br', '12345@Mudar'],
-  ['notificador', 'notificador@sentinellamap.com.br', '12345@Mudar'],
+  ['admin', 'admin@sentinellamap.com.br', '1234@Mudar'],
+  ['supervisor', 'supervisor@treslagoas.com.br', '1234@Mudar'],
+  ['agente', 'agente@treslagoas.com.br', '1234@Mudar'],
+  ['notificador', 'notificador@treslagoas.com.br', '1234@Mudar'],
 ];
 for (const [k, email, password] of users) {
   try {
