@@ -17,6 +17,7 @@ import { mockRequest } from '@test/utils/user-helpers';
 
 import { TransicionarFocoRisco } from '../transicionar-foco-risco';
 import { RecalcularScorePrioridadeFoco } from '../recalcular-score-prioridade-foco';
+import { CruzarFocoConfirmadoComCasos } from '../cruzar-foco-confirmado-com-casos';
 import { FocoRiscoBuilder } from './builders/foco-risco.builder';
 
 describe('TransicionarFocoRisco', () => {
@@ -29,6 +30,7 @@ describe('TransicionarFocoRisco', () => {
   const criarReinspecao = mock<CriarReinspecaoPosTratamento>();
   const cancelarReinspecoes = mock<CancelarReinspecoesAoFecharFoco>();
   const recalcularScore = mock<RecalcularScorePrioridadeFoco>();
+  const cruzarFocoConfirmado = mock<CruzarFocoConfirmadoComCasos>();
   const enfileirarScore = { enfileirarPorImovel: jest.fn().mockResolvedValue(undefined) };
 
   /**
@@ -49,6 +51,7 @@ describe('TransicionarFocoRisco', () => {
       cb({ __mock_tx__: true }),
     );
     recalcularScore.execute.mockResolvedValue({ score: 30 });
+    cruzarFocoConfirmado.execute.mockResolvedValue({ cruzamentos: 0, casos: 0 });
     enfileirarScore.enfileirarPorImovel.mockResolvedValue(undefined);
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -62,6 +65,7 @@ describe('TransicionarFocoRisco', () => {
         { provide: CriarReinspecaoPosTratamento, useValue: criarReinspecao },
         { provide: CancelarReinspecoesAoFecharFoco, useValue: cancelarReinspecoes },
         { provide: RecalcularScorePrioridadeFoco, useValue: recalcularScore },
+        { provide: CruzarFocoConfirmadoComCasos, useValue: cruzarFocoConfirmado },
         { provide: EnfileirarScoreImovel, useValue: enfileirarScore },
         { provide: REQUEST, useValue: mockRequest({ tenantId: 'cliente-uuid-1' }) },
       ],
@@ -128,6 +132,54 @@ describe('TransicionarFocoRisco', () => {
     expect(result.foco.confirmadoEm).toBeInstanceOf(Date);
     expect(iniciarSla.execute).toHaveBeenCalledWith(foco, expect.anything());
     expect(result.sla).toEqual({ acao: 'criado', slaId: 'sla-novo', fromFallback: false });
+  });
+
+  it('E.1.2: em_inspecao → confirmado dispara CruzarFocoConfirmadoComCasos', async () => {
+    const foco = new FocoRiscoBuilder().withStatus('em_inspecao').build();
+    readRepo.findById.mockResolvedValue(foco);
+    writeRepo.save.mockResolvedValue();
+    writeRepo.createHistorico.mockResolvedValue({
+      clienteId: 'cliente-uuid-1',
+      statusNovo: 'confirmado',
+    });
+    iniciarSla.execute.mockResolvedValue({ acao: 'criado', slaId: 's1', fromFallback: false });
+
+    await useCase.execute(foco.id!, { statusPara: 'confirmado' });
+
+    expect(cruzarFocoConfirmado.execute).toHaveBeenCalledWith(
+      expect.objectContaining({ focoId: foco.id, clienteId: foco.clienteId }),
+    );
+  });
+
+  it('E.1.2: transição que NÃO é confirmado não dispara o cruzamento', async () => {
+    const foco = new FocoRiscoBuilder().withStatus('suspeita').build();
+    readRepo.findById.mockResolvedValue(foco);
+    writeRepo.save.mockResolvedValue();
+    writeRepo.createHistorico.mockResolvedValue({
+      clienteId: 'cliente-uuid-1',
+      statusNovo: 'em_triagem',
+    });
+
+    await useCase.execute(foco.id!, { statusPara: 'em_triagem' });
+
+    expect(cruzarFocoConfirmado.execute).not.toHaveBeenCalled();
+  });
+
+  it('E.1.2: falha no CruzarFocoConfirmadoComCasos NÃO reverte a confirmação', async () => {
+    const foco = new FocoRiscoBuilder().withStatus('em_inspecao').build();
+    readRepo.findById.mockResolvedValue(foco);
+    writeRepo.save.mockResolvedValue();
+    writeRepo.createHistorico.mockResolvedValue({
+      clienteId: 'cliente-uuid-1',
+      statusNovo: 'confirmado',
+    });
+    iniciarSla.execute.mockResolvedValue({ acao: 'criado', slaId: 's1', fromFallback: false });
+    cruzarFocoConfirmado.execute.mockRejectedValueOnce(new Error('cruzamento db error'));
+
+    const result = await useCase.execute(foco.id!, { statusPara: 'confirmado' });
+
+    expect(result.foco.status).toBe('confirmado');
+    expect(result.foco.confirmadoEm).toBeInstanceOf(Date);
   });
 
   it('confirmado → em_tratamento chama CriarReinspecaoPosTratamento', async () => {
@@ -386,6 +438,7 @@ describe('TransicionarFocoRisco', () => {
           { provide: CriarReinspecaoPosTratamento, useValue: criarReinspecao },
           { provide: CancelarReinspecoesAoFecharFoco, useValue: cancelarReinspecoes },
           { provide: RecalcularScorePrioridadeFoco, useValue: recalcularScore },
+          { provide: CruzarFocoConfirmadoComCasos, useValue: cruzarFocoConfirmado },
           { provide: EnfileirarScoreImovel, useValue: enfileirarScore },
           { provide: REQUEST, useValue: mockRequest(reqOverrides) },
         ],

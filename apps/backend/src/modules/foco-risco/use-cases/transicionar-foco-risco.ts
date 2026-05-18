@@ -22,6 +22,7 @@ import { FocoRisco, FocoRiscoStatus } from '../entities/foco-risco';
 import { FocoRiscoException } from '../errors/foco-risco.exception';
 import { FocoRiscoReadRepository } from '../repositories/foco-risco-read.repository';
 import { FocoRiscoWriteRepository } from '../repositories/foco-risco-write.repository';
+import { CruzarFocoConfirmadoComCasos } from './cruzar-foco-confirmado-com-casos';
 import { RecalcularScorePrioridadeFoco } from './recalcular-score-prioridade-foco';
 
 /**
@@ -49,6 +50,7 @@ export class TransicionarFocoRisco {
     private criarReinspecao: CriarReinspecaoPosTratamento,
     private cancelarReinspecoes: CancelarReinspecoesAoFecharFoco,
     private recalcularScore: RecalcularScorePrioridadeFoco,
+    private cruzarFocoConfirmado: CruzarFocoConfirmadoComCasos,
     private enfileirarScore: EnfileirarScoreImovel,
     @Inject(REQUEST) private req: Request,
   ) {}
@@ -170,6 +172,25 @@ export class TransicionarFocoRisco {
             logErr instanceof Error ? logErr.stack : String(logErr),
           );
         });
+    }
+
+    // E.1.2 — Cruzamento epidemiológico oficial: ao CONFIRMAR o foco, busca
+    // casos notificados ativos no raio e vincula via foco_risco_id (best-effort,
+    // FORA da tx — falha aqui nunca reverte a confirmação).
+    if (novoStatus === 'confirmado') {
+      try {
+        await this.cruzarFocoConfirmado.execute({
+          focoId: foco.id,
+          clienteId: foco.clienteId,
+          latitude: foco.latitude ?? null,
+          longitude: foco.longitude ?? null,
+        });
+      } catch (err) {
+        this.logger.error(
+          `Hook CruzarFocoConfirmadoComCasos falhou na confirmação do foco ${foco.id}`,
+          err instanceof Error ? err.stack : String(err),
+        );
+      }
     }
 
     // Fase F.1.A — recalcula score após transição de status (best-effort)

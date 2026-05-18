@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@shared/modules/database/prisma/prisma.service';
 
-import { CruzarFocoNovoComCasos } from '../cruzar-foco-novo-com-casos';
+import { CruzarFocoConfirmadoComCasos } from '../cruzar-foco-confirmado-com-casos';
 import { gerarCodigoFoco } from '../helpers/gerar-codigo-foco';
 import { autoClassificarFoco } from './auto-classificar-foco';
 
@@ -28,7 +28,7 @@ export class CriarFocoDeVistoriaDeposito {
 
   constructor(
     private prisma: PrismaService,
-    private cruzarFocoNovoComCasos: CruzarFocoNovoComCasos,
+    private cruzarFocoConfirmado: CruzarFocoConfirmadoComCasos,
   ) {}
 
   async execute(
@@ -161,20 +161,25 @@ export class CriarFocoDeVistoriaDeposito {
       );
     }
 
-    try {
-      await this.cruzarFocoNovoComCasos.execute({
-        focoId: foco.id,
-        clienteId: foco.cliente_id,
-        origemLevantamentoItemId: foco.origem_levantamento_item_id ?? null,
-        latitude: foco.latitude,
-        longitude: foco.longitude,
-      });
-    } catch (err) {
-      this.logger.error(
-        `Hook CruzarFocoNovoComCasos falhou: foco=${foco.id} erro=${
-          err instanceof Error ? err.message : String(err)
-        }`,
-      );
+    // E.1.2 — cruzamento epidemiológico oficial só quando o foco fica
+    // confirmado (tratado=false). Foco já resolvido (tratado=true) não
+    // absorve caso nem é elevado a P1 — paridade com CruzarCasoComFocos,
+    // que ignora focos resolvidos.
+    if (statusFinal === 'confirmado') {
+      try {
+        await this.cruzarFocoConfirmado.execute({
+          focoId: foco.id,
+          clienteId: foco.cliente_id,
+          latitude: foco.latitude,
+          longitude: foco.longitude,
+        });
+      } catch (err) {
+        this.logger.error(
+          `Hook CruzarFocoConfirmadoComCasos falhou: foco=${foco.id} erro=${
+            err instanceof Error ? err.message : String(err)
+          }`,
+        );
+      }
     }
 
     return { criado: true, focoId: foco.id };
@@ -242,6 +247,25 @@ export class CriarFocoDeVistoriaDeposito {
           err instanceof Error ? err.message : String(err)
         }`,
       );
+    }
+
+    // E.1.2 — foco pré-existente (ex.: denúncia cidadã) confirmado pela
+    // vistoria do agente: agora cruza com casos notificados via foco_risco_id.
+    // Antes da E.1.2 este caminho não cruzava de forma alguma — era o gap
+    // central do fluxo denúncia → confirmação operacional.
+    if (statusFinal === 'confirmado') {
+      try {
+        await this.cruzarFocoConfirmado.execute({
+          focoId: foco.id,
+          clienteId,
+        });
+      } catch (err) {
+        this.logger.error(
+          `Hook CruzarFocoConfirmadoComCasos (vinculado) falhou: foco=${foco.id} erro=${
+            err instanceof Error ? err.message : String(err)
+          }`,
+        );
+      }
     }
 
     return { criado: false, focoId: foco.id };

@@ -193,7 +193,7 @@ describe('CriarFocoDeVistoriaDeposito', () => {
     });
   });
 
-  it('chama CruzarFocoNovoComCasos após criar foco', async () => {
+  it('E.1.2: foco novo confirmado (tratado=false) dispara CruzarFocoConfirmadoComCasos', async () => {
     p.vistoriasFind.mockResolvedValue({
       cliente_id: 'cli-1',
       imovel_id: null,
@@ -201,7 +201,35 @@ describe('CriarFocoDeVistoriaDeposito', () => {
       foco_risco_id: null,
     });
     await useCase.execute({ clienteId: 'cli-1', vistoriaId: 'v-1', qtdComFocos: 1, tratado: false });
-    expect(c.execute).toHaveBeenCalled();
+    expect(c.execute).toHaveBeenCalledWith(
+      expect.objectContaining({ focoId: 'foco-1', clienteId: 'cli-1' }),
+    );
+  });
+
+  it('E.1.2: foco novo já resolvido (tratado=true) NÃO cruza (paridade c/ CruzarCasoComFocos)', async () => {
+    p.vistoriasFind.mockResolvedValue({
+      cliente_id: 'cli-1',
+      imovel_id: null,
+      ciclo: 1,
+      foco_risco_id: null,
+    });
+    await useCase.execute({ clienteId: 'cli-1', vistoriaId: 'v-1', qtdComFocos: 1, tratado: true });
+    expect(c.execute).not.toHaveBeenCalled();
+  });
+
+  it('E.1.2: foco pré-vinculado (denúncia) confirmado pelo agente dispara o cruzamento', async () => {
+    p.vistoriasFind.mockResolvedValue({
+      cliente_id: 'cli-1',
+      imovel_id: 'imo-1',
+      ciclo: 1,
+      foco_risco_id: 'foco-denuncia',
+    });
+    p.focosFindFirst.mockResolvedValue({ id: 'foco-denuncia', status: 'em_inspecao' });
+
+    const r = await useCase.execute({ clienteId: 'cli-1', vistoriaId: 'v-1', qtdComFocos: 1, tratado: false });
+
+    expect(r).toEqual({ criado: false, focoId: 'foco-denuncia' });
+    expect(c.execute).toHaveBeenCalledWith({ focoId: 'foco-denuncia', clienteId: 'cli-1' });
   });
 
   it('autoClassificarFoco: origem agente → classificacao_inicial=suspeito (default)', async () => {
@@ -217,7 +245,7 @@ describe('CriarFocoDeVistoriaDeposito', () => {
     });
   });
 
-  it('falha em CruzarFocoNovoComCasos não reverte criação', async () => {
+  it('falha em CruzarFocoConfirmadoComCasos não reverte criação', async () => {
     p.vistoriasFind.mockResolvedValue({
       cliente_id: 'cli-1',
       imovel_id: null,

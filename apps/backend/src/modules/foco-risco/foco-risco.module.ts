@@ -25,6 +25,7 @@ import { PaginationFocoRisco } from './use-cases/pagination-foco-risco';
 import { TransicionarFocoRisco } from './use-cases/transicionar-foco-risco';
 import { UpdateFocoRisco } from './use-cases/update-foco-risco';
 import { CruzarFocoNovoComCasos } from './use-cases/cruzar-foco-novo-com-casos';
+import { CruzarFocoConfirmadoComCasos } from './use-cases/cruzar-foco-confirmado-com-casos';
 import { CriarFocoDeLevantamentoItem } from './use-cases/auto-criacao/criar-foco-de-levantamento-item';
 import { CriarFocoDeVistoriaDeposito } from './use-cases/auto-criacao/criar-foco-de-vistoria-deposito';
 import { NormalizarCicloFoco } from './use-cases/normalizar-ciclo-foco';
@@ -55,6 +56,7 @@ import { ListFocosTerritorioUseCase } from './use-cases/list-focos-territorio';
     TransicionarFocoRisco,
     UpdateFocoRisco,
     CruzarFocoNovoComCasos,
+    CruzarFocoConfirmadoComCasos,
     CriarFocoDeLevantamentoItem,
     CriarFocoDeVistoriaDeposito,
     NormalizarCicloFoco,
